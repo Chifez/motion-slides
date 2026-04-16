@@ -98,6 +98,37 @@ function createDefaultProject(name = 'Untitled Deck'): Project {
 }
 
 // ─────────────────────────────────────────────
+// Playback & Presentation Settings
+// ─────────────────────────────────────────────
+
+export interface PlaybackSettings {
+  autoplay: boolean
+  autoplayDelay: number // ms between slides during autoplay
+  loop: boolean
+  transitionDuration: number // ms
+  transitionEase: 'spring' | 'ease-out' | 'linear'
+  exportResolution: { width: number; height: number; label: string }
+}
+
+const EXPORT_RESOLUTIONS = [
+  { width: 1280, height: 720, label: '720p (HD)' },
+  { width: 1920, height: 1080, label: '1080p (Full HD)' },
+  { width: 2560, height: 1440, label: '1440p (2K)' },
+  { width: 3840, height: 2160, label: '2160p (4K)' },
+] as const
+
+export { EXPORT_RESOLUTIONS }
+
+const DEFAULT_PLAYBACK_SETTINGS: PlaybackSettings = {
+  autoplay: false,
+  autoplayDelay: 3000,
+  loop: true,
+  transitionDuration: 500,
+  transitionEase: 'ease-out',
+  exportResolution: EXPORT_RESOLUTIONS[0],
+}
+
+// ─────────────────────────────────────────────
 // Store Interface
 // ─────────────────────────────────────────────
 
@@ -106,6 +137,15 @@ interface EditorState {
   activeProjectId: string | null
   activeSlideIndex: number
   selectedElementId: string | null
+
+  // Presentation mode
+  isPresenting: boolean
+  playbackSettings: PlaybackSettings
+
+  // Presentation actions
+  startPresentation: () => void
+  stopPresentation: () => void
+  updatePlaybackSettings: (updates: Partial<PlaybackSettings>) => void
 
   // Project actions
   createProject: (name?: string) => Project
@@ -145,6 +185,19 @@ export const useEditorStore = create<EditorState>()(
       activeProjectId: null,
       activeSlideIndex: 0,
       selectedElementId: null,
+      isPresenting: false,
+      playbackSettings: { ...DEFAULT_PLAYBACK_SETTINGS },
+
+      // ── Presentation ──────────────────────────
+      startPresentation: () => {
+        set({ isPresenting: true, selectedElementId: null, activeSlideIndex: 0 })
+      },
+      stopPresentation: () => {
+        set({ isPresenting: false })
+      },
+      updatePlaybackSettings: (updates) => {
+        set((s) => ({ playbackSettings: { ...s.playbackSettings, ...updates } }))
+      },
 
       // ── Derived ──────────────────────────────
       activeProject: () => {
@@ -331,6 +384,13 @@ export const useEditorStore = create<EditorState>()(
     {
       name: 'motionslides-session',
       storage: createJSONStorage(() => sessionStorage),
+      // Don't persist presentation state — always start in editor mode
+      partialize: (state) => ({
+        projects: state.projects,
+        activeProjectId: state.activeProjectId,
+        activeSlideIndex: state.activeSlideIndex,
+        playbackSettings: state.playbackSettings,
+      }),
     },
   ),
 )

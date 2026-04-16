@@ -5,7 +5,7 @@ import { EditorToolbar } from '../components/editor/EditorToolbar'
 import { SlidePanel } from '#/components/editor/SlidePanel'
 import { CanvasStage } from '#/components/editor/CanvasStage'
 import { InspectorPanel } from '#/components/editor/InspectorPanel'
-
+import { PresentationOverlay } from '#/components/editor/PresentationOverlay'
 
 export const Route = createFileRoute('/editor/$projectId')({
   component: EditorPage,
@@ -13,7 +13,7 @@ export const Route = createFileRoute('/editor/$projectId')({
 
 function EditorPage() {
   const { projectId } = Route.useParams()
-  const { loadProject, activeProject } = useEditorStore()
+  const { loadProject, activeProject, isPresenting } = useEditorStore()
 
   useEffect(() => {
     loadProject(projectId)
@@ -31,12 +31,18 @@ function EditorPage() {
 
   return (
     <div className="h-screen flex flex-col bg-[#0d0d0d] overflow-hidden">
-      <EditorToolbar project={project} />
+      {/* Hide toolbar during presentation */}
+      {!isPresenting && <EditorToolbar project={project} />}
+
       <div className="flex flex-1 overflow-hidden">
-        <SlidePanel />
+        {/* Hide side panels during presentation */}
+        {!isPresenting && <SlidePanel />}
         <CanvasStage />
-        <InspectorPanel />
+        {!isPresenting && <InspectorPanel />}
       </div>
+
+      {/* Presentation overlay — renders on top when active */}
+      <PresentationOverlay />
     </div>
   )
 }
