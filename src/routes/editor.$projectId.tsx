@@ -2,9 +2,10 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { useEditorStore } from '../store/editorStore'
 import { EditorToolbar } from '../components/editor/EditorToolbar'
-import { SlidePanel } from '../components/editor/SlidePanel'
-import { CanvasStage } from '../components/editor/CanvasStage'
-import { InspectorPanel } from '../components/editor/InspectorPanel'
+import { SlidePanel } from '#/components/editor/SlidePanel'
+import { CanvasStage } from '#/components/editor/CanvasStage'
+import { InspectorPanel } from '#/components/editor/InspectorPanel'
+
 
 export const Route = createFileRoute('/editor/$projectId')({
   component: EditorPage,
@@ -29,9 +30,9 @@ function EditorPage() {
   }
 
   return (
-    <div className="app-shell">
+    <div className="h-screen flex flex-col bg-[#0d0d0d] overflow-hidden">
       <EditorToolbar project={project} />
-      <div className="editor-workspace">
+      <div className="flex flex-1 overflow-hidden">
         <SlidePanel />
         <CanvasStage />
         <InspectorPanel />

@@ -12,26 +12,17 @@ export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
 
-  const {
-    activeProject,
-    activeSlide,
-    activeSlideIndex,
-    setActiveSlide,
-    setSelectedElement,
-  } = useEditorStore()
+  const { activeProject, activeSlide, activeSlideIndex, setActiveSlide, setSelectedElement } = useEditorStore()
 
   const project = activeProject()
   const slide = activeSlide()
 
-  // Compute scale to fit canvas in stage
   useEffect(() => {
     function resize() {
       if (!stageRef.current) return
       const { clientWidth: w, clientHeight: h } = stageRef.current
       const padding = 64
-      const scaleX = (w - padding) / CANVAS_W
-      const scaleY = (h - padding) / CANVAS_H
-      setScale(Math.min(scaleX, scaleY, 1))
+      setScale(Math.min((w - padding) / CANVAS_W, (h - padding) / CANVAS_H, 1))
     }
     resize()
     const ro = new ResizeObserver(resize)
@@ -44,12 +35,12 @@ export function CanvasStage() {
   return (
     <main
       ref={stageRef}
-      className="canvas-stage"
+      className="flex-1 bg-[#111111] flex items-center justify-center overflow-hidden relative"
       onClick={() => setSelectedElement(null)}
     >
       {/* Canvas Board */}
       <div
-        className="canvas-board"
+        className="relative bg-[#0a0a0a] rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)] overflow-hidden"
         style={{
           width: CANVAS_W,
           height: CANVAS_H,
@@ -57,10 +48,8 @@ export function CanvasStage() {
           transformOrigin: 'center center',
         }}
       >
-        {/* Connector SVG layer */}
         {slide && <ConnectorLayer slide={slide} elements={slide.elements} />}
 
-        {/* Elements rendered with layout animations */}
         <LayoutGroup>
           <AnimatePresence>
             {slide?.elements.map((el) => (
@@ -70,22 +59,22 @@ export function CanvasStage() {
         </LayoutGroup>
       </div>
 
-      {/* Playback controls */}
-      <div className="playback-bar">
+      {/* Playback bar */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-[#161616]/90 border border-white/[0.08] rounded-full px-3 py-1.5 backdrop-blur-md">
         <button
-          className="btn btn-ghost btn-icon"
           onClick={() => setActiveSlide(activeSlideIndex - 1)}
           disabled={activeSlideIndex === 0}
+          className="p-1 rounded-full text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer border-none bg-transparent"
         >
           <ChevronLeft size={16} />
         </button>
-        <span className="slide-counter">
+        <span className="text-xs text-neutral-500 min-w-[48px] text-center">
           {activeSlideIndex + 1} / {totalSlides}
         </span>
         <button
-          className="btn btn-ghost btn-icon"
           onClick={() => setActiveSlide(activeSlideIndex + 1)}
           disabled={activeSlideIndex >= totalSlides - 1}
+          className="p-1 rounded-full text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer border-none bg-transparent"
         >
           <ChevronRight size={16} />
         </button>

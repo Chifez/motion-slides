@@ -2,69 +2,59 @@ import { Plus, Copy, Trash2 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 
 export function SlidePanel() {
-  const {
-    activeProject,
-    activeSlideIndex,
-    setActiveSlide,
-    addSlide,
-    duplicateSlide,
-    deleteSlide,
-  } = useEditorStore()
-
+  const { activeProject, activeSlideIndex, setActiveSlide, addSlide, duplicateSlide, deleteSlide } = useEditorStore()
   const project = activeProject()
   if (!project) return null
   const { slides } = project
 
   return (
-    <aside className="panel-left">
-      <div className="panel-left-header">
-        <span>Slides</span>
-        <button className="btn btn-ghost btn-icon" onClick={addSlide} title="Add Slide">
+    <aside className="w-[220px] shrink-0 flex flex-col bg-[#161616] border-r border-white/[0.08] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.06]">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Slides</span>
+        <button
+          onClick={addSlide}
+          className="p-1 rounded-md text-neutral-600 hover:text-neutral-100 hover:bg-white/[0.06] transition-colors cursor-pointer border-none bg-transparent"
+        >
           <Plus size={14} />
         </button>
       </div>
 
-      <div className="slides-list">
+      {/* Slide list */}
+      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5">
         {slides.map((slide, i) => (
           <div
             key={slide.id}
-            className={`slide-thumb${activeSlideIndex === i ? ' active' : ''}`}
             onClick={() => setActiveSlide(i)}
+            className={`relative rounded-md overflow-hidden cursor-pointer border-2 transition-all aspect-video bg-[#111] flex items-center justify-center group ${
+              activeSlideIndex === i
+                ? 'border-blue-500'
+                : 'border-transparent hover:border-white/[0.12]'
+            }`}
           >
-            <span className="slide-thumb-number">{i + 1}</span>
-            <div className="slide-thumb-preview">
-              {slide.elements.length > 0
-                ? <span style={{ fontSize: 9, color: '#555', textAlign: 'center', padding: 4 }}>
-                    {slide.elements.length} element{slide.elements.length !== 1 ? 's' : ''}
-                  </span>
-                : <span>Empty</span>}
-            </div>
+            <span className="absolute top-1 left-1.5 text-[9px] text-neutral-700 font-semibold">{i + 1}</span>
+            <span className="text-[9px] text-neutral-700">
+              {slide.elements.length > 0 ? `${slide.elements.length} element${slide.elements.length > 1 ? 's' : ''}` : 'Empty'}
+            </span>
 
-            {/* Hover actions */}
+            {/* Active slide actions */}
             {activeSlideIndex === i && (
               <div
-                style={{
-                  position: 'absolute', bottom: 4, right: 4,
-                  display: 'flex', gap: 3,
-                }}
+                className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
-                  className="btn btn-ghost btn-icon"
-                  style={{ padding: 3 }}
                   onClick={() => duplicateSlide(i)}
-                  title="Duplicate"
+                  className="p-0.5 rounded text-neutral-500 hover:text-neutral-100 hover:bg-white/10 cursor-pointer border-none bg-transparent"
                 >
-                  <Copy size={10} />
+                  <Copy size={9} />
                 </button>
                 {slides.length > 1 && (
                   <button
-                    className="btn btn-danger btn-icon"
-                    style={{ padding: 3 }}
                     onClick={() => deleteSlide(i)}
-                    title="Delete"
+                    className="p-0.5 rounded text-red-600 hover:text-red-400 hover:bg-red-500/10 cursor-pointer border-none bg-transparent"
                   >
-                    <Trash2 size={10} />
+                    <Trash2 size={9} />
                   </button>
                 )}
               </div>
@@ -73,8 +63,12 @@ export function SlidePanel() {
         ))}
       </div>
 
-      <div className="panel-left-footer">
-        <button className="btn btn-panel" style={{ width: '100%' }} onClick={addSlide}>
+      {/* Footer */}
+      <div className="p-2 border-t border-white/[0.06]">
+        <button
+          onClick={addSlide}
+          className="w-full flex items-center justify-center gap-1.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-neutral-500 hover:text-neutral-200 text-xs font-medium py-1.5 rounded-md transition-all cursor-pointer"
+        >
           <Plus size={13} /> Add Slide
         </button>
       </div>
