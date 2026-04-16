@@ -22,11 +22,10 @@ function Dashboard() {
   }
 
   return (
-    // Fix #3: h-screen + flex col, no overflow on root → content area scrolls inside
     <div className="h-screen flex flex-col bg-[#0d0d0d] overflow-hidden">
 
       {/* Header */}
-      <header className="h-14 shrink-0 flex items-center gap-4 px-6 bg-[#161616] border-b border-white/[0.08]">
+      <header className="h-14 shrink-0 flex items-center gap-4 px-6 bg-[#161616] border-b border-white/8">
         <Link to="/" className="flex items-center gap-2 no-underline">
           <img src="/logo.png" alt="MotionSlides" className="h-10 w-auto" />
         </Link>
@@ -65,10 +64,10 @@ function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={() => navigate({ to: '/editor/$projectId', params: { projectId: project.id } })}
-              className="bg-[#161616] border border-white/[0.08] hover:border-white/[0.16] rounded-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5"
+              className="bg-[#161616] border border-white/8 hover:border-white/16 rounded-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5"
             >
               {/* Preview area */}
-              <div className="aspect-video bg-[#111] border-b border-white/[0.06] flex items-center justify-center text-neutral-700">
+              <div className="aspect-video bg-[#111] border-b border-white/6 flex items-center justify-center text-neutral-700">
                 <Layout size={24} />
               </div>
               {/* Card body */}

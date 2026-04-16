@@ -5,6 +5,12 @@ import { RotateCw } from 'lucide-react'
 
 interface Props { element: SceneElement }
 
+function getCanvasScale(): number {
+  const board = document.querySelector('[data-canvas-board]')
+  if (!board) return 1
+  return board.getBoundingClientRect().width / (board as HTMLElement).offsetWidth
+}
+
 export function BoundingBox({ element }: Props) {
   const { updateElement } = useEditorStore()
 
@@ -13,11 +19,15 @@ export function BoundingBox({ element }: Props) {
     e.preventDefault()
     e.stopPropagation()
 
-    const cx = element.position.x + element.size.width / 2
-    const cy = element.position.y + element.size.height / 2
+    const board = document.querySelector('[data-canvas-board]')
+    if (!board) return
+    const boardRect = board.getBoundingClientRect()
+    const scale = getCanvasScale()
+
+    const cx = boardRect.left + (element.position.x + element.size.width / 2) * scale
+    const cy = boardRect.top + (element.position.y + element.size.height / 2) * scale
 
     const onMove = (ev: MouseEvent) => {
-      // Position is already in "canvas space" via parent transforms
       const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI) + 90
       updateElement(element.id, { rotation: Math.round(angle) })
     }
@@ -38,11 +48,14 @@ export function BoundingBox({ element }: Props) {
 
     const startX = e.clientX
     const startY = e.clientY
-    const { x, y, width, height } = { ...element.position, ...element.size }
+    const scale = getCanvasScale()
+    const { x, y } = element.position
+    const { width, height } = element.size
 
     const onMove = (ev: MouseEvent) => {
-      const dx = ev.clientX - startX
-      const dy = ev.clientY - startY
+      // Divide raw pixel delta by canvas scale so 1px drag = 1px in canvas coords
+      const dx = (ev.clientX - startX) / scale
+      const dy = (ev.clientY - startY) / scale
 
       let newX = x, newY = y, newW = width, newH = height
 
@@ -50,10 +63,6 @@ export function BoundingBox({ element }: Props) {
       if (corner.includes('l')) { newX = x + dx; newW = Math.max(40, width - dx) }
       if (corner.includes('b')) newH = Math.max(24, height + dy)
       if (corner.includes('t')) { newY = y + dy; newH = Math.max(24, height - dy) }
-      if (corner === 'mr') newW = Math.max(40, width + dx)
-      if (corner === 'ml') { newX = x + dx; newW = Math.max(40, width - dx) }
-      if (corner === 'mb') newH = Math.max(24, height + dy)
-      if (corner === 'mt') { newY = y + dy; newH = Math.max(24, height - dy) }
 
       updateElement(element.id, {
         position: { x: newX, y: newY },
@@ -70,12 +79,16 @@ export function BoundingBox({ element }: Props) {
     window.addEventListener('mouseup', onUp)
   }, [element, updateElement])
 
-  const { x, y, width, height } = { ...element.position, ...element.size }
-
   return (
     <div
       className="bounding-box"
-      style={{ left: x, top: y, width, height, rotate: `${element.rotation}deg` }}
+      style={{
+        left: element.position.x,
+        top: element.position.y,
+        width: element.size.width,
+        height: element.size.height,
+        transform: `rotate(${element.rotation}deg)`,
+      }}
     >
       {/* Rotate handle */}
       <div className="rotate-handle" onMouseDown={startRotate}>

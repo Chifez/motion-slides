@@ -2,8 +2,9 @@ import { useRef, useEffect, useState } from 'react'
 import { AnimatePresence, LayoutGroup } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import { CanvasElement } from './CanvasElement'
 import { ConnectorLayer } from './ConnectorLayer'
+import { CanvasElement } from './CanvasElement'
+
 
 const CANVAS_W = 1280
 const CANVAS_H = 720
@@ -40,6 +41,7 @@ export function CanvasStage() {
     >
       {/* Canvas Board */}
       <div
+        data-canvas-board
         className="relative bg-[#0a0a0a] rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)] overflow-hidden"
         style={{
           width: CANVAS_W,

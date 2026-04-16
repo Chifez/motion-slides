@@ -37,7 +37,7 @@ function LandingPage() {
 
         <h1 className="text-[clamp(48px,7vw,88px)] font-extrabold tracking-[-3px] leading-none text-white text-center mb-5">
           Slides that <br />
-          <span className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <span className="bg-linear-to-br from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
             think in motion
           </span>
         </h1>
@@ -64,7 +64,7 @@ function LandingPage() {
           {features.map((f) => (
             <div
               key={f.title}
-              className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4"
+              className="bg-white/3 border border-white/[0.07] rounded-xl p-4"
             >
               <div className="text-[13px] font-semibold text-neutral-100 mb-1">{f.title}</div>
               <div className="text-xs text-neutral-500 leading-relaxed">{f.desc}</div>
