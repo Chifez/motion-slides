@@ -7,6 +7,7 @@
 
 import { useEditorStore } from '@/store/editorStore'
 import { EXPORT_BITRATE, EXPORT_MIME_TYPE_VP9, EXPORT_MIME_TYPE_FALLBACK } from '@/constants/export'
+import { getCanvasDimensions } from '@/constants/canvas'
 import html2canvas from 'html2canvas'
 
 export type ExportFormat = 'webm' | 'pdf'
@@ -28,8 +29,11 @@ export async function exportAsVideo(
   if (!project || project.slides.length === 0) return null
 
   const { playbackSettings } = store
-  const { exportResolution, transitionDuration, autoplayDelay } = playbackSettings
+  const { exportResolution, transitionDuration, autoplayDelay, aspectRatio } = playbackSettings
   const totalSlides = project.slides.length
+
+  // Get the logical canvas dimensions for the current aspect ratio
+  const canvasDims = getCanvasDimensions(aspectRatio)
 
   onProgress({ stage: 'preparing', currentSlide: 0, totalSlides, message: 'Warming up engine…' })
 
@@ -57,7 +61,7 @@ export async function exportAsVideo(
   recorder.start()
   store.setActiveSlide(0)
   await sleep(1000)
-  await captureFrame(canvasBoard, canvas, ctx, exportResolution)
+  await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
 
   for (let i = 0; i < totalSlides; i++) {
     onProgress({ stage: 'recording', currentSlide: i + 1, totalSlides, message: `Processing slide ${i + 1}…` })
@@ -66,11 +70,11 @@ export async function exportAsVideo(
       store.setActiveSlide(i)
       const startTime = Date.now()
       while (Date.now() - startTime < transitionDuration) {
-        await captureFrame(canvasBoard, canvas, ctx, exportResolution)
+        await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
       }
     }
 
-    await captureFrame(canvasBoard, canvas, ctx, exportResolution)
+    await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
 
     onProgress({ stage: 'recording', currentSlide: i + 1, totalSlides, message: `Holding slide ${i + 1}…` })
     await sleep(autoplayDelay)
@@ -93,11 +97,18 @@ async function captureFrame(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
   resolution: { width: number; height: number },
+  canvasDims: { width: number; height: number },
 ) {
   try {
+    // Scale relative to the logical canvas dimensions, not the DOM element's layout size
+    // This ensures correct scaling regardless of CSS transforms applied to the canvas board
+    const scaleFactor = resolution.width / canvasDims.width
+
     const screenshot = await html2canvas(source, {
-      backgroundColor: '#0a0a0a',
-      scale: resolution.width / source.offsetWidth,
+      backgroundColor: null,
+      scale: scaleFactor,
+      width: canvasDims.width,
+      height: canvasDims.height,
       useCORS: true,
       logging: false,
       imageTimeout: 0,

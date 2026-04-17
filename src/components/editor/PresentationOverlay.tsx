@@ -6,7 +6,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAutoplay } from '@/hooks/useAutoplay'
 import { useFullscreen } from '@/hooks/useFullscreen'
 import { useAutoHide } from '@/hooks/useAutoHide'
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/constants/canvas'
+import { getCanvasDimensions } from '@/constants/canvas'
 import { CanvasElement } from './CanvasElement'
 import { ConnectorLayer } from './ConnectorLayer'
 import { PresentationControls } from './presentation/PresentationControls'
@@ -71,9 +71,10 @@ export function PresentationOverlay() {
 
   if (!isPresenting || !slide) return null
 
-  // Scale to fill viewport while maintaining 16:9 aspect ratio
-  const scaleX = window.innerWidth / CANVAS_WIDTH
-  const scaleY = window.innerHeight / CANVAS_HEIGHT
+  // Scale to fill viewport while maintaining the selected aspect ratio
+  const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
+  const scaleX = window.innerWidth / canvasW
+  const scaleY = window.innerHeight / canvasH
   const scale = Math.min(scaleX, scaleY)
 
   const handlePrev = () => { if (activeSlideIndex > 0) setActiveSlide(activeSlideIndex - 1) }
@@ -92,8 +93,8 @@ export function PresentationOverlay() {
         data-canvas-board
         className="relative overflow-hidden"
         style={{
-          width: CANVAS_WIDTH,
-          height: CANVAS_HEIGHT,
+          width: canvasW,
+          height: canvasH,
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
           background: slide.background || '#0a0a0a',

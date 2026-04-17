@@ -1,14 +1,15 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Settings, X } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import {
   EXPORT_RESOLUTIONS,
+  ASPECT_RATIO_OPTIONS,
   AUTOPLAY_DELAY_OPTIONS,
   TRANSITION_DURATION_OPTIONS,
   TRANSITION_EASE_OPTIONS,
 } from '@/constants/export'
-import { useState } from 'react'
+import type { AspectRatioKey } from '@/constants/export'
 
 const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-white/8 bg-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#242424]"
 const labelCls = "text-[10px] text-neutral-600 uppercase tracking-wider block mb-1"
@@ -19,6 +20,17 @@ export function SettingsDropdown() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useClickOutside(ref, () => setOpen(false))
+
+  const activeRatio = playbackSettings.aspectRatio
+  const resolutionsForRatio = EXPORT_RESOLUTIONS[activeRatio]
+
+  const handleRatioChange = (newRatio: AspectRatioKey) => {
+    const newResolutions = EXPORT_RESOLUTIONS[newRatio]
+    updatePlaybackSettings({
+      aspectRatio: newRatio,
+      exportResolution: { ...newResolutions[0] },
+    })
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -78,17 +90,30 @@ export function SettingsDropdown() {
               </select>
             </div>
 
+            {/* Aspect Ratio */}
             <div className="border-t border-white/6 pt-3">
+              <span className={labelCls}>Aspect Ratio</span>
+              <select
+                value={activeRatio}
+                onChange={(e) => handleRatioChange(e.target.value as AspectRatioKey)}
+                className={selectCls}
+              >
+                {ASPECT_RATIO_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+
+            {/* Export Resolution — filtered by active aspect ratio */}
+            <div>
               <span className={labelCls}>Export Resolution</span>
               <select
                 value={playbackSettings.exportResolution.label}
                 onChange={(e) => {
-                  const res = EXPORT_RESOLUTIONS.find((r) => r.label === e.target.value)
+                  const res = resolutionsForRatio.find((r) => r.label === e.target.value)
                   if (res) updatePlaybackSettings({ exportResolution: { ...res } })
                 }}
                 className={selectCls}
               >
-                {EXPORT_RESOLUTIONS.map((r) => <option key={r.label} value={r.label}>{r.label} ({r.width}×{r.height})</option>)}
+                {resolutionsForRatio.map((r) => <option key={r.label} value={r.label}>{r.label} ({r.width}×{r.height})</option>)}
               </select>
             </div>
           </div>

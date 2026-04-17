@@ -1,4 +1,4 @@
-import { type Slide, type SceneElement } from '@/types'
+import { type Slide } from '@/types'
 import { nanoid } from '@/lib/nanoid'
 import { CANVAS_BG } from '@/constants/canvas'
 

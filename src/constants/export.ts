@@ -4,13 +4,42 @@
 
 import type { PlaybackSettings } from '@/types'
 
-/** Available export resolutions */
-export const EXPORT_RESOLUTIONS = [
-  { width: 1280, height: 720, label: '720p (HD)' },
-  { width: 1920, height: 1080, label: '1080p (Full HD)' },
-  { width: 2560, height: 1440, label: '1440p (2K)' },
-  { width: 3840, height: 2160, label: '2160p (4K)' },
-] as const
+/** Supported aspect ratio keys */
+export type AspectRatioKey = '16:9' | '9:16' | '1:1' | '4:3'
+
+/** Aspect ratio presets with labels */
+export const ASPECT_RATIO_OPTIONS: { value: AspectRatioKey; label: string }[] = [
+  { value: '16:9', label: 'Widescreen (16:9)' },
+  { value: '9:16', label: 'Vertical (9:16)' },
+  { value: '1:1', label: 'Square (1:1)' },
+  { value: '4:3', label: 'Traditional (4:3)' },
+]
+
+/** Available export resolutions grouped by aspect ratio */
+export const EXPORT_RESOLUTIONS: Record<
+  AspectRatioKey,
+  readonly { width: number; height: number; label: string }[]
+> = {
+  '16:9': [
+    { width: 1280, height: 720, label: '720p (HD)' },
+    { width: 1920, height: 1080, label: '1080p (Full HD)' },
+    { width: 2560, height: 1440, label: '1440p (2K)' },
+    { width: 3840, height: 2160, label: '2160p (4K)' },
+  ],
+  '9:16': [
+    { width: 720, height: 1280, label: '720×1280 (HD)' },
+    { width: 1080, height: 1920, label: '1080×1920 (Full HD)' },
+  ],
+  '1:1': [
+    { width: 720, height: 720, label: '720×720 (HD)' },
+    { width: 1080, height: 1080, label: '1080×1080 (Full HD)' },
+  ],
+  '4:3': [
+    { width: 960, height: 720, label: '960×720 (SD)' },
+    { width: 1440, height: 1080, label: '1440×1080 (HD)' },
+    { width: 1920, height: 1440, label: '1920×1440 (Full HD)' },
+  ],
+}
 
 /** Video export bitrate (bits per second) */
 export const EXPORT_BITRATE = 8_000_000
@@ -50,5 +79,6 @@ export const DEFAULT_PLAYBACK_SETTINGS: PlaybackSettings = {
   loop: true,
   transitionDuration: 500,
   transitionEase: 'ease-out',
-  exportResolution: { ...EXPORT_RESOLUTIONS[0] },
+  aspectRatio: '16:9',
+  exportResolution: { ...EXPORT_RESOLUTIONS['16:9'][0] },
 }

@@ -3,18 +3,20 @@ import { AnimatePresence, LayoutGroup } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useCanvasScale } from '@/hooks/useCanvasScale'
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/constants/canvas'
+import { getCanvasDimensions } from '@/constants/canvas'
 import { ConnectorLayer } from './ConnectorLayer'
 import { CanvasElement } from './CanvasElement'
 
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
-  const scale = useCanvasScale(stageRef)
 
-  const { activeProject, activeSlide, activeSlideIndex, setActiveSlide, setSelectedElement } = useEditorStore()
+  const { activeProject, activeSlide, activeSlideIndex, setActiveSlide, setSelectedElement, playbackSettings } = useEditorStore()
   const project = activeProject()
   const slide = activeSlide()
   const totalSlides = project?.slides.length ?? 0
+
+  const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
+  const scale = useCanvasScale(stageRef, canvasW, canvasH)
 
   return (
     <main
@@ -26,8 +28,8 @@ export function CanvasStage() {
         data-canvas-board
         className="relative bg-[#0a0a0a] rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)] overflow-hidden"
         style={{
-          width: CANVAS_WIDTH,
-          height: CANVAS_HEIGHT,
+          width: canvasW,
+          height: canvasH,
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
         }}

@@ -93,6 +93,7 @@ export interface PlaybackSettings {
   loop: boolean
   transitionDuration: number
   transitionEase: 'spring' | 'ease-out' | 'linear'
+  aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
   exportResolution: { width: number; height: number; label: string }
 }
 
