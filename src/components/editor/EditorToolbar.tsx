@@ -5,6 +5,7 @@ import type { Project } from '@/types'
 import { ElementButtons } from './toolbar/ElementButtons'
 import { SettingsDropdown } from './toolbar/SettingsDropdown'
 import { ExportDropdown } from './toolbar/ExportDropdown'
+import { Logo } from '@/components/ui/Logo'
 
 interface Props { project: Project }
 
@@ -18,7 +19,7 @@ export function EditorToolbar({ project }: Props) {
       </Link>
       <div className="w-px h-5 bg-white/8 mx-1" />
       <Link to="/" className="flex items-center no-underline">
-        <img src="/logo.png" alt="MotionSlides" className="h-6 w-auto" />
+        <Logo expanded={false} size={22} />
       </Link>
       <input
         value={project.name}

@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { Plus, Layout, Clock } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
+import { Logo } from '@/components/ui/Logo'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -27,7 +28,7 @@ function Dashboard() {
       {/* Header */}
       <header className="h-14 shrink-0 flex items-center gap-4 px-6 bg-[#161616] border-b border-white/8">
         <Link to="/" className="flex items-center gap-2 no-underline">
-          <img src="/logo.png" alt="MotionSlides" className="h-10 w-auto" />
+          <Logo expanded size={30} />
         </Link>
         <div className="flex-1" />
         <button
