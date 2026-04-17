@@ -11,14 +11,30 @@ import { ShapeElement } from './elements/ShapeElement'
 import { LineElement } from './elements/LineElement'
 import { BoundingBox } from './BoundingBox'
 
-interface Props { element: SceneElement }
+interface Props {
+  element: SceneElement
+  /** Index for stagger calculation (only used in presentation mode) */
+  staggerIndex?: number
+}
 
-export function CanvasElement({ element }: Props) {
-  const { selectedElementId, setSelectedElement, updateElement, isPresenting } = useEditorStore()
-  const { isTransitioning, transition, durationSec, ease } = useMotionContext()
+export function CanvasElement({ element, staggerIndex = 0 }: Props) {
+  const { selectedElementId, setSelectedElement, updateElement } = useEditorStore()
+  const {
+    isTransitioning,
+    durationSec,
+    ease,
+    magicSpring,
+    buildInSpring,
+    continuingIds,
+    getStaggerDelay,
+  } = useMotionContext()
   const isSelected = selectedElementId === element.id
   const isDragging = useRef(false)
   const dragStart = useRef({ x: 0, y: 0, elX: 0, elY: 0 })
+
+  // ── Identity Check ──
+  // Is this element present in both the previous and current slide?
+  const isContinuing = continuingIds.has(element.id)
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
@@ -67,31 +83,49 @@ export function CanvasElement({ element }: Props) {
     }
   }
 
-  // ── Magic Move: layoutId is ALWAYS the element ID ──
-  // During presentation, framer-motion will match elements across slides
-  // by layoutId and automatically interpolate position + size (FLIP).
-  // During editing, layout still tracks drag moves smoothly.
+  // ─────────────────────────────────────────────
+  // Animation Configuration — The "Magic Move" Logic
+  // ─────────────────────────────────────────────
 
-  // Build the transition — in presentation mode, use user settings.
-  // In editor mode, make drags instant.
-  const motionTransition = isTransitioning
-    ? transition
-    : { layout: { duration: 0 }, default: { duration: 0 } }
+  // In editor mode, everything is instant (no animation during drags)
+  if (!isTransitioning) {
+    return (
+      <>
+        <motion.div
+          layoutId={element.id}
+          className="canvas-element"
+          style={{
+            position: 'absolute',
+            left: element.position.x,
+            top: element.position.y,
+            width: element.size.width,
+            height: element.size.height,
+            rotate: element.rotation,
+            opacity: element.opacity,
+            zIndex: isSelected ? SELECTED_Z_INDEX : element.zIndex,
+            cursor: 'grab',
+            overflow: element.type === 'line' ? 'visible' : undefined,
+          }}
+          transition={{ layout: { duration: 0 }, default: { duration: 0 } }}
+          initial={false}
+          onClick={handleClick}
+          onPointerDown={onPointerDown}
+        >
+          {renderContent()}
+        </motion.div>
+        {isSelected && <BoundingBox element={element} />}
+      </>
+    )
+  }
 
-  // Entrance/exit only apply to truly new/removed elements.
-  // Elements that exist on both slides get their motion from layoutId.
-  const entranceExit = isTransitioning
-    ? {
-        initial: ENTRANCE_INITIAL,
-        exit: {
-          ...EXIT_TARGET,
-          transition: { duration: durationSec * 0.4, ease },
-        },
-      }
-    : { initial: false as const }
+  // ── Presentation Mode ──
 
-  return (
-    <>
+  // CONTINUING ELEMENTS (exist in both slides):
+  // - Keep opacity at 1.0 (NO fade)
+  // - Let layoutId + layout handle the smooth FLIP position/size transition
+  // - Use spring physics for that weighted, Keynote-like feel
+  if (isContinuing) {
+    return (
       <motion.div
         layoutId={element.id}
         layout
@@ -103,21 +137,62 @@ export function CanvasElement({ element }: Props) {
           width: element.size.width,
           height: element.size.height,
           rotate: element.rotation,
-          opacity: element.opacity,
-          zIndex: isSelected ? SELECTED_Z_INDEX : element.zIndex,
-          cursor: isPresenting ? 'default' : 'grab',
-          // Lines need overflow visible for arrow markers
+          zIndex: element.zIndex,
+          cursor: 'default',
           overflow: element.type === 'line' ? 'visible' : undefined,
         }}
-        transition={motionTransition}
+        // NO initial — element is already on screen, just moving
+        initial={false}
         animate={{ opacity: element.opacity }}
-        {...entranceExit}
-        onClick={isPresenting ? undefined : handleClick}
-        onPointerDown={isPresenting ? undefined : onPointerDown}
+        // NO exit — continuing elements don't exit, they morph
+        transition={{
+          layout: magicSpring,
+          opacity: { duration: durationSec * 0.4, ease: 'easeInOut' },
+        }}
       >
         {renderContent()}
       </motion.div>
-      {isSelected && <BoundingBox element={element} />}
-    </>
+    )
+  }
+
+  // NEW ELEMENTS (only in the current slide):
+  // - Staggered build-in with delay
+  // - Subtle slide-up + fade + scale
+  const staggerMs = getStaggerDelay(staggerIndex)
+
+  return (
+    <motion.div
+      layoutId={element.id}
+      layout
+      className="canvas-element"
+      style={{
+        position: 'absolute',
+        left: element.position.x,
+        top: element.position.y,
+        width: element.size.width,
+        height: element.size.height,
+        rotate: element.rotation,
+        zIndex: element.zIndex,
+        cursor: 'default',
+        overflow: element.type === 'line' ? 'visible' : undefined,
+      }}
+      initial={ENTRANCE_INITIAL}
+      animate={{
+        opacity: element.opacity,
+        y: 0,
+        scale: 1,
+      }}
+      exit={{
+        ...EXIT_TARGET,
+        transition: { duration: durationSec * 0.3, ease },
+      }}
+      transition={{
+        ...buildInSpring,
+        delay: staggerMs,
+        opacity: { duration: durationSec * 0.5, ease: 'easeOut', delay: staggerMs },
+      }}
+    >
+      {renderContent()}
+    </motion.div>
   )
 }

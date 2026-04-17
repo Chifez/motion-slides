@@ -67,6 +67,34 @@ export function diffSlides(from: Slide | null, to: Slide | null): DiffResult {
   return { updated, added, removed, unchanged }
 }
 
+/**
+ * Returns the Set of element IDs that exist in BOTH slides.
+ * These are "continuing" elements — they should Magic Move
+ * (no fade in/out, just smooth position/size interpolation).
+ */
+export function getContinuingIds(from: Slide | null, to: Slide | null): Set<string> {
+  const fromIds = new Set((from?.elements ?? []).map((el) => el.id))
+  const toIds = (to?.elements ?? []).map((el) => el.id)
+  const continuing = new Set<string>()
+  for (const id of toIds) {
+    if (fromIds.has(id)) continuing.add(id)
+  }
+  return continuing
+}
+
+/**
+ * Returns the Set of element IDs that are NEW in the target slide
+ * (not present in the source slide). Used for staggered build-in.
+ */
+export function getNewElementIds(from: Slide | null, to: Slide | null): Set<string> {
+  const fromIds = new Set((from?.elements ?? []).map((el) => el.id))
+  const newIds = new Set<string>()
+  for (const el of to?.elements ?? []) {
+    if (!fromIds.has(el.id)) newIds.add(el.id)
+  }
+  return newIds
+}
+
 /** Check if any animatable property has changed between two element states */
 function hasElementChanged(a: SceneElement, b: SceneElement): boolean {
   return (
@@ -83,12 +111,20 @@ function hasElementChanged(a: SceneElement, b: SceneElement): boolean {
 // 2. Transition Builder
 // ─────────────────────────────────────────────
 
-/** Default spring config — feels premium like Keynote */
+/** Default spring config — feels premium like Keynote (CASpringAnimation equivalent) */
 export const MAGIC_SPRING = {
   type: 'spring' as const,
-  stiffness: 200,
-  damping: 26,
+  stiffness: 260,
+  damping: 20,
   mass: 1,
+}
+
+/** Gentler spring for staggered build-in of new elements */
+export const BUILD_IN_SPRING = {
+  type: 'spring' as const,
+  stiffness: 300,
+  damping: 28,
+  mass: 0.8,
 }
 
 /**
@@ -146,18 +182,25 @@ export function staggerDelay(index: number, total: number, baseDuration: number)
 // ─────────────────────────────────────────────
 
 export interface LineDiff {
-  /** Stable identity for this line across transitions */
+  /** Stable identity for this line across transitions — used as layoutId */
   key: string
   /** The HTML content to render */
   html: string
   /** What happened to this line in the transition */
   status: 'unchanged' | 'added' | 'removed'
+  /** Stagger index for sequenced build-in/out */
+  staggerIndex: number
 }
 
 /**
- * Diff two arrays of highlighted lines using content-based matching.
- * Uses a simple LCS (Longest Common Subsequence) approach to identify
- * which lines moved, which were added, and which were removed.
+ * Diff two arrays of highlighted lines using LCS (Myers' algorithm variant).
+ *
+ * KEY DESIGN DECISION for Magic Move:
+ * - "Unchanged" lines get a STABLE key based on content hash.
+ *   This means framer-motion's layoutId will track them across transitions
+ *   and smoothly slide them to their new Y position.
+ * - "Added" and "Removed" lines get unique keys so they properly
+ *   enter/exit with AnimatePresence.
  */
 export function diffCodeLines(
   prevLines: { id: string; html: string }[],
@@ -181,7 +224,6 @@ export function diffCodeLines(
   }
 
   // Backtrack to build diff
-  const result: LineDiff[] = []
   let i = m
   let j = n
 
@@ -201,24 +243,36 @@ export function diffCodeLines(
     }
   }
 
+  // Build result with stable keys for unchanged lines
+  const result: LineDiff[] = []
+  let addedCount = 0
+  let removedCount = 0
+
   for (const entry of merged) {
     if (entry.type === 'unchanged' && entry.nextIdx !== undefined) {
+      // STABLE KEY: based purely on content hash.
+      // This is the same key regardless of which index the line is at,
+      // so framer-motion will animate the line to its new Y position.
+      const contentHash = stableHash(nextTexts[entry.nextIdx])
       result.push({
-        key: `line-${nextTexts[entry.nextIdx]}-${entry.nextIdx}`,
+        key: `cl-${contentHash}`,
         html: nextLines[entry.nextIdx].html,
         status: 'unchanged',
+        staggerIndex: 0,
       })
     } else if (entry.type === 'added' && entry.nextIdx !== undefined) {
       result.push({
-        key: `line-add-${nextTexts[entry.nextIdx]}-${entry.nextIdx}`,
+        key: `cl-add-${entry.nextIdx}-${stableHash(nextTexts[entry.nextIdx])}`,
         html: nextLines[entry.nextIdx].html,
         status: 'added',
+        staggerIndex: addedCount++,
       })
     } else if (entry.type === 'removed' && entry.prevIdx !== undefined) {
       result.push({
-        key: `line-rm-${prevTexts[entry.prevIdx]}-${entry.prevIdx}`,
+        key: `cl-rm-${entry.prevIdx}-${stableHash(prevTexts[entry.prevIdx])}`,
         html: prevLines[entry.prevIdx].html,
         status: 'removed',
+        staggerIndex: removedCount++,
       })
     }
   }
@@ -229,6 +283,16 @@ export function diffCodeLines(
 /** Strip HTML tags to get plain text for comparison */
 function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').trim()
+}
+
+/** Produce a short deterministic hash from a string for stable keys */
+function stableHash(text: string): string {
+  let h = 0x811c9dc5 // FNV offset basis
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i)
+    h = Math.imul(h, 0x01000193) // FNV prime
+  }
+  return (h >>> 0).toString(36)
 }
 
 // ─────────────────────────────────────────────

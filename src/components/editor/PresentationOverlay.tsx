@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { AnimatePresence, LayoutGroup } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
@@ -10,6 +10,7 @@ import { getCanvasDimensions } from '@/constants/canvas'
 import { MotionProvider } from '@/context/MotionContext'
 import { CanvasElement } from './CanvasElement'
 import { PresentationControls } from './presentation/PresentationControls'
+import type { Slide } from '@/types'
 
 export function PresentationOverlay() {
   const {
@@ -24,6 +25,21 @@ export function PresentationOverlay() {
 
   const [autoplayPaused, setAutoplayPaused] = useState(false)
   const [controlsVisible, showControls] = useAutoHide(isPresenting)
+
+  // ── Track previous slide for identity-based diffing ──
+  // When the activeSlideIndex changes, we snapshot the old slide
+  // so the MotionProvider can compute continuingIds vs newElementIds.
+  const prevSlideRef = useRef<Slide | null>(null)
+  const prevSlideIndexRef = useRef<number>(-1)
+
+  useEffect(() => {
+    if (!project) return
+    // On slide change, capture what was previously showing
+    if (prevSlideIndexRef.current !== activeSlideIndex && prevSlideIndexRef.current >= 0) {
+      prevSlideRef.current = project.slides[prevSlideIndexRef.current] ?? null
+    }
+    prevSlideIndexRef.current = activeSlideIndex
+  }, [activeSlideIndex, project])
 
   // ── Keyboard navigation ──
   const onKey = useCallback((e: KeyboardEvent) => {
@@ -82,6 +98,10 @@ export function PresentationOverlay() {
     else if (playbackSettings.loop) setActiveSlide(0)
   }
 
+  // Compute the stagger index for new elements.
+  // We pass this to each CanvasElement so they can delay their entrance.
+  let newStaggerCounter = 0
+
   return (
     <div
       className="fixed inset-0 z-9999 bg-black flex items-center justify-center"
@@ -99,11 +119,25 @@ export function PresentationOverlay() {
           background: slide.background || '#0a0a0a',
         }}
       >
-        {/* MotionProvider injects user's duration & easing into all child animations */}
-        <MotionProvider settings={playbackSettings}>
+        {/* MotionProvider injects user's duration, easing, AND identity tracking */}
+        <MotionProvider
+          settings={playbackSettings}
+          previousSlide={prevSlideRef.current}
+          currentSlide={slide}
+        >
           <LayoutGroup>
             <AnimatePresence mode="popLayout">
-              {slide.elements.map((el) => <CanvasElement key={el.id} element={el} />)}
+              {slide.elements.map((el) => {
+                // Track order for stagger delay
+                const staggerIdx = newStaggerCounter++
+                return (
+                  <CanvasElement
+                    key={el.id}
+                    element={el}
+                    staggerIndex={staggerIdx}
+                  />
+                )
+              })}
             </AnimatePresence>
           </LayoutGroup>
         </MotionProvider>

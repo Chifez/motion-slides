@@ -8,12 +8,15 @@ import { diffCodeLines, type LineDiff } from '@/lib/motionEngine'
 
 interface Props { content: CodeContent }
 
+/** Per-line stagger offset (seconds) for cascading code animations */
+const LINE_STAGGER = 0.04
+
 export function CodeElement({ content }: Props) {
   const [lines, setLines] = useState<HighlightedLine[]>([])
   const [lineDiffs, setLineDiffs] = useState<LineDiff[]>([])
   const prevLinesRef = useRef<HighlightedLine[]>([])
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const { isTransitioning, durationSec, ease } = useMotionContext()
+  const { isTransitioning, durationSec, ease, magicSpring } = useMotionContext()
 
   // This useEffect is correct — it syncs with an external system (Shiki highlighter)
   useEffect(() => {
@@ -35,9 +38,10 @@ export function CodeElement({ content }: Props) {
         } else {
           // No diff needed — just show all lines as unchanged
           setLineDiffs(newLines.map((l, i) => ({
-            key: `line-${i}`,
+            key: `line-init-${i}`,
             html: l.html,
             status: 'unchanged' as const,
+            staggerIndex: 0,
           })))
         }
 
@@ -49,9 +53,10 @@ export function CodeElement({ content }: Props) {
           html: text.replace(/</g, '&lt;').replace(/>/g, '&gt;') || '&#8203;',
         }))
         setLineDiffs(fallbackLines.map((l, i) => ({
-          key: `line-${i}`,
+          key: `line-init-${i}`,
           html: l.html,
           status: 'unchanged' as const,
+          staggerIndex: 0,
         })))
         prevLinesRef.current = fallbackLines
         setLines(fallbackLines)
@@ -62,41 +67,80 @@ export function CodeElement({ content }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content.value, content.language])
 
-  const lineTransition = {
-    duration: durationSec * 0.5,
-    ease,
-  }
-
   return (
     <motion.div
       layout
       className="font-mono text-[12px] leading-relaxed bg-[#121212] rounded-lg px-3.5 py-3 w-full h-full overflow-auto"
-      transition={{ layout: { duration: durationSec, ease } }}
+      transition={{ layout: magicSpring }}
     >
       <div className="text-[9px] uppercase tracking-wider text-neutral-600 mb-2 select-none">
         {content.language || 'javascript'}
       </div>
       <AnimatePresence mode="popLayout">
-        {lineDiffs.map((line) => (
-          <motion.div
-            key={line.key}
-            layout
-            className="whitespace-pre min-h-[1.4em]"
-            dangerouslySetInnerHTML={{ __html: line.html }}
-            initial={
-              line.status === 'added'
-                ? { opacity: 0, x: -15, height: 0 }
-                : false
-            }
-            animate={{ opacity: 1, x: 0, height: 'auto' }}
-            exit={
-              line.status === 'removed'
-                ? { opacity: 0, x: 15, height: 0 }
-                : { opacity: 0 }
-            }
-            transition={lineTransition}
-          />
-        ))}
+        {lineDiffs.map((line) => {
+          // ── Unchanged lines: use layoutId for vertical Magic Move ──
+          // The stable key means framer-motion will smoothly slide this line
+          // to its new Y position when lines above/below are added or removed.
+          if (line.status === 'unchanged') {
+            return (
+              <motion.div
+                key={line.key}
+                layoutId={line.key}
+                layout
+                className="whitespace-pre min-h-[1.4em]"
+                dangerouslySetInnerHTML={{ __html: line.html }}
+                initial={false}
+                animate={{ opacity: 1 }}
+                transition={{ layout: magicSpring }}
+              />
+            )
+          }
+
+          // ── Added lines: staggered slide-in from the left ──
+          if (line.status === 'added') {
+            const delay = line.staggerIndex * LINE_STAGGER
+            return (
+              <motion.div
+                key={line.key}
+                layout
+                className="whitespace-pre min-h-[1.4em]"
+                dangerouslySetInnerHTML={{ __html: line.html }}
+                initial={{ opacity: 0, x: -20, height: 0 }}
+                animate={{ opacity: 1, x: 0, height: 'auto' }}
+                transition={{
+                  duration: durationSec * 0.5,
+                  ease,
+                  delay,
+                  layout: magicSpring,
+                }}
+              />
+            )
+          }
+
+          // ── Removed lines: staggered fade-out to the right ──
+          const delay = line.staggerIndex * LINE_STAGGER
+          return (
+            <motion.div
+              key={line.key}
+              layout
+              className="whitespace-pre min-h-[1.4em]"
+              dangerouslySetInnerHTML={{ __html: line.html }}
+              initial={false}
+              animate={{ opacity: 1 }}
+              exit={{
+                opacity: 0,
+                x: 20,
+                height: 0,
+                transition: {
+                  duration: durationSec * 0.35,
+                  ease,
+                  delay,
+                },
+              }}
+              transition={{ layout: magicSpring }}
+            />
+          )
+        })}
       </AnimatePresence>
     </motion.div>
   )
