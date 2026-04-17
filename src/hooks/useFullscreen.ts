@@ -1,21 +1,13 @@
 import { useEffect } from 'react'
 
 /**
- * Enters fullscreen when `active` becomes true, exits when the user
- * presses Escape or exits fullscreen. Calls `onExit` when fullscreen ends.
+ * Previously entered native browser fullscreen, but that caused distortion
+ * of the canvas scale and animation transforms. The presentation overlay is
+ * already `fixed inset-0` covering the full viewport, so no native fullscreen
+ * API is needed. This hook is kept as a no-op so call sites don't need to change.
  */
-export function useFullscreen(active: boolean, onExit: () => void) {
+export function useFullscreen(_active: boolean, _onExit: () => void) {
   useEffect(() => {
-    if (!active) return
-
-    document.documentElement.requestFullscreen?.().catch(() => {})
-
-    function onFullscreenChange() {
-      if (!document.fullscreenElement) {
-        onExit()
-      }
-    }
-    document.addEventListener('fullscreenchange', onFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
-  }, [active, onExit])
+    // intentionally empty — overlay mode handles presentation viewport
+  }, [])
 }

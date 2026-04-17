@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useLayoutEffect } from 'react'
 import { AnimatePresence, LayoutGroup } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
@@ -10,7 +10,19 @@ import { getCanvasDimensions } from '@/constants/canvas'
 import { MotionProvider } from '@/context/MotionContext'
 import { CanvasElement } from './CanvasElement'
 import { PresentationControls } from './presentation/PresentationControls'
-import type { Slide } from '@/types'
+
+/**
+ * Returns the value from the PREVIOUS render cycle.
+ * Uses useLayoutEffect so the ref is updated synchronously after render
+ * but before paint — meaning the next render always sees the correct previous.
+ */
+function usePrevious<T>(value: T): T | null {
+  const ref = useRef<T | null>(null)
+  useLayoutEffect(() => {
+    ref.current = value
+  })
+  return ref.current
+}
 
 export function PresentationOverlay() {
   const {
@@ -27,19 +39,9 @@ export function PresentationOverlay() {
   const [controlsVisible, showControls] = useAutoHide(isPresenting)
 
   // ── Track previous slide for identity-based diffing ──
-  // When the activeSlideIndex changes, we snapshot the old slide
-  // so the MotionProvider can compute continuingIds vs newElementIds.
-  const prevSlideRef = useRef<Slide | null>(null)
-  const prevSlideIndexRef = useRef<number>(-1)
-
-  useEffect(() => {
-    if (!project) return
-    // On slide change, capture what was previously showing
-    if (prevSlideIndexRef.current !== activeSlideIndex && prevSlideIndexRef.current >= 0) {
-      prevSlideRef.current = project.slides[prevSlideIndexRef.current] ?? null
-    }
-    prevSlideIndexRef.current = activeSlideIndex
-  }, [activeSlideIndex, project])
+  // usePrevious returns the slide from the PREVIOUS render cycle,
+  // so continuingIds is always computed from the correct "from" state.
+  const previousSlide = usePrevious(slide)
 
   // ── Keyboard navigation ──
   const onKey = useCallback((e: KeyboardEvent) => {
@@ -58,7 +60,6 @@ export function PresentationOverlay() {
       showControls()
     } else if (e.key === 'Escape') {
       stopPresentation()
-      document.exitFullscreen?.().catch(() => { })
     }
   }, [setActiveSlide, stopPresentation, playbackSettings.loop, showControls])
 
@@ -98,9 +99,6 @@ export function PresentationOverlay() {
     else if (playbackSettings.loop) setActiveSlide(0)
   }
 
-  // Compute the stagger index for new elements.
-  // We pass this to each CanvasElement so they can delay their entrance.
-  let newStaggerCounter = 0
 
   return (
     <div
@@ -122,22 +120,14 @@ export function PresentationOverlay() {
         {/* MotionProvider injects user's duration, easing, AND identity tracking */}
         <MotionProvider
           settings={playbackSettings}
-          previousSlide={prevSlideRef.current}
+          previousSlide={previousSlide}
           currentSlide={slide}
         >
           <LayoutGroup>
-            <AnimatePresence mode="popLayout">
-              {slide.elements.map((el) => {
-                // Track order for stagger delay
-                const staggerIdx = newStaggerCounter++
-                return (
-                  <CanvasElement
-                    key={el.id}
-                    element={el}
-                    staggerIndex={staggerIdx}
-                  />
-                )
-              })}
+            <AnimatePresence mode="sync">
+              {slide.elements.map((el) => (
+                <CanvasElement key={el.id} element={el} />
+              ))}
             </AnimatePresence>
           </LayoutGroup>
         </MotionProvider>
@@ -149,7 +139,7 @@ export function PresentationOverlay() {
         style={{ opacity: controlsVisible ? 1 : 0 }}
       >
         <button
-          onClick={() => { stopPresentation(); document.exitFullscreen?.().catch(() => { }) }}
+          onClick={() => stopPresentation()}
           className="pointer-events-auto absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/80 hover:text-white hover:bg-black/80 border border-white/10 transition-all cursor-pointer backdrop-blur-sm"
         >
           <X size={18} />

@@ -2,7 +2,7 @@ import { useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
 import { useMotionContext } from '@/context/MotionContext'
-import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS, ENTRANCE_INITIAL, EXIT_TARGET } from '@/constants/animation'
+import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS } from '@/constants/animation'
 import { SELECTED_Z_INDEX } from '@/constants/canvas'
 import type { SceneElement, TextContent, CodeContent, ShapeContent, LineContent } from '@/types'
 import { TextElement } from './elements/TextElement'
@@ -17,16 +17,12 @@ interface Props {
   staggerIndex?: number
 }
 
-export function CanvasElement({ element, staggerIndex = 0 }: Props) {
+export function CanvasElement({ element }: Props) {
   const { selectedElementId, setSelectedElement, updateElement } = useEditorStore()
   const {
     isTransitioning,
     durationSec,
-    ease,
-    magicSpring,
-    buildInSpring,
     continuingIds,
-    getStaggerDelay,
   } = useMotionContext()
   const isSelected = selectedElementId === element.id
   const isDragging = useRef(false)
@@ -146,7 +142,10 @@ export function CanvasElement({ element, staggerIndex = 0 }: Props) {
         animate={{ opacity: element.opacity }}
         // NO exit — continuing elements don't exit, they morph
         transition={{
-          layout: magicSpring,
+          layout: {
+            duration: durationSec,
+            ease: [0.37, 0, 0.63, 1] satisfies [number, number, number, number],
+          },
           opacity: { duration: durationSec * 0.4, ease: 'easeInOut' },
         }}
       >
@@ -156,9 +155,9 @@ export function CanvasElement({ element, staggerIndex = 0 }: Props) {
   }
 
   // NEW ELEMENTS (only in the current slide):
-  // - Staggered build-in with delay
-  // - Subtle slide-up + fade + scale
-  const staggerMs = getStaggerDelay(staggerIndex)
+  // - Smooth ease-in-out entrance (no spring bounce, no stagger)
+  // - Subtle fade + slide-up, same feel as code block Phase 2
+  const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
 
   return (
     <motion.div
@@ -176,20 +175,23 @@ export function CanvasElement({ element, staggerIndex = 0 }: Props) {
         cursor: 'default',
         overflow: element.type === 'line' ? 'visible' : undefined,
       }}
-      initial={ENTRANCE_INITIAL}
+      initial={{ opacity: 0, y: 12 }}
       animate={{
         opacity: element.opacity,
         y: 0,
-        scale: 1,
       }}
       exit={{
-        ...EXIT_TARGET,
-        transition: { duration: durationSec * 0.3, ease },
+        opacity: 0,
+        y: -8,
+        transition: { duration: durationSec * 0.3, ease: EASE_IN_OUT },
       }}
       transition={{
-        ...buildInSpring,
-        delay: staggerMs,
-        opacity: { duration: durationSec * 0.5, ease: 'easeOut', delay: staggerMs },
+        duration: durationSec * 0.5,
+        ease: EASE_IN_OUT,
+        layout: {
+          duration: durationSec,
+          ease: EASE_IN_OUT,
+        },
       }}
     >
       {renderContent()}

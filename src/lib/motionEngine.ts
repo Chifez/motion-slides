@@ -111,21 +111,57 @@ function hasElementChanged(a: SceneElement, b: SceneElement): boolean {
 // 2. Transition Builder
 // ─────────────────────────────────────────────
 
-/** Default spring config — feels premium like Keynote (CASpringAnimation equivalent) */
+/**
+ * Magic Move easing — critically damped (zero bounce).
+ *
+ * Critical damping condition: damping >= 2 * sqrt(stiffness * mass)
+ * At stiffness=280, mass=1: critical = 2*sqrt(280) ≈ 33.5
+ * We use 34 for a touch of snap without any oscillation.
+ */
 export const MAGIC_SPRING = {
   type: 'spring' as const,
-  stiffness: 260,
-  damping: 20,
+  stiffness: 280,
+  damping: 34,
   mass: 1,
 }
 
-/** Gentler spring for staggered build-in of new elements */
+/**
+ * Build-in spring — slightly softer, still no bounce.
+ * Used for new elements appearing after layout has settled.
+ */
 export const BUILD_IN_SPRING = {
   type: 'spring' as const,
-  stiffness: 300,
-  damping: 28,
-  mass: 0.8,
+  stiffness: 240,
+  damping: 30,
+  mass: 0.9,
 }
+
+/**
+ * Phased code animation timing.
+ *
+ * The sequence matches animate-code.com's model:
+ *   Phase 0 (0ms):       Removed lines exit (height → 0, opacity → 0)
+ *   Phase 1 (EXIT_DUR):  Layout settles — container resizes, unchanged lines reflow
+ *   Phase 2 (ENTER_DELAY): New lines fade/slide in to fill the created space
+ *
+ * All durations are in seconds.
+ */
+export const CODE_PHASE = {
+  /** How long removed lines take to exit */
+  EXIT_DUR: 0.18,
+  /** How long the layout reflow (container resize + line shift) takes */
+  LAYOUT_DUR: 0.32,
+  /**
+   * When new lines start entering.
+   * = EXIT_DUR + LAYOUT_DUR (0.18 + 0.32 = 0.50s)
+   * New lines only appear once the container resize is 100% complete.
+   */
+  ENTER_DELAY: 0.50,
+  /** How long each new line takes to fade/slide in */
+  ENTER_DUR: 0.22,
+  /** Per-line stagger between new lines cascading in */
+  LINE_STAGGER: 0.05,
+} as const
 
 /**
  * Build a framer-motion Transition object from the user's playback settings.
@@ -247,15 +283,20 @@ export function diffCodeLines(
   const result: LineDiff[] = []
   let addedCount = 0
   let removedCount = 0
+  const contentOccurrenceMap = new Map<string, number>()
 
   for (const entry of merged) {
     if (entry.type === 'unchanged' && entry.nextIdx !== undefined) {
-      // STABLE KEY: based purely on content hash.
-      // This is the same key regardless of which index the line is at,
-      // so framer-motion will animate the line to its new Y position.
+      // STABLE KEY: content hash + occurrence index.
+      // The occurrence suffix prevents two identical lines (e.g. `}`)
+      // from sharing the same layoutId, which causes Framer Motion
+      // to arbitrarily pick one and snap the other.
       const contentHash = stableHash(nextTexts[entry.nextIdx])
+      const occurrence = contentOccurrenceMap.get(contentHash) ?? 0
+      contentOccurrenceMap.set(contentHash, occurrence + 1)
+
       result.push({
-        key: `cl-${contentHash}`,
+        key: `cl-${contentHash}-${occurrence}`,
         html: nextLines[entry.nextIdx].html,
         status: 'unchanged',
         staggerIndex: 0,
