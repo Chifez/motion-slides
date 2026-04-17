@@ -31,15 +31,29 @@ export function lineKey(text: string, index: number) {
   return `L${index}-${Math.abs(h).toString(36)}`
 }
 
-/** Splits Shiki's HTML output into individual line objects */
+/**
+ * Splits Shiki's HTML output into individual line objects.
+ *
+ * Uses DOM parsing instead of regex to correctly handle nested
+ * <span> tokens inside each <span class="line"> wrapper.
+ * The previous regex `(.*?)` was non-greedy and stopped at the
+ * first inner </span>, discarding all tokens after the first one.
+ */
 export function splitHighlightedHtml(html: string): HighlightedLine[] {
-  const lineRegex = /<span class="line">(.*?)<\/span>/gs
+  const container = document.createElement('div')
+  container.innerHTML = html
+
+  const lineSpans = container.querySelectorAll('.line')
   const lines: HighlightedLine[] = []
-  let match: RegExpExecArray | null
-  let i = 0
-  while ((match = lineRegex.exec(html)) !== null) {
-    lines.push({ id: lineKey(match[1], i), html: match[1] || '&#8203;' })
-    i++
-  }
+
+  lineSpans.forEach((span, i) => {
+    const innerHtml = span.innerHTML
+    const textContent = span.textContent ?? ''
+    lines.push({
+      id: lineKey(textContent, i),
+      html: innerHtml || '&#8203;',
+    })
+  })
+
   return lines
 }
