@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Play } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@/types'
 import { ElementButtons } from './toolbar/ElementButtons'
@@ -9,7 +9,7 @@ import { ExportDropdown } from './toolbar/ExportDropdown'
 interface Props { project: Project }
 
 export function EditorToolbar({ project }: Props) {
-  const { updateProjectName, startPresentation } = useEditorStore()
+  const { updateProjectName, startPresentation, isPrototypeMode, setPrototypeMode } = useEditorStore()
 
   return (
     <header className="h-14 shrink-0 flex items-center gap-2 px-3 bg-[#161616] border-b border-white/8 z-50">
@@ -29,7 +29,36 @@ export function EditorToolbar({ project }: Props) {
       />
       <div className="w-px h-5 bg-white/8 mx-1" />
 
-      <ElementButtons />
+      {/* Design / Prototype mode toggle - Figma-style */}
+      <div className="flex items-center bg-[#1c1c1c] border border-white/8 rounded-md p-0.5">
+        <button
+          onClick={() => setPrototypeMode(false)}
+          className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${
+            !isPrototypeMode
+              ? 'bg-[#2a2a2a] text-neutral-100 shadow-sm'
+              : 'bg-transparent text-neutral-500 hover:text-neutral-300'
+          }`}
+        >
+          <PenSquare size={12} /> Design
+        </button>
+        <button
+          onClick={() => setPrototypeMode(true)}
+          className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${
+            isPrototypeMode
+              ? 'bg-[#2a2a2a] text-blue-400 shadow-sm'
+              : 'bg-transparent text-neutral-500 hover:text-neutral-300'
+          }`}
+        >
+          <GitBranch size={12} /> Prototype
+        </button>
+      </div>
+
+      {!isPrototypeMode && (
+        <>
+          <div className="w-px h-5 bg-white/8 mx-1" />
+          <ElementButtons />
+        </>
+      )}
 
       <div className="flex-1" />
 

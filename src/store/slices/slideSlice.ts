@@ -66,7 +66,6 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
         id: nanoid(),
         name: `${original.name || 'Slide'} copy`,
         elements: original.elements.map((el) => ({ ...el, id: nanoid() })),
-        connections: original.connections.map((c) => ({ ...c, id: nanoid() })),
       }
       const newSlides = [
         ...project.slides.slice(0, index + 1),

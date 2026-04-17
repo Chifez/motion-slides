@@ -8,7 +8,6 @@ import { useFullscreen } from '@/hooks/useFullscreen'
 import { useAutoHide } from '@/hooks/useAutoHide'
 import { getCanvasDimensions } from '@/constants/canvas'
 import { CanvasElement } from './CanvasElement'
-import { ConnectorLayer } from './ConnectorLayer'
 import { PresentationControls } from './presentation/PresentationControls'
 
 export function PresentationOverlay() {
@@ -25,7 +24,7 @@ export function PresentationOverlay() {
   const [autoplayPaused, setAutoplayPaused] = useState(false)
   const [controlsVisible, showControls] = useAutoHide(isPresenting)
 
-  // ── Keyboard navigation (hook replaces raw useEffect) ──
+  // ── Keyboard navigation ──
   const onKey = useCallback((e: KeyboardEvent) => {
     const { activeSlideIndex: idx } = useEditorStore.getState()
     const proj = useEditorStore.getState().activeProject()
@@ -48,7 +47,7 @@ export function PresentationOverlay() {
 
   useKeyboardShortcuts(isPresenting, onKey)
 
-  // ── Autoplay (hook replaces raw useEffect) ──
+  // ── Autoplay ──
   useAutoplay(
     isPresenting && playbackSettings.autoplay && !autoplayPaused,
     playbackSettings.autoplayDelay + playbackSettings.transitionDuration,
@@ -63,7 +62,7 @@ export function PresentationOverlay() {
     [activeSlideIndex],
   )
 
-  // ── Fullscreen (hook replaces raw useEffect) ──
+  // ── Fullscreen ──
   const onExitFullscreen = useCallback(() => {
     useEditorStore.getState().stopPresentation()
   }, [])
@@ -71,7 +70,6 @@ export function PresentationOverlay() {
 
   if (!isPresenting || !slide) return null
 
-  // Scale to fill viewport while maintaining the selected aspect ratio
   const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
   const scaleX = window.innerWidth / canvasW
   const scaleY = window.innerHeight / canvasH
@@ -100,7 +98,6 @@ export function PresentationOverlay() {
           background: slide.background || '#0a0a0a',
         }}
       >
-        <ConnectorLayer slide={slide} elements={slide.elements} />
         <LayoutGroup>
           <AnimatePresence>
             {slide.elements.map((el) => <CanvasElement key={el.id} element={el} />)}

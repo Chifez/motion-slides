@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight, Palette } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useCanvasScale } from '@/hooks/useCanvasScale'
 import { getCanvasDimensions } from '@/constants/canvas'
-import { ConnectorLayer } from './ConnectorLayer'
 import { CanvasElement } from './CanvasElement'
 
 export function CanvasStage() {
@@ -38,7 +37,6 @@ export function CanvasStage() {
           transformOrigin: 'center center',
         }}
       >
-        {slide && <ConnectorLayer slide={slide} elements={slide.elements} />}
         <LayoutGroup>
           <AnimatePresence>
             {slide?.elements.map((el) => <CanvasElement key={el.id} element={el} />)}
@@ -46,7 +44,7 @@ export function CanvasStage() {
         </LayoutGroup>
       </div>
 
-      {/* Slide name + background controls — top-left corner above canvas */}
+      {/* Slide name + background controls */}
       <div
         className="absolute top-3 left-3 flex items-center gap-2"
         onClick={(e) => e.stopPropagation()}
@@ -76,7 +74,6 @@ export function CanvasStage() {
                 onChange={(e) => updateSlide({ background: e.target.value })}
                 className="w-full h-8 rounded-md cursor-pointer border-none bg-transparent mb-2"
               />
-              {/* Quick presets */}
               <div className="flex gap-1 flex-wrap">
                 {['#0a0a0a', '#111827', '#1e1b4b', '#0c4a6e', '#14532d', '#7f1d1d', '#ffffff', '#f5f5f4'].map((c) => (
                   <button
@@ -92,7 +89,7 @@ export function CanvasStage() {
         </div>
       </div>
 
-      {/* Playback bar */}
+      {/* Playback nav bar */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-[#161616]/90 border border-white/8 rounded-full px-3 py-1.5 backdrop-blur-md">
         <button
           onClick={() => setActiveSlide(activeSlideIndex - 1)}

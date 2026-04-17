@@ -43,7 +43,24 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   },
 
   loadProject: (id) => {
-    set({ activeProjectId: id, activeSlideIndex: 0, selectedElementId: null })
+    // Migrate existing projects that might lack new fields
+    set((s) => ({
+      activeProjectId: id,
+      activeSlideIndex: 0,
+      selectedElementId: null,
+      projects: s.projects.map((p) => {
+        if (p.id !== id) return p
+        return {
+          ...p,
+          transitions: p.transitions ?? [],
+          prototypeLayout: p.prototypeLayout ?? {},
+          slides: p.slides.map((sl) => ({
+            ...sl,
+            name: sl.name ?? '',
+          })),
+        }
+      }),
+    }))
   },
 
   updateProjectName: (id, name) => {

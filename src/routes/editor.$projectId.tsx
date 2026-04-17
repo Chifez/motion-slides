@@ -6,6 +6,7 @@ import { SlidePanel } from '@/components/editor/SlidePanel'
 import { CanvasStage } from '@/components/editor/CanvasStage'
 import { InspectorPanel } from '@/components/editor/InspectorPanel'
 import { PresentationOverlay } from '@/components/editor/PresentationOverlay'
+import { PrototypeCanvas } from '@/components/editor/prototype/PrototypeCanvas'
 
 export const Route = createFileRoute('/editor/$projectId')({
   component: EditorPage,
@@ -13,9 +14,8 @@ export const Route = createFileRoute('/editor/$projectId')({
 
 function EditorPage() {
   const { projectId } = Route.useParams()
-  const { loadProject, activeProject, isPresenting } = useEditorStore()
+  const { loadProject, activeProject, isPresenting, isPrototypeMode } = useEditorStore()
 
-  // Correct use of useEffect — syncs on mount/param change
   useEffect(() => {
     loadProject(projectId)
   }, [projectId, loadProject])
@@ -34,9 +34,9 @@ function EditorPage() {
     <div className="h-screen flex flex-col bg-[#0d0d0d] overflow-hidden">
       {!isPresenting && <EditorToolbar project={project} />}
       <div className="flex flex-1 overflow-hidden">
-        {!isPresenting && <SlidePanel />}
-        <CanvasStage />
-        {!isPresenting && <InspectorPanel />}
+        {!isPresenting && !isPrototypeMode && <SlidePanel />}
+        {isPrototypeMode ? <PrototypeCanvas /> : <CanvasStage />}
+        {!isPresenting && !isPrototypeMode && <InspectorPanel />}
       </div>
       <PresentationOverlay />
     </div>

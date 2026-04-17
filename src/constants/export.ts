@@ -2,7 +2,7 @@
 // Export & Playback Settings Constants
 // ─────────────────────────────────────────────
 
-import type { PlaybackSettings } from '@/types'
+import type { PlaybackSettings, CubicBezier } from '@/types'
 
 /** Supported aspect ratio keys */
 export type AspectRatioKey = '16:9' | '9:16' | '1:1' | '4:3'
@@ -65,12 +65,20 @@ export const TRANSITION_DURATION_OPTIONS = [
   { value: 1200, label: 'Cinematic (1.2s)' },
 ] as const
 
-/** Transition easing presets */
-export const TRANSITION_EASE_OPTIONS = [
-  { value: 'spring', label: 'Spring' },
-  { value: 'ease-out', label: 'Ease Out' },
-  { value: 'linear', label: 'Linear' },
-] as const
+/** Bezier easing presets */
+export interface BezierPreset {
+  label: string
+  value: CubicBezier
+}
+
+export const BEZIER_PRESETS: BezierPreset[] = [
+  { label: 'Linear',      value: { x1: 0,    y1: 0,     x2: 1,    y2: 1    } },
+  { label: 'Ease Out',    value: { x1: 0,    y1: 0,     x2: 0.58, y2: 1    } },
+  { label: 'Ease In-Out', value: { x1: 0.42, y1: 0,     x2: 0.58, y2: 1    } },
+  { label: 'Apple',       value: { x1: 0.25, y1: 0.1,   x2: 0.25, y2: 1    } },
+  { label: 'Snappy',      value: { x1: 0.68, y1: -0.55, x2: 0.27, y2: 1.55 } },
+  { label: 'Smooth',      value: { x1: 0.4,  y1: 0,     x2: 0.2,  y2: 1    } },
+]
 
 /** Default playback settings */
 export const DEFAULT_PLAYBACK_SETTINGS: PlaybackSettings = {
@@ -78,7 +86,7 @@ export const DEFAULT_PLAYBACK_SETTINGS: PlaybackSettings = {
   autoplayDelay: 3000,
   loop: true,
   transitionDuration: 500,
-  transitionEase: 'ease-out',
+  transitionEase: { x1: 0.25, y1: 0.1, x2: 0.25, y2: 1 }, // Apple
   aspectRatio: '16:9',
   exportResolution: { ...EXPORT_RESOLUTIONS['16:9'][0] },
 }

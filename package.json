@@ -20,6 +20,7 @@
     "@tanstack/react-start": "latest",
     "@tanstack/router-plugin": "^1.132.0",
     "@types/diff": "^7.0.2",
+    "@xyflow/react": "^12.10.2",
     "diff": "^9.0.0",
     "framer-motion": "^12.38.0",
     "html2canvas": "^1.4.1",

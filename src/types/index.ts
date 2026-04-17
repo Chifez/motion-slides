@@ -14,7 +14,9 @@ export type ShapeType =
   | 'queue'
   | 'document'
 
-export type ElementType = 'text' | 'code' | 'shape' | 'image'
+export type LineType = 'straight' | 'elbow' | 'curved'
+
+export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line'
 
 export interface Position {
   x: number
@@ -48,6 +50,20 @@ export interface ShapeContent {
   label?: string
 }
 
+export interface LineContent {
+  lineType: LineType
+  /** Normalized endpoint positions (0–1) relative to the element's bounding box */
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  style: 'solid' | 'dashed' | 'dotted'
+  arrow: 'none' | 'end' | 'both'
+  color: string
+  strokeWidth: number
+  label?: string
+}
+
 export interface SceneElement {
   id: string
   type: ElementType
@@ -56,40 +72,25 @@ export interface SceneElement {
   rotation: number
   opacity: number
   zIndex: number
-  content: TextContent | CodeContent | ShapeContent
-}
-
-export type AnchorPosition = 'top' | 'right' | 'bottom' | 'left'
-
-export interface Connection {
-  id: string
-  fromId: string
-  toId: string
-  fromAnchor: AnchorPosition
-  toAnchor: AnchorPosition
-  label?: string
-  style: 'solid' | 'dashed' | 'dotted'
-  arrow: 'none' | 'end' | 'both'
-  color: string
-  strokeWidth: number
+  content: TextContent | CodeContent | ShapeContent | LineContent
 }
 
 export interface Slide {
   id: string
   name: string
   elements: SceneElement[]
-  connections: Connection[]
   background: string
 }
 
-export interface Project {
-  id: string
-  name: string
-  description: string
-  slides: Slide[]
-  createdAt: number
-  updatedAt: number
-  synced: boolean
+// ─────────────────────────────────────────────
+// Animation & Easing
+// ─────────────────────────────────────────────
+
+export interface CubicBezier {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
 }
 
 // ─────────────────────────────────────────────
@@ -101,8 +102,43 @@ export interface PlaybackSettings {
   autoplayDelay: number
   loop: boolean
   transitionDuration: number
-  transitionEase: 'spring' | 'ease-out' | 'linear'
+  transitionEase: CubicBezier
   aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
   exportResolution: { width: number; height: number; label: string }
 }
 
+// ─────────────────────────────────────────────
+// Prototype Mode
+// ─────────────────────────────────────────────
+
+export type TransitionAnimation =
+  | 'slide-left'
+  | 'slide-right'
+  | 'slide-up'
+  | 'slide-down'
+  | 'fade'
+  | 'zoom'
+  | 'flip'
+
+export interface SlideTransition {
+  id: string
+  fromSlideId: string
+  toSlideId: string
+  animation: TransitionAnimation
+  duration: number
+  ease: CubicBezier
+  trigger: 'click' | 'auto'
+  autoDelay?: number
+}
+
+export interface Project {
+  id: string
+  name: string
+  description: string
+  slides: Slide[]
+  transitions: SlideTransition[]
+  prototypeLayout: Record<string, { x: number; y: number }>
+  createdAt: number
+  updatedAt: number
+  synced: boolean
+}

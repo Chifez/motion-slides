@@ -3,8 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { createProjectSlice, type ProjectSlice } from './slices/projectSlice'
 import { createSlideSlice, type SlideSlice } from './slices/slideSlice'
 import { createElementSlice, type ElementSlice } from './slices/elementSlice'
-import { createConnectionSlice, type ConnectionSlice } from './slices/connectionSlice'
 import { createPresentationSlice, type PresentationSlice } from './slices/presentationSlice'
+import { createPrototypeSlice, type PrototypeSlice } from './slices/prototypeSlice'
 
 // ─────────────────────────────────────────────
 // Combined Store Type
@@ -14,8 +14,8 @@ export type EditorState =
   & ProjectSlice
   & SlideSlice
   & ElementSlice
-  & ConnectionSlice
   & PresentationSlice
+  & PrototypeSlice
 
 // ─────────────────────────────────────────────
 // Zustand Store with SessionStorage persistence
@@ -27,8 +27,8 @@ export const useEditorStore = create<EditorState>()(
       ...createProjectSlice(...a),
       ...createSlideSlice(...a),
       ...createElementSlice(...a),
-      ...createConnectionSlice(...a),
       ...createPresentationSlice(...a),
+      ...createPrototypeSlice(...a),
     }),
     {
       name: 'motionslides-session',

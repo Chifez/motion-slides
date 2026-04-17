@@ -97,3 +97,28 @@ export const DEFAULT_SHAPE_ELEMENT = {
   zIndex: 10,
   content: { shapeType: 'rectangle' as const, fill: '#1e3a5f', stroke: '#3b82f6', label: 'Service' },
 }
+
+export const DEFAULT_LINE_ELEMENT = {
+  type: 'line' as const,
+  position: { x: 100, y: 300 },
+  size: { width: 200, height: 2 },
+  rotation: 0,
+  opacity: 1,
+  zIndex: 5,
+  content: {
+    lineType: 'straight' as const,
+    x1: 0, y1: 0.5,
+    x2: 1, y2: 0.5,
+    style: 'solid' as const,
+    arrow: 'none' as const,
+    color: 'rgba(255,255,255,0.5)',
+    strokeWidth: 2,
+  },
+}
+
+/** Line type presets for the toolbar dropdown */
+export const LINE_TYPE_OPTIONS = [
+  { value: 'straight', label: 'Straight', icon: '—' },
+  { value: 'elbow', label: 'Elbow', icon: '⌐' },
+  { value: 'curved', label: 'Curved', icon: '∿' },
+] as const

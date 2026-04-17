@@ -8,7 +8,6 @@ export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
     id: nanoid(),
     name: '',
     elements: [],
-    connections: [],
     background: CANVAS_BG,
     ...overrides,
   }
@@ -38,13 +37,13 @@ export function createDefaultProject(name = 'Untitled Deck') {
     name: 'Slide 2',
     elements: [
       {
-        id: 'el-title', type: 'text',
+        id: 'el-title2', type: 'text',
         position: { x: 80, y: 40 }, size: { width: 640, height: 80 },
         rotation: 0, opacity: 1, zIndex: 1,
         content: { value: 'My First Slide', fontSize: 48, fontWeight: 'bold', fontFamily: 'Inter', fontStyle: 'normal', color: '#ffffff', align: 'left' },
       },
       {
-        id: 'el-code', type: 'code',
+        id: 'el-code2', type: 'code',
         position: { x: 80, y: 160 }, size: { width: 640, height: 160 },
         rotation: 0, opacity: 1, zIndex: 1,
         content: { value: `const greet = () => {\n  console.log('Hello, World!')\n  return true\n}`, language: 'javascript' },
@@ -57,6 +56,8 @@ export function createDefaultProject(name = 'Untitled Deck') {
     name,
     description: '',
     slides: [slide1, slide2],
+    transitions: [],
+    prototypeLayout: {},
     createdAt: Date.now(),
     updatedAt: Date.now(),
     synced: false,

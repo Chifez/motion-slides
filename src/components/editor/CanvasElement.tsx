@@ -1,21 +1,41 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
 import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS, LAYOUT_DURATION, LAYOUT_EASE } from '@/constants/animation'
 import { SELECTED_Z_INDEX } from '@/constants/canvas'
-import type { SceneElement, TextContent, CodeContent, ShapeContent } from '@/types'
+import type { SceneElement, TextContent, CodeContent, ShapeContent, LineContent } from '@/types'
 import { TextElement } from './elements/TextElement'
 import { CodeElement } from './elements/CodeElement'
 import { ShapeElement } from './elements/ShapeElement'
+import { LineElement } from './elements/LineElement'
 import { BoundingBox } from './BoundingBox'
 
 interface Props { element: SceneElement }
+
+/** Slide direction variants for entrance/exit animations */
+function getSlideVariant(element: SceneElement) {
+  const cx = element.position.x + element.size.width / 2
+  const cy = element.position.y + element.size.height / 2
+  let xOffset = 0
+  let yOffset = 0
+  if (cx < 400) xOffset = -60
+  else if (cx > 880) xOffset = 60
+  if (cy < 240) yOffset = -40
+  else if (cy > 480) yOffset = 40
+  if (xOffset === 0 && yOffset === 0) yOffset = 30
+  return { xOffset, yOffset }
+}
 
 export function CanvasElement({ element }: Props) {
   const { selectedElementId, setSelectedElement, updateElement } = useEditorStore()
   const isSelected = selectedElementId === element.id
   const isDragging = useRef(false)
   const dragStart = useRef({ x: 0, y: 0, elX: 0, elY: 0 })
+
+  const { xOffset, yOffset } = useMemo(
+    () => getSlideVariant(element),
+    [element.position.x, element.position.y, element.size.width, element.size.height],
+  )
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
@@ -59,6 +79,7 @@ export function CanvasElement({ element }: Props) {
       case 'text': return <TextElement content={element.content as TextContent} />
       case 'code': return <CodeElement content={element.content as CodeContent} />
       case 'shape': return <ShapeElement content={element.content as ShapeContent} />
+      case 'line': return <LineElement content={element.content as LineContent} />
       default: return null
     }
   }
@@ -79,11 +100,18 @@ export function CanvasElement({ element }: Props) {
           opacity: element.opacity,
           zIndex: isSelected ? SELECTED_Z_INDEX : element.zIndex,
           cursor: 'grab',
+          // Lines need overflow visible for arrow markers
+          overflow: element.type === 'line' ? 'visible' : undefined,
         }}
-        transition={{ layout: { duration: LAYOUT_DURATION, ease: LAYOUT_EASE } }}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: element.opacity, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.85 }}
+        transition={{
+          layout: { duration: LAYOUT_DURATION, ease: LAYOUT_EASE },
+          opacity: { duration: 0.4, ease: 'easeOut' },
+          x: { type: 'spring', stiffness: 300, damping: 30 },
+          y: { type: 'spring', stiffness: 300, damping: 30 },
+        }}
+        initial={{ opacity: 0, x: xOffset, y: yOffset }}
+        animate={{ opacity: element.opacity, x: 0, y: 0 }}
+        exit={{ opacity: 0, x: -xOffset, y: -yOffset, transition: { duration: 0.3 } }}
         onClick={handleClick}
         onPointerDown={onPointerDown}
       >

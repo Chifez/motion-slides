@@ -1,37 +1,19 @@
 import { Trash2 } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
-import type { TextContent, CodeContent, ShapeContent } from '@/types'
+import type { TextContent, CodeContent, ShapeContent, LineContent } from '@/types'
 import { TransformSection } from './inspector/TransformSection'
 import { TextSection } from './inspector/TextSection'
 import { CodeSection } from './inspector/CodeSection'
 import { ShapeSection } from './inspector/ShapeSection'
-import { ConnectionSection } from './inspector/ConnectionSection'
+import { LineSection } from './inspector/LineSection'
 
 const sectionCls = "px-3 py-3 border-b border-white/6"
 
 export function InspectorPanel() {
-  const {
-    selectedElementId, activeSlide, updateElement, deleteElement,
-    selectedConnectionId, updateConnection, deleteConnection, setSelectedConnection,
-  } = useEditorStore()
+  const { selectedElementId, activeSlide, updateElement, deleteElement } = useEditorStore()
   const slide = activeSlide()
   const element = slide?.elements.find((el) => el.id === selectedElementId)
-  const connection = slide?.connections.find((c) => c.id === selectedConnectionId)
 
-  // Connection selected — show connection inspector
-  if (connection) {
-    return (
-      <aside className="w-[280px] shrink-0 bg-[#161616] border-l border-white/8 overflow-y-auto">
-        <ConnectionSection
-          connection={connection}
-          onUpdate={(updates) => updateConnection(connection.id, updates)}
-          onDelete={() => { deleteConnection(connection.id); setSelectedConnection(null) }}
-        />
-      </aside>
-    )
-  }
-
-  // No element selected — empty state
   if (!element) {
     return (
       <aside className="w-[280px] shrink-0 bg-[#161616] border-l border-white/8 overflow-y-auto">
@@ -68,6 +50,13 @@ export function InspectorPanel() {
       )}
       {element.type === 'shape' && (
         <ShapeSection content={element.content as ShapeContent} onUpdate={(c) => update({ content: c })} />
+      )}
+      {element.type === 'line' && (
+        <LineSection
+          content={element.content as LineContent}
+          onUpdate={(c) => update({ content: c })}
+          onDelete={() => deleteElement(element.id)}
+        />
       )}
     </aside>
   )
