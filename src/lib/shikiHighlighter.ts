@@ -3,7 +3,9 @@
  * Extracted from CodeElement to avoid coupling display logic with highlighting setup.
  */
 
+import type { BundledLanguage } from 'shiki'
 import { CODE_LANGUAGES } from '@/constants/editor'
+import type { TokenInfo } from '@/lib/motionEngine'
 
 let highlighterPromise: Promise<import('shiki').Highlighter> | null = null
 
@@ -56,4 +58,29 @@ export function splitHighlightedHtml(html: string): HighlightedLine[] {
   })
 
   return lines
+}
+
+/**
+ * Returns a 2D array of TokenInfo objects — one sub-array per line.
+ * Used by CodeElement for token-level Magic Move animation.
+ *
+ * Falls back to a single token per line if the highlighter is unavailable.
+ */
+export async function getTokenizedLines(
+  code: string,
+  language: string,
+): Promise<TokenInfo[][]> {
+  const hl = await getHighlighter()
+  const tokenLines = hl.codeToTokensBase(code || ' ', {
+    lang: (language || 'javascript') as BundledLanguage,
+    theme: 'vitesse-dark',
+  })
+
+  return tokenLines.map((lineTokens) =>
+    lineTokens.map((tok) => ({
+      content: tok.content,
+      color: tok.color ?? '#e0e0e0',
+      fontStyle: (tok.fontStyle as number) ?? 0,
+    }))
+  )
 }

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import type { LineContent } from '@/types'
 import { useMotionContext } from '@/context/MotionContext'
+import { CODE_PHASE } from '@/lib/motionEngine'
 
 interface Props { content: LineContent }
 
@@ -30,19 +31,37 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
   }
 }
 
+/**
+ * LineElement — renders an animated SVG path.
+ *
+ * During a slide transition the visible `motion.path` animates:
+ *   - `d` (path shape) using the Phase 1 easing — same as all morphing elements
+ *   - `stroke` (color) cross-fades simultaneously
+ *   - `strokeWidth` interpolates smoothly
+ *
+ * The hit-area path is a plain SVG element (no animation needed).
+ */
 export function LineElement({ content }: Props) {
-  const { durationSec, ease } = useMotionContext()
+  const { isTransitioning, durationSec } = useMotionContext()
+
+  // Phase 1 easing — identical to CanvasElement & CodeElement
+  const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
+
+  // In editor mode use zero duration so dragging feels instant.
+  // In presentation mode use the user's chosen duration for the morph.
+  const pathTransition = isTransitioning
+    ? {
+        d: { duration: durationSec, ease: EASE_IN_OUT },
+        stroke: { duration: durationSec * 0.6, ease: EASE_IN_OUT },
+        strokeWidth: { duration: durationSec, ease: EASE_IN_OUT },
+      }
+    : { duration: 0 }
 
   // Use a generous viewBox — the SVG fills the element's bounding box
   const w = 100
   const h = 100
   const d = buildLinePath(w, h, content)
   const markerId = `arrow-${content.lineType}-${content.strokeWidth}`
-
-  const pathTransition = {
-    duration: durationSec,
-    ease,
-  }
 
   return (
     <svg
@@ -79,7 +98,7 @@ export function LineElement({ content }: Props) {
         vectorEffect="non-scaling-stroke"
       />
 
-      {/* Visible line — uses motion.path for smooth path morphing */}
+      {/* Visible line — motion.path for smooth path + color morphing */}
       <motion.path
         d={d}
         fill="none"
@@ -95,7 +114,7 @@ export function LineElement({ content }: Props) {
         markerEnd={content.arrow !== 'none' ? `url(#${markerId})` : undefined}
         markerStart={content.arrow === 'both' ? `url(#${markerId})` : undefined}
         vectorEffect="non-scaling-stroke"
-        animate={{ d }}
+        animate={{ d, stroke: content.color, strokeWidth: content.strokeWidth }}
         transition={pathTransition}
       />
 
@@ -132,3 +151,6 @@ export function LineElement({ content }: Props) {
     </svg>
   )
 }
+
+// Re-export CODE_PHASE so callers don't need a second import
+export { CODE_PHASE }

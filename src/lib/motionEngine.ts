@@ -8,6 +8,7 @@
  * lives in the components and MotionContext.
  */
 
+import { diffWords } from 'diff'
 import type { SceneElement, Slide, CubicBezier, PlaybackSettings } from '@/types'
 import type { Transition } from 'framer-motion'
 
@@ -147,21 +148,35 @@ export const BUILD_IN_SPRING = {
  * All durations are in seconds.
  */
 export const CODE_PHASE = {
-  /** How long removed lines take to exit */
+  /** How long removed lines/tokens take to exit */
   EXIT_DUR: 0.18,
   /** How long the layout reflow (container resize + line shift) takes */
   LAYOUT_DUR: 0.32,
   /**
-   * When new lines start entering.
+   * When new lines/tokens start entering.
    * = EXIT_DUR + LAYOUT_DUR (0.18 + 0.32 = 0.50s)
-   * New lines only appear once the container resize is 100% complete.
+   * New elements only appear once the container resize is 100% complete.
    */
   ENTER_DELAY: 0.50,
-  /** How long each new line takes to fade/slide in */
+  /** How long each new line/token takes to fade/slide in */
   ENTER_DUR: 0.22,
   /** Per-line stagger between new lines cascading in */
   LINE_STAGGER: 0.05,
 } as const
+
+/**
+ * Phase 1 total duration (morph / fly phase).
+ * Shared by CanvasElement for new-element entrance delay.
+ * = EXIT_DUR + LAYOUT_DUR
+ */
+export const PHASE_1_DURATION = CODE_PHASE.EXIT_DUR + CODE_PHASE.LAYOUT_DUR
+
+/**
+ * Phase 2 start delay — when NEW shapes/text/lines/code-tokens should begin
+ * appearing. Equals PHASE_1_DURATION so all morphs complete before any
+ * new element is revealed.
+ */
+export const PHASE_2_DELAY = PHASE_1_DURATION
 
 /**
  * Build a framer-motion Transition object from the user's playback settings.
@@ -214,7 +229,7 @@ export function staggerDelay(index: number, total: number, baseDuration: number)
 }
 
 // ─────────────────────────────────────────────
-// 3. Code Line Diffing (LCS)
+// 3. Code Line Diffing (LCS) + Token Diffing
 // ─────────────────────────────────────────────
 
 export interface LineDiff {
@@ -226,6 +241,141 @@ export interface LineDiff {
   status: 'unchanged' | 'added' | 'removed'
   /** Stagger index for sequenced build-in/out */
   staggerIndex: number
+}
+
+// ── Token-level diffing ──────────────────────
+
+export interface TokenInfo {
+  /** Raw text content of the token */
+  content: string
+  /** Inline CSS color for the token (from shiki) */
+  color: string
+  /** Font style flags from shiki (0=none,1=italic,2=bold,4=underline) */
+  fontStyle: number
+}
+
+export interface TokenDiff {
+  /**
+   * Stable layoutId key — same token content at the same occurrence
+   * index gets the same key across slides, enabling Framer Motion's
+   * FLIP to animate it from old → new position.
+   */
+  key: string
+  /** Token display text */
+  content: string
+  /** Inline color CSS value */
+  color: string
+  /** Font style flags */
+  fontStyle: number
+  /** Animation status */
+  status: 'unchanged' | 'added' | 'removed'
+  /** Stagger index (for added tokens only) */
+  staggerIndex: number
+}
+
+/**
+ * Generate a stable layoutId key for a token.
+ * Format: `tk-{contentHash}-{occurrenceIndex}`
+ * Two tokens with identical text get distinct keys via occurrence index,
+ * preventing Framer Motion from collapsing them into the same FLIP target.
+ */
+export function tokenKey(content: string, occurrence: number): string {
+  return `tk-${stableHash(content)}-${occurrence}`
+}
+
+/**
+ * Diff two arrays of TokenInfo (one line's worth of tokens)
+ * using the `diff` package's word-level comparison.
+ *
+ * Returns an array of TokenDiff with stable layoutId keys for matching
+ * tokens, enabling Framer Motion to fly each token independently.
+ */
+export function diffLineTokens(
+  prevTokens: TokenInfo[],
+  nextTokens: TokenInfo[],
+): TokenDiff[] {
+  // Flatten to plain-text arrays for diffWords
+  const prevWords = prevTokens.map((t) => t.content)
+  const nextWords = nextTokens.map((t) => t.content)
+
+  // Use diff package to get word-level changes
+  const changes = diffWords(prevWords.join(''), nextWords.join(''))
+
+  // We need to map changes back to individual tokens.
+  // Build index maps: walk next tokens and match them to diff output.
+  const result: TokenDiff[] = []
+  const occurrenceMap = new Map<string, number>()
+  let addedCount = 0
+
+  // Walk nextTokens and assign status by checking if their content
+  // appears in a 'removed' or 'added' diff chunk.
+  // Strategy: rebuild from diff chunks, keeping original token objects.
+  let nextIdx = 0
+  let prevIdx = 0
+
+  for (const change of changes) {
+    if (!change.added && !change.removed) {
+      // Unchanged chunk — consume tokens from both sides
+      let remaining = change.value.length
+      while (remaining > 0 && nextIdx < nextTokens.length) {
+        const tok = nextTokens[nextIdx]
+        if (tok.content.length > remaining) break
+        remaining -= tok.content.length
+        const occ = occurrenceMap.get(tok.content) ?? 0
+        occurrenceMap.set(tok.content, occ + 1)
+        result.push({
+          key: tokenKey(tok.content, occ),
+          content: tok.content,
+          color: tok.color,
+          fontStyle: tok.fontStyle,
+          status: 'unchanged',
+          staggerIndex: 0,
+        })
+        nextIdx++
+        prevIdx++
+      }
+    } else if (change.removed) {
+      // Removed — consume from prev side
+      let remaining = change.value.length
+      while (remaining > 0 && prevIdx < prevTokens.length) {
+        const tok = prevTokens[prevIdx]
+        if (tok.content.length > remaining) break
+        remaining -= tok.content.length
+        const occ = occurrenceMap.get(tok.content) ?? 0
+        occurrenceMap.set(tok.content, occ + 1)
+        result.push({
+          key: `rm-${tokenKey(tok.content, occ)}`,
+          content: tok.content,
+          color: tok.color,
+          fontStyle: tok.fontStyle,
+          status: 'removed',
+          staggerIndex: 0,
+        })
+        prevIdx++
+      }
+    } else if (change.added) {
+      // Added — consume from next side
+      let remaining = change.value.length
+      while (remaining > 0 && nextIdx < nextTokens.length) {
+        const tok = nextTokens[nextIdx]
+        if (tok.content.length > remaining) break
+        remaining -= tok.content.length
+        const occ = occurrenceMap.get(tok.content) ?? 0
+        occurrenceMap.set(tok.content, occ + 1)
+        result.push({
+          key: `add-${tokenKey(tok.content, occ)}-${addedCount}`,
+          content: tok.content,
+          color: tok.color,
+          fontStyle: tok.fontStyle,
+          status: 'added',
+          staggerIndex: addedCount++,
+        })
+        nextIdx++
+      }
+    }
+  }
+
+  return result
 }
 
 /**

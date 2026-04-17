@@ -1,72 +1,150 @@
 import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { CodeContent } from '@/types'
-// MotionContext import removed — we no longer gate on isTransitioning
 import { CODE_DEBOUNCE_MS } from '@/constants/animation'
-import { getHighlighter, splitHighlightedHtml, type HighlightedLine } from '@/lib/shikiHighlighter'
-import { diffCodeLines, type LineDiff, CODE_PHASE } from '@/lib/motionEngine'
+import { getTokenizedLines } from '@/lib/shikiHighlighter'
+import {
+  diffCodeLines,
+  diffLineTokens,
+  type LineDiff,
+  type TokenInfo,
+  type TokenDiff,
+  CODE_PHASE,
+} from '@/lib/motionEngine'
 
 interface Props { content: CodeContent }
 
 /**
- * CodeElement — Phased "animate-code.com" style animation sequence:
+ * CodeElement — Token-level "Magic Move" animation.
  *
- *   Phase 0 (immediate):     Removed lines exit (height collapses, fades out)
- *   Phase 1 (after exit):    Container and unchanged lines reflow to new positions
- *   Phase 2 (after reflow):  New lines fade/slide in with cascade stagger
+ * Architecture:
+ *   1. Shiki tokenizes code into a 2D array: line[] of token[].
+ *   2. Line-level LCS diff determines which lines are unchanged/added/removed.
+ *   3. For UNCHANGED lines, token-level diff finds which *tokens* moved/changed.
+ *   4. Each token is a `motion.span` with a stable `layoutId` key.
+ *      Framer Motion's FLIP animates tokens flying to their new positions.
  *
- * Each phase waits for the previous one to finish before starting,
- * so the user always sees: space opens up → content arrives.
- *
- * Spring physics are critically damped (no bounce).
+ * Phase sequence (same as before, now at token granularity):
+ *   Phase 0 — removed lines/tokens exit (fade+collapse)
+ *   Phase 1 — container + unchanged tokens reflow to new positions
+ *   Phase 2 — new tokens fade in after layout settles
  */
 export function CodeElement({ content }: Props) {
-  const [lines, setLines] = useState<HighlightedLine[]>([])
   const [lineDiffs, setLineDiffs] = useState<LineDiff[]>([])
-  const prevLinesRef = useRef<HighlightedLine[]>([])
+  // tokenDiffs: for each line key → the token-level diff result
+  const [tokenDiffs, setTokenDiffs] = useState<Map<string, TokenDiff[]>>(new Map())
+
+  // Previous structured tokens for diffing
+  const prevTokensRef = useRef<TokenInfo[][]>([])
+  const prevLineDiffsRef = useRef<LineDiff[]>([])
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current)
 
-    const debounceMs = lines.length === 0 ? 0 : CODE_DEBOUNCE_MS
+    const debounceMs = prevLineDiffsRef.current.length === 0 ? 0 : CODE_DEBOUNCE_MS
 
     timer.current = setTimeout(async () => {
       try {
-        const hl = await getHighlighter()
-        const lang = content.language || 'javascript'
-        const html = hl.codeToHtml(content.value || ' ', { lang, theme: 'vitesse-dark' })
-        const newLines = splitHighlightedHtml(html)
+        const nextTokenLines = await getTokenizedLines(
+          content.value || ' ',
+          content.language || 'javascript',
+        )
 
-        // Diff whenever we have a previous state.
-        // No isTransitioning gate needed — the diff engine handles
-        // the "no change" case correctly by returning all lines as unchanged.
-        if (prevLinesRef.current.length > 0) {
-          setLineDiffs(diffCodeLines(prevLinesRef.current, newLines))
+        // Build the HighlightedLine[] shape from tokens (for line-level LCS)
+        const nextLines = nextTokenLines.map((lineTokens, i) => ({
+          id: `line-${i}`,
+          html: lineTokens.map((t) => t.content).join(''),
+        }))
+
+        // ── Line-level diff ──
+        let newLineDiffs: LineDiff[]
+        if (prevLineDiffsRef.current.length > 0) {
+          const prevLines = prevTokensRef.current.map((lineTokens, i) => ({
+            id: `line-${i}`,
+            html: lineTokens.map((t) => t.content).join(''),
+          }))
+          newLineDiffs = diffCodeLines(prevLines, nextLines)
         } else {
-          setLineDiffs(newLines.map((l, i) => ({
+          newLineDiffs = nextLines.map((_, i) => ({
             key: `line-init-${i}`,
-            html: l.html,
+            html: '',
             status: 'unchanged' as const,
             staggerIndex: 0,
-          })))
+          }))
         }
 
-        prevLinesRef.current = newLines
-        setLines(newLines)
+        // ── Token-level diff for unchanged lines ──
+        // We need to match line keys to their token arrays.
+        // Build a map: prev plain text → index in prevTokenLines
+        const prevTextToIdx = new Map<string, number>()
+        prevTokensRef.current.forEach((lineTokens, i) => {
+          const text = lineTokens.map((t) => t.content).join('')
+          prevTextToIdx.set(text, i)
+        })
+
+        const newTokenDiffs = new Map<string, TokenDiff[]>()
+        let nextLineIdx = 0
+
+        for (const lineDiff of newLineDiffs) {
+          if (lineDiff.status === 'unchanged') {
+            const nextLineTokens = nextTokenLines[nextLineIdx] ?? []
+            const lineText = nextLineTokens.map((t) => t.content).join('')
+            const prevIdx = prevTextToIdx.get(lineText) ?? nextLineIdx
+            const prevLineTokens = prevTokensRef.current[prevIdx] ?? []
+
+            newTokenDiffs.set(
+              lineDiff.key,
+              diffLineTokens(prevLineTokens, nextLineTokens),
+            )
+            nextLineIdx++
+          } else if (lineDiff.status === 'added') {
+            // For added lines, all tokens are 'added'
+            const nextLineTokens = nextTokenLines[nextLineIdx] ?? []
+            newTokenDiffs.set(
+              lineDiff.key,
+              nextLineTokens.map((tok, ti) => ({
+                key: `add-tok-${lineDiff.key}-${ti}`,
+                content: tok.content,
+                color: tok.color,
+                fontStyle: tok.fontStyle,
+                status: 'added' as const,
+                staggerIndex: ti,
+              })),
+            )
+            nextLineIdx++
+          }
+          // 'removed' lines have no nextLineIdx to advance
+        }
+
+        prevTokensRef.current = nextTokenLines
+        prevLineDiffsRef.current = newLineDiffs
+        setLineDiffs(newLineDiffs)
+        setTokenDiffs(newTokenDiffs)
       } catch {
-        const fallback = content.value.split('\n').map((text, i) => ({
-          id: `fallback-${i}`,
-          html: text.replace(/</g, '&lt;').replace(/>/g, '&gt;') || '&#8203;',
-        }))
-        setLineDiffs(fallback.map((l, i) => ({
+        // Fallback: no-token mode, treat each line as a single text token
+        const fallbackLines = (content.value || '').split('\n')
+        const newLineDiffs: LineDiff[] = fallbackLines.map((text, i) => ({
           key: `line-init-${i}`,
-          html: l.html,
+          html: text,
           status: 'unchanged' as const,
           staggerIndex: 0,
-        })))
-        prevLinesRef.current = fallback
-        setLines(fallback)
+        }))
+        const newTokenDiffs = new Map<string, TokenDiff[]>()
+        fallbackLines.forEach((text, i) => {
+          newTokenDiffs.set(`line-init-${i}`, [{
+            key: `tok-fallback-${i}`,
+            content: text || '\u200b',
+            color: '#e0e0e0',
+            fontStyle: 0,
+            status: 'unchanged',
+            staggerIndex: 0,
+          }])
+        })
+        prevTokensRef.current = fallbackLines.map((t) => [{ content: t, color: '#e0e0e0', fontStyle: 0 }])
+        prevLineDiffsRef.current = newLineDiffs
+        setLineDiffs(newLineDiffs)
+        setTokenDiffs(newTokenDiffs)
       }
     }, debounceMs)
 
@@ -74,7 +152,7 @@ export function CodeElement({ content }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content.value, content.language])
 
-  // ── Easing curve: ease-in-out cubic (no bounce, smooth deceleration) ──
+  // ── Easing ──
   const EASE_OUT: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
 
@@ -82,12 +160,12 @@ export function CodeElement({ content }: Props) {
     <motion.div
       layout
       className="font-mono text-[12px] leading-relaxed bg-[#121212] rounded-lg px-3.5 py-3 w-full h-full overflow-auto"
-      // Phase 1: container resizes with ease-in-out — waits for exits to finish
+      // Phase 1: container resizes with ease-in-out after exits finish
       transition={{
         layout: {
           duration: CODE_PHASE.LAYOUT_DUR,
           ease: EASE_IN_OUT,
-          delay: CODE_PHASE.EXIT_DUR,  // starts after removed lines are gone
+          delay: CODE_PHASE.EXIT_DUR,
         },
       }}
     >
@@ -96,44 +174,44 @@ export function CodeElement({ content }: Props) {
       </div>
       <AnimatePresence mode="popLayout">
         {lineDiffs.map((line) => {
+          const tokens = tokenDiffs.get(line.key)
 
-          // ── UNCHANGED lines ──
-          // Use layoutId so framer-motion tracks them and slides them
-          // to the new Y position as the container expands/contracts.
-          // Delay matches container — they move in lockstep with Phase 1.
-          if (line.status === 'unchanged') {
+          // ── REMOVED lines ──
+          if (line.status === 'removed') {
             return (
               <motion.div
                 key={line.key}
-                layoutId={line.key}
                 layout
-                className="whitespace-pre min-h-[1.4em]"
-                dangerouslySetInnerHTML={{ __html: line.html }}
+                className="whitespace-pre min-h-[1.4em] overflow-hidden flex flex-wrap"
                 initial={false}
                 animate={{ opacity: 1 }}
-                transition={{
-                  layout: {
-                    duration: CODE_PHASE.LAYOUT_DUR,
+                exit={{
+                  opacity: 0,
+                  height: 0,
+                  transition: {
+                    duration: CODE_PHASE.EXIT_DUR,
                     ease: EASE_IN_OUT,
-                    delay: CODE_PHASE.EXIT_DUR,
                   },
-                  opacity: { duration: 0 },
                 }}
-              />
+                transition={{
+                  layout: { duration: CODE_PHASE.LAYOUT_DUR, ease: EASE_IN_OUT },
+                }}
+              >
+                {/* Render removed line as plain text — no token FLIP needed */}
+                <span className="text-neutral-500">{line.html}</span>
+              </motion.div>
             )
           }
 
           // ── ADDED lines ──
-          // Phase 2: all enter together once the container resize is fully complete.
           if (line.status === 'added') {
             return (
               <motion.div
                 key={line.key}
                 layout
-                className="whitespace-pre min-h-[1.4em] overflow-hidden"
-                dangerouslySetInnerHTML={{ __html: line.html }}
-                initial={{ opacity: 0, y: 6, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: 'auto' }}
+                className="whitespace-pre min-h-[1.4em] overflow-hidden flex flex-wrap"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
                 transition={{
                   duration: CODE_PHASE.ENTER_DUR,
                   ease: EASE_OUT,
@@ -144,38 +222,129 @@ export function CodeElement({ content }: Props) {
                     delay: CODE_PHASE.EXIT_DUR,
                   },
                 }}
-              />
+              >
+                <TokenRow tokens={tokens ?? []} easeOut={EASE_OUT} easeInOut={EASE_IN_OUT} />
+              </motion.div>
             )
           }
 
-          // ── REMOVED lines ──
-          // Phase 0: exit immediately (no delay) so space collapses
-          // before anything else moves. Quick so Phase 1 can start fast.
-          const exitDelay = line.staggerIndex * (CODE_PHASE.EXIT_DUR / 3)
+          // ── UNCHANGED lines ──
+          // Use layoutId on the line container so the whole row slides to
+          // its new Y position. Individual tokens inside also have layoutIds.
           return (
             <motion.div
               key={line.key}
+              layoutId={line.key}
               layout
-              className="whitespace-pre min-h-[1.4em] overflow-hidden"
-              dangerouslySetInnerHTML={{ __html: line.html }}
+              className="whitespace-pre min-h-[1.4em] flex flex-wrap"
               initial={false}
               animate={{ opacity: 1 }}
-              exit={{
-                opacity: 0,
-                height: 0,
-                transition: {
-                  duration: CODE_PHASE.EXIT_DUR,
-                  ease: EASE_IN_OUT,
-                  delay: exitDelay,
-                },
-              }}
               transition={{
-                layout: { duration: CODE_PHASE.LAYOUT_DUR, ease: EASE_IN_OUT },
+                layout: {
+                  duration: CODE_PHASE.LAYOUT_DUR,
+                  ease: EASE_IN_OUT,
+                  delay: CODE_PHASE.EXIT_DUR,
+                },
+                opacity: { duration: 0 },
               }}
-            />
+            >
+              <TokenRow tokens={tokens ?? []} easeOut={EASE_OUT} easeInOut={EASE_IN_OUT} />
+            </motion.div>
           )
         })}
       </AnimatePresence>
     </motion.div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// TokenRow — renders token-level motion.spans
+// ─────────────────────────────────────────────
+
+interface TokenRowProps {
+  tokens: TokenDiff[]
+  easeOut: [number, number, number, number]
+  easeInOut: [number, number, number, number]
+}
+
+/**
+ * Renders one line's worth of tokens as individual `motion.span` elements.
+ * Each token has a stable `layoutId` so Framer Motion can FLIP it to its
+ * new position when it moves between lines/positions across slides.
+ */
+function TokenRow({ tokens, easeOut, easeInOut }: TokenRowProps) {
+  return (
+    <AnimatePresence mode="popLayout">
+      {tokens.map((tok) => {
+        const style: React.CSSProperties = {
+          color: tok.color,
+          fontStyle: tok.fontStyle & 1 ? 'italic' : undefined,
+          fontWeight: tok.fontStyle & 2 ? 'bold' : undefined,
+          textDecoration: tok.fontStyle & 4 ? 'underline' : undefined,
+        }
+
+        if (tok.status === 'removed') {
+          return (
+            <motion.span
+              key={tok.key}
+              style={style}
+              initial={false}
+              animate={{ opacity: 1 }}
+              exit={{
+                opacity: 0,
+                transition: { duration: CODE_PHASE.EXIT_DUR, ease: easeInOut },
+              }}
+            >
+              {tok.content}
+            </motion.span>
+          )
+        }
+
+        if (tok.status === 'added') {
+          return (
+            <motion.span
+              key={tok.key}
+              style={style}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                duration: CODE_PHASE.ENTER_DUR,
+                ease: easeOut,
+                delay: CODE_PHASE.ENTER_DELAY + tok.staggerIndex * 0.02,
+              }}
+            >
+              {tok.content}
+            </motion.span>
+          )
+        }
+
+        // Unchanged token — use layoutId for FLIP positioning
+        return (
+          <motion.span
+            key={tok.key}
+            layoutId={tok.key}
+            layout
+            style={style}
+            initial={false}
+            animate={{ opacity: 1, color: tok.color }}
+            transition={{
+              layout: {
+                duration: CODE_PHASE.LAYOUT_DUR,
+                ease: easeInOut,
+                delay: CODE_PHASE.EXIT_DUR,
+              },
+              color: {
+                duration: CODE_PHASE.LAYOUT_DUR,
+                ease: easeInOut,
+                delay: CODE_PHASE.EXIT_DUR,
+              },
+              opacity: { duration: 0 },
+            }}
+          >
+            {tok.content}
+          </motion.span>
+        )
+      })}
+    </AnimatePresence>
   )
 }

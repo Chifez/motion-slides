@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import { Plus, Copy, Trash2 } from 'lucide-react'
+import { Plus, Copy, Trash2, Sparkles } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 
 export function SlidePanel() {
-  const { activeProject, activeSlideIndex, setActiveSlide, addSlide, duplicateSlide, deleteSlide } = useEditorStore()
+  const {
+    activeProject, activeSlideIndex, setActiveSlide,
+    addSlide, duplicateSlide, duplicateSlideKeepIds, deleteSlide,
+  } = useEditorStore()
   const project = activeProject()
   if (!project) return null
   const { slides } = project
@@ -34,6 +37,7 @@ export function SlidePanel() {
             totalSlides={slides.length}
             onSelect={() => setActiveSlide(i)}
             onDuplicate={() => duplicateSlide(i)}
+            onDuplicateKeepIds={() => duplicateSlideKeepIds(i)}
             onDelete={() => deleteSlide(i)}
           />
         ))}
@@ -61,10 +65,11 @@ interface SlideThumbProps {
   totalSlides: number
   onSelect: () => void
   onDuplicate: () => void
+  onDuplicateKeepIds: () => void
   onDelete: () => void
 }
 
-function SlideThumb({ index, name, background, elementCount, isActive, totalSlides, onSelect, onDuplicate, onDelete }: SlideThumbProps) {
+function SlideThumb({ index, name, background, elementCount, isActive, totalSlides, onSelect, onDuplicate, onDuplicateKeepIds, onDelete }: SlideThumbProps) {
   const [isEditing, setIsEditing] = useState(false)
   const { updateSlide, setActiveSlide } = useEditorStore()
 
@@ -76,7 +81,6 @@ function SlideThumb({ index, name, background, elementCount, isActive, totalSlid
 
   const handleNameChange = (newName: string) => {
     setIsEditing(false)
-    // We need to set the active slide first, then update
     setActiveSlide(index)
     setTimeout(() => updateSlide({ name: newName || `Slide ${index + 1}` }), 0)
   }
@@ -120,8 +124,21 @@ function SlideThumb({ index, name, background, elementCount, isActive, totalSlid
       {/* Action buttons on hover */}
       {isActive && (
         <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-          <button onClick={onDuplicate} className="p-0.5 rounded text-neutral-500 hover:text-neutral-100 hover:bg-white/10 cursor-pointer border-none bg-transparent">
+          {/* Regular duplicate — new IDs, no Magic Move */}
+          <button
+            onClick={onDuplicate}
+            title="Duplicate slide (new elements)"
+            className="p-0.5 rounded text-neutral-500 hover:text-neutral-100 hover:bg-white/10 cursor-pointer border-none bg-transparent"
+          >
             <Copy size={9} />
+          </button>
+          {/* Magic Move duplicate — same IDs, morphing enabled */}
+          <button
+            onClick={onDuplicateKeepIds}
+            title="Duplicate for Magic Move (elements will morph)"
+            className="p-0.5 rounded text-purple-500 hover:text-purple-300 hover:bg-purple-500/10 cursor-pointer border-none bg-transparent"
+          >
+            <Sparkles size={9} />
           </button>
           {totalSlides > 1 && (
             <button onClick={onDelete} className="p-0.5 rounded text-red-600 hover:text-red-400 hover:bg-red-500/10 cursor-pointer border-none bg-transparent">

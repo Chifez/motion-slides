@@ -4,6 +4,7 @@ import { useEditorStore } from '@/store/editorStore'
 import { useMotionContext } from '@/context/MotionContext'
 import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS } from '@/constants/animation'
 import { SELECTED_Z_INDEX } from '@/constants/canvas'
+import { PHASE_2_DELAY } from '@/lib/motionEngine'
 import type { SceneElement, TextContent, CodeContent, ShapeContent, LineContent } from '@/types'
 import { TextElement } from './elements/TextElement'
 import { CodeElement } from './elements/CodeElement'
@@ -155,8 +156,8 @@ export function CanvasElement({ element }: Props) {
   }
 
   // NEW ELEMENTS (only in the current slide):
-  // - Smooth ease-in-out entrance (no spring bounce, no stagger)
-  // - Subtle fade + slide-up, same feel as code block Phase 2
+  // - Phase 2: delay entrance until Phase 1 morphs are complete
+  // - Subtle fade + slide-up, aligned with code block Phase 2
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
 
   return (
@@ -188,6 +189,8 @@ export function CanvasElement({ element }: Props) {
       transition={{
         duration: durationSec * 0.5,
         ease: EASE_IN_OUT,
+        // Phase 2: wait for all continuing elements to finish morphing
+        delay: PHASE_2_DELAY,
         layout: {
           duration: durationSec,
           ease: EASE_IN_OUT,

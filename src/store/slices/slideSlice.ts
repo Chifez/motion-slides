@@ -8,7 +8,18 @@ export interface SlideSlice {
   activeSlideIndex: number
   addSlide: () => void
   deleteSlide: (index: number) => void
+  /**
+   * Duplicate a slide with NEW element IDs.
+   * Elements will NOT Magic Move between the original and the clone.
+   * Use this when you want a fully independent slide.
+   */
   duplicateSlide: (index: number) => void
+  /**
+   * Duplicate a slide PRESERVING all element IDs.
+   * Elements will Magic Move between the original and the clone —
+   * ideal for creating a "before/after" animation where items shift/morph.
+   */
+  duplicateSlideKeepIds: (index: number) => void
   setActiveSlide: (index: number) => void
   updateSlide: (updates: Partial<Pick<Slide, 'name' | 'background'>>) => void
   activeSlide: () => Slide | null
@@ -65,7 +76,35 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
         ...original,
         id: nanoid(),
         name: `${original.name || 'Slide'} copy`,
+        // NEW IDs — no Magic Move between original and clone
         elements: original.elements.map((el) => ({ ...el, id: nanoid() })),
+      }
+      const newSlides = [
+        ...project.slides.slice(0, index + 1),
+        clone,
+        ...project.slides.slice(index + 1),
+      ]
+      return {
+        projects: s.projects.map((p) =>
+          p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now() },
+        ),
+        activeSlideIndex: index + 1,
+      }
+    })
+  },
+
+  duplicateSlideKeepIds: (index) => {
+    const { activeProjectId } = get()
+    if (!activeProjectId) return
+    set((s) => {
+      const project = s.projects.find((p) => p.id === activeProjectId)!
+      const original = project.slides[index]
+      const clone: Slide = {
+        ...original,
+        id: nanoid(),
+        name: `${original.name || 'Slide'} (Magic Move)`,
+        // SAME element IDs — enables Magic Move morphing between slides
+        elements: original.elements.map((el) => ({ ...el })),
       }
       const newSlides = [
         ...project.slides.slice(0, index + 1),
