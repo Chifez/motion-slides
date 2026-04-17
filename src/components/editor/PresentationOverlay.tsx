@@ -41,7 +41,7 @@ export function PresentationOverlay() {
       showControls()
     } else if (e.key === 'Escape') {
       stopPresentation()
-      document.exitFullscreen?.().catch(() => {})
+      document.exitFullscreen?.().catch(() => { })
     }
   }, [setActiveSlide, stopPresentation, playbackSettings.loop, showControls])
 
@@ -83,7 +83,7 @@ export function PresentationOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] bg-black flex items-center justify-center"
+      className="fixed inset-0 z-9999 bg-black flex items-center justify-center"
       onMouseMove={showControls}
       style={{ cursor: controlsVisible ? 'default' : 'none' }}
     >
@@ -111,7 +111,7 @@ export function PresentationOverlay() {
         style={{ opacity: controlsVisible ? 1 : 0 }}
       >
         <button
-          onClick={() => { stopPresentation(); document.exitFullscreen?.().catch(() => {}) }}
+          onClick={() => { stopPresentation(); document.exitFullscreen?.().catch(() => { }) }}
           className="pointer-events-auto absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/80 hover:text-white hover:bg-black/80 border border-white/10 transition-all cursor-pointer backdrop-blur-sm"
         >
           <X size={18} />

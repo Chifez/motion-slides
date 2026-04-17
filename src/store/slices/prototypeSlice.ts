@@ -8,7 +8,7 @@ export interface PrototypeSlice {
   selectedTransitionId: string | null
 
   setPrototypeMode: (active: boolean) => void
-  addTransition: (transition: Omit<SlideTransition, 'id'>) => void
+  addTransition: (transition: Omit<SlideTransition, 'id'> & { id?: string }) => void
   updateTransition: (id: string, updates: Partial<SlideTransition>) => void
   deleteTransition: (id: string) => void
   setSelectedTransition: (id: string | null) => void
@@ -26,7 +26,7 @@ export const createPrototypeSlice: StateCreator<EditorState, [], [], PrototypeSl
   addTransition: (data) => {
     const { activeProjectId } = get()
     if (!activeProjectId) return
-    const transition: SlideTransition = { ...data, id: nanoid() }
+    const transition: SlideTransition = { id: nanoid(), ...data }
     set((s) => ({
       projects: s.projects.map((p) =>
         p.id !== activeProjectId

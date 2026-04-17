@@ -35,7 +35,19 @@ function sampleBezier(t: number, p0: number, p1: number, p2: number, p3: number)
   return mt * mt * mt * p0 + 3 * mt * mt * t * p1 + 3 * mt * t * t * p2 + t * t * t * p3
 }
 
-export function BezierEditor({ value, onChange }: Props) {
+/** Default fallback bezier (Apple ease) */
+const DEFAULT_BEZIER: CubicBezier = { x1: 0.25, y1: 0.1, x2: 0.25, y2: 1 }
+
+/** Normalize potentially stale string values from persisted sessions */
+function normalizeBezier(v: unknown): CubicBezier {
+  if (v && typeof v === 'object' && 'x1' in v) return v as CubicBezier
+  return { ...DEFAULT_BEZIER }
+}
+
+export function BezierEditor({ value: rawValue, onChange }: Props) {
+  // Guard against legacy string values (e.g. 'ease-out') still in session storage
+  const value = normalizeBezier(rawValue)
+
   const svgRef = useRef<SVGSVGElement>(null)
   const [dragging, setDragging] = useState<'p1' | 'p2' | null>(null)
 

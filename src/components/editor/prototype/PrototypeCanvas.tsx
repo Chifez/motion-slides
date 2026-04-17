@@ -5,18 +5,18 @@ import {
   Controls,
   MiniMap,
   useNodesState,
-  useEdgesState,
-  addEdge,
   type Connection as RFConnection,
   type NodeTypes,
   type EdgeTypes,
   type Node,
   type Edge,
   type NodeChange,
+  type EdgeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
 import { useEditorStore } from '@/store/editorStore'
+import { nanoid } from '@/lib/nanoid'
 import { SlideNode } from './SlideNode'
 import { TransitionEdge } from './TransitionEdge'
 import { TransitionPanel } from './TransitionPanel'
@@ -38,28 +38,30 @@ export function PrototypeCanvas() {
 
   const { slides, transitions, prototypeLayout } = project
 
-  // Build nodes from slides
+  // ── Nodes: built from slides, re-derived on every render ──
   const initialNodes: Node[] = useMemo(() =>
     slides.map((slide, i) => ({
       id: slide.id,
       type: 'slideNode',
-      position: prototypeLayout[slide.id] || { x: i * 300, y: 100 },
-      data: {
-        slide,
-        index: i,
-        isActive: i === activeSlideIndex,
-      },
+      position: prototypeLayout[slide.id] || { x: i * 320, y: 100 },
+      data: { slide, index: i, isActive: i === activeSlideIndex },
     })),
-    [slides, prototypeLayout, activeSlideIndex],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
 
-  // Build edges from transitions
-  const initialEdges: Edge[] = useMemo(() =>
+  const [nodes, , onNodesChange] = useNodesState(initialNodes)
+
+  // ── Edges: derived DIRECTLY from store transitions every render ──
+  // This is the source of truth — no parallel local edge state needed.
+  const edges: Edge[] = useMemo(() =>
     transitions.map((t) => ({
-      id: t.id,
+      id: t.id,          // edge.id === transition.id, always in sync
       source: t.fromSlideId,
       target: t.toSlideId,
       type: 'transitionEdge',
+      animated: true,
+      selected: t.id === selectedTransitionId,
       data: {
         animation: t.animation,
         duration: t.duration,
@@ -68,13 +70,10 @@ export function PrototypeCanvas() {
         transitionId: t.id,
       },
     })),
-    [transitions],
+    [transitions, selectedTransitionId],
   )
 
-  const [nodes, , onNodesChange] = useNodesState(initialNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
-
-  // Sync node positions back to store on drag end
+  // ── Node position changes → persist to store ──
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
     onNodesChange(changes)
     for (const change of changes) {
@@ -84,16 +83,29 @@ export function PrototypeCanvas() {
     }
   }, [onNodesChange, updateSlidePosition])
 
-  // Create transition on edge connect
+  // ── Edge changes: only handle deletion (no local state needed) ──
+  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+    for (const change of changes) {
+      if (change.type === 'remove') {
+        deleteTransition(change.id)
+      }
+    }
+  }, [deleteTransition])
+
+  // ── Connect: generate ID upfront so edge.id === transition.id ──
   const handleConnect = useCallback((connection: RFConnection) => {
     if (!connection.source || !connection.target) return
-    // Prevent duplicate transitions
+
+    // Prevent duplicate transitions between same pair
     const exists = transitions.some(
       (t) => t.fromSlideId === connection.source && t.toSlideId === connection.target,
     )
     if (exists) return
 
+    // Generate the ID here so ReactFlow edge and store transition share it
+    const id = nanoid()
     addTransition({
+      id,
       fromSlideId: connection.source,
       toSlideId: connection.target,
       animation: 'slide-left',
@@ -101,22 +113,11 @@ export function PrototypeCanvas() {
       ease: { ...DEFAULT_PLAYBACK_SETTINGS.transitionEase },
       trigger: 'click',
     })
-
-    // Also add the edge to local state
-    setEdges((eds) => addEdge({
-      ...connection,
-      type: 'transitionEdge',
-      data: {
-        animation: 'slide-left',
-        duration: 500,
-        ease: { ...DEFAULT_PLAYBACK_SETTINGS.transitionEase },
-        trigger: 'click',
-      },
-    }, eds))
-  }, [transitions, addTransition, setEdges])
+    // Edges are derived from store, so ReactFlow will auto-reflect the new one
+  }, [transitions, addTransition])
 
   const handleEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
-    setSelectedTransition(edge.id)
+    setSelectedTransition(edge.id) // edge.id === transition.id now
   }, [setSelectedTransition])
 
   const handlePaneClick = useCallback(() => {
@@ -131,17 +132,14 @@ export function PrototypeCanvas() {
         nodes={nodes}
         edges={edges}
         onNodesChange={handleNodesChange}
-        onEdgesChange={onEdgesChange}
+        onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
         onEdgeClick={handleEdgeClick}
         onPaneClick={handlePaneClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
-        defaultEdgeOptions={{
-          type: 'transitionEdge',
-          animated: true,
-        }}
+        defaultEdgeOptions={{ type: 'transitionEdge', animated: true }}
         proOptions={{ hideAttribution: true }}
         style={{ background: '#0d0d0d' }}
       >
@@ -155,24 +153,16 @@ export function PrototypeCanvas() {
           maskColor="rgba(0,0,0,0.7)"
           className="bg-[#111]! border-white/8! rounded-lg!"
         />
-        {/* Arrow defs */}
-        <svg style={{ position: 'absolute', width: 0, height: 0 }}>
-          <defs>
-            <marker id="proto-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-              <path d="M0,0 L0,6 L8,3 z" fill="#555" />
-            </marker>
-          </defs>
-        </svg>
       </ReactFlow>
 
-      {/* Transition settings panel */}
+      {/* Transition settings panel — shown when an edge is selected */}
       {selectedTransition && (
         <TransitionPanel
           transition={selectedTransition}
           onUpdate={(updates) => updateTransition(selectedTransition.id, updates)}
           onDelete={() => {
             deleteTransition(selectedTransition.id)
-            setEdges((eds) => eds.filter((e) => e.id !== selectedTransition.id))
+            setSelectedTransition(null)
           }}
           onClose={() => setSelectedTransition(null)}
         />
