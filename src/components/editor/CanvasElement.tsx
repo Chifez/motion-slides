@@ -1,7 +1,8 @@
-import { useRef, useCallback, useMemo } from 'react'
+import { useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
-import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS, LAYOUT_DURATION, LAYOUT_EASE } from '@/constants/animation'
+import { useMotionContext } from '@/context/MotionContext'
+import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS, ENTRANCE_INITIAL, EXIT_TARGET } from '@/constants/animation'
 import { SELECTED_Z_INDEX } from '@/constants/canvas'
 import type { SceneElement, TextContent, CodeContent, ShapeContent, LineContent } from '@/types'
 import { TextElement } from './elements/TextElement'
@@ -12,30 +13,12 @@ import { BoundingBox } from './BoundingBox'
 
 interface Props { element: SceneElement }
 
-/** Slide direction variants for entrance/exit animations */
-function getSlideVariant(element: SceneElement) {
-  const cx = element.position.x + element.size.width / 2
-  const cy = element.position.y + element.size.height / 2
-  let xOffset = 0
-  let yOffset = 0
-  if (cx < 400) xOffset = -60
-  else if (cx > 880) xOffset = 60
-  if (cy < 240) yOffset = -40
-  else if (cy > 480) yOffset = 40
-  if (xOffset === 0 && yOffset === 0) yOffset = 30
-  return { xOffset, yOffset }
-}
-
 export function CanvasElement({ element }: Props) {
-  const { selectedElementId, setSelectedElement, updateElement } = useEditorStore()
+  const { selectedElementId, setSelectedElement, updateElement, isPresenting } = useEditorStore()
+  const { isTransitioning, transition, durationSec, ease } = useMotionContext()
   const isSelected = selectedElementId === element.id
   const isDragging = useRef(false)
   const dragStart = useRef({ x: 0, y: 0, elX: 0, elY: 0 })
-
-  const { xOffset, yOffset } = useMemo(
-    () => getSlideVariant(element),
-    [element.position.x, element.position.y, element.size.width, element.size.height],
-  )
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
@@ -84,14 +67,37 @@ export function CanvasElement({ element }: Props) {
     }
   }
 
-  const isEditing = isSelected
+  // ── Magic Move: layoutId is ALWAYS the element ID ──
+  // During presentation, framer-motion will match elements across slides
+  // by layoutId and automatically interpolate position + size (FLIP).
+  // During editing, layout still tracks drag moves smoothly.
+
+  // Build the transition — in presentation mode, use user settings.
+  // In editor mode, make drags instant.
+  const motionTransition = isTransitioning
+    ? transition
+    : { layout: { duration: 0 }, default: { duration: 0 } }
+
+  // Entrance/exit only apply to truly new/removed elements.
+  // Elements that exist on both slides get their motion from layoutId.
+  const entranceExit = isTransitioning
+    ? {
+        initial: ENTRANCE_INITIAL,
+        exit: {
+          ...EXIT_TARGET,
+          transition: { duration: durationSec * 0.4, ease },
+        },
+      }
+    : { initial: false as const }
 
   return (
     <>
       <motion.div
-        layoutId={isEditing ? undefined : element.id}
+        layoutId={element.id}
+        layout
         className="canvas-element"
         style={{
+          position: 'absolute',
           left: element.position.x,
           top: element.position.y,
           width: element.size.width,
@@ -99,21 +105,15 @@ export function CanvasElement({ element }: Props) {
           rotate: element.rotation,
           opacity: element.opacity,
           zIndex: isSelected ? SELECTED_Z_INDEX : element.zIndex,
-          cursor: 'grab',
+          cursor: isPresenting ? 'default' : 'grab',
           // Lines need overflow visible for arrow markers
           overflow: element.type === 'line' ? 'visible' : undefined,
         }}
-        transition={{
-          layout: { duration: LAYOUT_DURATION, ease: LAYOUT_EASE },
-          opacity: { duration: 0.4, ease: 'easeOut' },
-          x: { type: 'spring', stiffness: 300, damping: 30 },
-          y: { type: 'spring', stiffness: 300, damping: 30 },
-        }}
-        initial={{ opacity: 0, x: xOffset, y: yOffset }}
-        animate={{ opacity: element.opacity, x: 0, y: 0 }}
-        exit={{ opacity: 0, x: -xOffset, y: -yOffset, transition: { duration: 0.3 } }}
-        onClick={handleClick}
-        onPointerDown={onPointerDown}
+        transition={motionTransition}
+        animate={{ opacity: element.opacity }}
+        {...entranceExit}
+        onClick={isPresenting ? undefined : handleClick}
+        onPointerDown={isPresenting ? undefined : onPointerDown}
       >
         {renderContent()}
       </motion.div>

@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion'
 import type { LineContent } from '@/types'
+import { useMotionContext } from '@/context/MotionContext'
 
 interface Props { content: LineContent }
 
@@ -29,11 +31,18 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
 }
 
 export function LineElement({ content }: Props) {
+  const { durationSec, ease } = useMotionContext()
+
   // Use a generous viewBox — the SVG fills the element's bounding box
   const w = 100
   const h = 100
   const d = buildLinePath(w, h, content)
   const markerId = `arrow-${content.lineType}-${content.strokeWidth}`
+
+  const pathTransition = {
+    duration: durationSec,
+    ease,
+  }
 
   return (
     <svg
@@ -70,8 +79,8 @@ export function LineElement({ content }: Props) {
         vectorEffect="non-scaling-stroke"
       />
 
-      {/* Visible line */}
-      <path
+      {/* Visible line — uses motion.path for smooth path morphing */}
+      <motion.path
         d={d}
         fill="none"
         stroke={content.color}
@@ -86,6 +95,8 @@ export function LineElement({ content }: Props) {
         markerEnd={content.arrow !== 'none' ? `url(#${markerId})` : undefined}
         markerStart={content.arrow === 'both' ? `url(#${markerId})` : undefined}
         vectorEffect="non-scaling-stroke"
+        animate={{ d }}
+        transition={pathTransition}
       />
 
       {/* Label at midpoint */}

@@ -7,6 +7,7 @@ import { useAutoplay } from '@/hooks/useAutoplay'
 import { useFullscreen } from '@/hooks/useFullscreen'
 import { useAutoHide } from '@/hooks/useAutoHide'
 import { getCanvasDimensions } from '@/constants/canvas'
+import { MotionProvider } from '@/context/MotionContext'
 import { CanvasElement } from './CanvasElement'
 import { PresentationControls } from './presentation/PresentationControls'
 
@@ -98,11 +99,14 @@ export function PresentationOverlay() {
           background: slide.background || '#0a0a0a',
         }}
       >
-        <LayoutGroup>
-          <AnimatePresence>
-            {slide.elements.map((el) => <CanvasElement key={el.id} element={el} />)}
-          </AnimatePresence>
-        </LayoutGroup>
+        {/* MotionProvider injects user's duration & easing into all child animations */}
+        <MotionProvider settings={playbackSettings}>
+          <LayoutGroup>
+            <AnimatePresence mode="popLayout">
+              {slide.elements.map((el) => <CanvasElement key={el.id} element={el} />)}
+            </AnimatePresence>
+          </LayoutGroup>
+        </MotionProvider>
       </div>
 
       {/* Controls — auto-hide */}
