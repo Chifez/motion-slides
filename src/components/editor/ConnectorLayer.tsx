@@ -1,4 +1,4 @@
-import type { Slide, SceneElement } from '../../types'
+import type { Slide, SceneElement } from '@/types'
 
 interface Props {
   slide: Slide
@@ -27,13 +27,11 @@ export function ConnectorLayer({ slide, elements }: Props) {
         const x2 = to.position.x + to.size.width / 2
         const y2 = to.position.y + to.size.height / 2
 
-        // Cubic bezier control points for smooth routing
         const dx = x2 - x1
         const cx1 = x1 + dx * 0.4
         const cy1 = y1
         const cx2 = x2 - dx * 0.4
         const cy2 = y2
-
         const d = `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`
 
         return (

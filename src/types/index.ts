@@ -82,3 +82,17 @@ export interface Project {
   updatedAt: number
   synced: boolean
 }
+
+// ─────────────────────────────────────────────
+// Playback & Presentation Settings
+// ─────────────────────────────────────────────
+
+export interface PlaybackSettings {
+  autoplay: boolean
+  autoplayDelay: number
+  loop: boolean
+  transitionDuration: number
+  transitionEase: 'spring' | 'ease-out' | 'linear'
+  exportResolution: { width: number; height: number; label: string }
+}
+

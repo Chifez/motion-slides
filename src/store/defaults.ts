@@ -1,0 +1,61 @@
+import { type Slide, type SceneElement } from '@/types'
+import { nanoid } from '@/lib/nanoid'
+import { CANVAS_BG } from '@/constants/canvas'
+
+/** Creates an empty slide with optional overrides */
+export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
+  return {
+    id: nanoid(),
+    elements: [],
+    connections: [],
+    background: CANVAS_BG,
+    ...overrides,
+  }
+}
+
+/** Creates a seeded demo project with two slides */
+export function createDefaultProject(name = 'Untitled Deck') {
+  const slide1 = createDefaultSlide({
+    elements: [
+      {
+        id: 'el-title', type: 'text',
+        position: { x: 80, y: 80 }, size: { width: 640, height: 80 },
+        rotation: 0, opacity: 1, zIndex: 1,
+        content: { value: 'My First Slide', fontSize: 48, fontWeight: 'bold', color: '#ffffff', align: 'left' },
+      },
+      {
+        id: 'el-code', type: 'code',
+        position: { x: 80, y: 200 }, size: { width: 640, height: 120 },
+        rotation: 0, opacity: 1, zIndex: 1,
+        content: { value: `const greet = () => {\n}`, language: 'javascript' },
+      },
+    ],
+  })
+
+  const slide2 = createDefaultSlide({
+    elements: [
+      {
+        id: 'el-title', type: 'text',
+        position: { x: 80, y: 40 }, size: { width: 640, height: 80 },
+        rotation: 0, opacity: 1, zIndex: 1,
+        content: { value: 'My First Slide', fontSize: 48, fontWeight: 'bold', color: '#ffffff', align: 'left' },
+      },
+      {
+        id: 'el-code', type: 'code',
+        position: { x: 80, y: 160 }, size: { width: 640, height: 160 },
+        rotation: 0, opacity: 1, zIndex: 1,
+        content: { value: `const greet = () => {\n  console.log('Hello, World!')\n  return true\n}`, language: 'javascript' },
+      },
+    ],
+  })
+
+  return {
+    id: nanoid(),
+    name,
+    description: '',
+    slides: [slide1, slide2],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    synced: false,
+  }
+}

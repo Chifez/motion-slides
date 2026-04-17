@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { Plus, Layout, Clock } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useEditorStore } from '../store/editorStore'
+import { useEditorStore } from '@/store/editorStore'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,

@@ -1,12 +1,13 @@
 /**
- * MotionSlides — Export Engine
+ * MotionSlides — Export Engine (Optimized)
  *
  * Records the presentation canvas as a WebM video using the
- * browser's MediaRecorder API. Works by programmatically walking
- * through each slide, waiting for transitions, and capturing frames.
+ * browser's MediaRecorder API.
  */
 
-import { useEditorStore, type PlaybackSettings } from '../store/editorStore'
+import { useEditorStore } from '@/store/editorStore'
+import { EXPORT_BITRATE, EXPORT_MIME_TYPE_VP9, EXPORT_MIME_TYPE_FALLBACK } from '@/constants/export'
+import html2canvas from 'html2canvas'
 
 export type ExportFormat = 'webm' | 'pdf'
 
@@ -19,10 +20,6 @@ export interface ExportProgress {
 
 type ProgressCallback = (progress: ExportProgress) => void
 
-// ─────────────────────────────────────────────
-// WebM Video Export via MediaRecorder
-// ─────────────────────────────────────────────
-
 export async function exportAsVideo(
   onProgress: ProgressCallback,
 ): Promise<Blob | null> {
@@ -34,96 +31,68 @@ export async function exportAsVideo(
   const { exportResolution, transitionDuration, autoplayDelay } = playbackSettings
   const totalSlides = project.slides.length
 
-  onProgress({
-    stage: 'preparing',
-    currentSlide: 0,
-    totalSlides,
-    message: 'Setting up recording…',
-  })
+  onProgress({ stage: 'preparing', currentSlide: 0, totalSlides, message: 'Warming up engine…' })
 
   const canvasBoard = document.querySelector('[data-canvas-board]') as HTMLElement | null
   if (!canvasBoard) {
-    onProgress({ stage: 'error', currentSlide: 0, totalSlides, message: 'Canvas not found' })
+    onProgress({ stage: 'error', currentSlide: 0, totalSlides, message: 'Canvas source not found' })
     return null
   }
-
-  // ✅ FIX 1: Import html2canvas once, not on every frame
-  const { default: html2canvas } = await import('html2canvas')
 
   const canvas = document.createElement('canvas')
   canvas.width = exportResolution.width
   canvas.height = exportResolution.height
-  const ctx = canvas.getContext('2d')!
+  const ctx = canvas.getContext('2d', { alpha: false })!
 
   const stream = canvas.captureStream(30)
-  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-    ? 'video/webm;codecs=vp9'
-    : 'video/webm'
+  const mimeType = MediaRecorder.isTypeSupported(EXPORT_MIME_TYPE_VP9)
+    ? EXPORT_MIME_TYPE_VP9
+    : EXPORT_MIME_TYPE_FALLBACK
 
-  const recorder = new MediaRecorder(stream, {
-    mimeType,
-    videoBitsPerSecond: 20_000_000,
-  })
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: EXPORT_BITRATE })
 
   const chunks: Blob[] = []
-  recorder.ondataavailable = (e) => {
-    if (e.data.size > 0) chunks.push(e.data)
-  }
+  recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
 
-  recorder.start(100)
+  recorder.start()
   store.setActiveSlide(0)
-  await sleep(500) // initial render
+  await sleep(1000)
+  await captureFrame(canvasBoard, canvas, ctx, exportResolution)
 
   for (let i = 0; i < totalSlides; i++) {
-    onProgress({
-      stage: 'recording',
-      currentSlide: i + 1,
-      totalSlides,
-      message: `Recording slide ${i + 1} of ${totalSlides}…`,
-    })
+    onProgress({ stage: 'recording', currentSlide: i + 1, totalSlides, message: `Processing slide ${i + 1}…` })
 
-    store.setActiveSlide(i)
+    if (i > 0) {
+      store.setActiveSlide(i)
+      const startTime = Date.now()
+      while (Date.now() - startTime < transitionDuration) {
+        await captureFrame(canvasBoard, canvas, ctx, exportResolution)
+      }
+    }
 
-    // Wait for the CSS/JS transition to finish
-    await sleep(transitionDuration + 200)
+    await captureFrame(canvasBoard, canvas, ctx, exportResolution)
 
-    // ✅ FIX 2: Capture the slide frame ONCE after the transition
-    await captureFrame(canvasBoard, canvas, ctx, exportResolution, html2canvas)
-
-    // ✅ FIX 3: During dwell, just sleep — captureStream(30) already holds
-    // the drawn pixels and emits them at 30fps automatically. No need to
-    // re-run html2canvas 30× per second here.
+    onProgress({ stage: 'recording', currentSlide: i + 1, totalSlides, message: `Holding slide ${i + 1}…` })
     await sleep(autoplayDelay)
   }
 
-  onProgress({
-    stage: 'encoding',
-    currentSlide: totalSlides,
-    totalSlides,
-    message: 'Encoding video…',
-  })
+  onProgress({ stage: 'encoding', currentSlide: totalSlides, totalSlides, message: 'Finalizing movie…' })
 
   return new Promise((resolve) => {
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType })
-      onProgress({ stage: 'done', currentSlide: totalSlides, totalSlides, message: 'Export complete!' })
+      onProgress({ stage: 'done', currentSlide: totalSlides, totalSlides, message: 'Export successful!' })
       resolve(blob)
     }
     recorder.stop()
   })
 }
 
-// ─────────────────────────────────────────────
-// Frame Capture Helper
-// ─────────────────────────────────────────────
-
-// ✅ FIX 1 (cont.): Accept the pre-imported html2canvas instance
 async function captureFrame(
   source: HTMLElement,
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
   resolution: { width: number; height: number },
-  html2canvas: typeof import('html2canvas').default,
 ) {
   try {
     const screenshot = await html2canvas(source, {
@@ -131,18 +100,13 @@ async function captureFrame(
       scale: resolution.width / source.offsetWidth,
       useCORS: true,
       logging: false,
+      imageTimeout: 0,
     })
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.drawImage(screenshot, 0, 0, canvas.width, canvas.height)
-  } catch {
-    ctx.fillStyle = '#0a0a0a'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+  } catch (err) {
+    console.error('Frame capture failed:', err)
   }
 }
-
-// ─────────────────────────────────────────────
-// Download helper
-// ─────────────────────────────────────────────
 
 export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)

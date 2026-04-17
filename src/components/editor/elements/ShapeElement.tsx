@@ -1,4 +1,4 @@
-import type { ShapeContent, ShapeType } from '../../../types'
+import type { ShapeContent, ShapeType } from '@/types'
 
 interface Props { content: ShapeContent }
 
@@ -72,10 +72,7 @@ function QueueShape({ fill, stroke }: { fill: string; stroke: string }) {
 
 function DocumentShape({ fill, stroke }: { fill: string; stroke: string }) {
   return <>
-    <path
-      d="M15 5 L75 5 L75 75 Q50 90 15 75 Z"
-      fill={fill} stroke={stroke} strokeWidth="2"
-    />
+    <path d="M15 5 L75 5 L75 75 Q50 90 15 75 Z" fill={fill} stroke={stroke} strokeWidth="2" />
     <path d="M15 75 Q35 88 75 75" fill="none" stroke={stroke} strokeWidth="2" />
     <line x1="25" y1="25" x2="65" y2="25" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" />
     <line x1="25" y1="38" x2="65" y2="38" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" />
@@ -84,16 +81,9 @@ function DocumentShape({ fill, stroke }: { fill: string; stroke: string }) {
 }
 
 const shapeMap: Record<ShapeType, React.FC<{ fill: string; stroke: string }>> = {
-  rectangle: RectangleShape,
-  database: DatabaseShape,
-  server: ServerShape,
-  cloud: CloudShape,
-  client: ClientShape,
-  diamond: DiamondShape,
-  user: UserShape,
-  bucket: BucketShape,
-  queue: QueueShape,
-  document: DocumentShape,
+  rectangle: RectangleShape, database: DatabaseShape, server: ServerShape,
+  cloud: CloudShape, client: ClientShape, diamond: DiamondShape,
+  user: UserShape, bucket: BucketShape, queue: QueueShape, document: DocumentShape,
 }
 
 export function ShapeElement({ content }: Props) {

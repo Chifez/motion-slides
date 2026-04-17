@@ -1,10 +1,7 @@
-import type { TextContent } from '../../../types'
+import type { TextContent } from '@/types'
+import { FONT_WEIGHT_MAP } from '@/constants/editor'
 
 interface Props { content: TextContent }
-
-const weightMap = {
-  normal: 400, medium: 500, semibold: 600, bold: 700,
-}
 
 export function TextElement({ content }: Props) {
   return (
@@ -15,7 +12,7 @@ export function TextElement({ content }: Props) {
         display: 'flex',
         alignItems: 'center',
         fontSize: content.fontSize,
-        fontWeight: weightMap[content.fontWeight],
+        fontWeight: FONT_WEIGHT_MAP[content.fontWeight],
         color: content.color,
         textAlign: content.align,
         lineHeight: 1.2,
