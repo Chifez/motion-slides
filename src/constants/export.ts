@@ -42,7 +42,7 @@ export const EXPORT_RESOLUTIONS: Record<
 }
 
 /** Video export bitrate (bits per second) */
-export const EXPORT_BITRATE = 8_000_000
+export const EXPORT_BITRATE = 20_000_000
 
 /** Preferred MIME type for video export */
 export const EXPORT_MIME_TYPE_VP9 = 'video/webm;codecs=vp9'

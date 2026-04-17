@@ -5,14 +5,33 @@ import { TransformSection } from './inspector/TransformSection'
 import { TextSection } from './inspector/TextSection'
 import { CodeSection } from './inspector/CodeSection'
 import { ShapeSection } from './inspector/ShapeSection'
+import { ConnectionSection } from './inspector/ConnectionSection'
 
 const sectionCls = "px-3 py-3 border-b border-white/6"
 
 export function InspectorPanel() {
-  const { selectedElementId, activeSlide, updateElement, deleteElement } = useEditorStore()
+  const {
+    selectedElementId, activeSlide, updateElement, deleteElement,
+    selectedConnectionId, updateConnection, deleteConnection, setSelectedConnection,
+  } = useEditorStore()
   const slide = activeSlide()
   const element = slide?.elements.find((el) => el.id === selectedElementId)
+  const connection = slide?.connections.find((c) => c.id === selectedConnectionId)
 
+  // Connection selected — show connection inspector
+  if (connection) {
+    return (
+      <aside className="w-[280px] shrink-0 bg-[#161616] border-l border-white/8 overflow-y-auto">
+        <ConnectionSection
+          connection={connection}
+          onUpdate={(updates) => updateConnection(connection.id, updates)}
+          onDelete={() => { deleteConnection(connection.id); setSelectedConnection(null) }}
+        />
+      </aside>
+    )
+  }
+
+  // No element selected — empty state
   if (!element) {
     return (
       <aside className="w-[280px] shrink-0 bg-[#161616] border-l border-white/8 overflow-y-auto">

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Plus, Copy, Trash2 } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 
@@ -23,31 +24,18 @@ export function SlidePanel() {
       {/* Slide list */}
       <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5">
         {slides.map((slide, i) => (
-          <div
+          <SlideThumb
             key={slide.id}
-            onClick={() => setActiveSlide(i)}
-            className={`relative rounded-md overflow-hidden cursor-pointer border-2 transition-all aspect-video bg-[#111] flex items-center justify-center group ${
-              activeSlideIndex === i ? 'border-blue-500' : 'border-transparent hover:border-white/12'
-            }`}
-          >
-            <span className="absolute top-1 left-1.5 text-[9px] text-neutral-700 font-semibold">{i + 1}</span>
-            <span className="text-[9px] text-neutral-700">
-              {slide.elements.length > 0 ? `${slide.elements.length} element${slide.elements.length > 1 ? 's' : ''}` : 'Empty'}
-            </span>
-
-            {activeSlideIndex === i && (
-              <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                <button onClick={() => duplicateSlide(i)} className="p-0.5 rounded text-neutral-500 hover:text-neutral-100 hover:bg-white/10 cursor-pointer border-none bg-transparent">
-                  <Copy size={9} />
-                </button>
-                {slides.length > 1 && (
-                  <button onClick={() => deleteSlide(i)} className="p-0.5 rounded text-red-600 hover:text-red-400 hover:bg-red-500/10 cursor-pointer border-none bg-transparent">
-                    <Trash2 size={9} />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+            index={i}
+            name={slide.name || `Slide ${i + 1}`}
+            background={slide.background}
+            elementCount={slide.elements.length}
+            isActive={activeSlideIndex === i}
+            totalSlides={slides.length}
+            onSelect={() => setActiveSlide(i)}
+            onDuplicate={() => duplicateSlide(i)}
+            onDelete={() => deleteSlide(i)}
+          />
         ))}
       </div>
 
@@ -61,5 +49,87 @@ export function SlidePanel() {
         </button>
       </div>
     </aside>
+  )
+}
+
+interface SlideThumbProps {
+  index: number
+  name: string
+  background: string
+  elementCount: number
+  isActive: boolean
+  totalSlides: number
+  onSelect: () => void
+  onDuplicate: () => void
+  onDelete: () => void
+}
+
+function SlideThumb({ index, name, background, elementCount, isActive, totalSlides, onSelect, onDuplicate, onDelete }: SlideThumbProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const { updateSlide, setActiveSlide } = useEditorStore()
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setActiveSlide(index)
+    setIsEditing(true)
+  }
+
+  const handleNameChange = (newName: string) => {
+    setIsEditing(false)
+    // We need to set the active slide first, then update
+    setActiveSlide(index)
+    setTimeout(() => updateSlide({ name: newName || `Slide ${index + 1}` }), 0)
+  }
+
+  return (
+    <div
+      onClick={onSelect}
+      className={`relative rounded-md overflow-hidden cursor-pointer border-2 transition-all group ${
+        isActive ? 'border-blue-500' : 'border-transparent hover:border-white/12'
+      }`}
+    >
+      {/* Thumbnail body */}
+      <div
+        className="aspect-video flex items-center justify-center"
+        style={{ background }}
+      >
+        <span className="text-[9px] text-neutral-700">
+          {elementCount > 0 ? `${elementCount} element${elementCount > 1 ? 's' : ''}` : 'Empty'}
+        </span>
+      </div>
+
+      {/* Slide name label */}
+      <div className="px-1.5 py-1 bg-[#1a1a1a]" onDoubleClick={handleDoubleClick}>
+        {isEditing ? (
+          <input
+            autoFocus
+            defaultValue={name}
+            onBlur={(e) => handleNameChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleNameChange((e.target as HTMLInputElement).value) }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full bg-transparent text-[9px] text-neutral-300 font-medium border-none outline-none px-0"
+          />
+        ) : (
+          <span className="text-[9px] text-neutral-500 font-medium block truncate">{name}</span>
+        )}
+      </div>
+
+      {/* Index badge */}
+      <span className="absolute top-1 left-1.5 text-[9px] text-neutral-700/60 font-semibold">{index + 1}</span>
+
+      {/* Action buttons on hover */}
+      {isActive && (
+        <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+          <button onClick={onDuplicate} className="p-0.5 rounded text-neutral-500 hover:text-neutral-100 hover:bg-white/10 cursor-pointer border-none bg-transparent">
+            <Copy size={9} />
+          </button>
+          {totalSlides > 1 && (
+            <button onClick={onDelete} className="p-0.5 rounded text-red-600 hover:text-red-400 hover:bg-red-500/10 cursor-pointer border-none bg-transparent">
+              <Trash2 size={9} />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   )
 }

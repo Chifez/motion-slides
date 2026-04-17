@@ -1,6 +1,6 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { AnimatePresence, LayoutGroup } from 'framer-motion'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Palette } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useCanvasScale } from '@/hooks/useCanvasScale'
 import { getCanvasDimensions } from '@/constants/canvas'
@@ -9,14 +9,17 @@ import { CanvasElement } from './CanvasElement'
 
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
+  const [showBgPicker, setShowBgPicker] = useState(false)
 
-  const { activeProject, activeSlide, activeSlideIndex, setActiveSlide, setSelectedElement, playbackSettings } = useEditorStore()
+  const { activeProject, activeSlide, activeSlideIndex, setActiveSlide, setSelectedElement, playbackSettings, updateSlide } = useEditorStore()
   const project = activeProject()
   const slide = activeSlide()
   const totalSlides = project?.slides.length ?? 0
 
   const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
   const scale = useCanvasScale(stageRef, canvasW, canvasH)
+
+  const slideName = slide?.name || `Slide ${activeSlideIndex + 1}`
 
   return (
     <main
@@ -26,10 +29,11 @@ export function CanvasStage() {
     >
       <div
         data-canvas-board
-        className="relative bg-[#0a0a0a] rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)] overflow-hidden"
+        className="relative rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)] overflow-hidden"
         style={{
           width: canvasW,
           height: canvasH,
+          background: slide?.background || '#0a0a0a',
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
         }}
@@ -40,6 +44,52 @@ export function CanvasStage() {
             {slide?.elements.map((el) => <CanvasElement key={el.id} element={el} />)}
           </AnimatePresence>
         </LayoutGroup>
+      </div>
+
+      {/* Slide name + background controls — top-left corner above canvas */}
+      <div
+        className="absolute top-3 left-3 flex items-center gap-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="text-[10px] text-neutral-600 font-medium bg-[#161616]/80 backdrop-blur-sm border border-white/6 rounded-md px-2 py-1">
+          {slideName}
+        </span>
+
+        <div className="relative">
+          <button
+            onClick={() => setShowBgPicker(!showBgPicker)}
+            className="flex items-center gap-1.5 text-[10px] text-neutral-500 hover:text-neutral-200 bg-[#161616]/80 backdrop-blur-sm border border-white/6 rounded-md px-2 py-1 cursor-pointer transition-colors"
+          >
+            <div
+              className="w-3 h-3 rounded-sm border border-white/15"
+              style={{ background: slide?.background || '#0a0a0a' }}
+            />
+            <Palette size={11} />
+          </button>
+
+          {showBgPicker && (
+            <div className="absolute top-full mt-1.5 left-0 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-50 p-3 w-48">
+              <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-2">Slide Background</span>
+              <input
+                type="color"
+                value={slide?.background || '#0a0a0a'}
+                onChange={(e) => updateSlide({ background: e.target.value })}
+                className="w-full h-8 rounded-md cursor-pointer border-none bg-transparent mb-2"
+              />
+              {/* Quick presets */}
+              <div className="flex gap-1 flex-wrap">
+                {['#0a0a0a', '#111827', '#1e1b4b', '#0c4a6e', '#14532d', '#7f1d1d', '#ffffff', '#f5f5f4'].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => updateSlide({ background: c })}
+                    className="w-6 h-6 rounded-md border border-white/10 cursor-pointer transition-transform hover:scale-110"
+                    style={{ background: c }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Playback bar */}

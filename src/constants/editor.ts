@@ -43,6 +43,19 @@ export const FONT_WEIGHT_MAP = {
   bold: 700,
 } as const
 
+/** Available font families for text elements */
+export const FONT_FAMILIES = [
+  { value: 'Inter', label: 'Inter', category: 'sans-serif' },
+  { value: 'Outfit', label: 'Outfit', category: 'sans-serif' },
+  { value: 'Playfair Display', label: 'Playfair Display', category: 'serif' },
+  { value: 'Space Grotesk', label: 'Space Grotesk', category: 'sans-serif' },
+  { value: 'JetBrains Mono', label: 'JetBrains Mono', category: 'monospace' },
+  { value: 'Georgia', label: 'Georgia', category: 'serif' },
+  { value: 'Arial', label: 'Arial', category: 'sans-serif' },
+  { value: 'Times New Roman', label: 'Times New Roman', category: 'serif' },
+  { value: 'Courier New', label: 'Courier New', category: 'monospace' },
+] as const
+
 /** Resize handle positions */
 export const RESIZE_HANDLES = ['tl', 'tm', 'tr', 'ml', 'mr', 'bl', 'bm', 'br'] as const
 
@@ -54,7 +67,15 @@ export const DEFAULT_TEXT_ELEMENT = {
   rotation: 0,
   opacity: 1,
   zIndex: 10,
-  content: { value: 'Text', fontSize: 28, fontWeight: 'bold' as const, color: '#ffffff', align: 'left' as const },
+  content: {
+    value: 'Text',
+    fontSize: 28,
+    fontWeight: 'bold' as const,
+    fontFamily: 'Inter',
+    fontStyle: 'normal' as const,
+    color: '#ffffff',
+    align: 'left' as const,
+  },
 }
 
 export const DEFAULT_CODE_ELEMENT = {

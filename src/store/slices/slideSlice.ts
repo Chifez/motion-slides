@@ -10,6 +10,7 @@ export interface SlideSlice {
   deleteSlide: (index: number) => void
   duplicateSlide: (index: number) => void
   setActiveSlide: (index: number) => void
+  updateSlide: (updates: Partial<Pick<Slide, 'name' | 'background'>>) => void
   activeSlide: () => Slide | null
 }
 
@@ -26,7 +27,9 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
   addSlide: () => {
     const { activeProjectId } = get()
     if (!activeProjectId) return
-    const newSlide = createDefaultSlide()
+    const project = get().activeProject()
+    const slideNum = (project?.slides.length ?? 0) + 1
+    const newSlide = createDefaultSlide({ name: `Slide ${slideNum}` })
     set((s) => ({
       projects: s.projects.map((p) =>
         p.id !== activeProjectId
@@ -61,6 +64,7 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
       const clone: Slide = {
         ...original,
         id: nanoid(),
+        name: `${original.name || 'Slide'} copy`,
         elements: original.elements.map((el) => ({ ...el, id: nanoid() })),
         connections: original.connections.map((c) => ({ ...c, id: nanoid() })),
       }
@@ -76,6 +80,21 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
         activeSlideIndex: index + 1,
       }
     })
+  },
+
+  updateSlide: (updates) => {
+    const { activeProjectId, activeSlideIndex } = get()
+    if (!activeProjectId) return
+    set((s) => ({
+      projects: s.projects.map((p) => {
+        if (p.id !== activeProjectId) return p
+        const slides = p.slides.map((sl, i) => {
+          if (i !== activeSlideIndex) return sl
+          return { ...sl, ...updates }
+        })
+        return { ...p, slides, updatedAt: Date.now() }
+      }),
+    }))
   },
 
   setActiveSlide: (index) => {

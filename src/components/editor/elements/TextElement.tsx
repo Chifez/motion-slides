@@ -13,12 +13,13 @@ export function TextElement({ content }: Props) {
         alignItems: 'center',
         fontSize: content.fontSize,
         fontWeight: FONT_WEIGHT_MAP[content.fontWeight],
+        fontFamily: `"${content.fontFamily || 'Inter'}", sans-serif`,
+        fontStyle: content.fontStyle || 'normal',
         color: content.color,
         textAlign: content.align,
         lineHeight: 1.2,
         wordBreak: 'break-word',
         overflow: 'hidden',
-        fontFamily: 'Inter, sans-serif',
       }}
     >
       {content.value}

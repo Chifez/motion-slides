@@ -6,6 +6,7 @@ import { CANVAS_BG } from '@/constants/canvas'
 export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
   return {
     id: nanoid(),
+    name: '',
     elements: [],
     connections: [],
     background: CANVAS_BG,
@@ -16,12 +17,13 @@ export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
 /** Creates a seeded demo project with two slides */
 export function createDefaultProject(name = 'Untitled Deck') {
   const slide1 = createDefaultSlide({
+    name: 'Slide 1',
     elements: [
       {
         id: 'el-title', type: 'text',
         position: { x: 80, y: 80 }, size: { width: 640, height: 80 },
         rotation: 0, opacity: 1, zIndex: 1,
-        content: { value: 'My First Slide', fontSize: 48, fontWeight: 'bold', color: '#ffffff', align: 'left' },
+        content: { value: 'My First Slide', fontSize: 48, fontWeight: 'bold', fontFamily: 'Inter', fontStyle: 'normal', color: '#ffffff', align: 'left' },
       },
       {
         id: 'el-code', type: 'code',
@@ -33,12 +35,13 @@ export function createDefaultProject(name = 'Untitled Deck') {
   })
 
   const slide2 = createDefaultSlide({
+    name: 'Slide 2',
     elements: [
       {
         id: 'el-title', type: 'text',
         position: { x: 80, y: 40 }, size: { width: 640, height: 80 },
         rotation: 0, opacity: 1, zIndex: 1,
-        content: { value: 'My First Slide', fontSize: 48, fontWeight: 'bold', color: '#ffffff', align: 'left' },
+        content: { value: 'My First Slide', fontSize: 48, fontWeight: 'bold', fontFamily: 'Inter', fontStyle: 'normal', color: '#ffffff', align: 'left' },
       },
       {
         id: 'el-code', type: 'code',

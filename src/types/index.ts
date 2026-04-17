@@ -30,6 +30,8 @@ export interface TextContent {
   value: string
   fontSize: number
   fontWeight: 'normal' | 'medium' | 'semibold' | 'bold'
+  fontFamily: string
+  fontStyle: 'normal' | 'italic'
   color: string
   align: 'left' | 'center' | 'right'
 }
@@ -57,17 +59,24 @@ export interface SceneElement {
   content: TextContent | CodeContent | ShapeContent
 }
 
+export type AnchorPosition = 'top' | 'right' | 'bottom' | 'left'
+
 export interface Connection {
   id: string
   fromId: string
   toId: string
+  fromAnchor: AnchorPosition
+  toAnchor: AnchorPosition
   label?: string
   style: 'solid' | 'dashed' | 'dotted'
   arrow: 'none' | 'end' | 'both'
+  color: string
+  strokeWidth: number
 }
 
 export interface Slide {
   id: string
+  name: string
   elements: SceneElement[]
   connections: Connection[]
   background: string
