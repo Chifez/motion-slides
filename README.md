@@ -1,193 +1,87 @@
-Welcome to your new TanStack Start app! 
+# 🎬 MotionSlides
 
-# Getting Started
+**MotionSlides** is a high-fidelity, web-based presentation engine designed to bring Apple Keynote-level "Magic Move" transitions and developer-centric features to the browser.
 
-To run this application:
+Built for presenters who demand fluid, physics-based animations and seamless code-block transitions, MotionSlides treats every slide as a scene state, automatically calculating the most elegant way to move, morph, and build elements.
 
-```bash
-npm install
-npm run dev
-```
+---
 
-# Building For Production
+## ✨ Key Features
 
-To build this application for production:
+### 🪄 Magic Move (Smart Identity)
+Unlike traditional slide decks that rely on simple fade transitions, MotionSlides uses a state-based diffing engine. 
+- **FLIP Animation**: Elements present on multiple slides are automatically matched and interpolated using the FLIP (First, Last, Invert, Play) technique.
+- **Identity Tracking**: Elements maintain a persistent identity, allowing them to glide, scale, and rotate smoothly across the canvas.
+- **Spring Physics**: All motion is powered by second-order differential equations (Springs), giving every transition a weighted, premium feel.
 
-```bash
-npm run build
-```
+### 💻 Code Morphing
+Presenting code has never been smoother.
+- **LCS Diffing**: Uses the Longest Common Subsequence algorithm to diff code lines. Unchanged lines slide vertically to their new positions, while new lines cascade in.
+- **Syntax-Aware**: Powered by **Shiki**, providing beautiful, accurate syntax highlighting for dozens of languages.
+- **Cascading Builds**: Added and removed lines use staggered delays for a professional "building" effect.
 
-## Testing
+### 🎨 Modern Canvas Editor
+A professional editing experience inspired by Figma and Keynote.
+- **Layer Management**: Control z-index, opacity, and grouping.
+- **Smart Connectors**: Line tools that "stretch" and morph between shapes as they move.
+- **Vector Shapes**: Custom SVG paths with real-time coordinate interpolation.
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+###  Prototype Mode
+Map out your presentation flow using a visual, node-based transition editor powered by `@xyflow/react`. Define how slides connect and which triggers (click, auto, timer) drive the story.
 
-```bash
-npm run test
-```
+---
 
-## Styling
+## Tech Stack
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+- **Framework**: [TanStack Start](https://tanstack.com/start) (React 19 + SSR)
+- **Animation**: [Framer Motion](https://www.framer.com/motion/) (Layout Projection & Springs)
+- **Code Highlighting**: [Shiki](https://shiki.style/)
+- **State Management**: [Zustand](https://zustand-demo.pmnd.rs/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Diagramming**: [@xyflow/react](https://reactflow.dev/)
 
-### Removing Tailwind CSS
+---
 
-If you prefer not to use Tailwind CSS:
+## 🚀 Getting Started
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `npm install @tailwindcss/vite tailwindcss -D`
+### Prerequisites
+- Node.js (v20+)
+- npm / pnpm / yarn
 
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Chifez/motion-slides.git
+   ```
 
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Routing
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Adding A Route
+---
 
-To add a new route to your application just add a new file in the `./src/routes` directory.
+## 🧠 Architecture: How it Works
 
-TanStack will automatically generate the content of the route file for you.
+1. **Match**: The `motionEngine` compares Slide A and Slide B to find elements with matching IDs or matching heuristics.
+2. **Diff**: It identifies which elements are *Continuing*, *Added*, or *Removed*.
+3. **Measure**: The browser records the "Final" layout of all elements.
+4. **Invert**: The engine calculates the delta from the "Initial" layout.
+5. **Animate**: Framer Motion projects the elements back to their initial state and animates the deltas using spring physics.
 
-Now that you have two routes you can use a `Link` component to navigate between them.
+---
 
-### Adding Links
+## 📄 License
 
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-```tsx
-import { Link } from "@tanstack/react-router";
-```
+---
 
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+Built for the creative developer community.
