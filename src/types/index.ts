@@ -14,9 +14,9 @@ export type ShapeType =
   | 'queue'
   | 'document'
 
-export type LineType = 'straight' | 'elbow' | 'curved'
+export type LineType = 'straight' | 'elbow' | 'curved' | 'step-after' | 'step-before' | 'y-shaped'
 
-export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line'
+export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line' | 'chart'
 
 export interface Position {
   x: number
@@ -41,6 +41,29 @@ export interface TextContent {
 export interface CodeContent {
   value: string
   language: string
+  fontSize?: number
+  fontFamily?: string
+  lineHeight?: number
+  theme?: string
+}
+
+export type ChartType = 'bar' | 'line' | 'pie' | 'area'
+
+export interface ChartDataPoint {
+  label: string
+  value: number
+  color?: string
+  stack?: number[]
+}
+
+export interface ChartContent {
+  chartType: ChartType
+  data: ChartDataPoint[]
+  showLabels?: boolean
+  showGrid?: boolean
+  colors?: string[]
+  barSize?: number
+  isStacked?: boolean
 }
 
 export interface ShapeContent {
@@ -72,7 +95,9 @@ export interface SceneElement {
   rotation: number
   opacity: number
   zIndex: number
-  content: TextContent | CodeContent | ShapeContent | LineContent
+  locked?: boolean
+  groupId?: string
+  content: TextContent | CodeContent | ShapeContent | LineContent | ChartContent
 }
 
 export interface Slide {

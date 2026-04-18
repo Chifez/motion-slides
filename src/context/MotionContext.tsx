@@ -106,7 +106,7 @@ export function MotionProvider({ settings, previousSlide, currentSlide, activeTr
     const newIds = getNewElementIds(previousSlide, currentSlide)
 
     return {
-      isTransitioning: true,
+      isTransitioning: !!previousSlide,
       transition,
       durationSec,
       ease,

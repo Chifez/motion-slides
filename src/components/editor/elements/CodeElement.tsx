@@ -258,7 +258,14 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
   // ─────────────────────────────────────────────
 
   return (
-    <div className="font-mono text-[12px] leading-relaxed bg-[#121212] rounded-lg px-3.5 py-3 w-full h-full overflow-auto">
+    <div 
+      className="bg-[#121212] rounded-lg px-3.5 py-3 w-full h-full overflow-auto"
+      style={{ 
+        fontFamily: content.fontFamily || 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+        fontSize: content.fontSize || 12,
+        lineHeight: content.lineHeight || 1.5,
+      }}
+    >
       <div className="text-[9px] uppercase tracking-wider text-neutral-600 mb-2 select-none">
         {content.language || 'javascript'}
       </div>
@@ -275,7 +282,15 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
         <div
           ref={ghostRef}
           aria-hidden="true"
-          style={{ opacity: 0, pointerEvents: 'none', userSelect: 'none', whiteSpace: 'pre-wrap' }}
+          style={{ 
+            opacity: 0, 
+            pointerEvents: 'none', 
+            userSelect: 'none', 
+            whiteSpace: 'pre-wrap',
+            fontFamily: content.fontFamily || 'inherit',
+            fontSize: content.fontSize || 'inherit',
+            lineHeight: content.lineHeight || 'inherit',
+          }}
         >
           {ghostTokens.map((tok) => (
             <span key={tok.key} data-tok={tok.key}>{tok.content}</span>

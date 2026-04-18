@@ -1,22 +1,47 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { AnimatePresence, LayoutGroup } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Palette } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useCanvasScale } from '@/hooks/useCanvasScale'
 import { getCanvasDimensions } from '@/constants/canvas'
-import { CanvasElement } from './CanvasElement'
+import { MotionStage } from './MotionStage'
 
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
   const [showBgPicker, setShowBgPicker] = useState(false)
 
-  const { activeProject, activeSlide, activeSlideIndex, setActiveSlide, setSelectedElement, playbackSettings, updateSlide } = useEditorStore()
+  const { 
+    activeProject, activeSlide, activeSlideIndex, setActiveSlide, 
+    setSelectedElement, playbackSettings, updateSlide,
+    camera, setCamera 
+  } = useEditorStore()
   const project = activeProject()
   const slide = activeSlide()
   const totalSlides = project?.slides.length ?? 0
 
   const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
   const scale = useCanvasScale(stageRef, canvasW, canvasH)
+
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        const delta = e.deltaY > 0 ? 0.9 : 1.1
+        // We use functional update or capture current values from store
+        const currentCamera = useEditorStore.getState().camera
+        setCamera({ zoom: Math.min(Math.max(currentCamera.zoom * delta, 0.05), 10) })
+      } else {
+        const currentCamera = useEditorStore.getState().camera
+        setCamera({ x: currentCamera.x - e.deltaX, y: currentCamera.y - e.deltaY })
+      }
+    }
+
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [setCamera])
 
   const slideName = slide?.name || `Slide ${activeSlideIndex + 1}`
 
@@ -33,15 +58,16 @@ export function CanvasStage() {
           width: canvasW,
           height: canvasH,
           background: slide?.background || '#0a0a0a',
-          transform: `scale(${scale})`,
+          transform: `translate(${camera.x}px, ${camera.y}px) scale(${scale * camera.zoom})`,
           transformOrigin: 'center center',
         }}
       >
-        <LayoutGroup>
-          <AnimatePresence>
-            {slide?.elements.map((el) => <CanvasElement key={el.id} element={el} />)}
-          </AnimatePresence>
-        </LayoutGroup>
+        <MotionStage
+          mode="editor"
+          slide={slide}
+          previousSlide={null}
+          settings={playbackSettings}
+        />
       </div>
 
       {/* Slide name + background controls */}

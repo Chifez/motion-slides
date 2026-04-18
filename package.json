@@ -23,11 +23,13 @@
     "@xyflow/react": "^12.10.2",
     "diff": "^9.0.0",
     "framer-motion": "^12.38.0",
+    "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "idb-keyval": "^6.2.2",
     "lucide-react": "^0.545.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "recharts": "^3.8.1",
     "shiki": "^4.0.2",
     "tailwindcss": "^4.1.18",
     "zustand": "^5.0.12"

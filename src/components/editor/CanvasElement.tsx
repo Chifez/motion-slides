@@ -5,11 +5,12 @@ import { useMotionContext } from '@/context/MotionContext'
 import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS } from '@/constants/animation'
 import { SELECTED_Z_INDEX } from '@/constants/canvas'
 import { PHASE_2_DELAY } from '@/lib/motionEngine'
-import type { SceneElement, TextContent, CodeContent, ShapeContent, LineContent } from '@/types'
+import type { SceneElement, TextContent, CodeContent, ShapeContent, LineContent, ChartContent } from '@/types'
 import { TextElement } from './elements/TextElement'
 import { CodeElement } from './elements/CodeElement'
 import { ShapeElement } from './elements/ShapeElement'
 import { LineElement } from './elements/LineElement'
+import { ChartElement } from './elements/ChartElement'
 import { BoundingBox } from './BoundingBox'
 
 interface Props {
@@ -37,13 +38,22 @@ export function CanvasElement({ element }: Props) {
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
-    if (!isDragging.current) setSelectedElement(element.id)
+    // Select here too as a fallback if onPointerDown was blocked or missed.
+    if (!element.locked) setSelectedElement(element.id)
   }
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest('.bounding-box')) return
     e.stopPropagation()
-    e.preventDefault()
+    
+    // Select on pointerdown (Figma style)
+    if (!element.locked) {
+      setSelectedElement(element.id)
+    }
+
+    // Only prevent default if we're not clicking an interactive element inside
+    // e.preventDefault() // Removing this to allow click events to bubble if needed, but we handle selection here now.
+
     isDragging.current = false
     dragStart.current = { x: e.clientX, y: e.clientY, elX: element.position.x, elY: element.position.y }
 
@@ -51,6 +61,7 @@ export function CanvasElement({ element }: Props) {
     el.setPointerCapture(e.pointerId)
 
     const onMove = (ev: PointerEvent) => {
+      if (element.locked) return
       const dx = ev.clientX - dragStart.current.x
       const dy = ev.clientY - dragStart.current.y
       if (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX) isDragging.current = true
@@ -70,7 +81,7 @@ export function CanvasElement({ element }: Props) {
 
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
-  }, [element.id, element.position.x, element.position.y, updateElement])
+  }, [element.id, element.position.x, element.position.y, element.locked, setSelectedElement, updateElement])
 
   function renderContent() {
     switch (element.type) {
@@ -78,6 +89,7 @@ export function CanvasElement({ element }: Props) {
       case 'code': return <CodeElement content={element.content as CodeContent} elementId={element.id} />
       case 'shape': return <ShapeElement content={element.content as ShapeContent} />
       case 'line': return <LineElement content={element.content as LineContent} />
+      case 'chart': return <ChartElement content={element.content as ChartContent} />
       default: return null
     }
   }

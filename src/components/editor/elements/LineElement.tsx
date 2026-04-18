@@ -26,6 +26,16 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
       const cy2 = y2
       return `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`
     }
+    case 'step-after':
+      return `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`
+    case 'step-before':
+      return `M ${x1} ${y1} L ${x1} ${y2} L ${x2} ${y2}`
+    case 'y-shaped': {
+      const midX = (x1 + x2) / 2
+      const midY = (y1 + y2) / 2
+      // Branches from start to midpoint, then splits to two points (we simulate split for now)
+      return `M ${x1} ${y1} L ${midX} ${midY} M ${midX} ${midY} L ${x2} ${y1} M ${midX} ${midY} L ${x2} ${y2}`
+    }
     default:
       return `M ${x1} ${y1} L ${x2} ${y2}`
   }

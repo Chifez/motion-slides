@@ -116,9 +116,33 @@ export const DEFAULT_LINE_ELEMENT = {
   },
 }
 
+export const DEFAULT_CHART_ELEMENT = {
+  type: 'chart' as const,
+  position: { x: 100, y: 100 },
+  size: { width: 400, height: 280 },
+  rotation: 0,
+  opacity: 1,
+  zIndex: 10,
+  content: {
+    chartType: 'bar' as const,
+    data: [
+      { label: 'A', value: 45 },
+      { label: 'B', value: 72 },
+      { label: 'C', value: 38 },
+      { label: 'D', value: 65 },
+    ],
+    showLabels: true,
+    showGrid: true,
+    colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+  },
+}
+
 /** Line type presets for the toolbar dropdown */
 export const LINE_TYPE_OPTIONS = [
   { value: 'straight', label: 'Straight', icon: '—' },
   { value: 'elbow', label: 'Elbow', icon: '⌐' },
   { value: 'curved', label: 'Curved', icon: '∿' },
+  { value: 'step-after', label: 'Step After', icon: '┐' },
+  { value: 'step-before', label: 'Step Before', icon: '└' },
+  { value: 'y-shaped', label: 'Y-Shaped', icon: 'Y' },
 ] as const

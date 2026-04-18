@@ -1,11 +1,12 @@
 import { Trash2 } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
-import type { TextContent, CodeContent, ShapeContent, LineContent } from '@/types'
+import type { TextContent, CodeContent, ShapeContent, LineContent, ChartContent } from '@/types'
 import { TransformSection } from './inspector/TransformSection'
 import { TextSection } from './inspector/TextSection'
 import { CodeSection } from './inspector/CodeSection'
 import { ShapeSection } from './inspector/ShapeSection'
 import { LineSection } from './inspector/LineSection'
+import { ChartSection } from './inspector/ChartSection'
 
 const sectionCls = "px-3 py-3 border-b border-white/6"
 
@@ -57,6 +58,9 @@ export function InspectorPanel() {
           onUpdate={(c) => update({ content: c })}
           onDelete={() => deleteElement(element.id)}
         />
+      )}
+      {element.type === 'chart' && (
+        <ChartSection content={element.content as ChartContent} onUpdate={(c) => update({ content: c })} />
       )}
     </aside>
   )

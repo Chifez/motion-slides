@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Copy, Trash2, Sparkles, Type, Code2, Square, Minus, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, Copy, Trash2, Sparkles, Type, Code2, Square, Minus, ChevronDown, ChevronRight, Lock, Unlock, BarChart3 } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import type { SceneElement } from '@/types'
 
@@ -26,7 +26,7 @@ export function SlidePanel() {
       </div>
 
       {/* Slide list */}
-      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5">
+      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 min-h-0 custom-scrollbar">
         {slides.map((slide, i) => (
           <SlideThumb
             key={slide.id}
@@ -68,6 +68,7 @@ function ElementIcon({ type }: { type: SceneElement['type'] }) {
     case 'code':  return <Code2 size={9} className={cls} />
     case 'shape': return <Square size={9} className={cls} />
     case 'line':  return <Minus size={9} className={cls} />
+    case 'chart': return <BarChart3 size={9} className={cls} />
     default:      return <Square size={9} className={cls} />
   }
 }
@@ -90,21 +91,42 @@ function elementLabel(el: SceneElement): string {
 // ─────────────────────────────────────────────
 
 function ElementRow({ element }: { element: SceneElement }) {
-  const { selectedElementId, setSelectedElement } = useEditorStore()
+  const { selectedElementId, setSelectedElement, toggleElementLock, deleteElement } = useEditorStore()
   const isSelected = selectedElementId === element.id
+  const isLocked = element.locked
 
   return (
-    <button
-      onClick={(e) => { e.stopPropagation(); setSelectedElement(element.id) }}
-      className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer border-none transition-colors ${
-        isSelected
-          ? 'bg-blue-500/20 text-blue-300'
-          : 'bg-transparent text-neutral-500 hover:bg-white/5 hover:text-neutral-300'
-      }`}
-    >
-      <ElementIcon type={element.type} />
-      <span className="text-[9px] font-medium truncate flex-1">{elementLabel(element)}</span>
-    </button>
+    <div className="group/row relative">
+      <div
+        onClick={(e) => { e.stopPropagation(); setSelectedElement(element.id) }}
+        className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer transition-colors ${
+          isSelected
+            ? 'bg-blue-500/20 text-blue-300'
+            : 'bg-transparent text-neutral-500 hover:bg-white/5 hover:text-neutral-300'
+        }`}
+      >
+        <ElementIcon type={element.type} />
+        <span className="text-[9px] font-medium truncate flex-1">{elementLabel(element)}</span>
+        
+        {/* Lock indicator (visible if locked OR on hover) */}
+        {(isLocked || isSelected) && (
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleElementLock(element.id) }}
+            className={`p-0.5 rounded transition-colors ${isLocked ? 'text-blue-400' : 'text-neutral-600 opacity-0 group-hover/row:opacity-100 hover:text-neutral-300'} border-none bg-transparent cursor-pointer`}
+          >
+            {isLocked ? <Lock size={8} /> : <Unlock size={8} />}
+          </button>
+        )}
+
+        {/* Delete button (only on hover) */}
+        <button
+          onClick={(e) => { e.stopPropagation(); deleteElement(element.id) }}
+          className="p-0.5 rounded text-neutral-600 opacity-0 group-hover/row:opacity-100 hover:text-red-400 border-none bg-transparent cursor-pointer"
+        >
+          <Trash2 size={8} />
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -222,7 +244,7 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
 
           {/* Element rows — reversed so top-z-index is first (Figma convention) */}
           {layersOpen && (
-            <div className="pb-1 px-1 flex flex-col gap-px">
+            <div className="pb-1 px-1 flex flex-col gap-px max-h-[160px] overflow-y-auto custom-scrollbar">
               {[...elements].reverse().map((el) => (
                 <ElementRow key={el.id} element={el} />
               ))}

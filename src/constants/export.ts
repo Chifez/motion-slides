@@ -42,7 +42,7 @@ export const EXPORT_RESOLUTIONS: Record<
 }
 
 /** Video export bitrate (bits per second) */
-export const EXPORT_BITRATE = 20_000_000
+export const EXPORT_BITRATE = 50_000_000
 
 /** Preferred MIME type for video export */
 export const EXPORT_MIME_TYPE_VP9 = 'video/webm;codecs=vp9'
@@ -88,5 +88,5 @@ export const DEFAULT_PLAYBACK_SETTINGS: PlaybackSettings = {
   transitionDuration: 500,
   transitionEase: { x1: 0.25, y1: 0.1, x2: 0.25, y2: 1 }, // Apple
   aspectRatio: '16:9',
-  exportResolution: { ...EXPORT_RESOLUTIONS['16:9'][0] },
+  exportResolution: { ...EXPORT_RESOLUTIONS['16:9'][1] },
 }

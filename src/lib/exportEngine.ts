@@ -8,7 +8,7 @@
 import { useEditorStore } from '@/store/editorStore'
 import { EXPORT_BITRATE, EXPORT_MIME_TYPE_VP9, EXPORT_MIME_TYPE_FALLBACK } from '@/constants/export'
 import { getCanvasDimensions } from '@/constants/canvas'
-import html2canvas from 'html2canvas'
+import * as htmlToImage from 'html-to-image'
 
 export type ExportFormat = 'webm' | 'pdf'
 
@@ -60,7 +60,10 @@ export async function exportAsVideo(
 
   recorder.start()
   store.setActiveSlide(0)
-  await sleep(1000)
+  
+  // High-fidelity warmup: wait for fonts and initial layout
+  await document.fonts.ready
+  await sleep(1500)
   await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
 
   for (let i = 0; i < totalSlides; i++) {
@@ -69,15 +72,23 @@ export async function exportAsVideo(
     if (i > 0) {
       store.setActiveSlide(i)
       const startTime = Date.now()
-      while (Date.now() - startTime < transitionDuration) {
+      // Capture more frequently during transition for better frame density
+      while (Date.now() - startTime < transitionDuration + 200) {
         await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
+        await sleep(16) // Aim for ~60fps capture attempts
       }
     }
 
     await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
 
     onProgress({ stage: 'recording', currentSlide: i + 1, totalSlides, message: `Holding slide ${i + 1}…` })
-    await sleep(autoplayDelay)
+    
+    // During hold, we still need to capture some frames to keep the stream alive
+    const holdStart = Date.now()
+    while (Date.now() - holdStart < autoplayDelay) {
+      await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
+      await sleep(100)
+    }
   }
 
   onProgress({ stage: 'encoding', currentSlide: totalSlides, totalSlides, message: 'Finalizing movie…' })
@@ -100,19 +111,17 @@ async function captureFrame(
   canvasDims: { width: number; height: number },
 ) {
   try {
-    // Scale relative to the logical canvas dimensions, not the DOM element's layout size
-    // This ensures correct scaling regardless of CSS transforms applied to the canvas board
     const scaleFactor = resolution.width / canvasDims.width
 
-    const screenshot = await html2canvas(source, {
-      backgroundColor: null,
-      scale: scaleFactor,
+    // html-to-image is much faster and more accurate for modern CSS/SVGs
+    const screenshot = await htmlToImage.toCanvas(source, {
       width: canvasDims.width,
       height: canvasDims.height,
-      useCORS: true,
-      logging: false,
-      imageTimeout: 0,
+      pixelRatio: scaleFactor,
+      skipAutoScale: true,
+      backgroundColor: '#0a0a0a',
     })
+    
     ctx.drawImage(screenshot, 0, 0, canvas.width, canvas.height)
   } catch (err) {
     console.error('Frame capture failed:', err)

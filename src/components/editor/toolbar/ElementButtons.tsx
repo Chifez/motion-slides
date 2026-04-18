@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
-import { Type, Code2, Shapes, Minus, ChevronDown } from 'lucide-react'
+import { Type, Code2, Shapes, Minus, ChevronDown, BarChart3 } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { nanoid } from '@/lib/nanoid'
-import { DEFAULT_TEXT_ELEMENT, DEFAULT_CODE_ELEMENT, DEFAULT_SHAPE_ELEMENT, DEFAULT_LINE_ELEMENT, LINE_TYPE_OPTIONS } from '@/constants/editor'
+import { DEFAULT_TEXT_ELEMENT, DEFAULT_CODE_ELEMENT, DEFAULT_SHAPE_ELEMENT, DEFAULT_LINE_ELEMENT, DEFAULT_CHART_ELEMENT, LINE_TYPE_OPTIONS } from '@/constants/editor'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import type { LineType } from '@/types'
 
@@ -17,6 +17,7 @@ export function ElementButtons() {
   const addText = () => addElement({ ...DEFAULT_TEXT_ELEMENT, id: nanoid() })
   const addCode = () => addElement({ ...DEFAULT_CODE_ELEMENT, id: nanoid() })
   const addShape = () => addElement({ ...DEFAULT_SHAPE_ELEMENT, id: nanoid() })
+  const addChart = () => addElement({ ...DEFAULT_CHART_ELEMENT, id: nanoid() })
 
   const addLine = (lineType: LineType) => {
     const lineContent = { ...DEFAULT_LINE_ELEMENT.content, lineType }
@@ -43,6 +44,9 @@ export function ElementButtons() {
       </button>
       <button className={btnBase} onClick={addShape}>
         <Shapes size={13} /> Shape
+      </button>
+      <button className={btnBase} onClick={addChart}>
+        <BarChart3 size={13} /> Chart
       </button>
       <div className="w-px h-5 bg-white/8 mx-0.5" />
       <div className="relative" ref={lineRef}>

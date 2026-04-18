@@ -7,8 +7,7 @@ import { useAutoplay } from '@/hooks/useAutoplay'
 import { useFullscreen } from '@/hooks/useFullscreen'
 import { useAutoHide } from '@/hooks/useAutoHide'
 import { getCanvasDimensions } from '@/constants/canvas'
-import { MotionProvider } from '@/context/MotionContext'
-import { CanvasElement } from './CanvasElement'
+import { MotionStage } from './MotionStage'
 import { PresentationControls } from './presentation/PresentationControls'
 
 /**
@@ -129,21 +128,13 @@ export function PresentationOverlay() {
           background: slide.background || '#0a0a0a',
         }}
       >
-        {/* MotionProvider injects user's duration, easing, AND identity tracking */}
-        <MotionProvider
-          settings={playbackSettings}
+        <MotionStage
+          mode="presentation"
+          slide={slide}
           previousSlide={previousSlide}
-          currentSlide={slide}
+          settings={playbackSettings}
           activeTransition={activeTransition}
-        >
-          <LayoutGroup>
-            <AnimatePresence mode="sync">
-              {slide.elements.map((el) => (
-                <CanvasElement key={el.id} element={el} />
-              ))}
-            </AnimatePresence>
-          </LayoutGroup>
-        </MotionProvider>
+        />
       </div>
 
       {/* Controls — auto-hide */}
@@ -165,6 +156,14 @@ export function PresentationOverlay() {
           onPrev={handlePrev}
           onNext={handleNext}
           onToggleAutoplay={() => setAutoplayPaused(!autoplayPaused)}
+        />
+      </div>
+
+      {/* Progress Bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/5 overflow-hidden z-[10000]">
+        <div 
+          className="h-full bg-blue-500 transition-all duration-300 ease-out"
+          style={{ width: `${((activeSlideIndex + 1) / totalSlides) * 100}%` }}
         />
       </div>
     </div>
