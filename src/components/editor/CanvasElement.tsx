@@ -23,6 +23,7 @@ export function CanvasElement({ element }: Props) {
   const {
     isTransitioning,
     durationSec,
+    ease,
     continuingIds,
     transitionAnimation,
   } = useMotionContext()
@@ -74,7 +75,7 @@ export function CanvasElement({ element }: Props) {
   function renderContent() {
     switch (element.type) {
       case 'text': return <TextElement content={element.content as TextContent} />
-      case 'code': return <CodeElement content={element.content as CodeContent} />
+      case 'code': return <CodeElement content={element.content as CodeContent} elementId={element.id} />
       case 'shape': return <ShapeElement content={element.content as ShapeContent} />
       case 'line': return <LineElement content={element.content as LineContent} />
       default: return null
@@ -145,10 +146,8 @@ export function CanvasElement({ element }: Props) {
         // NO exit — continuing elements don't exit, they morph
         transition={{
           layout: {
-            type: 'spring',
-            stiffness: 260,
-            damping: 28,
-            mass: 1,
+            duration: durationSec,
+            ease: ease,
           },
           opacity: { duration: durationSec * 0.4, ease: 'easeInOut' },
         }}

@@ -6,18 +6,15 @@ import { getTokenizedLines } from '@/lib/shikiHighlighter'
 import { tokenKey, CODE_PHASE } from '@/lib/motionEngine'
 import { useMotionContext } from '@/context/MotionContext'
 
-interface Props { content: CodeContent }
+interface Props {
+  content: CodeContent
+  elementId: string
+}
 
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
 
-/**
- * A flat token with a stable cross-line identity key.
- * All tokens for ALL lines are flattened into one array —
- * this is what enables cross-line FLIP (e.g. `}` moving from
- * line 3 to line 7 is tracked as the same token).
- */
 interface FlatToken {
   key: string
   content: string
@@ -32,24 +29,27 @@ interface Rect {
   height: number
 }
 
-/**
- * AnimToken = FlatToken + measured position + FLIP delta.
- *
- * Rendered as `position: absolute` in the stage layer at (x, y).
- * For "unchanged" tokens, `dx`/`dy` is the offset from old→new position;
- * Framer Motion animates from `initial={{ x: dx, y: dy }}` → `animate={{ x: 0, y: 0 }}`.
- */
 interface AnimToken extends FlatToken {
   x: number
   y: number
   width: number
   height: number
-  /** FLIP offset: prevX - nextX (start here, animate to 0) */
+  /**
+   * FLIP offsets: delta from the token's NEW position back to its OLD position.
+   * We render at `style.left=newX, style.top=newY`, then `initial={{ x:dx, y:dy }}`
+   * visually places it at the old position, and `animate={{ x:0, y:0 }}` flies it forward.
+   */
   dx: number
-  /** FLIP offset: prevY - nextY (start here, animate to 0) */
   dy: number
   status: 'unchanged' | 'added' | 'removed'
   staggerIndex: number
+  /**
+   * Incremented on every content change. Used as a React key suffix on "unchanged"
+   * tokens so they remount on every transition — which is the only way to guarantee
+   * that Framer Motion's `initial` prop fires (it only fires on mount, not re-renders).
+   * Without this, unchanged tokens snap instead of flying because `initial` is ignored.
+   */
+  transitionId: number
 }
 
 // ─────────────────────────────────────────────
@@ -57,15 +57,9 @@ interface AnimToken extends FlatToken {
 // ─────────────────────────────────────────────
 
 /**
- * Structural punctuation characters that Shiki may bundle together into a
- * single token in one context (e.g. `{}` as an inline empty block) but emit
- * as individual tokens in another (e.g. `{` and `}` on separate lines).
- *
- * We split any token that is composed entirely of these characters into
- * individual single-character tokens, each inheriting the parent token's
- * color and fontStyle. This guarantees that `{}` and `{ }` and `{\n}`
- * all produce the same keys for `{` and `}`, making cross-slide FLIP work
- * regardless of how Shiki chose to group the punctuation.
+ * Punctuation chars that Shiki sometimes bundles (e.g. `{}`, `=>`) and sometimes
+ * emits individually. Splitting normalises them so the same structural character
+ * always gets the same stable key regardless of Shiki's grouping decision.
  */
 const PUNCTUATION_CHARS = new Set([
   '{', '}', '(', ')', '[', ']', '<', '>',
@@ -77,77 +71,39 @@ function isPurelyPunctuation(text: string): boolean {
   return text.length > 1 && [...text].every((ch) => PUNCTUATION_CHARS.has(ch))
 }
 
-/**
- * Split a token into individual single-character sub-tokens when it is
- * composed entirely of punctuation characters. Otherwise return as-is.
- * Each sub-token inherits the parent's color and fontStyle.
- */
 function splitToken(tok: { content: string; color: string; fontStyle: number }) {
   if (!isPurelyPunctuation(tok.content)) return [tok]
   return [...tok.content].map((ch) => ({ content: ch, color: tok.color, fontStyle: tok.fontStyle }))
 }
 
-/**
- * Tokenize code and flatten all lines into a single array with stable cross-line keys.
- *
- * KEY DESIGN: Occurrence counting is global across ALL lines.
- * So two `}` tokens on different lines get `tk-xxx-0` and `tk-xxx-1`.
- * If they swap positions between slides, each keeps its identity and FLIP animates it.
- *
- * Multi-character punctuation tokens (e.g. `{}`, `=>`) are split into
- * individual characters before key assignment so that the same structural
- * character always gets the same key regardless of how Shiki grouped it.
- */
-async function buildFlatTokens(
-  value: string,
-  language: string,
-): Promise<FlatToken[]> {
+async function buildFlatTokens(value: string, language: string): Promise<FlatToken[]> {
   const lines = await getTokenizedLines(value || ' ', language || 'javascript')
   const occMap = new Map<string, number>()
   const flat: FlatToken[] = []
 
   for (let li = 0; li < lines.length; li++) {
     for (const rawTok of lines[li]) {
-      // Normalise: split pure-punctuation compound tokens into single chars
-      const subTokens = splitToken(rawTok)
-      for (const tok of subTokens) {
+      for (const tok of splitToken(rawTok)) {
         const occ = occMap.get(tok.content) ?? 0
         occMap.set(tok.content, occ + 1)
-        flat.push({
-          key: tokenKey(tok.content, occ),
-          content: tok.content,
-          color: tok.color,
-          fontStyle: tok.fontStyle,
-        })
+        flat.push({ key: tokenKey(tok.content, occ), content: tok.content, color: tok.color, fontStyle: tok.fontStyle })
       }
     }
-    // Explicit newline between lines (not after the last)
     if (li < lines.length - 1) {
       flat.push({ key: `__nl${li}`, content: '\n', color: '', fontStyle: 0 })
     }
   }
-
   return flat
 }
 
 /**
- * Read every `[data-tok]` span's bounding rect from the ghost layer,
- * normalised to the wrapper's top-left as origin and corrected for any
- * CSS transform scale applied by an ancestor (e.g. the presentation canvas).
- *
- * getBoundingClientRect() returns viewport px (post-transform).
- * CSS left/top properties work in local CSS px (pre-transform).
- * Dividing by the scale factor converts between the two coordinate spaces.
+ * Measure token positions from the ghost layer, converting from viewport px
+ * (getBoundingClientRect, post-transform) to local CSS px (pre-transform).
+ * This corrects for the presentation canvas's `transform: scale(n)`.
  */
-function measureGhostRects(
-  ghostEl: HTMLElement,
-  wrapperEl: HTMLElement,
-): Map<string, Rect> {
+function measureGhostRects(ghostEl: HTMLElement, wrapperEl: HTMLElement): Map<string, Rect> {
   const wrapperRect = wrapperEl.getBoundingClientRect()
-
-  // offsetWidth/Height are in CSS px (unaffected by transforms).
-  // getBoundingClientRect().width/height are in viewport px (includes all ancestor scales).
-  // Their ratio gives us the cumulative scale we need to undo.
+  // offsetWidth is CSS px (no transforms). clientRect.width is viewport px (with transforms).
   const scaleX = wrapperRect.width / wrapperEl.offsetWidth
   const scaleY = wrapperRect.height / wrapperEl.offsetHeight
 
@@ -170,36 +126,40 @@ function measureGhostRects(
 // Component
 // ─────────────────────────────────────────────
 
-export function CodeElement({ content }: Props) {
-  // ── DOM refs ──────────────────────────────────
-  /**
-   * wrapperRef: the `position: relative` div that both the ghost and stage
-   * sit inside. All absolute coordinates are relative to this element.
-   */
+export function CodeElement({ content, elementId: _elementId }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null)
-  /**
-   * ghostRef: the invisible, in-flow div. It renders tokens as plain inline
-   * spans to give the wrapper its natural height and to provide pixel-accurate
-   * token positions we can measure before building the animated stage.
-   */
   const ghostRef = useRef<HTMLDivElement>(null)
 
-  // ── State ─────────────────────────────────────
-  /** Token list the ghost currently renders (drives measurements). */
   const [ghostTokens, setGhostTokens] = useState<FlatToken[]>([])
-  /** Absolutely-positioned animated tokens rendered in the stage. */
   const [animTokens, setAnimTokens] = useState<AnimToken[]>([])
 
-  // ── Mutation refs (no re-render needed) ───────
-  /**
-   * Destination positions from the PREVIOUS render.
-   * When a new transition begins, these become the FLIP "from" positions.
-   */
   const prevPositionsRef = useRef<Map<string, Rect>>(new Map())
-  /** FlatTokens from the previous render — needed to know which tokens were removed. */
   const prevTokensRef = useRef<FlatToken[]>([])
-
+  const transitionIdRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Pull user's transition settings from context ────────────────────────
+  // When used in the editor (not presenting), isTransitioning=false and we
+  // fall back to the CODE_PHASE constants for sane defaults.
+  const { durationSec: ctxDuration, ease: ctxEase, isTransitioning } = useMotionContext()
+
+  // Scale phase durations proportionally to the user's configured duration.
+  // Phase 1 (flight) gets the largest share — it's the most perceptible part.
+  const totalDur = isTransitioning
+    ? ctxDuration
+    : CODE_PHASE.EXIT_DUR + CODE_PHASE.LAYOUT_DUR + CODE_PHASE.ENTER_DUR
+  const exitDur = totalDur * 0.20          // Phase 0: removed tokens fade out
+  const layoutDur = totalDur * 0.55          // Phase 1: tokens fly to new positions
+  const enterDur = totalDur * 0.30          // Phase 2: new tokens fade in
+  const enterDelay = exitDur + layoutDur * 0.7 // Phase 2 starts near end of flight
+
+  // Use the user's configured easing for the flight phase (Phase 1).
+  // This is the most felt part of the animation — it should honour their setting.
+  const FLIGHT_EASE = isTransitioning
+    ? ctxEase
+    : ([0.37, 0, 0.63, 1] as [number, number, number, number])
+  const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
+  const EASE_OUT: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
 
   // ─────────────────────────────────────────────
   // Step 1 — content changes → tokenize → update ghost
@@ -211,15 +171,17 @@ export function CodeElement({ content }: Props) {
     timerRef.current = setTimeout(async () => {
       try {
         const flat = await buildFlatTokens(content.value, content.language || 'javascript')
+        // Advance BEFORE setGhostTokens so useLayoutEffect reads the new id.
+        transitionIdRef.current += 1
         setGhostTokens(flat)
       } catch {
-        // Bare-text fallback: treat the whole value as a single token per line
         const lines = (content.value || '').split('\n')
         const flat: FlatToken[] = []
         lines.forEach((text, i) => {
           flat.push({ key: `__fb${i}`, content: text || '\u200b', color: '#e0e0e0', fontStyle: 0 })
           if (i < lines.length - 1) flat.push({ key: `__nl${i}`, content: '\n', color: '', fontStyle: 0 })
         })
+        transitionIdRef.current += 1
         setGhostTokens(flat)
       }
     }, isFirst ? 0 : CODE_DEBOUNCE_MS)
@@ -229,68 +191,65 @@ export function CodeElement({ content }: Props) {
   }, [content.value, content.language])
 
   // ─────────────────────────────────────────────
-  // Step 2 — ghost re-renders → measure positions → build FLIP animTokens
+  // Step 2 — ghost renders → measure → build FLIP animTokens
   //
-  // useLayoutEffect fires synchronously after the DOM updates but before
-  // the browser paints, so `ghostRef` already reflects the new tokens.
+  // useLayoutEffect fires synchronously after DOM update, before paint,
+  // so the ghost already shows the new tokens when we measure.
   // ─────────────────────────────────────────────
   useLayoutEffect(() => {
     if (!wrapperRef.current || !ghostRef.current || ghostTokens.length === 0) return
 
     const nextPositions = measureGhostRects(ghostRef.current, wrapperRef.current)
+    const tid = transitionIdRef.current
 
     const isFirst = prevTokensRef.current.length === 0
-    const prevPositions = prevPositionsRef.current
+    const prevPos = prevPositionsRef.current
     const prevKeys = new Set(prevTokensRef.current.map((t) => t.key))
-    const nextKeys = new Set(
-      ghostTokens.filter((t) => !t.key.startsWith('__nl')).map((t) => t.key),
-    )
+    const nextKeys = new Set(ghostTokens.filter((t) => !t.key.startsWith('__nl')).map((t) => t.key))
 
     const newAnimTokens: AnimToken[] = []
     let addedIdx = 0
 
-    // ── Unchanged + Added tokens ─────────────────
+    // ── Unchanged + Added ────────────────────────
     for (const tok of ghostTokens) {
       if (tok.key.startsWith('__nl')) continue
       const next = nextPositions.get(tok.key)
       if (!next) continue
 
       if (isFirst) {
-        // Very first render: snap everything in place, no animation.
-        // initial={false} below prevents any entrance animation.
-        newAnimTokens.push({ ...tok, ...next, dx: 0, dy: 0, status: 'unchanged', staggerIndex: 0 })
-      } else if (prevKeys.has(tok.key) && prevPositions.has(tok.key)) {
-        // Token existed before: compute FLIP delta so it flies from old → new position.
-        const prev = prevPositions.get(tok.key)!
+        // First render: snap in place, no animation.
+        newAnimTokens.push({ ...tok, ...next, dx: 0, dy: 0, status: 'unchanged', staggerIndex: 0, transitionId: tid })
+      } else if (prevKeys.has(tok.key) && prevPos.has(tok.key)) {
+        // In both slides → FLIP from old position to new.
+        const prev = prevPos.get(tok.key)!
         newAnimTokens.push({
           ...tok, ...next,
           dx: prev.x - next.x,
           dy: prev.y - next.y,
           status: 'unchanged',
           staggerIndex: 0,
+          transitionId: tid,
         })
       } else {
-        // Brand-new token: fade in after the FLIP phase completes.
-        newAnimTokens.push({ ...tok, ...next, dx: 0, dy: 0, status: 'added', staggerIndex: addedIdx++ })
+        // New token → fade in (Phase 2).
+        newAnimTokens.push({ ...tok, ...next, dx: 0, dy: 0, status: 'added', staggerIndex: addedIdx++, transitionId: tid })
       }
     }
 
-    // ── Removed tokens ───────────────────────────
-    // Render at their OLD pixel position and fade out immediately (Phase 0).
+    // ── Removed ──────────────────────────────────
+    // Placed at OLD pixel position, fades to 0 in Phase 0.
     if (!isFirst) {
       for (const tok of prevTokensRef.current) {
         if (tok.key.startsWith('__nl')) continue
-        if (!nextKeys.has(tok.key) && prevPositions.has(tok.key)) {
-          const prev = prevPositions.get(tok.key)!
-          newAnimTokens.push({ ...tok, ...prev, dx: 0, dy: 0, status: 'removed', staggerIndex: 0 })
+        if (!nextKeys.has(tok.key) && prevPos.has(tok.key)) {
+          const prev = prevPos.get(tok.key)!
+          newAnimTokens.push({ ...tok, ...prev, dx: 0, dy: 0, status: 'removed', staggerIndex: 0, transitionId: tid })
         }
       }
     }
 
-    // Save current state for the next transition
     prevPositionsRef.current = nextPositions
     prevTokensRef.current = ghostTokens
-
     setAnimTokens(newAnimTokens)
   }, [ghostTokens])
 
@@ -298,89 +257,51 @@ export function CodeElement({ content }: Props) {
   // Render
   // ─────────────────────────────────────────────
 
-  // Read the user's transition duration so code animation timing respects settings.
-  // Fall back to CODE_PHASE defaults when not in presentation mode.
-  const { durationSec: ctxDuration, isTransitioning } = useMotionContext()
-  const baseDuration = isTransitioning ? ctxDuration : (CODE_PHASE.EXIT_DUR + CODE_PHASE.LAYOUT_DUR + CODE_PHASE.ENTER_DUR)
-
-  // Scale phase timings proportionally with the user's duration setting
-  const exitDur   = isTransitioning ? baseDuration * 0.22 : CODE_PHASE.EXIT_DUR
-  const layoutDur = isTransitioning ? baseDuration * 0.55 : CODE_PHASE.LAYOUT_DUR
-  const enterDur  = isTransitioning ? baseDuration * 0.35 : CODE_PHASE.ENTER_DUR
-  const enterDelay = exitDur + layoutDur
-
-  const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
-  const EASE_OUT: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
-
   return (
     <div className="font-mono text-[12px] leading-relaxed bg-[#121212] rounded-lg px-3.5 py-3 w-full h-full overflow-auto">
       <div className="text-[9px] uppercase tracking-wider text-neutral-600 mb-2 select-none">
         {content.language || 'javascript'}
       </div>
 
-      {/*
-        Measurement + animation wrapper.
-        `position: relative` makes it the coordinate origin for all
-        absolute-positioned tokens in the stage.
-      */}
+      {/* Coordinate origin for all absolute token positions */}
       <div ref={wrapperRef} style={{ position: 'relative' }}>
 
         {/*
-          ── Ghost layer ──────────────────────────────────────────────────
-          Rendered in NORMAL TEXT FLOW so it determines the wrapper's height.
-          Invisible (opacity: 0) and non-interactive.
-          Each span gets `data-tok` so measureGhostRects() can find it.
-
-          IMPORTANT: this must have identical font, size, line-height, and
-          whitespace handling to what you'd normally render — otherwise the
-          measured positions will be offset from what the user sees.
+          Ghost layer — invisible, in normal text flow.
+          Gives the wrapper its correct height and provides pixel-accurate
+          positions for every token via getBoundingClientRect().
+          Must match font/size/line-height of the visible render exactly.
         */}
         <div
           ref={ghostRef}
           aria-hidden="true"
-          style={{
-            opacity: 0,
-            pointerEvents: 'none',
-            userSelect: 'none',
-            whiteSpace: 'pre-wrap',
-          }}
+          style={{ opacity: 0, pointerEvents: 'none', userSelect: 'none', whiteSpace: 'pre-wrap' }}
         >
           {ghostTokens.map((tok) => (
-            <span key={tok.key} data-tok={tok.key}>
-              {tok.content}
-            </span>
+            <span key={tok.key} data-tok={tok.key}>{tok.content}</span>
           ))}
         </div>
 
         {/*
-          ── Stage layer ──────────────────────────────────────────────────
-          Absolutely overlays the ghost (same origin, same width).
-          All tokens here are `position: absolute` at their measured (x, y).
+          Stage layer — absolutely positioned overlay.
 
-          Why this works for FLIP:
-          - Token at (x=40, y=80) in slide A, (x=40, y=160) in slide B
-          - In the stage it renders at left:40 top:160 (the NEW position)
-          - `initial={{ x: 0, y: -80 }}` offsets it back to where it was
-          - `animate={{ x: 0, y: 0 }}` eases it to the new position
-          - Net effect: the token visually flies from line 3 to line 7 ✓
+          No `layoutId` on tokens. layoutId causes Framer Motion to briefly
+          remove the element from the DOM during its own FLIP pass, which is
+          what causes the "bracket disappears then reappears" flicker.
+          We do our own FLIP manually via dx/dy offsets instead.
+
+          Phase ordering:
+            0 (immediate):         removed tokens fade to opacity 0
+            1 (delay=exitDur):     unchanged tokens fly via FLIP (x:dx→0, y:dy→0)
+            2 (delay=enterDelay):  new tokens fade in
         */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            // No `bottom` — let removed tokens overflow downward during exit
-            pointerEvents: 'none',
-          }}
-        >
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, pointerEvents: 'none' }}>
           <AnimatePresence>
             {animTokens.map((tok) => {
               const baseStyle: React.CSSProperties = {
                 position: 'absolute',
                 left: tok.x,
                 top: tok.y,
-                // Explicit width prevents token from wrapping when briefly at odd positions
                 width: tok.width,
                 color: tok.color,
                 whiteSpace: 'pre',
@@ -389,40 +310,36 @@ export function CodeElement({ content }: Props) {
                 textDecoration: tok.fontStyle & 4 ? 'underline' : 'none',
               }
 
-              // ── Phase 0: removed tokens fade out immediately ────────
+              // Phase 0: removed ────────────────────────────────────────
               if (tok.status === 'removed') {
                 return (
                   <motion.span
-                    // Use a distinct key suffix so AnimatePresence can
-                    // distinguish this exit from a same-keyed entrance
-                    key={tok.key + '__rm'}
+                    // __rm suffix prevents key collision with a same-key entrance
+                    // that might be mounted in the same render pass.
+                    key={`${tok.key}__rm${tok.transitionId}`}
                     style={baseStyle}
                     initial={{ opacity: 1 }}
                     animate={{ opacity: 0 }}
                     exit={{ opacity: 0 }}
-                    transition={{
-                      duration: exitDur,
-                      ease: EASE_IN_OUT,
-                    }}
+                    transition={{ duration: exitDur, ease: EASE_IN_OUT }}
                   >
                     {tok.content}
                   </motion.span>
                 )
               }
 
-              // ── Phase 2: new tokens fade in after layout settles ────
+              // Phase 2: added ──────────────────────────────────────────
               if (tok.status === 'added') {
                 return (
                   <motion.span
-                    key={tok.key}
+                    key={`${tok.key}__add${tok.transitionId}`}
                     style={baseStyle}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{
                       duration: enterDur,
                       ease: EASE_OUT,
-                      // Wait for removes (Phase 0) + FLIP moves (Phase 1) to finish
-                      delay: enterDelay + tok.staggerIndex * 0.015,
+                      delay: enterDelay + tok.staggerIndex * 0.012,
                     }}
                   >
                     {tok.content}
@@ -430,28 +347,29 @@ export function CodeElement({ content }: Props) {
                 )
               }
 
-              // ── Phase 1: unchanged tokens fly to their new positions ─
+              // Phase 1: unchanged — fly from old position to new ───────
               //
-              // `initial={false}` on first render (dx===0, dy===0) = no animation, snap in place.
-              // On subsequent transitions, `initial={{ x: dx, y: dy }}` starts the token
-              // at its OLD visual position and `animate={{ x:0, y:0 }}` moves it to its new one.
+              // WHY transitionId IS IN THE KEY:
+              //   Framer Motion's `initial` only fires on component MOUNT.
+              //   Without transitionId in the key, this span stays mounted
+              //   across transitions (stable key), so `initial={{ x:dx, y:dy }}`
+              //   is silently ignored on re-renders — the token snaps.
+              //   transitionId forces a remount on every transition, guaranteeing
+              //   `initial` fires and the FLIP offset is applied correctly.
+              //
+              //   On the first render (isFirst path), dx===0 && dy===0, so
+              //   `initial={false}` skips the entrance — tokens just appear.
               const hasMovement = tok.dx !== 0 || tok.dy !== 0
               return (
                 <motion.span
-                  key={tok.key}
+                  key={`${tok.key}__t${tok.transitionId}`}
                   style={baseStyle}
-                  // `initial={false}` = don't animate from initial on mount;
-                  // just snap to animate values. Used when there's no delta.
-                  initial={hasMovement ? { x: tok.dx, y: tok.dy } : false}
-                  animate={{ x: 0, y: 0 }}
+                  initial={hasMovement ? { x: tok.dx, y: tok.dy, opacity: 1 } : false}
+                  animate={{ x: 0, y: 0, opacity: 1 }}
                   transition={{
-                    // Spring physics: tokens glide smoothly like Keynote text
-                    type: 'spring',
-                    stiffness: 260,
-                    damping: 28,
-                    mass: 1,
-                    // Wait for removed tokens to exit first
-                    delay: exitDur,
+                    duration: layoutDur,
+                    ease: FLIGHT_EASE,
+                    delay: exitDur,  // wait for Phase 0 to finish
                   }}
                 >
                   {tok.content}

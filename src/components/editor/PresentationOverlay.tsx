@@ -25,14 +25,17 @@ function usePrevious<T>(value: T): T | null {
 }
 
 export function PresentationOverlay() {
-  const {
-    isPresenting, stopPresentation,
-    activeProject, activeSlide, activeSlideIndex, setActiveSlide,
-    playbackSettings,
-  } = useEditorStore()
+  const isPresenting = useEditorStore((s) => s.isPresenting)
+  const stopPresentation = useEditorStore((s) => s.stopPresentation)
+  const activeSlideIndex = useEditorStore((s) => s.activeSlideIndex)
+  const setActiveSlide = useEditorStore((s) => s.setActiveSlide)
+  const playbackSettings = useEditorStore((s) => s.playbackSettings)
 
-  const project = activeProject()
-  const slide = activeSlide()
+  const project = useEditorStore((s) => s.projects.find((p) => p.id === s.activeProjectId) ?? null)
+  const slide = useEditorStore((s) => {
+    const p = s.projects.find((proj) => proj.id === s.activeProjectId)
+    return p?.slides[s.activeSlideIndex] ?? null
+  })
   const totalSlides = project?.slides.length ?? 0
 
   const [autoplayPaused, setAutoplayPaused] = useState(false)
