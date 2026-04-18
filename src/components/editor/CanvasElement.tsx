@@ -24,6 +24,7 @@ export function CanvasElement({ element }: Props) {
     isTransitioning,
     durationSec,
     continuingIds,
+    transitionAnimation,
   } = useMotionContext()
   const isSelected = selectedElementId === element.id
   const isDragging = useRef(false)
@@ -144,8 +145,10 @@ export function CanvasElement({ element }: Props) {
         // NO exit — continuing elements don't exit, they morph
         transition={{
           layout: {
-            duration: durationSec,
-            ease: [0.37, 0, 0.63, 1] satisfies [number, number, number, number],
+            type: 'spring',
+            stiffness: 260,
+            damping: 28,
+            mass: 1,
           },
           opacity: { duration: durationSec * 0.4, ease: 'easeInOut' },
         }}
@@ -156,9 +159,21 @@ export function CanvasElement({ element }: Props) {
   }
 
   // NEW ELEMENTS (only in the current slide):
-  // - Phase 2: delay entrance until Phase 1 morphs are complete
-  // - Subtle fade + slide-up, aligned with code block Phase 2
+  // Phase 2: delay entrance until Phase 1 morphs are complete.
+  // Direction is driven by the prototype transition animation setting.
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
+
+  // Map transition animation to enter/exit x/y offsets and scale
+  const DIRECTION_MAP: Record<string, { x: number; y: number; scale: number }> = {
+    'slide-left':  { x: 80,   y: 0,   scale: 1 },
+    'slide-right': { x: -80,  y: 0,   scale: 1 },
+    'slide-up':    { x: 0,    y: 80,  scale: 1 },
+    'slide-down':  { x: 0,    y: -80, scale: 1 },
+    'zoom':        { x: 0,    y: 0,   scale: 0.85 },
+    'flip':        { x: 0,    y: 0,   scale: 0.9 },
+    'fade':        { x: 0,    y: 12,  scale: 0.97 },
+  }
+  const dir = DIRECTION_MAP[transitionAnimation] ?? DIRECTION_MAP['fade']
 
   return (
     <motion.div
@@ -176,14 +191,13 @@ export function CanvasElement({ element }: Props) {
         cursor: 'default',
         overflow: element.type === 'line' ? 'visible' : undefined,
       }}
-      initial={{ opacity: 0, y: 12 }}
-      animate={{
-        opacity: element.opacity,
-        y: 0,
-      }}
+      initial={{ opacity: 0, x: dir.x, y: dir.y, scale: dir.scale }}
+      animate={{ opacity: element.opacity, x: 0, y: 0, scale: 1 }}
       exit={{
         opacity: 0,
-        y: -8,
+        x: -dir.x,
+        y: -dir.y,
+        scale: dir.scale,
         transition: { duration: durationSec * 0.3, ease: EASE_IN_OUT },
       }}
       transition={{

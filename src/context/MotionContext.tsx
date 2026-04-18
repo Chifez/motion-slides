@@ -4,13 +4,14 @@
  *
  * During editing mode, this context is NOT provided (elements use defaults).
  * During presentation mode, PresentationOverlay wraps the canvas and provides:
- *   - The user's chosen duration & easing
+ *   - The user's chosen duration & easing (or per-transition overrides)
  *   - Which element IDs are "continuing" (Magic Move) vs "new" (staggered build-in)
+ *   - The transition animation direction (slide-left, zoom, fade, etc.)
  */
 
 import { createContext, useContext, useMemo } from 'react'
 import type { Transition } from 'framer-motion'
-import type { PlaybackSettings, Slide } from '@/types'
+import type { PlaybackSettings, Slide, SlideTransition, TransitionAnimation } from '@/types'
 import {
   buildTransition,
   cubicBezierToArray,
@@ -44,6 +45,12 @@ export interface MotionContextValue {
   newElementCount: number
   /** Get the stagger delay (in seconds) for a new element */
   getStaggerDelay: (staggerIndex: number) => number
+  /**
+   * The transition animation style from the prototype SlideTransition.
+   * Drives enter/exit direction for new/removed elements.
+   * Defaults to 'fade' when no prototype transition is defined.
+   */
+  transitionAnimation: TransitionAnimation
 }
 
 /** Default context when no provider is present (editor mode) */
@@ -63,6 +70,7 @@ const defaultValue: MotionContextValue = {
   newElementIds: EMPTY_SET,
   newElementCount: 0,
   getStaggerDelay: () => 0,
+  transitionAnimation: 'fade',
 }
 
 const MotionCtx = createContext<MotionContextValue>(defaultValue)
@@ -77,14 +85,23 @@ interface ProviderProps {
   previousSlide: Slide | null
   /** The slide we are transitioning TO */
   currentSlide: Slide | null
+  /**
+   * Optional per-transition override from prototype mode.
+   * When provided, its duration/ease/animation take precedence over global settings.
+   */
+  activeTransition?: SlideTransition | null
   children: React.ReactNode
 }
 
-export function MotionProvider({ settings, previousSlide, currentSlide, children }: ProviderProps) {
+export function MotionProvider({ settings, previousSlide, currentSlide, activeTransition, children }: ProviderProps) {
   const value = useMemo<MotionContextValue>(() => {
-    const transition = buildTransition(settings)
-    const durationSec = msToSec(settings.transitionDuration)
-    const ease = cubicBezierToArray(settings.transitionEase)
+    // Per-transition settings override global playback settings when defined
+    const durationMs = activeTransition?.duration ?? settings.transitionDuration
+    const easeBezier = activeTransition?.ease ?? settings.transitionEase
+
+    const transition = buildTransition({ ...settings, transitionDuration: durationMs, transitionEase: easeBezier })
+    const durationSec = msToSec(durationMs)
+    const ease = cubicBezierToArray(easeBezier)
     const continuing = getContinuingIds(previousSlide, currentSlide)
     const newIds = getNewElementIds(previousSlide, currentSlide)
 
@@ -100,11 +117,13 @@ export function MotionProvider({ settings, previousSlide, currentSlide, children
       newElementCount: newIds.size,
       getStaggerDelay: (staggerIndex: number) =>
         staggerDelay(staggerIndex, newIds.size, durationSec),
+      transitionAnimation: activeTransition?.animation ?? 'fade',
     }
   }, [
     settings.transitionDuration,
     settings.transitionEase.x1, settings.transitionEase.y1,
     settings.transitionEase.x2, settings.transitionEase.y2,
+    activeTransition,
     previousSlide, currentSlide,
   ])
 

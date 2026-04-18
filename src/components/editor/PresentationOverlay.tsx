@@ -99,6 +99,15 @@ export function PresentationOverlay() {
     else if (playbackSettings.loop) setActiveSlide(0)
   }
 
+  // ── Resolve active prototype transition ──────────────────────────────────
+  // Look up a SlideTransition defined in prototype mode that connects the
+  // previous slide to the current slide. When found, its animation direction,
+  // duration, and ease override the global playback settings.
+  const activeTransition = previousSlide && project
+    ? (project.transitions ?? []).find(
+        (t) => t.fromSlideId === previousSlide.id && t.toSlideId === slide.id,
+      ) ?? null
+    : null
 
   return (
     <div
@@ -122,6 +131,7 @@ export function PresentationOverlay() {
           settings={playbackSettings}
           previousSlide={previousSlide}
           currentSlide={slide}
+          activeTransition={activeTransition}
         >
           <LayoutGroup>
             <AnimatePresence mode="sync">

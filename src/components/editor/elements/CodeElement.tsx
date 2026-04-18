@@ -4,6 +4,7 @@ import type { CodeContent } from '@/types'
 import { CODE_DEBOUNCE_MS } from '@/constants/animation'
 import { getTokenizedLines } from '@/lib/shikiHighlighter'
 import { tokenKey, CODE_PHASE } from '@/lib/motionEngine'
+import { useMotionContext } from '@/context/MotionContext'
 
 interface Props { content: CodeContent }
 
@@ -297,6 +298,17 @@ export function CodeElement({ content }: Props) {
   // Render
   // ─────────────────────────────────────────────
 
+  // Read the user's transition duration so code animation timing respects settings.
+  // Fall back to CODE_PHASE defaults when not in presentation mode.
+  const { durationSec: ctxDuration, isTransitioning } = useMotionContext()
+  const baseDuration = isTransitioning ? ctxDuration : (CODE_PHASE.EXIT_DUR + CODE_PHASE.LAYOUT_DUR + CODE_PHASE.ENTER_DUR)
+
+  // Scale phase timings proportionally with the user's duration setting
+  const exitDur   = isTransitioning ? baseDuration * 0.22 : CODE_PHASE.EXIT_DUR
+  const layoutDur = isTransitioning ? baseDuration * 0.55 : CODE_PHASE.LAYOUT_DUR
+  const enterDur  = isTransitioning ? baseDuration * 0.35 : CODE_PHASE.ENTER_DUR
+  const enterDelay = exitDur + layoutDur
+
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
   const EASE_OUT: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
 
@@ -389,7 +401,7 @@ export function CodeElement({ content }: Props) {
                     animate={{ opacity: 0 }}
                     exit={{ opacity: 0 }}
                     transition={{
-                      duration: CODE_PHASE.EXIT_DUR,
+                      duration: exitDur,
                       ease: EASE_IN_OUT,
                     }}
                   >
@@ -407,10 +419,10 @@ export function CodeElement({ content }: Props) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{
-                      duration: CODE_PHASE.ENTER_DUR,
+                      duration: enterDur,
                       ease: EASE_OUT,
                       // Wait for removes (Phase 0) + FLIP moves (Phase 1) to finish
-                      delay: CODE_PHASE.ENTER_DELAY + tok.staggerIndex * 0.015,
+                      delay: enterDelay + tok.staggerIndex * 0.015,
                     }}
                   >
                     {tok.content}
@@ -433,10 +445,13 @@ export function CodeElement({ content }: Props) {
                   initial={hasMovement ? { x: tok.dx, y: tok.dy } : false}
                   animate={{ x: 0, y: 0 }}
                   transition={{
-                    duration: CODE_PHASE.LAYOUT_DUR,
-                    ease: EASE_IN_OUT,
+                    // Spring physics: tokens glide smoothly like Keynote text
+                    type: 'spring',
+                    stiffness: 260,
+                    damping: 28,
+                    mass: 1,
                     // Wait for removed tokens to exit first
-                    delay: CODE_PHASE.EXIT_DUR,
+                    delay: exitDur,
                   }}
                 >
                   {tok.content}

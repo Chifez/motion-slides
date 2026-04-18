@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Plus, Copy, Trash2, Sparkles } from 'lucide-react'
+import { Plus, Copy, Trash2, Sparkles, Type, Code2, Square, Minus, ChevronDown, ChevronRight } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
+import type { SceneElement } from '@/types'
 
 export function SlidePanel() {
   const {
@@ -32,7 +33,7 @@ export function SlidePanel() {
             index={i}
             name={slide.name || `Slide ${i + 1}`}
             background={slide.background}
-            elementCount={slide.elements.length}
+            elements={slide.elements}
             isActive={activeSlideIndex === i}
             totalSlides={slides.length}
             onSelect={() => setActiveSlide(i)}
@@ -56,11 +57,66 @@ export function SlidePanel() {
   )
 }
 
+// ─────────────────────────────────────────────
+// Element type icon
+// ─────────────────────────────────────────────
+
+function ElementIcon({ type }: { type: SceneElement['type'] }) {
+  const cls = 'shrink-0'
+  switch (type) {
+    case 'text':  return <Type  size={9} className={cls} />
+    case 'code':  return <Code2 size={9} className={cls} />
+    case 'shape': return <Square size={9} className={cls} />
+    case 'line':  return <Minus size={9} className={cls} />
+    default:      return <Square size={9} className={cls} />
+  }
+}
+
+function elementLabel(el: SceneElement): string {
+  switch (el.type) {
+    case 'text': {
+      const v = (el.content as { value: string }).value?.trim()
+      return v ? (v.length > 18 ? v.slice(0, 18) + '…' : v) : 'Text'
+    }
+    case 'code':  return (el.content as { language: string }).language || 'Code'
+    case 'shape': return (el.content as { shapeType: string }).shapeType || 'Shape'
+    case 'line':  return 'Line'
+    default:      return el.type
+  }
+}
+
+// ─────────────────────────────────────────────
+// Element list row (Figma-style)
+// ─────────────────────────────────────────────
+
+function ElementRow({ element }: { element: SceneElement }) {
+  const { selectedElementId, setSelectedElement } = useEditorStore()
+  const isSelected = selectedElementId === element.id
+
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); setSelectedElement(element.id) }}
+      className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer border-none transition-colors ${
+        isSelected
+          ? 'bg-blue-500/20 text-blue-300'
+          : 'bg-transparent text-neutral-500 hover:bg-white/5 hover:text-neutral-300'
+      }`}
+    >
+      <ElementIcon type={element.type} />
+      <span className="text-[9px] font-medium truncate flex-1">{elementLabel(element)}</span>
+    </button>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Slide thumbnail
+// ─────────────────────────────────────────────
+
 interface SlideThumbProps {
   index: number
   name: string
   background: string
-  elementCount: number
+  elements: SceneElement[]
   isActive: boolean
   totalSlides: number
   onSelect: () => void
@@ -69,8 +125,9 @@ interface SlideThumbProps {
   onDelete: () => void
 }
 
-function SlideThumb({ index, name, background, elementCount, isActive, totalSlides, onSelect, onDuplicate, onDuplicateKeepIds, onDelete }: SlideThumbProps) {
+function SlideThumb({ index, name, background, elements, isActive, totalSlides, onSelect, onDuplicate, onDuplicateKeepIds, onDelete }: SlideThumbProps) {
   const [isEditing, setIsEditing] = useState(false)
+  const [layersOpen, setLayersOpen] = useState(true)
   const { updateSlide, setActiveSlide } = useEditorStore()
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -98,7 +155,7 @@ function SlideThumb({ index, name, background, elementCount, isActive, totalSlid
         style={{ background }}
       >
         <span className="text-[9px] text-neutral-700">
-          {elementCount > 0 ? `${elementCount} element${elementCount > 1 ? 's' : ''}` : 'Empty'}
+          {elements.length > 0 ? `${elements.length} element${elements.length > 1 ? 's' : ''}` : 'Empty'}
         </span>
       </div>
 
@@ -144,6 +201,32 @@ function SlideThumb({ index, name, background, elementCount, isActive, totalSlid
             <button onClick={onDelete} className="p-0.5 rounded text-red-600 hover:text-red-400 hover:bg-red-500/10 cursor-pointer border-none bg-transparent">
               <Trash2 size={9} />
             </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Figma-style element layer list (active slide only) ── */}
+      {isActive && elements.length > 0 && (
+        <div className="bg-[#131313] border-t border-white/5" onClick={(e) => e.stopPropagation()}>
+          {/* Collapsible header */}
+          <button
+            onClick={() => setLayersOpen((o) => !o)}
+            className="w-full flex items-center gap-1 px-2 py-1 text-[9px] text-neutral-600 hover:text-neutral-400 uppercase tracking-wider cursor-pointer border-none bg-transparent transition-colors"
+          >
+            {layersOpen
+              ? <ChevronDown size={9} />
+              : <ChevronRight size={9} />
+            }
+            Layers
+          </button>
+
+          {/* Element rows — reversed so top-z-index is first (Figma convention) */}
+          {layersOpen && (
+            <div className="pb-1 px-1 flex flex-col gap-px">
+              {[...elements].reverse().map((el) => (
+                <ElementRow key={el.id} element={el} />
+              ))}
+            </div>
           )}
         </div>
       )}
