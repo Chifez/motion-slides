@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { 
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
+import {
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip,
   AreaChart, Area
 } from 'recharts'
@@ -15,10 +15,10 @@ const DEFAULT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '
 
 export function ChartElement({ content }: Props) {
   const { isTransitioning, durationSec } = useMotionContext()
-  
+
   const data = useMemo(() => content.data || [], [content.data])
   const colors = content.colors?.length ? content.colors : DEFAULT_COLORS
-  
+
   const animationDuration = isTransitioning ? durationSec * 1000 : 0
 
   function renderChart() {
@@ -44,26 +44,26 @@ export function ChartElement({ content }: Props) {
         return (
           <BarChart data={barData}>
             {content.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />}
-            <XAxis 
-              dataKey="label" 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fill: '#666', fontSize: 10 }} 
+            <XAxis
+              dataKey="label"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#666', fontSize: 10 }}
               hide={!content.showLabels}
             />
-            <YAxis 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fill: '#666', fontSize: 10 }} 
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#666', fontSize: 10 }}
               hide={!content.showLabels}
             />
-            <Tooltip 
+            <Tooltip
               contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', fontSize: '10px' }}
               itemStyle={{ color: '#fff' }}
             />
             {content.isStacked ? (
               Array.from({ length: maxStackLength }).map((_, si) => (
-                <Bar 
+                <Bar
                   key={si}
                   dataKey={`stack${si}`}
                   stackId="a"
@@ -73,9 +73,9 @@ export function ChartElement({ content }: Props) {
                 />
               ))
             ) : (
-              <Bar 
-                dataKey="value" 
-                fill={colors[0]} 
+              <Bar
+                dataKey="value"
+                fill={colors[0]}
                 radius={[4, 4, 0, 0]}
                 barSize={content.barSize}
                 animationDuration={animationDuration}
@@ -94,14 +94,14 @@ export function ChartElement({ content }: Props) {
             {content.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#333" />}
             <XAxis dataKey="label" hide={!content.showLabels} tick={{ fill: '#666', fontSize: 10 }} />
             <YAxis hide={!content.showLabels} tick={{ fill: '#666', fontSize: 10 }} />
-            <Tooltip 
+            <Tooltip
               contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', fontSize: '10px' }}
             />
-            <Line 
-              type="monotone" 
-              dataKey="value" 
-              stroke={colors[0]} 
-              strokeWidth={3} 
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={colors[0]}
+              strokeWidth={3}
               dot={{ r: 4, fill: colors[0], strokeWidth: 2, stroke: '#111' }}
               animationDuration={animationDuration}
             />
@@ -124,7 +124,7 @@ export function ChartElement({ content }: Props) {
                 <Cell key={`cell-${index}`} fill={entry.color || colors[index % colors.length]} />
               ))}
             </Pie>
-            <Tooltip 
+            <Tooltip
               contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', fontSize: '10px' }}
             />
           </PieChart>
@@ -135,14 +135,14 @@ export function ChartElement({ content }: Props) {
             {content.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#333" />}
             <XAxis dataKey="label" hide={!content.showLabels} tick={{ fill: '#666', fontSize: 10 }} />
             <YAxis hide={!content.showLabels} tick={{ fill: '#666', fontSize: 10 }} />
-            <Tooltip 
+            <Tooltip
               contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', fontSize: '10px' }}
             />
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke={colors[0]} 
-              fill={colors[0]} 
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={colors[0]}
+              fill={colors[0]}
               fillOpacity={0.3}
               animationDuration={animationDuration}
             />

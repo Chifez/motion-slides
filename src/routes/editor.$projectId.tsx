@@ -4,11 +4,12 @@ import { useEditorStore } from '@/store/editorStore'
 import { EditorToolbar } from '@/components/editor/EditorToolbar'
 import { SlidePanel } from '@/components/editor/SlidePanel'
 import { CanvasStage } from '@/components/editor/CanvasStage'
-import { InspectorPanel } from '@/components/editor/InspectorPanel'
-import { PresentationOverlay } from '@/components/editor/PresentationOverlay'
+
 import { PrototypeCanvas } from '@/components/editor/prototype/PrototypeCanvas'
 import { useEditorShortcuts } from '@/hooks/useEditorShortcuts'
-
+import { useIsMobile } from '@/hooks/useMediaQuery'
+import { InspectorPanel } from '@/components/editor/InspectorPanel'
+import { PresentationOverlay } from '@/components/editor/PresentationOverlay'
 export const Route = createFileRoute('/editor/$projectId')({
   component: EditorPage,
 })
@@ -16,7 +17,7 @@ export const Route = createFileRoute('/editor/$projectId')({
 function EditorPage() {
   const { projectId } = Route.useParams()
   const { loadProject, activeProject, isPresenting, isPrototypeMode } = useEditorStore()
-  
+
   useEditorShortcuts()
 
   useEffect(() => {
@@ -32,6 +33,8 @@ function EditorPage() {
       </div>
     )
   }
+
+  const isMobile = useIsMobile()
 
   return (
     <div className="h-screen flex flex-col bg-[#0d0d0d] overflow-hidden">

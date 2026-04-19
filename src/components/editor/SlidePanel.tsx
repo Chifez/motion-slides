@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Plus, Copy, Trash2, Sparkles, Type, Code2, Square, Minus, ChevronDown, ChevronRight, Lock, Unlock, BarChart3 } from 'lucide-react'
+import { Plus, Copy, Trash2, Sparkles, Type, Code2, Square, Minus, ChevronDown, ChevronRight, Lock, Unlock, BarChart3, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { useEditorStore } from '@/store/editorStore'
 import type { SceneElement } from '@/types'
 
@@ -7,26 +9,38 @@ export function SlidePanel() {
   const {
     activeProject, activeSlideIndex, setActiveSlide,
     addSlide, duplicateSlide, duplicateSlideKeepIds, deleteSlide,
+    mobileSlidesOpen, setMobileSlidesOpen
   } = useEditorStore()
+  const isMobile = useIsMobile()
   const project = activeProject()
   if (!project) return null
   const { slides } = project
 
-  return (
-    <aside className="w-[220px] shrink-0 flex flex-col bg-[#161616] border-r border-white/8 overflow-hidden">
+  const panelContent = (
+    <div className={`h-full flex flex-col bg-[#161616] ${isMobile ? 'rounded-r-2xl shadow-2xl' : 'border-r border-white/8'}`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/6">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Slides</span>
-        <button
-          onClick={addSlide}
-          className="p-1 rounded-md text-neutral-600 hover:text-neutral-100 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent"
-        >
-          <Plus size={14} />
-        </button>
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/6 sticky top-0 bg-[#161616] z-10">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Slides & Layers</span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={addSlide}
+            className="p-1 rounded-md text-neutral-600 hover:text-neutral-100 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent"
+          >
+            <Plus size={14} />
+          </button>
+          {isMobile && (
+            <button
+              onClick={() => setMobileSlidesOpen(false)}
+              className="p-1 rounded-md text-neutral-500 hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Slide list */}
-      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 min-h-0 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 custom-scrollbar pb-10 md:pb-0">
         {slides.map((slide, i) => (
           <SlideThumb
             key={slide.id}
@@ -36,7 +50,9 @@ export function SlidePanel() {
             elements={slide.elements}
             isActive={activeSlideIndex === i}
             totalSlides={slides.length}
-            onSelect={() => setActiveSlide(i)}
+            onSelect={() => {
+              setActiveSlide(i)
+            }}
             onDuplicate={() => duplicateSlide(i)}
             onDuplicateKeepIds={() => duplicateSlideKeepIds(i)}
             onDelete={() => deleteSlide(i)}
@@ -53,6 +69,39 @@ export function SlidePanel() {
           <Plus size={13} /> Add Slide
         </button>
       </div>
+    </div>
+  )
+
+  if (isMobile) {
+    return (
+      <AnimatePresence>
+        {mobileSlidesOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileSlidesOpen(false)}
+              className="fixed inset-0 bg-black/60 z-100 backdrop-blur-sm"
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 bottom-0 left-0 w-[280px] z-101 overflow-hidden"
+            >
+              {panelContent}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    )
+  }
+
+  return (
+    <aside className="w-[220px] shrink-0 flex flex-col bg-[#161616] overflow-hidden">
+      {panelContent}
     </aside>
   )
 }
@@ -64,12 +113,12 @@ export function SlidePanel() {
 function ElementIcon({ type }: { type: SceneElement['type'] }) {
   const cls = 'shrink-0'
   switch (type) {
-    case 'text':  return <Type  size={9} className={cls} />
-    case 'code':  return <Code2 size={9} className={cls} />
+    case 'text': return <Type size={9} className={cls} />
+    case 'code': return <Code2 size={9} className={cls} />
     case 'shape': return <Square size={9} className={cls} />
-    case 'line':  return <Minus size={9} className={cls} />
+    case 'line': return <Minus size={9} className={cls} />
     case 'chart': return <BarChart3 size={9} className={cls} />
-    default:      return <Square size={9} className={cls} />
+    default: return <Square size={9} className={cls} />
   }
 }
 
@@ -79,10 +128,10 @@ function elementLabel(el: SceneElement): string {
       const v = (el.content as { value: string }).value?.trim()
       return v ? (v.length > 18 ? v.slice(0, 18) + '…' : v) : 'Text'
     }
-    case 'code':  return (el.content as { language: string }).language || 'Code'
+    case 'code': return (el.content as { language: string }).language || 'Code'
     case 'shape': return (el.content as { shapeType: string }).shapeType || 'Shape'
-    case 'line':  return 'Line'
-    default:      return el.type
+    case 'line': return 'Line'
+    default: return el.type
   }
 }
 
@@ -99,15 +148,14 @@ function ElementRow({ element }: { element: SceneElement }) {
     <div className="group/row relative">
       <div
         onClick={(e) => { e.stopPropagation(); setSelectedElement(element.id) }}
-        className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer transition-colors ${
-          isSelected
+        className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer transition-colors ${isSelected
             ? 'bg-blue-500/20 text-blue-300'
             : 'bg-transparent text-neutral-500 hover:bg-white/5 hover:text-neutral-300'
-        }`}
+          }`}
       >
         <ElementIcon type={element.type} />
         <span className="text-[9px] font-medium truncate flex-1">{elementLabel(element)}</span>
-        
+
         {/* Lock indicator (visible if locked OR on hover) */}
         {(isLocked || isSelected) && (
           <button
@@ -167,9 +215,8 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
   return (
     <div
       onClick={onSelect}
-      className={`relative rounded-md overflow-hidden cursor-pointer border-2 transition-all group ${
-        isActive ? 'border-blue-500' : 'border-transparent hover:border-white/12'
-      }`}
+      className={`relative rounded-md overflow-hidden cursor-pointer border-2 transition-all group ${isActive ? 'border-blue-500' : 'border-transparent hover:border-white/12'
+        }`}
     >
       {/* Thumbnail body */}
       <div

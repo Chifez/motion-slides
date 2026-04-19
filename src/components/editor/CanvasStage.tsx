@@ -48,7 +48,7 @@ export function CanvasStage() {
   return (
     <main
       ref={stageRef}
-      className="flex-1 bg-[#111111] flex items-center justify-center overflow-hidden relative"
+      className="flex-1 bg-[#111111] flex items-center justify-center overflow-hidden relative p-2 md:p-0"
       onClick={() => setSelectedElement(null)}
     >
       <div

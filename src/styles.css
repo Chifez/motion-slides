@@ -96,3 +96,18 @@ html, body {
   background: transparent !important;
   font-family: var(--font-mono);
 }
+
+/* ── Mobile Utilities ────────────────────── */
+@layer components {
+  .mobile-menu-item {
+    @apply w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-neutral-300 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+}
