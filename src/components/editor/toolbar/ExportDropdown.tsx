@@ -5,6 +5,7 @@ import { useClickOutside } from '@/hooks/useClickOutside'
 import { exportAsVideo, downloadBlob, type ExportProgress } from '@/lib/exportEngine'
 import { SOCIAL_PRESETS, type SocialPreset } from '@/lib/socialExport'
 import { ExportProgressToast } from './ExportProgressToast'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 
 const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-white/8 bg-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#242424]"
 
@@ -107,8 +108,8 @@ export function ExportDropdown() {
   return (
     <>
       <div className="relative" ref={ref}>
-        <button className={btnBase} onClick={() => setOpen(!open)}>
-          <Download size={13} /> Export
+        <button className={btnBase} onClick={() => setOpen(!open)} title="Export">
+          <Download size={13} /> {!useIsMobile() && "Export"}
         </button>
         {open && (
           <div className="absolute right-0 top-full mt-1.5 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-999 p-3 w-64">
