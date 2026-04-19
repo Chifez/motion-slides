@@ -1,3 +1,7 @@
+<img width="1200" height="630" alt="og (2)" src="https://github.com/user-attachments/assets/a6715a9e-2037-4ace-8d39-39942ac48d92" />
+
+
+
 # 🎬 MotionSlides
 
 **MotionSlides** is a high-fidelity, web-based presentation engine designed to bring Apple Keynote-level "Magic Move" transitions and developer-centric features to the browser.
@@ -28,6 +32,9 @@ A professional editing experience inspired by Figma and Keynote.
 
 ###  Prototype Mode
 Map out your presentation flow using a visual, node-based transition editor powered by `@xyflow/react`. Define how slides connect and which triggers (click, auto, timer) drive the story.
+
+
+<img width="1919" height="897" alt="capture_20260419_021753" src="https://github.com/user-attachments/assets/9789097d-60cc-4c7d-aa21-bfc16a62b7a5" />
 
 ---
 
