@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
 import { useMotionContext } from '@/context/MotionContext'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS } from '@/constants/animation'
 import { SELECTED_Z_INDEX } from '@/constants/canvas'
 import { PHASE_2_DELAY } from '@/lib/motionEngine'
@@ -20,7 +21,11 @@ interface Props {
 }
 
 export function CanvasElement({ element }: Props) {
-  const { selectedElementId, setSelectedElement, updateElement } = useEditorStore()
+  const { 
+    selectedElementId, setSelectedElement, updateElement,
+    setMobileInspectorOpen
+  } = useEditorStore()
+  const isMobile = useIsMobile()
   const {
     isTransitioning,
     durationSec,
@@ -39,7 +44,22 @@ export function CanvasElement({ element }: Props) {
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
     // Select here too as a fallback if onPointerDown was blocked or missed.
-    if (!element.locked) setSelectedElement(element.id)
+    if (!element.locked) {
+      setSelectedElement(element.id)
+      // On mobile, a single click shouldn't open inspector, 
+      // and if it's already open for another element, maybe we should close it?
+      // Actually, let's just not open it here.
+    }
+  }
+
+  function handleDoubleClick(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!element.locked) {
+      setSelectedElement(element.id)
+      if (isMobile) {
+        setMobileInspectorOpen(true)
+      }
+    }
   }
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
@@ -120,6 +140,7 @@ export function CanvasElement({ element }: Props) {
           transition={{ layout: { duration: 0 }, default: { duration: 0 } }}
           initial={false}
           onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
           onPointerDown={onPointerDown}
         >
           {renderContent()}

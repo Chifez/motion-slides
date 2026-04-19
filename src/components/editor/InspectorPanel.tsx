@@ -13,7 +13,10 @@ import { ChartSection } from './inspector/ChartSection'
 const sectionCls = "px-3 py-3 border-b border-white/6"
 
 export function InspectorPanel() {
-  const { selectedElementId, setSelectedElement, activeSlide, updateElement, deleteElement } = useEditorStore()
+  const { 
+    selectedElementId, setSelectedElement, activeSlide, updateElement, deleteElement,
+    mobileInspectorOpen, setMobileInspectorOpen
+  } = useEditorStore()
   const isMobile = useIsMobile()
   const slide = activeSlide()
   const element = slide?.elements.find((el) => el.id === selectedElementId)
@@ -41,7 +44,7 @@ export function InspectorPanel() {
               </button>
               {isMobile && (
                 <button
-                  onClick={() => setSelectedElement(null)}
+                  onClick={() => setMobileInspectorOpen(false)}
                   className="p-1.5 rounded-md text-neutral-500 hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent"
                 >
                   <X size={16} />
@@ -81,13 +84,13 @@ export function InspectorPanel() {
   if (isMobile) {
     return (
       <AnimatePresence>
-        {element && (
+        {element && mobileInspectorOpen && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedElement(null)}
+              onClick={() => setMobileInspectorOpen(false)}
               className="fixed inset-0 bg-black/60 z-100 backdrop-blur-sm"
             />
             <motion.aside

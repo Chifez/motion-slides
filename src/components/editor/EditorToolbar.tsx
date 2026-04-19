@@ -18,6 +18,8 @@ export function EditorToolbar({ project }: Props) {
     setPrototypeMode, mobileSlidesOpen, setMobileSlidesOpen
   } = useEditorStore()
 
+  const isMobile = useIsMobile();
+
   return (
     <header className="h-14 shrink-0 flex items-center gap-1 md:gap-2 px-2 md:px-3 bg-[#161616] border-b border-white/8 z-50">
       <Link to="/dashboard" className="p-1 md:p-1.5 rounded-md text-neutral-500 hover:text-neutral-100 hover:bg-white/6 transition-colors">
@@ -25,7 +27,7 @@ export function EditorToolbar({ project }: Props) {
       </Link>
       <div className="w-px h-5 bg-white/8 mx-0.5 md:mx-1" />
 
-      {useIsMobile() && (
+      {isMobile && (
         <button
           onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
           className={`p-2 rounded-md transition-colors border-none cursor-pointer ${mobileSlidesOpen ? 'bg-blue-600/20 text-blue-400' : 'text-neutral-500 hover:bg-white/6'
@@ -52,29 +54,29 @@ export function EditorToolbar({ project }: Props) {
         <button
           onClick={() => setPrototypeMode(false)}
           className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${!isPrototypeMode
-              ? 'bg-[#2a2a2a] text-neutral-100 shadow-sm'
-              : 'bg-transparent text-neutral-500 hover:text-neutral-300'
+            ? 'bg-[#2a2a2a] text-neutral-100 shadow-sm'
+            : 'bg-transparent text-neutral-500 hover:text-neutral-300'
             }`}
           title="Design Mode"
         >
-          <PenSquare size={12} /> {!useIsMobile() && "Design"}
+          <PenSquare size={12} /> {!isMobile && "Design"}
         </button>
         <button
           onClick={() => setPrototypeMode(true)}
           className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${isPrototypeMode
-              ? 'bg-[#2a2a2a] text-blue-400 shadow-sm'
-              : 'bg-transparent text-neutral-500 hover:text-neutral-300'
+            ? 'bg-[#2a2a2a] text-blue-400 shadow-sm'
+            : 'bg-transparent text-neutral-500 hover:text-neutral-300'
             }`}
           title="Prototype Mode"
         >
-          <GitBranch size={12} /> {!useIsMobile() && "Prototype"}
+          <GitBranch size={12} /> {!isMobile && "Prototype"}
         </button>
       </div>
 
       {!isPrototypeMode && (
         <>
           <div className="w-px h-5 bg-white/8 mx-1" />
-          {useIsMobile() ? <MobileElementDropdown /> : <ElementButtons />}
+          {isMobile ? <MobileElementDropdown /> : <ElementButtons />}
         </>
       )}
 
@@ -88,7 +90,7 @@ export function EditorToolbar({ project }: Props) {
         onClick={() => startPresentation()}
         title="Start Presentation"
       >
-        <Play size={13} fill="currentColor" /> {!useIsMobile() && "Play"}
+        <Play size={13} fill="currentColor" /> {!isMobile && "Play"}
       </button>
     </header>
   )

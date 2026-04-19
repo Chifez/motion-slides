@@ -7,7 +7,7 @@ import { CanvasStage } from '@/components/editor/CanvasStage'
 
 import { PrototypeCanvas } from '@/components/editor/prototype/PrototypeCanvas'
 import { useEditorShortcuts } from '@/hooks/useEditorShortcuts'
-import { useIsMobile } from '@/hooks/useMediaQuery'
+
 import { InspectorPanel } from '@/components/editor/InspectorPanel'
 import { PresentationOverlay } from '@/components/editor/PresentationOverlay'
 export const Route = createFileRoute('/editor/$projectId')({
@@ -34,7 +34,7 @@ function EditorPage() {
     )
   }
 
-  const isMobile = useIsMobile()
+
 
   return (
     <div className="h-screen flex flex-col bg-[#0d0d0d] overflow-hidden">

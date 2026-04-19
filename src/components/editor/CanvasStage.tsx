@@ -13,7 +13,7 @@ export function CanvasStage() {
   const { 
     activeProject, activeSlide, activeSlideIndex, setActiveSlide, 
     setSelectedElement, playbackSettings, updateSlide,
-    camera, setCamera 
+    camera, setCamera, setMobileInspectorOpen
   } = useEditorStore()
   const project = activeProject()
   const slide = activeSlide()
@@ -49,7 +49,10 @@ export function CanvasStage() {
     <main
       ref={stageRef}
       className="flex-1 bg-[#111111] flex items-center justify-center overflow-hidden relative p-2 md:p-0"
-      onClick={() => setSelectedElement(null)}
+      onClick={() => {
+        setSelectedElement(null)
+        setMobileInspectorOpen(false)
+      }}
     >
       <div
         data-canvas-board

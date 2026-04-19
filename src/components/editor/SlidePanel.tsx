@@ -140,17 +140,28 @@ function elementLabel(el: SceneElement): string {
 // ─────────────────────────────────────────────
 
 function ElementRow({ element }: { element: SceneElement }) {
-  const { selectedElementId, setSelectedElement, toggleElementLock, deleteElement } = useEditorStore()
+  const {
+    selectedElementId, setSelectedElement, toggleElementLock, deleteElement,
+    setMobileInspectorOpen, setMobileSlidesOpen
+  } = useEditorStore()
+  const isMobile = useIsMobile()
   const isSelected = selectedElementId === element.id
   const isLocked = element.locked
 
   return (
     <div className="group/row relative">
       <div
-        onClick={(e) => { e.stopPropagation(); setSelectedElement(element.id) }}
+        onClick={(e) => {
+          e.stopPropagation()
+          setSelectedElement(element.id)
+          if (isMobile) {
+            setMobileInspectorOpen(true)
+            setMobileSlidesOpen(false)
+          }
+        }}
         className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer transition-colors ${isSelected
-            ? 'bg-blue-500/20 text-blue-300'
-            : 'bg-transparent text-neutral-500 hover:bg-white/5 hover:text-neutral-300'
+          ? 'bg-blue-500/20 text-blue-300'
+          : 'bg-transparent text-neutral-500 hover:bg-white/5 hover:text-neutral-300'
           }`}
       >
         <ElementIcon type={element.type} />

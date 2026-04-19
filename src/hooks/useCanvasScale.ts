@@ -22,7 +22,7 @@ export function useCanvasScale(
       if (!el) return
       const { clientWidth: w, clientHeight: h } = el
       const padding = isMobile ? 12 : CANVAS_PADDING
-      setScale(Math.min((w - padding) / canvasWidth, (h - padding) / canvasHeight, 1))
+      setScale(Math.min((w - padding) / canvasWidth, (h - padding) / canvasHeight))
     }
 
     resize()
