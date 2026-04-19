@@ -1,5 +1,6 @@
 import { useEffect, useState, type RefObject } from 'react'
 import { CANVAS_PADDING } from '@/constants/canvas'
+import { useIsMobile } from './useMediaQuery'
 
 /**
  * Computes the CSS scale factor for the canvas to fit inside a container
@@ -11,6 +12,7 @@ export function useCanvasScale(
   canvasHeight: number,
 ): number {
   const [scale, setScale] = useState(1)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const el = containerRef.current
@@ -19,7 +21,8 @@ export function useCanvasScale(
     function resize() {
       if (!el) return
       const { clientWidth: w, clientHeight: h } = el
-      setScale(Math.min((w - CANVAS_PADDING) / canvasWidth, (h - CANVAS_PADDING) / canvasHeight, 1))
+      const padding = isMobile ? 12 : CANVAS_PADDING
+      setScale(Math.min((w - padding) / canvasWidth, (h - padding) / canvasHeight, 1))
     }
 
     resize()

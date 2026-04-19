@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Plus, Type, Code2, Shapes, Minus, ChevronRight } from 'lucide-react'
+import { Plus, Type, Code2, Shapes, Minus, BarChart3, ChevronRight } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { nanoid } from '@/lib/nanoid'
 import {
@@ -7,6 +7,7 @@ import {
   DEFAULT_CODE_ELEMENT,
   DEFAULT_SHAPE_ELEMENT,
   DEFAULT_LINE_ELEMENT,
+  DEFAULT_CHART_ELEMENT,
   LINE_TYPE_OPTIONS
 } from '@/constants/editor'
 import { useClickOutside } from '@/hooks/useClickOutside'
@@ -26,6 +27,7 @@ export function MobileElementDropdown() {
   const addText = () => { addElement({ ...DEFAULT_TEXT_ELEMENT, id: nanoid() }); setIsOpen(false) }
   const addCode = () => { addElement({ ...DEFAULT_CODE_ELEMENT, id: nanoid() }); setIsOpen(false) }
   const addShape = () => { addElement({ ...DEFAULT_SHAPE_ELEMENT, id: nanoid() }); setIsOpen(false) }
+  const addChart = () => { addElement({ ...DEFAULT_CHART_ELEMENT, id: nanoid() }); setIsOpen(false) }
 
 
   const addLine = (lineType: LineType) => {
@@ -50,6 +52,7 @@ export function MobileElementDropdown() {
           <button onClick={addText} className="mobile-menu-item"><Type size={14} /> Text</button>
           <button onClick={addCode} className="mobile-menu-item"><Code2 size={14} /> Code</button>
           <button onClick={addShape} className="mobile-menu-item"><Shapes size={14} /> Shape</button>
+          <button onClick={addChart} className="mobile-menu-item"><BarChart3 size={14} /> Chart</button>
 
 
           <div className="h-px bg-white/5 my-1" />

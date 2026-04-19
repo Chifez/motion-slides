@@ -146,3 +146,10 @@ export const LINE_TYPE_OPTIONS = [
   { value: 'step-before', label: 'Step Before', icon: '└' },
   { value: 'y-shaped', label: 'Y-Shaped', icon: 'Y' },
 ] as const
+
+export const CHART_TYPE_OPTIONS = [
+  { value: 'line', label: 'Line', icon: '—' },
+  { value: 'bar', label: 'Bar', icon: '▎' },
+  { value: 'area', label: 'Area', icon: '△' },
+  { value: 'pie', label: 'Pie', icon: '○' },
+] as const
