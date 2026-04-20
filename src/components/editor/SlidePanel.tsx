@@ -168,7 +168,7 @@ function elementLabel(el: SceneElement): string {
 function ElementRow({ element }: { element: SceneElement }) {
   const {
     selectedElementIds, setSelectedElement, setSelectedElements, toggleElementLock, deleteElement,
-    setMobileInspectorOpen, setMobileSlidesOpen
+    setMobileInspectorOpen, setMobileSlidesOpen, isMultiSelectMode
   } = useEditorStore()
   const isMobile = useIsMobile()
   const isSelected = selectedElementIds.includes(element.id)
@@ -179,12 +179,12 @@ function ElementRow({ element }: { element: SceneElement }) {
       <div
         onClick={(e) => {
           e.stopPropagation()
-          if (element.groupId && !e.shiftKey) {
+          if (element.groupId && !(e.shiftKey || isMultiSelectMode)) {
             const slide = useEditorStore.getState().activeProject()?.slides[useEditorStore.getState().activeSlideIndex]
             const groupIds = slide?.elements.filter(el => el.groupId === element.groupId).map(el => el.id) || [element.id]
             setSelectedElements(groupIds)
           } else {
-            setSelectedElement(element.id, e.shiftKey)
+            setSelectedElement(element.id, e.shiftKey || isMultiSelectMode)
           }
           if (isMobile) {
             setMobileInspectorOpen(true)
@@ -223,7 +223,7 @@ function ElementRow({ element }: { element: SceneElement }) {
 
 function GroupRow({ childrenElements }: { groupId: string, childrenElements: SceneElement[] }) {
   const [isOpen, setIsOpen] = useState(true)
-  const { selectedElementIds, setSelectedElements } = useEditorStore()
+  const { selectedElementIds, setSelectedElements, isMultiSelectMode } = useEditorStore()
   
   const allSelected = childrenElements.every(el => selectedElementIds.includes(el.id))
   
@@ -233,8 +233,8 @@ function GroupRow({ childrenElements }: { groupId: string, childrenElements: Sce
         onClick={(e) => {
           e.stopPropagation()
           const ids = childrenElements.map(el => el.id)
-          // If shift key, toggle selection for the whole group
-          if (e.shiftKey) {
+          // If shift key or multi-select mode, toggle selection for the whole group
+          if (e.shiftKey || isMultiSelectMode) {
             if (allSelected) {
               const remaining = selectedElementIds.filter(id => !ids.includes(id))
               setSelectedElements(remaining)

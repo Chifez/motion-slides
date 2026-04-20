@@ -11,6 +11,8 @@ export interface CanvasSlice {
   camera: Camera
   setCamera: (camera: Partial<Camera>) => void
   resetCamera: () => void
+  isMultiSelectMode: boolean
+  setMultiSelectMode: (isMultiSelectMode: boolean) => void
 }
 
 export const createCanvasSlice: StateCreator<EditorState, [], [], CanvasSlice> = (set) => ({
@@ -19,4 +21,7 @@ export const createCanvasSlice: StateCreator<EditorState, [], [], CanvasSlice> =
   setCamera: (updates) => set((s) => ({ camera: { ...s.camera, ...updates } })),
 
   resetCamera: () => set({ camera: { x: 0, y: 0, zoom: 1 } }),
+
+  isMultiSelectMode: false,
+  setMultiSelectMode: (isMultiSelectMode) => set({ isMultiSelectMode }),
 })

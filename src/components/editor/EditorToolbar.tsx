@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Play, PenSquare, GitBranch } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch, CheckSquare, Layout } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@/types'
 import { ElementButtons } from './toolbar/ElementButtons'
@@ -8,14 +8,14 @@ import { ExportDropdown } from './toolbar/ExportDropdown'
 import { Logo } from '@/components/ui/Logo'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { MobileElementDropdown } from './toolbar/MobileElementDropdown'
-import { Layout } from 'lucide-react'
 
 interface Props { project: Project }
 
 export function EditorToolbar({ project }: Props) {
   const {
     updateProjectName, startPresentation, isPrototypeMode,
-    setPrototypeMode, mobileSlidesOpen, setMobileSlidesOpen
+    setPrototypeMode, mobileSlidesOpen, setMobileSlidesOpen,
+    isMultiSelectMode, setMultiSelectMode
   } = useEditorStore()
 
   const isMobile = useIsMobile();
@@ -28,13 +28,23 @@ export function EditorToolbar({ project }: Props) {
       <div className="w-px h-5 bg-white/8 mx-0.5 md:mx-1" />
 
       {isMobile && (
-        <button
-          onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
-          className={`p-2 rounded-md transition-colors border-none cursor-pointer ${mobileSlidesOpen ? 'bg-blue-600/20 text-blue-400' : 'text-neutral-500 hover:bg-white/6'
-            }`}
-        >
-          <Layout size={16} />
-        </button>
+        <>
+          <button
+            onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
+            className={`p-2 rounded-md transition-colors border-none cursor-pointer ${mobileSlidesOpen ? 'bg-blue-600/20 text-blue-400' : 'text-neutral-500 hover:bg-white/6'
+              }`}
+          >
+            <Layout size={16} />
+          </button>
+          <button
+            onClick={() => setMultiSelectMode(!isMultiSelectMode)}
+            className={`p-2 rounded-md transition-colors border-none cursor-pointer ${isMultiSelectMode ? 'bg-blue-600/20 text-blue-400' : 'text-neutral-500 hover:bg-white/6'
+              }`}
+            title="Multi-select Mode"
+          >
+            <CheckSquare size={16} />
+          </button>
+        </>
       )}
 
       <Link to="/" className="items-center no-underline hidden sm:flex">

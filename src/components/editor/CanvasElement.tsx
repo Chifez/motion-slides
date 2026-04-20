@@ -23,7 +23,7 @@ interface Props {
 export function CanvasElement({ element }: Props) {
   const { 
     selectedElementIds, setSelectedElement, setSelectedElements, updateElementsBatch,
-    setMobileInspectorOpen
+    setMobileInspectorOpen, isMultiSelectMode
   } = useEditorStore()
   const isMobile = useIsMobile()
   const {
@@ -67,12 +67,12 @@ export function CanvasElement({ element }: Props) {
       // But we shouldn't overwrite selection if we are clicking an already selected element to drag it!
       const currentSelected = useEditorStore.getState().selectedElementIds
       if (!currentSelected.includes(element.id)) {
-        if (element.groupId && !e.shiftKey) {
+        if (element.groupId && !(e.shiftKey || isMultiSelectMode)) {
           const slide = useEditorStore.getState().activeProject()?.slides[useEditorStore.getState().activeSlideIndex]
           const groupIds = slide?.elements.filter(el => el.groupId === element.groupId).map(el => el.id) || [element.id]
           setSelectedElements(groupIds)
         } else {
-          setSelectedElement(element.id, e.shiftKey)
+          setSelectedElement(element.id, e.shiftKey || isMultiSelectMode)
         }
       }
     }
@@ -128,7 +128,7 @@ export function CanvasElement({ element }: Props) {
 
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
-  }, [element.id, element.locked, element.groupId, setSelectedElement, setSelectedElements, updateElementsBatch])
+  }, [element.id, element.locked, element.groupId, isMultiSelectMode, setSelectedElement, setSelectedElements, updateElementsBatch])
 
   function renderContent() {
     switch (element.type) {

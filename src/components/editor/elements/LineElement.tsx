@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import type { LineContent } from '@/types'
 import { useMotionContext } from '@/context/MotionContext'
 import { CODE_PHASE } from '@/lib/motionEngine'
+import { getArrow } from 'perfect-arrows'
 
 interface Props { content: LineContent }
 
@@ -20,22 +21,15 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
       return `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`
     }
     case 'curved': {
-      const dx = x2 - x1
-      const dy = y2 - y1
-      const dist = Math.hypot(dx, dy)
-      // Normal vector
-      const len = dist || 1
-      const nx = -dy / len
-      const ny = dx / len
-      
-      // Curve offset amount
-      const offset = dist * 0.25
-
-      const cx1 = x1 + dx * 0.25 + nx * offset
-      const cy1 = y1 + dy * 0.25 + ny * offset
-      const cx2 = x1 + dx * 0.75 + nx * offset
-      const cy2 = y1 + dy * 0.75 + ny * offset
-      return `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`
+      const arrow = getArrow(x1, y1, x2, y2, {
+        bow: 0.2,
+        stretch: 0.5,
+        padStart: 0,
+        padEnd: 0,
+        straights: false,
+      })
+      const [sx, sy, cx, cy, ex, ey] = arrow
+      return `M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`
     }
     case 'step-after':
       return `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`
@@ -82,7 +76,8 @@ export function LineElement({ content }: Props) {
   const w = 100
   const h = 100
   const d = buildLinePath(w, h, content)
-  const markerId = `arrow-${content.lineType}-${content.strokeWidth}`
+  const markerIdEnd = `arrow-end-${content.lineType}-${content.strokeWidth}`
+  const markerIdStart = `arrow-start-${content.lineType}-${content.strokeWidth}`
 
   return (
     <svg
@@ -97,12 +92,23 @@ export function LineElement({ content }: Props) {
     >
       <defs>
         <marker
-          id={markerId}
+          id={markerIdEnd}
           markerWidth="8"
           markerHeight="8"
           refX="6"
           refY="3"
           orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path d="M0,0 L0,6 L8,3 z" fill={content.color} />
+        </marker>
+        <marker
+          id={markerIdStart}
+          markerWidth="8"
+          markerHeight="8"
+          refX="6"
+          refY="3"
+          orient="auto-start-reverse"
           markerUnits="strokeWidth"
         >
           <path d="M0,0 L0,6 L8,3 z" fill={content.color} />
@@ -132,8 +138,8 @@ export function LineElement({ content }: Props) {
         }
         strokeLinecap="round"
         strokeLinejoin="round"
-        markerEnd={content.arrow !== 'none' ? `url(#${markerId})` : undefined}
-        markerStart={content.arrow === 'both' ? `url(#${markerId})` : undefined}
+        markerEnd={content.arrow !== 'none' ? `url(#${markerIdEnd})` : undefined}
+        markerStart={content.arrow === 'both' ? `url(#${markerIdStart})` : undefined}
         vectorEffect="non-scaling-stroke"
         animate={{ d, stroke: content.color, strokeWidth: content.strokeWidth }}
         transition={pathTransition}

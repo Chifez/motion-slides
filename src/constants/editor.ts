@@ -101,14 +101,14 @@ export const DEFAULT_SHAPE_ELEMENT = {
 export const DEFAULT_LINE_ELEMENT = {
   type: 'line' as const,
   position: { x: 100, y: 300 },
-  size: { width: 200, height: 2 },
+  size: { width: 200, height: 100 },
   rotation: 0,
   opacity: 1,
   zIndex: 5,
   content: {
     lineType: 'straight' as const,
-    x1: 0, y1: 0.5,
-    x2: 1, y2: 0.5,
+    x1: 0, y1: 0,
+    x2: 1, y2: 1,
     style: 'solid' as const,
     arrow: 'none' as const,
     color: 'rgba(255,255,255,0.5)',
