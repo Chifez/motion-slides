@@ -178,7 +178,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                     <span className="text-[9px] text-neutral-400">{Math.round(b.x * 100)}%</span>
                   </div>
                   <input 
-                    type="range" min="0" max="1" step="0.01" 
+                    type="range" min="-2" max="2" step="0.01" 
                     value={b.x} 
                     onChange={(e) => {
                       const newBranches = [...(content.branches || [])]
@@ -194,7 +194,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                     <span className="text-[9px] text-neutral-400">{Math.round(b.y * 100)}%</span>
                   </div>
                   <input 
-                    type="range" min="0" max="1" step="0.01" 
+                    type="range" min="-2" max="2" step="0.01" 
                     value={b.y} 
                     onChange={(e) => {
                       const newBranches = [...(content.branches || [])]

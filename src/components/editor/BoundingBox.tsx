@@ -156,21 +156,10 @@ export function BoundingBox({ element }: Props) {
         absEnd = { x: currentAbsX, y: currentAbsY }
       }
 
-      const allAbsPoints = [absStart, absEnd]
-      if (content.branches) {
-        content.branches.forEach((b, i) => {
-           if (nodeType === 'branch' && branchIndex === i) {
-             allAbsPoints.push({ x: currentAbsX, y: currentAbsY })
-           } else {
-             allAbsPoints.push({ x: element.position.x + b.x * element.size.width, y: element.position.y + b.y * element.size.height })
-           }
-        })
-      }
-      
-      const minX = Math.min(...allAbsPoints.map(p => p.x))
-      const minY = Math.min(...allAbsPoints.map(p => p.y))
-      const maxX = Math.max(...allAbsPoints.map(p => p.x))
-      const maxY = Math.max(...allAbsPoints.map(p => p.y))
+      const minX = Math.min(absStart.x, absEnd.x)
+      const minY = Math.min(absStart.y, absEnd.y)
+      const maxX = Math.max(absStart.x, absEnd.x)
+      const maxY = Math.max(absStart.y, absEnd.y)
       
       const newWidth = Math.max(1, maxX - minX)
       const newHeight = Math.max(1, maxY - minY)
@@ -180,10 +169,20 @@ export function BoundingBox({ element }: Props) {
       const nx2 = (absEnd.x - minX) / newWidth
       const ny2 = (absEnd.y - minY) / newHeight
       
-      const newBranches = allAbsPoints.slice(2).map(p => ({
-         x: (p.x - minX) / newWidth,
-         y: (p.y - minY) / newHeight
-      }))
+      const newBranches = content.branches?.map((b, i) => {
+         if (nodeType === 'branch' && branchIndex === i) {
+           return {
+             x: (currentAbsX - minX) / newWidth,
+             y: (currentAbsY - minY) / newHeight
+           }
+         }
+         const oldAbsX = element.position.x + b.x * element.size.width
+         const oldAbsY = element.position.y + b.y * element.size.height
+         return {
+           x: (oldAbsX - minX) / newWidth,
+           y: (oldAbsY - minY) / newHeight
+         }
+      })
 
       let newStartConn = content.startConnection
       let newEndConn = content.endConnection
