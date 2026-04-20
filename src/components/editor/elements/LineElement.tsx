@@ -1,3 +1,4 @@
+import React from 'react'
 import { motion } from 'framer-motion'
 import type { LineContent } from '@/types'
 import { useMotionContext } from '@/context/MotionContext'
@@ -69,12 +70,8 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
  */
 export function LineElement({ content }: Props) {
   const { isTransitioning, durationSec } = useMotionContext()
-
-  // Phase 1 easing — identical to CanvasElement & CodeElement
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
 
-  // In editor mode use zero duration so dragging feels instant.
-  // In presentation mode use the user's chosen duration for the morph.
   const pathTransition = isTransitioning
     ? {
         d: { duration: durationSec, ease: EASE_IN_OUT },
@@ -83,13 +80,18 @@ export function LineElement({ content }: Props) {
       }
     : { duration: 0 }
 
-  // Use a generous viewBox — the SVG fills the element's bounding box
   const w = 100
   const h = 100
-  const d = buildLinePath(w, h, content)
-  const markerIdEnd = `arrow-end-${content.lineType}-${content.strokeWidth}`
-  const markerIdStart = `arrow-start-${content.lineType}-${content.strokeWidth}`
 
+  // 1. Get all unique colors for markers
+  const uniqueColors = Array.from(new Set([
+    content.color,
+    ...(content.branches?.map(b => b.color).filter(Boolean) as string[] || [])
+  ]))
+
+  // 2. Main path logic (without branches)
+  const mainD = buildLinePath(w, h, { ...content, branches: undefined })
+  
   return (
     <svg
       viewBox={`-2 -2 ${w + 4} ${h + 4}`}
@@ -102,33 +104,37 @@ export function LineElement({ content }: Props) {
       }}
     >
       <defs>
-        <marker
-          id={markerIdEnd}
-          markerWidth="8"
-          markerHeight="8"
-          refX="6"
-          refY="3"
-          orient="auto"
-          markerUnits="strokeWidth"
-        >
-          <path d="M0,0 L0,6 L8,3 z" fill={content.color} />
-        </marker>
-        <marker
-          id={markerIdStart}
-          markerWidth="8"
-          markerHeight="8"
-          refX="6"
-          refY="3"
-          orient="auto-start-reverse"
-          markerUnits="strokeWidth"
-        >
-          <path d="M0,0 L0,6 L8,3 z" fill={content.color} />
-        </marker>
+        {uniqueColors.map(color => (
+          <React.Fragment key={color}>
+            <marker
+              id={`arrow-end-${color.replace('#', '')}`}
+              markerWidth="8"
+              markerHeight="8"
+              refX="6"
+              refY="3"
+              orient="auto"
+              markerUnits="strokeWidth"
+            >
+              <path d="M0,0 L0,6 L8,3 z" fill={color} />
+            </marker>
+            <marker
+              id={`arrow-start-${color.replace('#', '')}`}
+              markerWidth="8"
+              markerHeight="8"
+              refX="6"
+              refY="3"
+              orient="auto-start-reverse"
+              markerUnits="strokeWidth"
+            >
+              <path d="M0,0 L0,6 L8,3 z" fill={color} />
+            </marker>
+          </React.Fragment>
+        ))}
       </defs>
 
-      {/* Hit area for interaction — transparent thick stroke */}
+      {/* Main Path Hit Area */}
       <path
-        d={d}
+        d={mainD}
         fill="none"
         stroke="transparent"
         strokeWidth={Math.max(12, content.strokeWidth * 4)}
@@ -136,9 +142,9 @@ export function LineElement({ content }: Props) {
         vectorEffect="non-scaling-stroke"
       />
 
-      {/* Visible line — motion.path for smooth path + color morphing */}
+      {/* Main Path */}
       <motion.path
-        d={d}
+        d={mainD}
         fill="none"
         stroke={content.color}
         strokeWidth={content.strokeWidth}
@@ -149,44 +155,102 @@ export function LineElement({ content }: Props) {
         }
         strokeLinecap="round"
         strokeLinejoin="round"
-        markerEnd={content.arrow !== 'none' ? `url(#${markerIdEnd})` : undefined}
-        markerStart={content.arrow === 'both' ? `url(#${markerIdStart})` : undefined}
+        markerEnd={content.arrow !== 'none' ? `url(#arrow-end-${content.color.replace('#', '')})` : undefined}
+        markerStart={content.arrow === 'both' ? `url(#arrow-start-${content.color.replace('#', '')})` : undefined}
         vectorEffect="non-scaling-stroke"
-        animate={{ d, stroke: content.color, strokeWidth: content.strokeWidth }}
+        animate={{ d: mainD, stroke: content.color, strokeWidth: content.strokeWidth }}
         transition={pathTransition}
       />
 
-      {/* Label at midpoint */}
-      {content.label && (() => {
-        const mx = (content.x1 + content.x2) / 2 * w
-        const my = (content.y1 + content.y2) / 2 * h
+      {/* Main Label */}
+      {content.label && (
+        <LabelGroup 
+          text={content.label} 
+          x={(content.x1 + content.x2) / 2 * w} 
+          y={(content.y1 + content.y2) / 2 * h} 
+        />
+      )}
+
+      {/* Branches */}
+      {content.lineType === 'branching' && content.branches?.map((b, i) => {
+        const bx = b.x * w
+        const by = b.y * h
+        const x1 = content.x1 * w
+        const y1 = content.y1 * h
+        const bmidX = (x1 + bx) / 2
+        const branchD = `M ${x1} ${y1} L ${bmidX} ${y1} L ${bmidX} ${by} L ${bx} ${by}`
+        const branchColor = b.color || content.color
+        const branchStyle = b.style || content.style
+
         return (
-          <g>
-            <rect
-              x={mx - content.label.length * 3 - 4}
-              y={my - 9}
-              width={content.label.length * 6 + 8}
-              height={18}
-              rx={4}
-              fill="#1a1a1a"
-              fillOpacity={0.92}
-              stroke="rgba(255,255,255,0.12)"
-              strokeWidth={0.5}
+          <React.Fragment key={i}>
+            {/* Hit Area */}
+            <path
+              d={branchD}
+              fill="none"
+              stroke="transparent"
+              strokeWidth={Math.max(12, content.strokeWidth * 4)}
+              style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+              vectorEffect="non-scaling-stroke"
             />
-            <text
-              x={mx}
-              y={my + 4}
-              fill="#a3a3a3"
-              fontSize="10"
-              fontFamily="Inter, sans-serif"
-              textAnchor="middle"
-            >
-              {content.label}
-            </text>
-          </g>
+            {/* Branch Path */}
+            <motion.path
+              d={branchD}
+              fill="none"
+              stroke={branchColor}
+              strokeWidth={content.strokeWidth}
+              strokeDasharray={
+                branchStyle === 'dashed' ? '8 5'
+                : branchStyle === 'dotted' ? '2 4'
+                : undefined
+              }
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              markerEnd={content.arrow !== 'none' ? `url(#arrow-end-${branchColor.replace('#', '')})` : undefined}
+              vectorEffect="non-scaling-stroke"
+              animate={{ d: branchD, stroke: branchColor, strokeWidth: content.strokeWidth }}
+              transition={pathTransition}
+            />
+            {/* Branch Label */}
+            {b.label && (
+              <LabelGroup 
+                text={b.label} 
+                x={bx} 
+                y={by - 15} 
+              />
+            )}
+          </React.Fragment>
         )
-      })()}
+      })}
     </svg>
+  )
+}
+
+function LabelGroup({ text, x, y }: { text: string, x: number, y: number }) {
+  return (
+    <g>
+      <rect
+        x={x - text.length * 3 - 4}
+        y={y - 9}
+        width={text.length * 6 + 8}
+        height={18}
+        rx={4}
+        fill="#1a1a1a"
+        fillOpacity={0.92}
+        stroke="rgba(255,255,255,0.12)"
+        strokeWidth={0.5}
+      />
+      <text
+        x={x}
+        y={y + 4}
+        fill="#a3a3a3"
+        fontSize="10"
+        fontFamily="Inter, sans-serif"
+        textAnchor="middle"
+      >
+        {text}
+      </text>
+    </g>
   )
 }
 

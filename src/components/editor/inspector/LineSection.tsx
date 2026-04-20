@@ -161,18 +161,89 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
             </button>
           </div>
           {(content.branches || []).map((b, idx) => (
-            <div key={idx} className="flex flex-col gap-2 p-2.5 bg-white/5 rounded-lg mb-2.5 border border-white/4">
+            <div key={idx} className="flex flex-col gap-3 p-3 bg-white/5 rounded-lg mb-3 border border-white/4">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-medium text-neutral-400 tracking-tight">Point {idx + 1}</span>
+                <span className="text-[10px] font-bold text-blue-400 tracking-tight">Branch {idx + 1}</span>
                 <button 
                   onClick={() => onUpdate({ ...content, branches: content.branches?.filter((_, i) => i !== idx) })}
                   className="text-neutral-600 hover:text-red-500 transition-colors p-0.5 border-none bg-transparent cursor-pointer"
                 >
-                  <Trash2 size={11} />
+                  <Trash2 size={12} />
                 </button>
               </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-col gap-1.5">
+
+              {/* Individual Branch Label */}
+              <div className="flex flex-col gap-1">
+                <span className="text-[9px] text-neutral-500 font-medium">Label</span>
+                <input
+                  type="text"
+                  value={b.label ?? ''}
+                  onChange={(e) => {
+                    const newBranches = [...(content.branches || [])]
+                    newBranches[idx] = { ...b, label: e.target.value }
+                    onUpdate({ ...content, branches: newBranches })
+                  }}
+                  placeholder="Branch label"
+                  className="w-full bg-[#1c1c1c] border border-white/8 rounded px-2 py-1 text-[11px] text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              {/* Individual Color & Style */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[9px] text-neutral-500 font-medium">Color</span>
+                  <div className="flex gap-1.5 items-center">
+                    <input
+                      type="color"
+                      value={b.color || content.color}
+                      onChange={(e) => {
+                        const newBranches = [...(content.branches || [])]
+                        newBranches[idx] = { ...b, color: e.target.value }
+                        onUpdate({ ...content, branches: newBranches })
+                      }}
+                      className="w-6 h-6 rounded cursor-pointer border-none bg-transparent"
+                    />
+                    <button 
+                      onClick={() => {
+                        const newBranches = [...(content.branches || [])]
+                        const { color, ...rest } = b
+                        newBranches[idx] = rest
+                        onUpdate({ ...content, branches: newBranches })
+                      }}
+                      className="text-[8px] text-neutral-600 hover:text-neutral-400 border-none bg-transparent underline cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[9px] text-neutral-500 font-medium">Style</span>
+                  <select
+                    value={b.style || 'default'}
+                    onChange={(e) => {
+                      const newBranches = [...(content.branches || [])]
+                      const val = e.target.value
+                      if (val === 'default') {
+                        const { style, ...rest } = b
+                        newBranches[idx] = rest
+                      } else {
+                        newBranches[idx] = { ...b, style: val as any }
+                      }
+                      onUpdate({ ...content, branches: newBranches })
+                    }}
+                    className="w-full bg-[#1c1c1c] border border-white/8 rounded px-1.5 py-1 text-[10px] text-neutral-100 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="default">Default</option>
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Position Sliders */}
+              <div className="flex flex-col gap-2 pt-1">
+                <div className="flex flex-col gap-1">
                   <div className="flex justify-between items-center px-0.5">
                     <span className="text-[9px] text-neutral-500 font-medium">X Delta</span>
                     <span className="text-[9px] text-neutral-400">{Math.round(b.x * 100)}%</span>
@@ -188,7 +259,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                     className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-500"
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <div className="flex justify-between items-center px-0.5">
                     <span className="text-[9px] text-neutral-500 font-medium">Y Delta</span>
                     <span className="text-[9px] text-neutral-400">{Math.round(b.y * 100)}%</span>

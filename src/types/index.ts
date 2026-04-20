@@ -78,6 +78,13 @@ export interface Connection {
   handleId: 'top' | 'right' | 'bottom' | 'left' | 'center'
 }
 
+export interface BranchContent extends Position {
+  style?: 'solid' | 'dashed' | 'dotted'
+  color?: string
+  label?: string
+  arrow?: 'none' | 'end'
+}
+
 export interface LineContent {
   lineType: LineType
   /** Normalized endpoint positions (0–1) relative to the element's bounding box */
@@ -85,7 +92,7 @@ export interface LineContent {
   y1: number
   x2: number
   y2: number
-  branches?: Position[]
+  branches?: BranchContent[]
   startConnection?: Connection
   endConnection?: Connection
   style: 'solid' | 'dashed' | 'dotted'
