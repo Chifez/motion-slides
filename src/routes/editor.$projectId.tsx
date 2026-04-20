@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { EditorToolbar } from '@/components/editor/EditorToolbar'
 import { SlidePanel } from '@/components/editor/SlidePanel'
@@ -10,19 +9,19 @@ import { useEditorShortcuts } from '@/hooks/useEditorShortcuts'
 
 import { InspectorPanel } from '@/components/editor/InspectorPanel'
 import { PresentationOverlay } from '@/components/editor/PresentationOverlay'
+
 export const Route = createFileRoute('/editor/$projectId')({
+  loader: ({ params }) => {
+    useEditorStore.getState().loadProject(params.projectId)
+  },
   component: EditorPage,
 })
 
 function EditorPage() {
-  const { projectId } = Route.useParams()
-  const { loadProject, activeProject, isPresenting, isPrototypeMode } = useEditorStore()
+
+  const { activeProject, isPresenting, isPrototypeMode } = useEditorStore()
 
   useEditorShortcuts()
-
-  useEffect(() => {
-    loadProject(projectId)
-  }, [projectId, loadProject])
 
   const project = activeProject()
   if (!project) {

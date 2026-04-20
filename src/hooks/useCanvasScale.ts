@@ -29,7 +29,7 @@ export function useCanvasScale(
     const ro = new ResizeObserver(resize)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [containerRef, canvasWidth, canvasHeight])
+  }, [containerRef, canvasWidth, canvasHeight, isMobile])
 
   return scale
 }

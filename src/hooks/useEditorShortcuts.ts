@@ -5,16 +5,17 @@ import { useEditorStore } from '@/store/editorStore'
  * Global keyboard shortcuts for the editor (Duplicate, Delete, etc.)
  */
 export function useEditorShortcuts() {
-  const { 
-    selectedElementId, duplicateElement, deleteElement,
-    activeSlideIndex, setActiveSlide, projects, activeProjectId
-  } = useEditorStore()
-
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       // Don't trigger shortcuts when typing in inputs
       const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
       if (isInput) return
+
+      const state = useEditorStore.getState()
+      const { 
+        selectedElementId, duplicateElement, deleteElement,
+        activeSlideIndex, setActiveSlide, projects, activeProjectId
+      } = state
 
       const project = projects.find(p => p.id === activeProjectId)
       if (!project) return
@@ -47,8 +48,5 @@ export function useEditorShortcuts() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [
-    selectedElementId, duplicateElement, deleteElement, 
-    activeSlideIndex, setActiveSlide, projects, activeProjectId
-  ])
+  }, [])
 }
