@@ -136,6 +136,6 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
   },
 
   setActiveSlide: (index) => {
-    set({ activeSlideIndex: index, selectedElementId: null })
+    set({ activeSlideIndex: index, selectedElementIds: [] })
   },
 })

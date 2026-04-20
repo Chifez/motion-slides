@@ -29,22 +29,17 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
       {/* Line Type */}
       <div className="mb-2">
         <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Type</span>
-        <div className="flex gap-1">
+        <select
+          value={content.lineType}
+          onChange={(e) => onUpdate({ ...content, lineType: e.target.value as LineType })}
+          className={selectCls}
+        >
           {LINE_TYPE_OPTIONS.map((lt) => (
-            <button
-              key={lt.value}
-              onClick={() => onUpdate({ ...content, lineType: lt.value as LineType })}
-              className={`flex-1 flex items-center justify-center gap-1 text-[10px] py-1.5 rounded-md border transition-colors cursor-pointer ${
-                content.lineType === lt.value
-                  ? 'border-blue-500 bg-blue-500/15 text-blue-400'
-                  : 'border-white/8 bg-[#1c1c1c] text-neutral-500 hover:text-neutral-100'
-              }`}
-            >
-              <span className="text-sm">{lt.icon}</span>
+            <option key={lt.value} value={lt.value}>
               {lt.label}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
       {/* Line Style */}

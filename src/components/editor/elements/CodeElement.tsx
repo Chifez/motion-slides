@@ -188,7 +188,7 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [content.value, content.language])
+  }, [content.value, content.language, content.fontSize, content.lineHeight, content.fontFamily])
 
   // ─────────────────────────────────────────────
   // Step 2 — ghost renders → measure → build FLIP animTokens

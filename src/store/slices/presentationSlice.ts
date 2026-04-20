@@ -22,7 +22,7 @@ export const createPresentationSlice: StateCreator<EditorState, [], [], Presenta
   playbackSettings: { ...DEFAULT_PLAYBACK_SETTINGS },
 
   startPresentation: () => {
-    set({ isPresenting: true, selectedElementId: null, activeSlideIndex: 0 })
+    set({ isPresenting: true, selectedElementIds: [], activeSlideIndex: 0 })
   },
 
   stopPresentation: () => {

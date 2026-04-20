@@ -5,7 +5,11 @@
 
 import type { BundledLanguage } from 'shiki'
 import { CODE_LANGUAGES } from '@/constants/editor'
-import type { TokenInfo } from '@/lib/motionEngine'
+export interface TokenInfo {
+  content: string
+  color: string
+  fontStyle: number
+}
 
 let highlighterPromise: Promise<import('shiki').Highlighter> | null = null
 

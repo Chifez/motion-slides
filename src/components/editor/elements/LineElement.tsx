@@ -20,10 +20,21 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
       return `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`
     }
     case 'curved': {
-      const cx1 = x1 + (x2 - x1) * 0.4
-      const cy1 = y1
-      const cx2 = x2 - (x2 - x1) * 0.4
-      const cy2 = y2
+      const dx = x2 - x1
+      const dy = y2 - y1
+      const dist = Math.hypot(dx, dy)
+      // Normal vector
+      const len = dist || 1
+      const nx = -dy / len
+      const ny = dx / len
+      
+      // Curve offset amount
+      const offset = dist * 0.25
+
+      const cx1 = x1 + dx * 0.25 + nx * offset
+      const cy1 = y1 + dy * 0.25 + ny * offset
+      const cx2 = x1 + dx * 0.75 + nx * offset
+      const cy2 = y1 + dy * 0.75 + ny * offset
       return `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`
     }
     case 'step-after':

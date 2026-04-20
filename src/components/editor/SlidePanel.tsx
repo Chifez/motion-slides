@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Copy, Trash2, Sparkles, Type, Code2, Square, Minus, ChevronDown, ChevronRight, Lock, Unlock, BarChart3, X } from 'lucide-react'
+import { Plus, Copy, Trash2, Sparkles, Type, Code2, Square, Minus, ChevronDown, ChevronRight, Lock, Unlock, BarChart3, X, Combine, Ungroup } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { useEditorStore } from '@/store/editorStore'
@@ -7,12 +7,14 @@ import type { SceneElement } from '@/types'
 
 export function SlidePanel() {
   const {
-    activeProject, activeSlideIndex, setActiveSlide,
+    activeProject, activeSlideIndex, setActiveSlide, activeSlide,
     addSlide, duplicateSlide, duplicateSlideKeepIds, deleteSlide,
-    mobileSlidesOpen, setMobileSlidesOpen
+    mobileSlidesOpen, setMobileSlidesOpen,
+    selectedElementIds, groupElements, ungroupElements
   } = useEditorStore()
   const isMobile = useIsMobile()
   const project = activeProject()
+  const slide = activeSlide()
   if (!project) return null
   const { slides } = project
 
@@ -22,6 +24,30 @@ export function SlidePanel() {
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/6 sticky top-0 bg-[#161616] z-10">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Slides & Layers</span>
         <div className="flex items-center gap-1">
+          {/* Show Group/Ungroup icon if multiple items or a group is selected */}
+          {(() => {
+            if (selectedElementIds.length > 1) {
+              const elements = slide?.elements.filter(e => selectedElementIds.includes(e.id)) || []
+              const firstGroupId = elements[0]?.groupId
+              const allSameGroup = firstGroupId && elements.every(el => el.groupId === firstGroupId) && elements.length > 1
+              
+              if (allSameGroup) {
+                return (
+                  <button onClick={() => ungroupElements(firstGroupId)} className="p-1 rounded-md text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 transition-colors cursor-pointer border-none bg-transparent" title="Ungroup">
+                    <Ungroup size={13} />
+                  </button>
+                )
+              }
+              
+              return (
+                <button onClick={() => groupElements(selectedElementIds)} className="p-1 rounded-md text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer border-none bg-transparent" title="Group Selection">
+                  <Combine size={13} />
+                </button>
+              )
+            }
+            return null
+          })()}
+
           <button
             onClick={addSlide}
             className="p-1 rounded-md text-neutral-600 hover:text-neutral-100 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent"
@@ -141,11 +167,11 @@ function elementLabel(el: SceneElement): string {
 
 function ElementRow({ element }: { element: SceneElement }) {
   const {
-    selectedElementId, setSelectedElement, toggleElementLock, deleteElement,
+    selectedElementIds, setSelectedElement, setSelectedElements, toggleElementLock, deleteElement,
     setMobileInspectorOpen, setMobileSlidesOpen
   } = useEditorStore()
   const isMobile = useIsMobile()
-  const isSelected = selectedElementId === element.id
+  const isSelected = selectedElementIds.includes(element.id)
   const isLocked = element.locked
 
   return (
@@ -153,7 +179,13 @@ function ElementRow({ element }: { element: SceneElement }) {
       <div
         onClick={(e) => {
           e.stopPropagation()
-          setSelectedElement(element.id)
+          if (element.groupId && !e.shiftKey) {
+            const slide = useEditorStore.getState().activeProject()?.slides[useEditorStore.getState().activeSlideIndex]
+            const groupIds = slide?.elements.filter(el => el.groupId === element.groupId).map(el => el.id) || [element.id]
+            setSelectedElements(groupIds)
+          } else {
+            setSelectedElement(element.id, e.shiftKey)
+          }
           if (isMobile) {
             setMobileInspectorOpen(true)
             setMobileSlidesOpen(false)
@@ -188,6 +220,54 @@ function ElementRow({ element }: { element: SceneElement }) {
     </div>
   )
 }
+
+function GroupRow({ childrenElements }: { groupId: string, childrenElements: SceneElement[] }) {
+  const [isOpen, setIsOpen] = useState(true)
+  const { selectedElementIds, setSelectedElements } = useEditorStore()
+  
+  const allSelected = childrenElements.every(el => selectedElementIds.includes(el.id))
+  
+  return (
+    <div className="flex flex-col">
+      <div 
+        onClick={(e) => {
+          e.stopPropagation()
+          const ids = childrenElements.map(el => el.id)
+          // If shift key, toggle selection for the whole group
+          if (e.shiftKey) {
+            if (allSelected) {
+              const remaining = selectedElementIds.filter(id => !ids.includes(id))
+              setSelectedElements(remaining)
+            } else {
+              setSelectedElements([...new Set([...selectedElementIds, ...ids])])
+            }
+          } else {
+            setSelectedElements(ids)
+          }
+        }}
+        className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer transition-colors ${
+          allSelected ? 'bg-blue-500/20 text-blue-300' : 'bg-transparent text-neutral-500 hover:bg-white/5 hover:text-neutral-300'
+        }`}
+      >
+        <button 
+          onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen) }} 
+          className="p-0 text-inherit bg-transparent border-none cursor-pointer hover:text-white"
+        >
+          {isOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+        </button>
+        <Combine size={10} className="shrink-0" />
+        <span className="text-[9px] font-medium truncate flex-1">Group</span>
+      </div>
+      
+      {isOpen && (
+        <div className="pl-4 flex flex-col gap-px border-l border-white/5 ml-3 my-0.5">
+          {childrenElements.map(el => <ElementRow key={el.id} element={el} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
 
 // ─────────────────────────────────────────────
 // Slide thumbnail
@@ -303,9 +383,40 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
           {/* Element rows — reversed so top-z-index is first (Figma convention) */}
           {layersOpen && (
             <div className="pb-1 px-1 flex flex-col gap-px max-h-[160px] overflow-y-auto custom-scrollbar">
-              {[...elements].reverse().map((el) => (
-                <ElementRow key={el.id} element={el} />
-              ))}
+              {(() => {
+                // Build a layer tree
+                interface LayerNode { type: 'element' | 'group', id: string, element?: SceneElement, children?: SceneElement[] }
+                const tree: LayerNode[] = []
+                const groupMap = new Map<string, LayerNode>()
+                
+                elements.forEach(el => {
+                  if (el.groupId) {
+                    if (!groupMap.has(el.groupId)) {
+                      const groupNode: LayerNode = { type: 'group', id: el.groupId, children: [] }
+                      groupMap.set(el.groupId, groupNode)
+                      tree.push(groupNode)
+                    }
+                    groupMap.get(el.groupId)!.children!.push(el)
+                  } else {
+                    tree.push({ type: 'element', id: el.id, element: el })
+                  }
+                })
+                
+                // Reverse for top-to-bottom rendering
+                tree.reverse()
+                tree.forEach(node => {
+                  if (node.type === 'group' && node.children) {
+                    node.children.reverse()
+                  }
+                })
+
+                return tree.map(node => {
+                  if (node.type === 'group') {
+                    return <GroupRow key={node.id} groupId={node.id} childrenElements={node.children!} />
+                  }
+                  return <ElementRow key={node.id} element={node.element!} />
+                })
+              })()}
             </div>
           )}
         </div>

@@ -20,7 +20,7 @@ export const createPrototypeSlice: StateCreator<EditorState, [], [], PrototypeSl
   selectedTransitionId: null,
 
   setPrototypeMode: (active) => {
-    set({ isPrototypeMode: active, selectedElementId: null, selectedTransitionId: null })
+    set({ isPrototypeMode: active, selectedElementIds: [], selectedTransitionId: null })
   },
 
   addTransition: (data) => {

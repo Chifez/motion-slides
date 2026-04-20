@@ -30,7 +30,7 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
       projects: [...s.projects, project],
       activeProjectId: project.id,
       activeSlideIndex: 0,
-      selectedElementId: null,
+      selectedElementIds: [],
     }))
     return project
   },
@@ -47,7 +47,7 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
     set((s) => ({
       activeProjectId: id,
       activeSlideIndex: 0,
-      selectedElementId: null,
+      selectedElementIds: [],
       projects: s.projects.map((p) => {
         if (p.id !== id) return p
         return {

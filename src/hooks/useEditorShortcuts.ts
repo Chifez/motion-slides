@@ -13,25 +13,45 @@ export function useEditorShortcuts() {
 
       const state = useEditorStore.getState()
       const { 
-        selectedElementId, duplicateElement, deleteElement,
-        activeSlideIndex, setActiveSlide, projects, activeProjectId
+        selectedElementIds, duplicateElement, deleteElement,
+        activeSlideIndex, setActiveSlide, projects, activeProjectId,
+        groupElements, ungroupElements
       } = state
 
       const project = projects.find(p => p.id === activeProjectId)
       if (!project) return
 
+      // --- Group / Ungroup Actions ---
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'g') {
+        e.preventDefault()
+        if (e.shiftKey) {
+          // Ungroup
+          const slide = project.slides[activeSlideIndex]
+          const firstSelected = slide?.elements.find(el => selectedElementIds.includes(el.id))
+          if (firstSelected?.groupId) {
+            ungroupElements(firstSelected.groupId)
+          }
+        } else {
+          // Group
+          if (selectedElementIds.length > 1) {
+            groupElements(selectedElementIds)
+          }
+        }
+      }
+
       // --- Element Actions ---
-      if (selectedElementId) {
+      if (selectedElementIds.length > 0) {
         // Duplicate (Cmd/Ctrl + D)
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') {
           e.preventDefault()
-          duplicateElement(selectedElementId)
+          // Duplicate all selected
+          selectedElementIds.forEach(id => duplicateElement(id))
         }
 
         // Delete (Backspace / Delete)
         if (e.key === 'Backspace' || e.key === 'Delete') {
-          // Check if it's not a text editing state (if we had one)
-          deleteElement(selectedElementId)
+          // Delete all selected
+          selectedElementIds.forEach(id => deleteElement(id))
         }
       }
 

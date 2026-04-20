@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef, useLayoutEffect } from 'react'
-import { AnimatePresence, LayoutGroup } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'

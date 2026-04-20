@@ -17,10 +17,8 @@ interface Props {
  * Handles the Match → Diff → Measure → Invert → Animate lifecycle.
  * Used in both the Editor and Presentation mode to ensure visual parity.
  */
-export function MotionStage({ slide, previousSlide, settings, activeTransition, mode }: Props) {
+export function MotionStage({ slide, previousSlide, settings, activeTransition }: Props) {
   if (!slide) return null
-
-  const isPresentation = mode === 'presentation'
 
   return (
     <MotionProvider

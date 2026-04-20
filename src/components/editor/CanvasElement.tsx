@@ -22,7 +22,7 @@ interface Props {
 
 export function CanvasElement({ element }: Props) {
   const { 
-    selectedElementId, setSelectedElement, updateElement,
+    selectedElementIds, setSelectedElement, setSelectedElements, updateElementsBatch,
     setMobileInspectorOpen
   } = useEditorStore()
   const isMobile = useIsMobile()
@@ -33,9 +33,10 @@ export function CanvasElement({ element }: Props) {
     continuingIds,
     transitionAnimation,
   } = useMotionContext()
-  const isSelected = selectedElementId === element.id
+  const isSelected = selectedElementIds.includes(element.id)
   const isDragging = useRef(false)
-  const dragStart = useRef({ x: 0, y: 0, elX: 0, elY: 0 })
+  const dragStartCoords = useRef<Record<string, { x: number, y: number }>>({})
+  const dragStartPointer = useRef({ x: 0, y: 0 })
 
   // ── Identity Check ──
   // Is this element present in both the previous and current slide?
@@ -43,19 +44,13 @@ export function CanvasElement({ element }: Props) {
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
-    // Select here too as a fallback if onPointerDown was blocked or missed.
-    if (!element.locked) {
-      setSelectedElement(element.id)
-      // On mobile, a single click shouldn't open inspector, 
-      // and if it's already open for another element, maybe we should close it?
-      // Actually, let's just not open it here.
-    }
   }
 
   function handleDoubleClick(e: React.MouseEvent) {
     e.stopPropagation()
     if (!element.locked) {
-      setSelectedElement(element.id)
+      // Deep select
+      setSelectedElement(element.id, false)
       if (isMobile) {
         setMobileInspectorOpen(true)
       }
@@ -68,29 +63,61 @@ export function CanvasElement({ element }: Props) {
     
     // Select on pointerdown (Figma style)
     if (!element.locked) {
-      setSelectedElement(element.id)
+      // If we are shift-clicking, we toggle. If we are clicking a group, we select the group.
+      // But we shouldn't overwrite selection if we are clicking an already selected element to drag it!
+      const currentSelected = useEditorStore.getState().selectedElementIds
+      if (!currentSelected.includes(element.id)) {
+        if (element.groupId && !e.shiftKey) {
+          const slide = useEditorStore.getState().activeProject()?.slides[useEditorStore.getState().activeSlideIndex]
+          const groupIds = slide?.elements.filter(el => el.groupId === element.groupId).map(el => el.id) || [element.id]
+          setSelectedElements(groupIds)
+        } else {
+          setSelectedElement(element.id, e.shiftKey)
+        }
+      }
     }
 
     // Only prevent default if we're not clicking an interactive element inside
     // e.preventDefault() // Removing this to allow click events to bubble if needed, but we handle selection here now.
 
     isDragging.current = false
-    dragStart.current = { x: e.clientX, y: e.clientY, elX: element.position.x, elY: element.position.y }
+    dragStartPointer.current = { x: e.clientX, y: e.clientY }
+    
+    const currentSelectedIds = useEditorStore.getState().selectedElementIds
+    const targetIds = currentSelectedIds.includes(element.id) ? currentSelectedIds : [element.id]
+    
+    // Cache the starting coordinates for all elements that are about to be dragged
+    const slide = useEditorStore.getState().activeProject()?.slides[useEditorStore.getState().activeSlideIndex]
+    if (slide) {
+      dragStartCoords.current = {}
+      targetIds.forEach(id => {
+        const el = slide.elements.find(e => e.id === id)
+        if (el) dragStartCoords.current[id] = { x: el.position.x, y: el.position.y }
+      })
+    }
 
     const el = e.currentTarget as HTMLElement
     el.setPointerCapture(e.pointerId)
 
     const onMove = (ev: PointerEvent) => {
       if (element.locked) return
-      const dx = ev.clientX - dragStart.current.x
-      const dy = ev.clientY - dragStart.current.y
+      const dx = ev.clientX - dragStartPointer.current.x
+      const dy = ev.clientY - dragStartPointer.current.y
       if (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX) isDragging.current = true
 
       const canvasBoard = el.parentElement
       const scale = canvasBoard ? canvasBoard.getBoundingClientRect().width / canvasBoard.offsetWidth : 1
-      updateElement(element.id, {
-        position: { x: dragStart.current.elX + dx / scale, y: dragStart.current.elY + dy / scale },
+      
+      const updates = targetIds.map(id => {
+        const startX = dragStartCoords.current[id]?.x ?? 0
+        const startY = dragStartCoords.current[id]?.y ?? 0
+        return {
+          id,
+          changes: { position: { x: startX + dx / scale, y: startY + dy / scale } }
+        }
       })
+      
+      updateElementsBatch(updates)
     }
 
     const onUp = () => {
@@ -101,7 +128,7 @@ export function CanvasElement({ element }: Props) {
 
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
-  }, [element.id, element.position.x, element.position.y, element.locked, setSelectedElement, updateElement])
+  }, [element.id, element.locked, element.groupId, setSelectedElement, setSelectedElements, updateElementsBatch])
 
   function renderContent() {
     switch (element.type) {
@@ -145,7 +172,7 @@ export function CanvasElement({ element }: Props) {
         >
           {renderContent()}
         </motion.div>
-        {isSelected && <BoundingBox element={element} />}
+        {isSelected && selectedElementIds.length === 1 && !element.groupId && <BoundingBox element={element} />}
       </>
     )
   }

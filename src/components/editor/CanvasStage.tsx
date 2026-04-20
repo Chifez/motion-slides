@@ -1,10 +1,11 @@
 import { useRef, useState, useEffect } from 'react'
-import { AnimatePresence, LayoutGroup } from 'framer-motion'
+
 import { ChevronLeft, ChevronRight, Palette } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useCanvasScale } from '@/hooks/useCanvasScale'
 import { getCanvasDimensions } from '@/constants/canvas'
 import { MotionStage } from './MotionStage'
+import { GroupBoundingBox } from './GroupBoundingBox'
 
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
@@ -18,6 +19,11 @@ export function CanvasStage() {
   const project = activeProject()
   const slide = activeSlide()
   const totalSlides = project?.slides.length ?? 0
+
+  const selectedElementIds = useEditorStore((state) => state.selectedElementIds)
+  const selectedElements = slide?.elements.filter(el => selectedElementIds.includes(el.id)) || []
+  // We render the group bounding box if there are multiple selections, OR if the single selection is part of a group
+  const isGroupSelection = selectedElements.length > 1 || (selectedElements.length === 1 && selectedElements[0].groupId)
 
   const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
   const scale = useCanvasScale(stageRef, canvasW, canvasH)
@@ -71,6 +77,7 @@ export function CanvasStage() {
           previousSlide={null}
           settings={playbackSettings}
         />
+        {isGroupSelection && <GroupBoundingBox elements={selectedElements} />}
       </div>
 
       {/* Slide name + background controls */}
