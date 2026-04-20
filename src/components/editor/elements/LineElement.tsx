@@ -89,7 +89,12 @@ export function LineElement({ content }: Props) {
     ...(content.branches?.map(b => b.color).filter(Boolean) as string[] || [])
   ]))
 
-  // 2. Main path logic (without branches)
+  const sanitizeId = (c: string) => c.replace(/[^a-zA-Z0-ts0-9]/g, '')
+
+  // 2. Main path logic
+  // For branching type, the 'main' end (x2,y2) is treated as Branch 0 if no branches exist, 
+  // but the user wants a fork. We'll render the main path only if it's NOT branching type.
+  const isFork = content.lineType === 'branching'
   const mainD = buildLinePath(w, h, { ...content, branches: undefined })
   
   return (
@@ -107,7 +112,7 @@ export function LineElement({ content }: Props) {
         {uniqueColors.map(color => (
           <React.Fragment key={color}>
             <marker
-              id={`arrow-end-${color.replace('#', '')}`}
+              id={`arrow-end-${sanitizeId(color)}`}
               markerWidth="8"
               markerHeight="8"
               refX="6"
@@ -118,7 +123,7 @@ export function LineElement({ content }: Props) {
               <path d="M0,0 L0,6 L8,3 z" fill={color} />
             </marker>
             <marker
-              id={`arrow-start-${color.replace('#', '')}`}
+              id={`arrow-start-${sanitizeId(color)}`}
               markerWidth="8"
               markerHeight="8"
               refX="6"
@@ -132,38 +137,40 @@ export function LineElement({ content }: Props) {
         ))}
       </defs>
 
-      {/* Main Path Hit Area */}
-      <path
-        d={mainD}
-        fill="none"
-        stroke="transparent"
-        strokeWidth={Math.max(12, content.strokeWidth * 4)}
-        style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
-        vectorEffect="non-scaling-stroke"
-      />
+      {/* Render Main Path if NOT a fork */}
+      {!isFork && (
+        <>
+          <path
+            d={mainD}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={Math.max(12, content.strokeWidth * 4)}
+            style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+            vectorEffect="non-scaling-stroke"
+          />
+          <motion.path
+            d={mainD}
+            fill="none"
+            stroke={content.color}
+            strokeWidth={content.strokeWidth}
+            strokeDasharray={
+              content.style === 'dashed' ? '8 5'
+              : content.style === 'dotted' ? '2 4'
+              : undefined
+            }
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            markerEnd={content.arrow !== 'none' ? `url(#arrow-end-${sanitizeId(content.color)})` : undefined}
+            markerStart={content.arrow === 'both' ? `url(#arrow-start-${sanitizeId(content.color)})` : undefined}
+            vectorEffect="non-scaling-stroke"
+            animate={{ d: mainD, stroke: content.color, strokeWidth: content.strokeWidth }}
+            transition={pathTransition}
+          />
+        </>
+      )}
 
-      {/* Main Path */}
-      <motion.path
-        d={mainD}
-        fill="none"
-        stroke={content.color}
-        strokeWidth={content.strokeWidth}
-        strokeDasharray={
-          content.style === 'dashed' ? '8 5'
-          : content.style === 'dotted' ? '2 4'
-          : undefined
-        }
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        markerEnd={content.arrow !== 'none' ? `url(#arrow-end-${content.color.replace('#', '')})` : undefined}
-        markerStart={content.arrow === 'both' ? `url(#arrow-start-${content.color.replace('#', '')})` : undefined}
-        vectorEffect="non-scaling-stroke"
-        animate={{ d: mainD, stroke: content.color, strokeWidth: content.strokeWidth }}
-        transition={pathTransition}
-      />
-
-      {/* Main Label */}
-      {content.label && (
+      {/* Main Label (Only if not fork) */}
+      {content.label && !isFork && (
         <LabelGroup 
           text={content.label} 
           x={(content.x1 + content.x2) / 2 * w} 
@@ -171,20 +178,24 @@ export function LineElement({ content }: Props) {
         />
       )}
 
-      {/* Branches */}
-      {content.lineType === 'branching' && content.branches?.map((b, i) => {
+      {/* Fork Branches */}
+      {isFork && content.branches?.map((b, i) => {
         const bx = b.x * w
         const by = b.y * h
         const x1 = content.x1 * w
         const y1 = content.y1 * h
+        
+        // Fork geometry: Trunk starts at source, goes halfway to the average of all branch X positions?
+        // Let's keep it simple: trunk goes halfway to the destination of THIS branch.
         const bmidX = (x1 + bx) / 2
         const branchD = `M ${x1} ${y1} L ${bmidX} ${y1} L ${bmidX} ${by} L ${bx} ${by}`
+        
         const branchColor = b.color || content.color
         const branchStyle = b.style || content.style
+        const hasArrow = b.arrow === 'end' || (b.arrow === undefined && content.arrow !== 'none')
 
         return (
           <React.Fragment key={i}>
-            {/* Hit Area */}
             <path
               d={branchD}
               fill="none"
@@ -193,7 +204,6 @@ export function LineElement({ content }: Props) {
               style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
               vectorEffect="non-scaling-stroke"
             />
-            {/* Branch Path */}
             <motion.path
               d={branchD}
               fill="none"
@@ -206,12 +216,11 @@ export function LineElement({ content }: Props) {
               }
               strokeLinecap="round"
               strokeLinejoin="round"
-              markerEnd={content.arrow !== 'none' ? `url(#arrow-end-${branchColor.replace('#', '')})` : undefined}
+              markerEnd={hasArrow ? `url(#arrow-end-${sanitizeId(branchColor)})` : undefined}
               vectorEffect="non-scaling-stroke"
               animate={{ d: branchD, stroke: branchColor, strokeWidth: content.strokeWidth }}
               transition={pathTransition}
             />
-            {/* Branch Label */}
             {b.label && (
               <LabelGroup 
                 text={b.label} 

@@ -20,11 +20,16 @@ export function ElementButtons() {
   const addChart = () => addElement({ ...DEFAULT_CHART_ELEMENT, id: nanoid() })
 
   const addLine = (lineType: LineType) => {
-    const lineContent = { ...DEFAULT_LINE_ELEMENT.content, lineType }
-    // Adjust default size based on line type
+    const branches = lineType === 'branching' ? [
+      { x: 1, y: 0 }, // Up
+      { x: 1, y: 1 }  // Down
+    ] : undefined
+    
+    const lineContent = { ...DEFAULT_LINE_ELEMENT.content, lineType, branches }
     const size = lineType === 'straight'
       ? { width: 200, height: 2 }
       : { width: 200, height: 100 }
+      
     addElement({
       ...DEFAULT_LINE_ELEMENT,
       id: nanoid(),

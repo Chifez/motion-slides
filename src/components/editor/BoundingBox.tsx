@@ -236,11 +236,13 @@ export function BoundingBox({ element }: Props) {
           style={{ left: `${content.x1 * 100}%`, top: `${content.y1 * 100}%`, pointerEvents: 'auto' }}
           onMouseDown={startNodeDrag('start')}
         />
-        <div 
-          className={isSnappedEnd ? snappedCls : nodeCls} 
-          style={{ left: `${content.x2 * 100}%`, top: `${content.y2 * 100}%`, pointerEvents: 'auto' }}
-          onMouseDown={startNodeDrag('end')}
-        />
+        {content.lineType !== 'branching' && (
+          <div 
+            className={isSnappedEnd ? snappedCls : nodeCls} 
+            style={{ left: `${content.x2 * 100}%`, top: `${content.y2 * 100}%`, pointerEvents: 'auto' }}
+            onMouseDown={startNodeDrag('end')}
+          />
+        )}
         {content.branches?.map((b, i) => (
           <div 
             key={i}

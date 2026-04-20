@@ -31,7 +31,14 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Type</span>
         <select
           value={content.lineType}
-          onChange={(e) => onUpdate({ ...content, lineType: e.target.value as LineType })}
+          onChange={(e) => {
+            const nextType = e.target.value as LineType
+            let nextBranches = content.branches
+            if (nextType === 'branching' && (!nextBranches || nextBranches.length === 0)) {
+              nextBranches = [{ x: 1, y: 0 }, { x: 1, y: 1 }]
+            }
+            onUpdate({ ...content, lineType: nextType, branches: nextBranches })
+          }}
           className={selectCls}
         >
           {LINE_TYPE_OPTIONS.map((lt) => (
@@ -62,9 +69,11 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         </div>
       </div>
 
-      {/* Arrow */}
+      {/* Arrow (Main Line) */}
       <div className="mb-2">
-        <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Arrow</span>
+        <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">
+          {content.lineType === 'branching' ? 'Default Arrow' : 'Arrow'}
+        </span>
         <select
           value={content.arrow}
           onChange={(e) => onUpdate({ ...content, arrow: e.target.value as LineContent['arrow'] })}
@@ -79,7 +88,9 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
       {/* Color + Width */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Color</span>
+          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">
+            {content.lineType === 'branching' ? 'Default Color' : 'Color'}
+          </span>
           <input
             type="color"
             value={content.color.startsWith('rgba') ? '#808080' : content.color}
@@ -103,17 +114,19 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         </div>
       </div>
 
-      {/* Label */}
-      <div className="flex flex-col gap-0.5 mb-4">
-        <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Label</span>
-        <input
-          type="text"
-          value={content.label ?? ''}
-          onChange={(e) => onUpdate({ ...content, label: e.target.value })}
-          placeholder="e.g. REST API"
-          className="w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1.5 text-[12px] text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-blue-500"
-        />
-      </div>
+      {/* Label (Hide if branching as branches have individual labels) */}
+      {content.lineType !== 'branching' && (
+        <div className="flex flex-col gap-0.5 mb-4">
+          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Label</span>
+          <input
+            type="text"
+            value={content.label ?? ''}
+            onChange={(e) => onUpdate({ ...content, label: e.target.value })}
+            placeholder="e.g. REST API"
+            className="w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1.5 text-[12px] text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+      )}
 
       {/* Connections Info */}
       {(content.startConnection || content.endConnection) && (
@@ -188,7 +201,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                 />
               </div>
 
-              {/* Individual Color & Style */}
+              {/* Individual Styling Row 1: Color & Style */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-1">
                   <span className="text-[9px] text-neutral-500 font-medium">Color</span>
@@ -239,6 +252,30 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                     <option value="dotted">Dotted</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Individual Styling Row 2: Arrow */}
+              <div className="flex flex-col gap-1">
+                <span className="text-[9px] text-neutral-500 font-medium">Branch Arrow</span>
+                <select
+                  value={b.arrow || 'default'}
+                  onChange={(e) => {
+                    const newBranches = [...(content.branches || [])]
+                    const val = e.target.value
+                    if (val === 'default') {
+                      const { arrow, ...rest } = b
+                      newBranches[idx] = rest
+                    } else {
+                      newBranches[idx] = { ...b, arrow: val as any }
+                    }
+                    onUpdate({ ...content, branches: newBranches })
+                  }}
+                  className="w-full bg-[#1c1c1c] border border-white/8 rounded px-1.5 py-1 text-[10px] text-neutral-100 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="default">Follow Main</option>
+                  <option value="none">None</option>
+                  <option value="end">End →</option>
+                </select>
               </div>
 
               {/* Position Sliders */}
