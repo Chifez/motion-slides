@@ -6,6 +6,7 @@ import { useCanvasScale } from '@/hooks/useCanvasScale'
 import { getCanvasDimensions } from '@/constants/canvas'
 import { MotionStage } from './MotionStage'
 import { GroupBoundingBox } from './GroupBoundingBox'
+import { ConnectionAnchors } from './BoundingBox'
 
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
@@ -77,6 +78,7 @@ export function CanvasStage() {
           previousSlide={null}
           settings={playbackSettings}
         />
+        <ConnectionAnchors />
         {isGroupSelection && <GroupBoundingBox elements={selectedElements} />}
       </div>
 

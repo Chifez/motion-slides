@@ -144,7 +144,7 @@ export const LINE_TYPE_OPTIONS = [
   { value: 'curved', label: 'Curved', icon: '∿' },
   { value: 'step-after', label: 'Step After', icon: '┐' },
   { value: 'step-before', label: 'Step Before', icon: '└' },
-  { value: 'y-shaped', label: 'Y-Shaped', icon: 'Y' },
+  { value: 'branching', label: 'Branching', icon: '⑂' },
 ] as const
 
 export const CHART_TYPE_OPTIONS = [

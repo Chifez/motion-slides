@@ -35,11 +35,22 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
       return `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`
     case 'step-before':
       return `M ${x1} ${y1} L ${x1} ${y2} L ${x2} ${y2}`
-    case 'y-shaped': {
+    case 'branching': {
+      let path = `M ${x1} ${y1}`
+      // Primary branch
       const midX = (x1 + x2) / 2
-      const midY = (y1 + y2) / 2
-      // Branches from start to midpoint, then splits to two points (we simulate split for now)
-      return `M ${x1} ${y1} L ${midX} ${midY} M ${midX} ${midY} L ${x2} ${y1} M ${midX} ${midY} L ${x2} ${y2}`
+      path += ` L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`
+      
+      // Additional branches
+      if (content.branches) {
+        content.branches.forEach(b => {
+          const bx = b.x * w
+          const by = b.y * h
+          const bmidX = (x1 + bx) / 2
+          path += ` M ${x1} ${y1} L ${bmidX} ${y1} L ${bmidX} ${by} L ${bx} ${by}`
+        })
+      }
+      return path
     }
     default:
       return `M ${x1} ${y1} L ${x2} ${y2}`

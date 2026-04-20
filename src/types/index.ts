@@ -14,7 +14,7 @@ export type ShapeType =
   | 'queue'
   | 'document'
 
-export type LineType = 'straight' | 'elbow' | 'curved' | 'step-after' | 'step-before' | 'y-shaped'
+export type LineType = 'straight' | 'elbow' | 'curved' | 'step-after' | 'step-before' | 'branching'
 
 export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line' | 'chart'
 
@@ -73,6 +73,11 @@ export interface ShapeContent {
   label?: string
 }
 
+export interface Connection {
+  elementId: string
+  handleId: 'top' | 'right' | 'bottom' | 'left' | 'center'
+}
+
 export interface LineContent {
   lineType: LineType
   /** Normalized endpoint positions (0–1) relative to the element's bounding box */
@@ -80,6 +85,9 @@ export interface LineContent {
   y1: number
   x2: number
   y2: number
+  branches?: Position[]
+  startConnection?: Connection
+  endConnection?: Connection
   style: 'solid' | 'dashed' | 'dotted'
   arrow: 'none' | 'end' | 'both'
   color: string

@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react'
+import { Trash2, X } from 'lucide-react'
 import type { LineContent, LineType } from '@/types'
 import { LINE_TYPE_OPTIONS } from '@/constants/editor'
 
@@ -104,7 +104,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
       </div>
 
       {/* Label */}
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-0.5 mb-4">
         <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Label</span>
         <input
           type="text"
@@ -114,6 +114,101 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
           className="w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1.5 text-[12px] text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-blue-500"
         />
       </div>
+
+      {/* Connections Info */}
+      {(content.startConnection || content.endConnection) && (
+        <div className="mb-4 mt-2 pt-3 border-t border-white/6">
+          <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-2">Connected To</span>
+          <div className="flex flex-col gap-1.5">
+            {content.startConnection && (
+              <div className="flex items-center justify-between text-[11px] text-neutral-400 bg-white/5 p-2 rounded-md">
+                <span>Start: <span className="text-blue-400 font-medium">{content.startConnection.handleId}</span></span>
+                <button 
+                  onClick={() => onUpdate({ ...content, startConnection: undefined })} 
+                  className="text-neutral-500 hover:text-red-500 transition-colors p-1 border-none bg-transparent cursor-pointer"
+                  title="Disconnect"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+            {content.endConnection && (
+              <div className="flex items-center justify-between text-[11px] text-neutral-400 bg-white/5 p-2 rounded-md">
+                <span>End: <span className="text-blue-400 font-medium">{content.endConnection.handleId}</span></span>
+                <button 
+                  onClick={() => onUpdate({ ...content, endConnection: undefined })} 
+                  className="text-neutral-500 hover:text-red-500 transition-colors p-1 border-none bg-transparent cursor-pointer"
+                  title="Disconnect"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Branches management */}
+      {content.lineType === 'branching' && (
+        <div className="mb-2 mt-2 pt-3 border-t border-white/6">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Extra Branches</span>
+            <button 
+              onClick={() => onUpdate({ ...content, branches: [...(content.branches || []), { x: 1, y: 1 }] })}
+              className="text-[10px] font-semibold text-blue-500 hover:text-blue-400 border-none bg-transparent cursor-pointer"
+            >
+              + Add Point
+            </button>
+          </div>
+          {(content.branches || []).map((b, idx) => (
+            <div key={idx} className="flex flex-col gap-2 p-2.5 bg-white/5 rounded-lg mb-2.5 border border-white/4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-medium text-neutral-400 tracking-tight">Point {idx + 1}</span>
+                <button 
+                  onClick={() => onUpdate({ ...content, branches: content.branches?.filter((_, i) => i !== idx) })}
+                  className="text-neutral-600 hover:text-red-500 transition-colors p-0.5 border-none bg-transparent cursor-pointer"
+                >
+                  <Trash2 size={11} />
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center px-0.5">
+                    <span className="text-[9px] text-neutral-500 font-medium">X Delta</span>
+                    <span className="text-[9px] text-neutral-400">{Math.round(b.x * 100)}%</span>
+                  </div>
+                  <input 
+                    type="range" min="0" max="1" step="0.01" 
+                    value={b.x} 
+                    onChange={(e) => {
+                      const newBranches = [...(content.branches || [])]
+                      newBranches[idx] = { ...b, x: parseFloat(e.target.value) }
+                      onUpdate({ ...content, branches: newBranches })
+                    }}
+                    className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center px-0.5">
+                    <span className="text-[9px] text-neutral-500 font-medium">Y Delta</span>
+                    <span className="text-[9px] text-neutral-400">{Math.round(b.y * 100)}%</span>
+                  </div>
+                  <input 
+                    type="range" min="0" max="1" step="0.01" 
+                    value={b.y} 
+                    onChange={(e) => {
+                      const newBranches = [...(content.branches || [])]
+                      newBranches[idx] = { ...b, y: parseFloat(e.target.value) }
+                      onUpdate({ ...content, branches: newBranches })
+                    }}
+                    className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
