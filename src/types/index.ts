@@ -83,6 +83,8 @@ export interface BranchContent extends Position {
   color?: string
   label?: string
   arrow?: 'none' | 'end'
+  connection?: Connection
+  labelFontSize?: number
 }
 
 export interface LineContent {
@@ -100,6 +102,7 @@ export interface LineContent {
   color: string
   strokeWidth: number
   label?: string
+  labelFontSize?: number
 }
 
 export interface SceneElement {

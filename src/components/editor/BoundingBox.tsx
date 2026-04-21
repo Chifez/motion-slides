@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { RotateCw } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
+import { getConnectionPos } from '@/store/slices/elementSlice'
 import { MIN_ELEMENT_WIDTH, MIN_ELEMENT_HEIGHT } from '@/constants/animation'
 import { RESIZE_HANDLES } from '@/constants/editor'
 import type { SceneElement, Position, LineContent } from '@/types'
@@ -170,17 +171,29 @@ export function BoundingBox({ element }: Props) {
       const ny2 = (absEnd.y - minY) / newHeight
       
       const newBranches = content.branches?.map((b, i) => {
-         if (nodeType === 'branch' && branchIndex === i) {
+         const isTarget = nodeType === 'branch' && branchIndex === i
+         const conn = isTarget 
+          ? (snapped ? { elementId: snapped.elementId, handleId: snapped.handleId } : undefined)
+          : b.connection
+
+         if (isTarget) {
            return {
+             ...b,
              x: (currentAbsX - minX) / newWidth,
-             y: (currentAbsY - minY) / newHeight
+             y: (currentAbsY - minY) / newHeight,
+             connection: conn
            }
          }
-         const oldAbsX = element.position.x + b.x * element.size.width
-         const oldAbsY = element.position.y + b.y * element.size.height
+
+         const oldAbs = b.connection
+           ? getConnectionPos(b.connection, slide?.elements || [])
+           : { x: element.position.x + b.x * element.size.width, y: element.position.y + b.y * element.size.height }
+         
          return {
-           x: (oldAbsX - minX) / newWidth,
-           y: (oldAbsY - minY) / newHeight
+           ...b,
+           x: (oldAbs.x - minX) / newWidth,
+           y: (oldAbs.y - minY) / newHeight,
+           connection: conn
          }
       })
 
@@ -220,8 +233,8 @@ export function BoundingBox({ element }: Props) {
     const isSnappedStart = !!content.startConnection
     const isSnappedEnd = !!content.endConnection
 
-    const nodeCls = "absolute w-3 h-3 rounded-full border-2 border-blue-500 bg-white -translate-x-1/2 -translate-y-1/2 cursor-pointer shadow-sm hover:scale-125 transition-transform"
-    const snappedCls = "absolute w-4 h-4 rounded-full border-2 border-blue-400 bg-blue-500 -translate-x-1/2 -translate-y-1/2 cursor-pointer shadow-[0_0_10px_rgba(59,130,246,0.8)] z-50"
+    const nodeCls = "absolute w-4 h-4 rounded-full border-2 border-blue-500 bg-white -translate-x-1/2 -translate-y-1/2 cursor-pointer shadow-sm hover:scale-125 transition-transform z-30"
+    const snappedCls = "absolute w-5 h-5 rounded-full border-2 border-blue-400 bg-blue-500 -translate-x-1/2 -translate-y-1/2 cursor-pointer shadow-[0_0_12px_rgba(59,130,246,0.9)] z-50 transition-all scale-110"
 
     return (
       <div

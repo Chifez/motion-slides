@@ -1,11 +1,11 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import type { LineContent } from '@/types'
+import type { LineContent, SceneElement } from '@/types'
 import { useMotionContext } from '@/context/MotionContext'
 import { CODE_PHASE } from '@/lib/motionEngine'
 import { getArrow } from 'perfect-arrows'
 
-interface Props { content: LineContent }
+interface Props { element: SceneElement }
 
 /** Compute SVG path for a line within its bounding box */
 function buildLinePath(w: number, h: number, content: LineContent): string {
@@ -38,11 +38,9 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
       return `M ${x1} ${y1} L ${x1} ${y2} L ${x2} ${y2}`
     case 'branching': {
       let path = `M ${x1} ${y1}`
-      // Primary branch
       const midX = (x1 + x2) / 2
       path += ` L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`
       
-      // Additional branches
       if (content.branches) {
         content.branches.forEach(b => {
           const bx = b.x * w
@@ -58,17 +56,8 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
   }
 }
 
-/**
- * LineElement — renders an animated SVG path.
- *
- * During a slide transition the visible `motion.path` animates:
- *   - `d` (path shape) using the Phase 1 easing — same as all morphing elements
- *   - `stroke` (color) cross-fades simultaneously
- *   - `strokeWidth` interpolates smoothly
- *
- * The hit-area path is a plain SVG element (no animation needed).
- */
-export function LineElement({ content }: Props) {
+export function LineElement({ element }: Props) {
+  const content = element.content as LineContent
   const { isTransitioning, durationSec } = useMotionContext()
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
 
@@ -80,30 +69,28 @@ export function LineElement({ content }: Props) {
       }
     : { duration: 0 }
 
-  const w = 100
-  const h = 100
+  // Use actual pixel dimensions to prevent squashing
+  const w = element.size.width
+  const h = element.size.height
 
-  // 1. Get all unique colors for markers
   const uniqueColors = Array.from(new Set([
     content.color,
     ...(content.branches?.map(b => b.color).filter(Boolean) as string[] || [])
   ]))
 
   const sanitizeId = (c: string) => c.replace(/[^a-zA-Z0-ts0-9]/g, '')
-
-  // 2. Main path logic
-  // For branching type, the 'main' end (x2,y2) is treated as Branch 0 if no branches exist, 
-  // but the user wants a fork. We'll render the main path only if it's NOT branching type.
   const isFork = content.lineType === 'branching'
   const mainD = buildLinePath(w, h, { ...content, branches: undefined })
   
   return (
     <svg
-      viewBox={`-2 -2 ${w + 4} ${h + 4}`}
-      preserveAspectRatio="none"
+      viewBox={`-50 -50 ${w + 100} ${h + 100}`}
       style={{
-        width: '100%',
-        height: '100%',
+        position: 'absolute',
+        left: -50,
+        top: -50,
+        width: w + 100,
+        height: h + 100,
         overflow: 'visible',
         pointerEvents: 'none',
       }}
@@ -113,31 +100,30 @@ export function LineElement({ content }: Props) {
           <React.Fragment key={color}>
             <marker
               id={`arrow-end-${sanitizeId(color)}`}
-              markerWidth="8"
-              markerHeight="8"
-              refX="6"
-              refY="3"
+              markerWidth="12"
+              markerHeight="12"
+              refX="10"
+              refY="6"
               orient="auto"
-              markerUnits="strokeWidth"
+              markerUnits="userSpaceOnUse"
             >
-              <path d="M0,0 L0,6 L8,3 z" fill={color} />
+              <path d="M0,0 L0,12 L12,6 z" fill={color} />
             </marker>
             <marker
               id={`arrow-start-${sanitizeId(color)}`}
-              markerWidth="8"
-              markerHeight="8"
-              refX="6"
-              refY="3"
+              markerWidth="12"
+              markerHeight="12"
+              refX="10"
+              refY="6"
               orient="auto-start-reverse"
-              markerUnits="strokeWidth"
+              markerUnits="userSpaceOnUse"
             >
-              <path d="M0,0 L0,6 L8,3 z" fill={color} />
+              <path d="M0,0 L0,12 L12,6 z" fill={color} />
             </marker>
           </React.Fragment>
         ))}
       </defs>
 
-      {/* Render Main Path if NOT a fork */}
       {!isFork && (
         <>
           <path
@@ -146,7 +132,6 @@ export function LineElement({ content }: Props) {
             stroke="transparent"
             strokeWidth={Math.max(12, content.strokeWidth * 4)}
             style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
-            vectorEffect="non-scaling-stroke"
           />
           <motion.path
             d={mainD}
@@ -162,37 +147,34 @@ export function LineElement({ content }: Props) {
             strokeLinejoin="round"
             markerEnd={content.arrow !== 'none' ? `url(#arrow-end-${sanitizeId(content.color)})` : undefined}
             markerStart={content.arrow === 'both' ? `url(#arrow-start-${sanitizeId(content.color)})` : undefined}
-            vectorEffect="non-scaling-stroke"
             animate={{ d: mainD, stroke: content.color, strokeWidth: content.strokeWidth }}
             transition={pathTransition}
           />
+          {content.label && (
+            <LabelGroup 
+              text={content.label} 
+              x={(content.x1 + content.x2) / 2 * w} 
+              y={(content.y1 + content.y2) / 2 * h} 
+              fontSize={content.labelFontSize || 10}
+            />
+          )}
         </>
       )}
 
-      {/* Main Label (Only if not fork) */}
-      {content.label && !isFork && (
-        <LabelGroup 
-          text={content.label} 
-          x={(content.x1 + content.x2) / 2 * w} 
-          y={(content.y1 + content.y2) / 2 * h} 
-        />
-      )}
-
-      {/* Fork Branches */}
       {isFork && content.branches?.map((b, i) => {
         const bx = b.x * w
         const by = b.y * h
         const x1 = content.x1 * w
         const y1 = content.y1 * h
-        
-        // Fork geometry: Trunk starts at source, goes halfway to the average of all branch X positions?
-        // Let's keep it simple: trunk goes halfway to the destination of THIS branch.
         const bmidX = (x1 + bx) / 2
         const branchD = `M ${x1} ${y1} L ${bmidX} ${y1} L ${bmidX} ${by} L ${bx} ${by}`
         
         const branchColor = b.color || content.color
         const branchStyle = b.style || content.style
         const hasArrow = b.arrow === 'end' || (b.arrow === undefined && content.arrow !== 'none')
+
+        const lx = bmidX
+        const ly = (y1 + by) / 2
 
         return (
           <React.Fragment key={i}>
@@ -202,7 +184,6 @@ export function LineElement({ content }: Props) {
               stroke="transparent"
               strokeWidth={Math.max(12, content.strokeWidth * 4)}
               style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
-              vectorEffect="non-scaling-stroke"
             />
             <motion.path
               d={branchD}
@@ -217,15 +198,15 @@ export function LineElement({ content }: Props) {
               strokeLinecap="round"
               strokeLinejoin="round"
               markerEnd={hasArrow ? `url(#arrow-end-${sanitizeId(branchColor)})` : undefined}
-              vectorEffect="non-scaling-stroke"
               animate={{ d: branchD, stroke: branchColor, strokeWidth: content.strokeWidth }}
               transition={pathTransition}
             />
             {b.label && (
               <LabelGroup 
                 text={b.label} 
-                x={bx} 
-                y={by - 15} 
+                x={lx} 
+                y={ly} 
+                fontSize={b.labelFontSize || content.labelFontSize || 10}
               />
             )}
           </React.Fragment>
@@ -235,14 +216,19 @@ export function LineElement({ content }: Props) {
   )
 }
 
-function LabelGroup({ text, x, y }: { text: string, x: number, y: number }) {
+function LabelGroup({ text, x, y, fontSize }: { text: string, x: number, y: number, fontSize: number }) {
+  const charWidth = fontSize * 0.6
+  const padding = 8
+  const width = text.length * charWidth + padding
+  const height = fontSize + padding
+
   return (
-    <g>
+    <g style={{ pointerEvents: 'none' }}>
       <rect
-        x={x - text.length * 3 - 4}
-        y={y - 9}
-        width={text.length * 6 + 8}
-        height={18}
+        x={x - width / 2}
+        y={y - height / 2}
+        width={width}
+        height={height}
         rx={4}
         fill="#1a1a1a"
         fillOpacity={0.92}
@@ -251,11 +237,12 @@ function LabelGroup({ text, x, y }: { text: string, x: number, y: number }) {
       />
       <text
         x={x}
-        y={y + 4}
+        y={y}
         fill="#a3a3a3"
-        fontSize="10"
+        fontSize={fontSize}
         fontFamily="Inter, sans-serif"
         textAnchor="middle"
+        dominantBaseline="central"
       >
         {text}
       </text>

@@ -114,19 +114,36 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         </div>
       </div>
 
-      {/* Label (Hide if branching as branches have individual labels) */}
-      {content.lineType !== 'branching' && (
-        <div className="flex flex-col gap-0.5 mb-4">
-          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Label</span>
+      {/* Label & Font Size */}
+      <div className="grid grid-cols-5 gap-2 mb-4">
+        <div className="col-span-3 flex flex-col gap-0.5">
+          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">
+            {content.lineType === 'branching' ? 'Default Label' : 'Label'}
+          </span>
+          {content.lineType !== 'branching' ? (
+            <input
+              type="text"
+              value={content.label ?? ''}
+              onChange={(e) => onUpdate({ ...content, label: e.target.value })}
+              placeholder="Label"
+              className="w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1.5 text-[11px] text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-blue-500"
+            />
+          ) : (
+            <div className="text-[10px] text-neutral-700 italic py-1.5">Branch labels are individual</div>
+          )}
+        </div>
+        <div className="col-span-2 flex flex-col gap-0.5">
+          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Size</span>
           <input
-            type="text"
-            value={content.label ?? ''}
-            onChange={(e) => onUpdate({ ...content, label: e.target.value })}
-            placeholder="e.g. REST API"
-            className="w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1.5 text-[12px] text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-blue-500"
+            type="number"
+            min="6"
+            max="32"
+            value={content.labelFontSize || 10}
+            onChange={(e) => onUpdate({ ...content, labelFontSize: parseInt(e.target.value) })}
+            className="w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1.5 text-[11px] text-neutral-100 focus:outline-none focus:border-blue-500"
           />
         </div>
-      )}
+      </div>
 
       {/* Connections Info */}
       {(content.startConnection || content.endConnection) && (
@@ -201,8 +218,8 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                 />
               </div>
 
-              {/* Individual Styling Row 1: Color & Style */}
-              <div className="grid grid-cols-2 gap-2">
+              {/* Individual Color, Style & Font Size */}
+              <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col gap-1">
                   <span className="text-[9px] text-neutral-500 font-medium">Color</span>
                   <div className="flex gap-1.5 items-center">
@@ -214,7 +231,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                         newBranches[idx] = { ...b, color: e.target.value }
                         onUpdate({ ...content, branches: newBranches })
                       }}
-                      className="w-6 h-6 rounded cursor-pointer border-none bg-transparent"
+                      className="w-5 h-5 rounded cursor-pointer border-none bg-transparent"
                     />
                     <button 
                       onClick={() => {
@@ -251,6 +268,21 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                     <option value="dashed">Dashed</option>
                     <option value="dotted">Dotted</option>
                   </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[9px] text-neutral-500 font-medium">Font Size</span>
+                  <input
+                    type="number"
+                    min="6"
+                    max="32"
+                    value={b.labelFontSize || content.labelFontSize || 10}
+                    onChange={(e) => {
+                      const newBranches = [...(content.branches || [])]
+                      newBranches[idx] = { ...b, labelFontSize: parseInt(e.target.value) }
+                      onUpdate({ ...content, branches: newBranches })
+                    }}
+                    className="w-full bg-[#1c1c1c] border border-white/8 rounded px-1.5 py-1 text-[10px] text-neutral-100 focus:outline-none focus:border-blue-500"
+                  />
                 </div>
               </div>
 

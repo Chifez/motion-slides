@@ -26,7 +26,7 @@ export interface ElementSlice {
  * Given a connection descriptor { elementId, handleId } and the current element
  * list, resolve the absolute canvas position of that anchor point.
  */
-function getConnectionPos(
+export function getConnectionPos(
   conn: { elementId: string; handleId: string },
   elements: SceneElement[],
 ): Position | null {
@@ -58,34 +58,62 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
     if (el.type !== 'line') return el
 
     const content = el.content as LineContent
-    if (!content.startConnection && !content.endConnection) return el
+    const isFork = content.lineType === 'branching'
 
+    // 1. Collect all absolute points for this line
+    const points: Position[] = []
+
+    // Start point
     const startPos = content.startConnection
       ? getConnectionPos(content.startConnection, elements)
       : { x: el.position.x + content.x1 * el.size.width, y: el.position.y + content.y1 * el.size.height }
+    if (startPos) points.push(startPos)
 
-    const endPos = content.endConnection
-      ? getConnectionPos(content.endConnection, elements)
-      : { x: el.position.x + content.x2 * el.size.width, y: el.position.y + content.y2 * el.size.height }
+    // End point (Only if not a fork)
+    const endPos = !isFork || content.endConnection
+      ? (content.endConnection
+          ? getConnectionPos(content.endConnection, elements)
+          : { x: el.position.x + content.x2 * el.size.width, y: el.position.y + content.y2 * el.size.height })
+      : null
+    if (endPos && !isFork) points.push(endPos)
 
-    if (!startPos || !endPos) return el
+    // Branches
+    const branchPositions: (Position | null)[] = (content.branches || []).map(b => {
+      if (b.connection) return getConnectionPos(b.connection, elements)
+      return { x: el.position.x + b.x * el.size.width, y: el.position.y + b.y * el.size.height }
+    })
+    branchPositions.forEach(p => { if (p) points.push(p) })
 
-    const minX = Math.min(startPos.x, endPos.x)
-    const minY = Math.min(startPos.y, endPos.y)
-    const newW = Math.max(1, Math.max(startPos.x, endPos.x) - minX)
-    const newH = Math.max(1, Math.max(startPos.y, endPos.y) - minY)
+    if (points.length < 2) return el
 
-    const nx1 = (startPos.x - minX) / newW
-    const ny1 = (startPos.y - minY) / newH
-    const nx2 = (endPos.x - minX) / newW
-    const ny2 = (endPos.y - minY) / newH
+    // 2. Calculate new bounding box
+    const minX = Math.min(...points.map(p => p.x))
+    const minY = Math.min(...points.map(p => p.y))
+    const maxX = Math.max(...points.map(p => p.x))
+    const maxY = Math.max(...points.map(p => p.y))
+    const newW = Math.max(1, maxX - minX)
+    const newH = Math.max(1, maxY - minY)
 
-    // Skip the update if nothing actually changed (avoids infinite loops)
+    // 3. Normalized coordinates
+    const nx1 = startPos ? (startPos.x - minX) / newW : content.x1
+    const ny1 = startPos ? (startPos.y - minY) / newH : content.y1
+    const nx2 = endPos ? (endPos.x - minX) / newW : content.x2
+    const ny2 = endPos ? (endPos.y - minY) / newH : content.y2
+
+    const nBranches = (content.branches || []).map((b, i) => {
+      const p = branchPositions[i]
+      if (!p) return b
+      return { ...b, x: (p.x - minX) / newW, y: (p.y - minY) / newH }
+    })
+
+    // Skip update if nothing changed
+    const hasBranchesChanged = JSON.stringify(content.branches) !== JSON.stringify(nBranches)
     if (
       el.position.x === minX && el.position.y === minY &&
       el.size.width === newW && el.size.height === newH &&
       content.x1 === nx1 && content.y1 === ny1 &&
-      content.x2 === nx2 && content.y2 === ny2
+      content.x2 === nx2 && content.y2 === ny2 &&
+      !hasBranchesChanged
     ) return el
 
     changed = true
@@ -93,17 +121,18 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
       ...el,
       position: { x: minX, y: minY },
       size: { width: newW, height: newH },
-      content: { ...content, x1: nx1, y1: ny1, x2: nx2, y2: ny2 },
+      content: { 
+        ...content, 
+        x1: nx1, y1: ny1, 
+        x2: nx2, y2: ny2,
+        branches: nBranches
+      },
     }
   })
 
   return changed ? next : elements
 }
 
-/**
- * When an element is deleted, remove any startConnection / endConnection
- * references that point to it so lines don't hold dangling refs.
- */
 function cleanupConnectionsForDeletedElement(
   elements: SceneElement[],
   deletedId: string,
@@ -114,8 +143,17 @@ function cleanupConnectionsForDeletedElement(
     const content = el.content as LineContent
     const startDangling = content.startConnection?.elementId === deletedId
     const endDangling = content.endConnection?.elementId === deletedId
+    
+    let branchesChanged = false
+    const nextBranches = content.branches?.map(b => {
+      if (b.connection?.elementId === deletedId) {
+        branchesChanged = true
+        return { ...b, connection: undefined }
+      }
+      return b
+    })
 
-    if (!startDangling && !endDangling) return el
+    if (!startDangling && !endDangling && !branchesChanged) return el
 
     return {
       ...el,
@@ -123,6 +161,7 @@ function cleanupConnectionsForDeletedElement(
         ...content,
         ...(startDangling ? { startConnection: undefined } : {}),
         ...(endDangling ? { endConnection: undefined } : {}),
+        branches: nextBranches,
       } as LineContent,
     }
   })
