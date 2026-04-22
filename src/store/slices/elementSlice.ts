@@ -97,8 +97,10 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
     // 3. Normalized coordinates
     const nx1 = startPos ? (startPos.x - minX) / newW : content.x1
     const ny1 = startPos ? (startPos.y - minY) / newH : content.y1
-    const nx2 = endPos ? (endPos.x - minX) / newW : content.x2
-    const ny2 = endPos ? (endPos.y - minY) / newH : content.y2
+    // For branching lines the end-point is not part of the bbox, so we must
+    // leave x2/y2 unchanged to avoid overwriting them with stale values.
+    const nx2 = (!isFork && endPos) ? (endPos.x - minX) / newW : content.x2
+    const ny2 = (!isFork && endPos) ? (endPos.y - minY) / newH : content.y2
 
     const nBranches = (content.branches || []).map((b, i) => {
       const p = branchPositions[i]
@@ -112,7 +114,7 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
       el.position.x === minX && el.position.y === minY &&
       el.size.width === newW && el.size.height === newH &&
       content.x1 === nx1 && content.y1 === ny1 &&
-      content.x2 === nx2 && content.y2 === ny2 &&
+      (isFork || (content.x2 === nx2 && content.y2 === ny2)) &&
       !hasBranchesChanged
     ) return el
 
@@ -253,8 +255,12 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
         return { ...p, slides, updatedAt: Date.now() }
       }),
     }))
-    // Propagate: any line connected to `id` gets its geometry recalculated
-    get().recalculateLines()
+    // Only propagate when a shape moves — line updates already carry their own
+    // final geometry (especially during node-drag), so calling recalculateLines
+    // here would cause a redundant second render pass on every mousemove.
+    const project = get().projects.find((p) => p.id === get().activeProjectId)
+    const updatedEl = project?.slides[get().activeSlideIndex]?.elements.find((e) => e.id === id)
+    if (updatedEl?.type !== 'line') get().recalculateLines()
   },
 
   updateElements: (ids, updates) => {
@@ -360,11 +366,27 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
     const element = project?.slides[activeSlideIndex]?.elements.find((el) => el.id === id)
     if (!element) return
 
+    // Strip connection refs from duplicated lines so two lines don't
+    // simultaneously claim ownership of the same shape anchor.
+    const dupContent =
+      element.type === 'line'
+        ? {
+            ...(element.content as LineContent),
+            startConnection: undefined,
+            endConnection: undefined,
+            branches: (element.content as LineContent).branches?.map((b) => ({
+              ...b,
+              connection: undefined,
+            })),
+          }
+        : element.content
+
     const newElement: SceneElement = {
       ...element,
       id: `el-${Math.random().toString(36).substr(2, 9)}`,
       position: { x: element.position.x + 20, y: element.position.y + 20 },
       zIndex: element.zIndex + 1,
+      content: dupContent,
     }
     get().addElement(newElement)
     get().setSelectedElement(newElement.id)

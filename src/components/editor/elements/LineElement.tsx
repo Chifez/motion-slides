@@ -78,7 +78,7 @@ export function LineElement({ element }: Props) {
     ...(content.branches?.map(b => b.color).filter(Boolean) as string[] || [])
   ]))
 
-  const sanitizeId = (c: string) => c.replace(/[^a-zA-Z0-ts0-9]/g, '')
+  const sanitizeId = (c: string) => c.replace(/[^a-zA-Z0-9]/g, '')
   const isFork = content.lineType === 'branching'
   const mainD = buildLinePath(w, h, { ...content, branches: undefined })
   

@@ -79,6 +79,8 @@ export interface Connection {
 }
 
 export interface BranchContent extends Position {
+  /** Stable identifier used as React key; generated on creation, never changes. */
+  id?: string
   style?: 'solid' | 'dashed' | 'dotted'
   color?: string
   label?: string

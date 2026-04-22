@@ -1,5 +1,5 @@
 import { Trash2, X } from 'lucide-react'
-import type { LineContent, LineType } from '@/types'
+import type { BranchContent, LineContent, LineType } from '@/types'
 import { LINE_TYPE_OPTIONS } from '@/constants/editor'
 
 const labelCls = "text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2.5 block"
@@ -35,7 +35,10 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
             const nextType = e.target.value as LineType
             let nextBranches = content.branches
             if (nextType === 'branching' && (!nextBranches || nextBranches.length === 0)) {
-              nextBranches = [{ x: 1, y: 0 }, { x: 1, y: 1 }]
+              nextBranches = [
+                { id: `b-${Math.random().toString(36).slice(2, 8)}`, x: 1, y: 0 },
+                { id: `b-${Math.random().toString(36).slice(2, 8)}`, x: 1, y: 1 },
+              ]
             }
             onUpdate({ ...content, lineType: nextType, branches: nextBranches })
           }}
@@ -184,14 +187,14 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Extra Branches</span>
             <button 
-              onClick={() => onUpdate({ ...content, branches: [...(content.branches || []), { x: 1, y: 1 }] })}
+              onClick={() => onUpdate({ ...content, branches: [...(content.branches || []), { id: `b-${Math.random().toString(36).slice(2, 8)}`, x: 1, y: 1 }] })}
               className="text-[10px] font-semibold text-blue-500 hover:text-blue-400 border-none bg-transparent cursor-pointer"
             >
               + Add Point
             </button>
           </div>
           {(content.branches || []).map((b, idx) => (
-            <div key={idx} className="flex flex-col gap-3 p-3 bg-white/5 rounded-lg mb-3 border border-white/4">
+            <div key={b.id ?? idx} className="flex flex-col gap-3 p-3 bg-white/5 rounded-lg mb-3 border border-white/4">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-blue-400 tracking-tight">Branch {idx + 1}</span>
                 <button 
@@ -257,7 +260,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                         const { style, ...rest } = b
                         newBranches[idx] = rest
                       } else {
-                        newBranches[idx] = { ...b, style: val as any }
+                        newBranches[idx] = { ...b, style: val as BranchContent['style'] }
                       }
                       onUpdate({ ...content, branches: newBranches })
                     }}
@@ -298,7 +301,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                       const { arrow, ...rest } = b
                       newBranches[idx] = rest
                     } else {
-                      newBranches[idx] = { ...b, arrow: val as any }
+                      newBranches[idx] = { ...b, arrow: val as BranchContent['arrow'] }
                     }
                     onUpdate({ ...content, branches: newBranches })
                   }}

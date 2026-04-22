@@ -111,11 +111,11 @@ export function BoundingBox({ element }: Props) {
     let absStart = { x: element.position.x + content.x1 * element.size.width, y: element.position.y + content.y1 * element.size.height }
     let absEnd = { x: element.position.x + content.x2 * element.size.width, y: element.position.y + content.y2 * element.size.height }
 
+    const board = document.querySelector('[data-canvas-board]')
+    if (!board) return
+    const boardRect = board.getBoundingClientRect()
+
     const onMove = (ev: MouseEvent) => {
-      const board = document.querySelector('[data-canvas-board]')
-      if (!board) return
-      const boardRect = board.getBoundingClientRect()
-      
       let currentAbsX = (ev.clientX - boardRect.left) / scale
       let currentAbsY = (ev.clientY - boardRect.top) / scale
       
@@ -157,10 +157,16 @@ export function BoundingBox({ element }: Props) {
         absEnd = { x: currentAbsX, y: currentAbsY }
       }
 
-      const minX = Math.min(absStart.x, absEnd.x)
-      const minY = Math.min(absStart.y, absEnd.y)
-      const maxX = Math.max(absStart.x, absEnd.x)
-      const maxY = Math.max(absStart.y, absEnd.y)
+      // For branching lines, absEnd is not rendered as a node and must not
+      // influence the bounding box — only start + branch endpoints matter.
+      const isBranching = (element.content as LineContent).lineType === 'branching'
+      const bboxPoints = [absStart]
+      if (!isBranching) bboxPoints.push(absEnd)
+
+      const minX = Math.min(...bboxPoints.map((p) => p.x))
+      const minY = Math.min(...bboxPoints.map((p) => p.y))
+      const maxX = Math.max(...bboxPoints.map((p) => p.x))
+      const maxY = Math.max(...bboxPoints.map((p) => p.y))
       
       const newWidth = Math.max(1, maxX - minX)
       const newHeight = Math.max(1, maxY - minY)
@@ -187,12 +193,18 @@ export function BoundingBox({ element }: Props) {
 
          const oldAbs = b.connection
            ? getConnectionPos(b.connection, slide?.elements || [])
-           : { x: element.position.x + b.x * element.size.width, y: element.position.y + b.y * element.size.height }
+           : null
+         // Fall back to the branch's stored (pre-drag) absolute position if
+         // the connection target no longer exists in the slide.
+         const resolvedOldAbs = oldAbs ?? {
+           x: element.position.x + b.x * element.size.width,
+           y: element.position.y + b.y * element.size.height,
+         }
          
          return {
            ...b,
-           x: (oldAbs.x - minX) / newWidth,
-           y: (oldAbs.y - minY) / newHeight,
+           x: (resolvedOldAbs.x - minX) / newWidth,
+           y: (resolvedOldAbs.y - minY) / newHeight,
            connection: conn
          }
       })
@@ -258,7 +270,7 @@ export function BoundingBox({ element }: Props) {
         )}
         {content.branches?.map((b, i) => (
           <div 
-            key={i}
+            key={b.id ?? i}
             className={nodeCls} 
             style={{ left: `${b.x * 100}%`, top: `${b.y * 100}%`, pointerEvents: 'auto', borderColor: '#10b981' }}
             onMouseDown={startNodeDrag('branch', i)}
