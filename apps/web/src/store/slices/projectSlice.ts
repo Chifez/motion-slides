@@ -1,0 +1,73 @@
+import type { StateCreator } from 'zustand'
+import type { Project } from '@motionslides/shared'
+import { createDefaultProject } from '@/store/defaults'
+import type { EditorState } from '@/store/editorStore'
+
+export interface ProjectSlice {
+  projects: Project[]
+  activeProjectId: string | null
+
+  createProject: (name?: string) => Project
+  deleteProject: (id: string) => void
+  loadProject: (id: string) => void
+  updateProjectName: (id: string, name: string) => void
+
+  activeProject: () => Project | null
+}
+
+export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice> = (set, get) => ({
+  projects: [],
+  activeProjectId: null,
+
+  activeProject: () => {
+    const { projects, activeProjectId } = get()
+    return projects.find((p) => p.id === activeProjectId) ?? null
+  },
+
+  createProject: (name) => {
+    const project = createDefaultProject(name)
+    set((s) => ({
+      projects: [...s.projects, project],
+      activeProjectId: project.id,
+      activeSlideIndex: 0,
+      selectedElementIds: [],
+    }))
+    return project
+  },
+
+  deleteProject: (id) => {
+    set((s) => ({
+      projects: s.projects.filter((p) => p.id !== id),
+      activeProjectId: s.activeProjectId === id ? null : s.activeProjectId,
+    }))
+  },
+
+  loadProject: (id) => {
+    // Migrate existing projects that might lack new fields
+    set((s) => ({
+      activeProjectId: id,
+      activeSlideIndex: 0,
+      selectedElementIds: [],
+      projects: s.projects.map((p) => {
+        if (p.id !== id) return p
+        return {
+          ...p,
+          transitions: p.transitions ?? [],
+          prototypeLayout: p.prototypeLayout ?? {},
+          slides: p.slides.map((sl) => ({
+            ...sl,
+            name: sl.name ?? '',
+          })),
+        }
+      }),
+    }))
+  },
+
+  updateProjectName: (id, name) => {
+    set((s) => ({
+      projects: s.projects.map((p) =>
+        p.id === id ? { ...p, name, updatedAt: Date.now() } : p,
+      ),
+    }))
+  },
+})
