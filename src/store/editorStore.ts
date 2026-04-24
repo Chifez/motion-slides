@@ -45,3 +45,8 @@ export const useEditorStore = create<EditorState>()(
     },
   ),
 )
+
+// Expose store for headless renderer injection (export pipeline only)
+if (typeof window !== 'undefined') {
+  (window as any).__motionslides_store__ = useEditorStore
+}

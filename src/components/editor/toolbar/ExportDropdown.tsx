@@ -2,7 +2,8 @@ import { useState, useRef, useCallback } from 'react'
 import { Download, Film, FileText, Share2 } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useClickOutside } from '@/hooks/useClickOutside'
-import { exportAsVideo, downloadBlob, type ExportProgress } from '@/lib/exportEngine'
+import { startExport, type ExportProgressEvent } from '@/lib/exportClient'
+import { downloadBlob } from '@/lib/exportEngine'
 import { SOCIAL_PRESETS, type SocialPreset } from '@/lib/socialExport'
 import { ExportProgressToast } from './ExportProgressToast'
 import { useIsMobile } from '@/hooks/useMediaQuery'
@@ -59,7 +60,7 @@ function PlatformIcon({ id }: { id: string }) {
 
 export function ExportDropdown() {
   const [open, setOpen] = useState(false)
-  const [progress, setProgress] = useState<ExportProgress | null>(null)
+  const [progress, setProgress] = useState<ExportProgressEvent | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   useClickOutside(ref, () => setOpen(false))
 
@@ -73,14 +74,8 @@ export function ExportDropdown() {
 
   const handleExportVideo = useCallback(async () => {
     setOpen(false)
-    setProgress({ stage: 'preparing', currentSlide: 0, totalSlides: 0, message: 'Starting…' })
-    const blob = await exportAsVideo((p) => setProgress(p))
-    if (blob) {
-      const proj = useEditorStore.getState().activeProject()
-      const name = proj?.name.replace(/\s+/g, '_') ?? 'presentation'
-      downloadBlob(blob, `${name}.webm`)
-    }
-    setTimeout(() => setProgress(null), 3000)
+    await startExport('mp4', (p) => setProgress(p))
+    setTimeout(() => setProgress(null), 5000)
   }, [])
 
   const handleSocialExport = useCallback(async (preset: SocialPreset) => {
@@ -95,14 +90,8 @@ export function ExportDropdown() {
     // Small delay to let the canvas adapt to the new aspect ratio
     await new Promise((r) => setTimeout(r, 500))
 
-    setProgress({ stage: 'preparing', currentSlide: 0, totalSlides: 0, message: `Optimizing for ${preset.name}…` })
-    const blob = await exportAsVideo((p) => setProgress(p))
-    if (blob) {
-      const proj = useEditorStore.getState().activeProject()
-      const name = proj?.name.replace(/\s+/g, '_') ?? 'presentation'
-      downloadBlob(blob, `${name}_${preset.id}.webm`)
-    }
-    setTimeout(() => setProgress(null), 3000)
+    await startExport('mp4', (p) => setProgress(p))
+    setTimeout(() => setProgress(null), 5000)
   }, [])
 
   return (
