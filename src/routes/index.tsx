@@ -133,7 +133,7 @@ function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-60px' }}
                 transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 hover:border-white/12 transition-colors"
+                className="bg-white/3 border border-white/7 rounded-2xl p-6 hover:border-white/12 transition-colors"
               >
                 <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-blue-400 mb-4">
                   {f.icon}

@@ -54,7 +54,7 @@ export function ChartSection({ content, onUpdate }: Props) {
 
       <div className="flex flex-col gap-2 mb-4 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
         {content.data.map((dp, i) => (
-          <div key={i} className="flex flex-col gap-1.5 p-2 bg-white/[0.03] rounded border border-white/5">
+          <div key={i} className="flex flex-col gap-1.5 p-2 bg-white/3 rounded border border-white/5">
             <div className="flex items-center gap-2">
               <input
                 type="text"

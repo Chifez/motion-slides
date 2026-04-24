@@ -4,10 +4,13 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "outDir": "./dist",
-    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../src/*"]
+    }
   },
-  "include": ["**/*"]
+  "include": ["**/*", "../src/lib/sceneGraph.ts", "../src/types.ts"]
 }

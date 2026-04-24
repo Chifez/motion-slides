@@ -159,7 +159,7 @@ export function PresentationOverlay() {
       </div>
 
       {/* Progress Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/5 overflow-hidden z-[10000]">
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/5 overflow-hidden z-10000">
         <div 
           className="h-full bg-blue-500 transition-all duration-300 ease-out"
           style={{ width: `${((activeSlideIndex + 1) / totalSlides) * 100}%` }}

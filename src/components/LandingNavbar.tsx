@@ -4,7 +4,7 @@ import { Logo } from '@/components/ui/Logo'
 
 export function LandingNavbar() {
   return (
-    <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-10 h-16 bg-black/60 backdrop-blur-md border-b border-white/[0.06]">
+    <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-10 h-16 bg-black/60 backdrop-blur-md border-b border-white/6">
       <Link to="/" className="no-underline">
         <Logo expanded size={28} />
       </Link>
