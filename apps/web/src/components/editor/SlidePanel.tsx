@@ -115,9 +115,11 @@ export function SlidePanel() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 bottom-0 left-0 w-[280px] z-101 overflow-hidden"
+              className="fixed top-0 bottom-0 left-0 w-[280px] z-101 flex flex-col overflow-hidden"
             >
-              {panelContent}
+              <div className="flex-1 h-full flex flex-col min-h-0">
+                {panelContent}
+              </div>
             </motion.aside>
           </>
         )}
