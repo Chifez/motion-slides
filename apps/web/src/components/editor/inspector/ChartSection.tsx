@@ -1,5 +1,8 @@
-import { Trash2, Plus } from 'lucide-react'
+import { Trash2, Plus, Palette } from 'lucide-react'
 import type { ChartContent, ChartType, ChartDataPoint } from '@motionslides/shared'
+
+
+const DEFAULT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
 const labelCls = "text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2.5 block"
 
@@ -44,7 +47,7 @@ export function ChartSection({ content, onUpdate }: Props) {
 
       <div className="flex items-center justify-between mb-3">
         <span className={labelCls}>Data Points</span>
-        <button 
+        <button
           onClick={addDataPoint}
           className="p-1 rounded bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-neutral-100 border-none cursor-pointer"
         >
@@ -55,30 +58,38 @@ export function ChartSection({ content, onUpdate }: Props) {
       <div className="flex flex-col gap-2 mb-4 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
         {content.data.map((dp, i) => (
           <div key={i} className="flex flex-col gap-1.5 p-2 bg-white/3 rounded border border-white/5">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-2 px-2">
               <input
                 type="text"
                 value={dp.label}
                 onChange={(e) => updateDataPoint(i, { label: e.target.value })}
-                className="flex-1 bg-transparent border-none text-[11px] text-neutral-200 outline-none font-semibold"
+                className="min-w-0 bg-transparent border-none text-[11px] text-neutral-200 outline-none font-semibold"
                 placeholder="Label"
               />
               {!content.isStacked && (
-                <input
-                  type="number"
-                  value={dp.value}
-                  onChange={(e) => updateDataPoint(i, { value: parseFloat(e.target.value) || 0 })}
-                  className="w-16 bg-[#0d1117] border border-white/8 rounded px-1.5 py-1 text-[11px] text-neutral-200 outline-none"
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="color"
+                    value={dp.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]}
+                    onChange={(e) => updateDataPoint(i, { color: e.target.value })}
+                    className="w-4 h-4 bg-transparent border-none cursor-pointer rounded-sm overflow-hidden p-0"
+                  />
+                  <input
+                    type="number"
+                    value={dp.value}
+                    onChange={(e) => updateDataPoint(i, { value: parseFloat(e.target.value) || 0 })}
+                    className="w-16 bg-[#0d1117] border border-white/8 rounded px-1.5 py-1 text-[11px] text-neutral-200 outline-none"
+                  />
+                </div>
               )}
-              <button 
+              <button
                 onClick={() => removeDataPoint(i)}
                 className="p-1 text-neutral-600 hover:text-red-500 border-none bg-transparent cursor-pointer"
               >
                 <Trash2 size={12} />
               </button>
             </div>
-            
+
             {content.isStacked && (
               <div className="space-y-1.5 mt-1 border-t border-white/5 pt-2">
                 {(dp.stack || [dp.value]).map((val, si) => (
@@ -95,7 +106,7 @@ export function ChartSection({ content, onUpdate }: Props) {
                       className="flex-1 bg-[#0d1117] border border-white/8 rounded px-1.5 py-0.5 text-[10px] text-neutral-300 outline-none"
                     />
                     {(dp.stack?.length ?? 0) > 1 && (
-                      <button 
+                      <button
                         onClick={() => {
                           const newStack = (dp.stack || [dp.value]).filter((_, index) => index !== si)
                           updateDataPoint(i, { stack: newStack, value: newStack.reduce((a, b) => a + b, 0) })
@@ -139,7 +150,7 @@ export function ChartSection({ content, onUpdate }: Props) {
                 className="w-full h-1 bg-white/5 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-2"
               />
             </div>
-            
+
             <label className="flex items-center gap-2 cursor-pointer group pb-2">
               <input
                 type="checkbox"
@@ -161,7 +172,7 @@ export function ChartSection({ content, onUpdate }: Props) {
           />
           <span className="text-[11px] text-neutral-500 group-hover:text-neutral-300 transition-colors">Show Labels</span>
         </label>
-        
+
         <label className="flex items-center gap-2 cursor-pointer group">
           <input
             type="checkbox"
@@ -171,6 +182,31 @@ export function ChartSection({ content, onUpdate }: Props) {
           />
           <span className="text-[11px] text-neutral-500 group-hover:text-neutral-300 transition-colors">Show Grid</span>
         </label>
+
+        <div className="pt-3 mt-1 border-t border-white/5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] text-neutral-500 uppercase tracking-wider flex items-center gap-1.5">
+              <Palette size={10} className="text-neutral-600" />
+              Series Colors
+            </span>
+          </div>
+          <div className="grid grid-cols-6 gap-2">
+            {(content.colors || DEFAULT_COLORS).map((color, ci) => (
+              <div key={ci} className="relative group/color">
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => {
+                    const newColors = [...(content.colors || DEFAULT_COLORS)]
+                    newColors[ci] = e.target.value
+                    onUpdate({ ...content, colors: newColors })
+                  }}
+                  className="w-full h-6 bg-transparent border-none cursor-pointer rounded overflow-hidden p-0"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

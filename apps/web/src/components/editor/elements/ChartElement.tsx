@@ -36,7 +36,7 @@ export function ChartElement({ content }: Props) {
           : 1
 
         const barData = normalizedData.map(d => {
-          const item: any = { label: d.label }
+          const item: any = { label: d.label, value: d.value }
           d.stack.forEach((v, si) => { item[`stack${si}`] = v })
           return item
         })
