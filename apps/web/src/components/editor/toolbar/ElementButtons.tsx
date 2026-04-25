@@ -2,22 +2,66 @@ import { useState, useRef } from 'react'
 import { Type, Code2, Shapes, Minus, ChevronDown, BarChart3 } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { nanoid } from '@/lib/nanoid'
-import { DEFAULT_TEXT_ELEMENT, DEFAULT_CODE_ELEMENT, DEFAULT_SHAPE_ELEMENT, DEFAULT_LINE_ELEMENT, DEFAULT_CHART_ELEMENT, LINE_TYPE_OPTIONS } from '@/constants/editor'
+import { 
+  DEFAULT_TEXT_ELEMENT, DEFAULT_CODE_ELEMENT, DEFAULT_SHAPE_ELEMENT, 
+  DEFAULT_LINE_ELEMENT, DEFAULT_CHART_ELEMENT, LINE_TYPE_OPTIONS, 
+  SHAPE_OPTIONS, CHART_TYPE_OPTIONS 
+} from '@/constants/editor'
 import { useClickOutside } from '@/hooks/useClickOutside'
-import type { LineType } from '@motionslides/shared'
+import type { LineType, ShapeType, ChartType } from '@motionslides/shared'
 
 const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-white/8 bg-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#242424]"
 
 export function ElementButtons() {
   const { addElement } = useEditorStore()
+  
   const [showLineMenu, setShowLineMenu] = useState(false)
   const lineRef = useRef<HTMLDivElement>(null)
   useClickOutside(lineRef, () => setShowLineMenu(false))
 
+  const [showShapeMenu, setShowShapeMenu] = useState(false)
+  const shapeRef = useRef<HTMLDivElement>(null)
+  useClickOutside(shapeRef, () => setShowShapeMenu(false))
+
+  const [showChartMenu, setShowChartMenu] = useState(false)
+  const chartRef = useRef<HTMLDivElement>(null)
+  useClickOutside(chartRef, () => setShowChartMenu(false))
+
   const addText = () => addElement({ ...DEFAULT_TEXT_ELEMENT, id: nanoid() })
   const addCode = () => addElement({ ...DEFAULT_CODE_ELEMENT, id: nanoid() })
-  const addShape = () => addElement({ ...DEFAULT_SHAPE_ELEMENT, id: nanoid() })
-  const addChart = () => addElement({ ...DEFAULT_CHART_ELEMENT, id: nanoid() })
+  
+  const addShape = (shapeType: ShapeType = 'rectangle') => {
+    const isAws = shapeType === 'aws-icon'
+    const isGcp = shapeType === 'gcp-icon'
+    const isIcon = isAws || isGcp
+
+    addElement({ 
+      ...DEFAULT_SHAPE_ELEMENT, 
+      id: nanoid(),
+      content: { 
+        ...DEFAULT_SHAPE_ELEMENT.content, 
+        shapeType,
+        iconPath: isAws 
+          ? 'icons/aws/Architecture-Service-Icons_01302026/Arch_Compute/32/Arch_Amazon-EC2_32.svg'
+          : isGcp
+          ? 'icons/gcp/Compute/Compute Engine.svg'
+          : undefined,
+        iconLabel: isAws ? 'Amazon EC2' : isGcp ? 'Compute Engine' : undefined,
+        iconCategory: isAws ? 'Arch_Compute' : isGcp ? 'Compute' : undefined,
+        label: isAws ? 'Amazon EC2' : isGcp ? 'Compute Engine' : DEFAULT_SHAPE_ELEMENT.content.label
+      }
+    })
+    setShowShapeMenu(false)
+  }
+
+  const addChart = (chartType: ChartType = 'bar') => {
+    addElement({ 
+      ...DEFAULT_CHART_ELEMENT, 
+      id: nanoid(),
+      content: { ...DEFAULT_CHART_ELEMENT.content, chartType }
+    })
+    setShowChartMenu(false)
+  }
 
   const addLine = (lineType: LineType) => {
     const branches = lineType === 'branching' ? [
@@ -47,12 +91,46 @@ export function ElementButtons() {
       <button className={btnBase} onClick={addCode}>
         <Code2 size={13} /> Code
       </button>
-      <button className={btnBase} onClick={addShape}>
-        <Shapes size={13} /> Shape
-      </button>
-      <button className={btnBase} onClick={addChart}>
-        <BarChart3 size={13} /> Chart
-      </button>
+
+      <div className="relative" ref={shapeRef}>
+        <button className={btnBase} onClick={() => setShowShapeMenu(!showShapeMenu)}>
+          <Shapes size={13} /> Shape <ChevronDown size={10} />
+        </button>
+        {showShapeMenu && (
+          <div className="absolute left-0 top-full mt-1.5 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-50 p-1.5 w-44 max-h-64 overflow-y-auto custom-scrollbar">
+            {SHAPE_OPTIONS.map((so) => (
+              <button
+                key={so.value}
+                onClick={() => addShape(so.value as ShapeType)}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-300 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+              >
+                {so.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="relative" ref={chartRef}>
+        <button className={btnBase} onClick={() => setShowChartMenu(!showChartMenu)}>
+          <BarChart3 size={13} /> Chart <ChevronDown size={10} />
+        </button>
+        {showChartMenu && (
+          <div className="absolute left-0 top-full mt-1.5 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-50 p-1.5 w-36">
+            {CHART_TYPE_OPTIONS.map((ct) => (
+              <button
+                key={ct.value}
+                onClick={() => addChart(ct.value as ChartType)}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-300 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+              >
+                <span className="text-base w-4 text-center">{ct.icon}</span>
+                {ct.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="w-px h-5 bg-white/8 mx-0.5" />
       <div className="relative" ref={lineRef}>
         <button

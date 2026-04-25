@@ -18,7 +18,7 @@ interface ShapeProps {
 function RectangleShape({ fill, stroke, transition }: ShapeProps) {
   return (
     <motion.rect
-      x="2" y="2" width="96" height="96" rx="6"
+      x="4" y="4" width="92" height="92" rx="6"
       animate={{ fill, stroke }}
       transition={transition}
       strokeWidth="2"
@@ -126,10 +126,33 @@ function DocumentShape({ fill, stroke, transition }: ShapeProps) {
   )
 }
 
-const shapeMap: Record<ShapeType, React.FC<ShapeProps>> = {
+function AwsIconShape({ iconPath }: { iconPath?: string }) {
+  if (!iconPath) return null
+  // We use a foreignObject to render the <img> tag inside the SVG coordinate system
+  return (
+    <foreignObject x="0" y="0" width="100" height="100">
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <img
+          src={`/${iconPath}`}
+          alt="AWS Icon"
+          style={{
+            maxWidth: '90%',
+            maxHeight: '90%',
+            objectFit: 'contain',
+            pointerEvents: 'none'
+          }}
+        />
+      </div>
+    </foreignObject>
+  )
+}
+
+const shapeMap: Record<string, React.FC<any>> = {
   rectangle: RectangleShape, database: DatabaseShape, server: ServerShape,
   cloud: CloudShape, client: ClientShape, diamond: DiamondShape,
   user: UserShape, bucket: BucketShape, queue: QueueShape, document: DocumentShape,
+  'aws-icon': AwsIconShape,
+  'gcp-icon': AwsIconShape,
 }
 
 /**
@@ -153,18 +176,20 @@ export function ShapeElement({ content }: Props) {
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-      <svg viewBox="0 0 100 100" className="shape-svg" style={{ flex: 1 }}>
+      <svg viewBox="0 0 100 100" className="shape-svg" style={{ flex: 1, overflow: 'visible' }}>
         <ShapeSVG
           fill={content.fill}
           stroke={content.stroke}
           transition={colorTransition}
+          iconPath={content.iconPath}
         />
       </svg>
       {content.label && (
-        <span style={{ fontSize: 11, color: '#ccc', fontWeight: 500, fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
+        <span style={{ fontSize: 11, color: '#ccc', fontWeight: 500, fontFamily: 'Inter, sans-serif', textAlign: 'center', userSelect: 'none' }}>
           {content.label}
         </span>
       )}
     </div>
   )
 }
+

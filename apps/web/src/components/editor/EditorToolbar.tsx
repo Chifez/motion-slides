@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Play, PenSquare, GitBranch, CheckSquare, Layout } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch, CheckSquare, Layout, Sparkles } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@motionslides/shared'
 import { ElementButtons } from './toolbar/ElementButtons'
@@ -15,7 +15,7 @@ export function EditorToolbar({ project }: Props) {
   const {
     updateProjectName, startPresentation, isPrototypeMode,
     setPrototypeMode, mobileSlidesOpen, setMobileSlidesOpen,
-    isMultiSelectMode, setMultiSelectMode
+    isMultiSelectMode, setMultiSelectMode, toggleChat, isChatOpen
   } = useEditorStore()
 
   const isMobile = useIsMobile();
@@ -55,9 +55,9 @@ export function EditorToolbar({ project }: Props) {
         onChange={(e) => updateProjectName(project.id, e.target.value)}
         onBlur={(e) => { if (!e.target.value.trim()) updateProjectName(project.id, 'Untitled Deck') }}
         spellCheck={false}
-        className="bg-transparent border border-transparent hover:border-white/8 focus:border-blue-500 focus:bg-[#1c1c1c] rounded-md px-1 md:px-2 py-1 text-[13px] text-neutral-100 font-medium min-w-[60px] md:min-w-[130px] max-w-[220px] focus:outline-none transition-all truncate"
+        className="bg-transparent border border-transparent hover:border-white/8 focus:border-blue-500 focus:bg-[#1c1c1c] rounded-md px-1 md:px-2 py-1 text-[13px] text-neutral-100 font-medium min-w-[60px] md:min-w-[130px] max-w-[220px] focus:outline-none transition-all truncate hidden md:block"
       />
-      <div className="w-px h-5 bg-white/8 mx-0.5 md:mx-1" />
+      <div className="w-px h-5 bg-white/8 mx-0.5 md:mx-1 hidden md:block" />
 
       {/* Design / Prototype mode toggle - Figma-style */}
       <div className="flex items-center bg-[#1c1c1c] border border-white/8 rounded-md p-0.5">
@@ -92,16 +92,26 @@ export function EditorToolbar({ project }: Props) {
 
       <div className="flex-1" />
 
+      <button
+        onClick={() => toggleChat()}
+        className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-all cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-neutral-800 text-neutral-400 hover:text-neutral-100'}`}
+        title="AI Generation"
+      >
+        <Sparkles size={13} className={isChatOpen ? 'animate-pulse' : ''} />
+        {!isMobile && <span>AI Chat</span>}
+      </button>
+
       <SettingsDropdown />
       <ExportDropdown />
 
       <button
-        className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
+        className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
         onClick={() => startPresentation()}
         title="Start Presentation"
       >
         <Play size={13} fill="currentColor" /> {!isMobile && "Play"}
       </button>
+
     </header>
   )
 }

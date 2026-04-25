@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
-import { Plus, Layout, Clock } from 'lucide-react'
+import { Plus, Layout, Clock, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
 import { Logo } from '@/components/ui/Logo'
@@ -15,7 +15,7 @@ function formatDate(ts: number) {
 
 function Dashboard() {
   const navigate = useNavigate()
-  const { projects, createProject } = useEditorStore()
+  const { projects, createProject, deleteProject } = useEditorStore()
 
   function handleCreate() {
     const project = createProject('Untitled Deck')
@@ -65,11 +65,24 @@ function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={() => navigate({ to: '/editor/$projectId', params: { projectId: project.id } })}
-              className="bg-[#161616] border border-white/8 hover:border-white/16 rounded-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5"
+              className="group bg-[#161616] border border-white/8 hover:border-white/16 rounded-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5"
             >
               {/* Preview area */}
-              <div className="aspect-video bg-[#111] border-b border-white/6 flex items-center justify-center text-neutral-700">
+              <div className="aspect-video bg-[#111] border-b border-white/6 flex items-center justify-center text-neutral-700 relative">
                 <Layout size={24} />
+                {/* Delete button (shows on hover) */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (confirm(`Are you sure you want to delete "${project.name}"?`)) {
+                      deleteProject(project.id)
+                    }
+                  }}
+                  className="absolute top-2 right-2 p-1.5 rounded-md bg-black/60 text-neutral-500 hover:text-red-400 hover:bg-red-900/40 opacity-0 group-hover:opacity-100 transition-all border-none cursor-pointer"
+                  title="Delete Project"
+                >
+                  <Trash2 size={13} />
+                </button>
               </div>
               {/* Card body */}
               <div className="px-3.5 py-3">

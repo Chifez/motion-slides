@@ -7,7 +7,8 @@ export function TextElement({ content }: Props) {
   return (
     <div
       style={{
-        width: '100%',
+        width: 'max-content',
+        maxWidth: '100%',
         height: '100%',
         display: 'flex',
         alignItems: 'center',

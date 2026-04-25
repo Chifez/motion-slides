@@ -13,6 +13,8 @@ export type ShapeType =
   | 'bucket'
   | 'queue'
   | 'document'
+  | 'aws-icon'
+  | 'gcp-icon'
 
 export type LineType = 'straight' | 'elbow' | 'curved' | 'step-after' | 'step-before' | 'branching'
 
@@ -73,6 +75,9 @@ export interface ShapeContent {
   fill: string
   stroke: string
   label?: string
+  iconPath?:     string
+  iconCategory?: string
+  iconLabel?:    string
 }
 
 export interface Connection {
@@ -109,6 +114,8 @@ export interface LineContent {
   labelFontSize?: number
 }
 
+export type AnimationType = 'fade-in' | 'slide-up' | 'slide-left' | 'zoom-in' | 'pop' | 'draw' | 'none'
+
 export interface SceneElement {
   id: string
   type: ElementType
@@ -119,6 +126,8 @@ export interface SceneElement {
   zIndex: number
   locked?: boolean
   groupId?: string
+  animation?: AnimationType
+  animationDelay?: number
   content: TextContent | CodeContent | ShapeContent | LineContent | ChartContent
 }
 
@@ -127,6 +136,23 @@ export interface Slide {
   name: string
   elements: SceneElement[]
   background: string
+}
+
+// ── AI Chat ───────────────────────────────────────────────────────────────────
+
+export interface AIChatMessage {
+  id:        string
+  role:      'user' | 'assistant'
+  content:   string
+  timestamp: number
+  /** Present when the message contains generated slides ready to preview */
+  slides?:   Slide[]
+  /** Present when stage is in progress */
+  progress?: {
+    stage:   'preparing' | 'capturing' | 'encoding' | 'done' | 'error'
+    percent: number
+    message: string
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -166,6 +192,7 @@ export type TransitionAnimation =
   | 'fade'
   | 'zoom'
   | 'flip'
+  | 'magic-move'
 
 export interface SlideTransition {
   id: string

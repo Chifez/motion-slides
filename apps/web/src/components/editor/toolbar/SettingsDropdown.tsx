@@ -11,7 +11,7 @@ import {
 import type { AspectRatioKey } from '@motionslides/shared'
 import { BezierEditor } from './BezierEditor'
 
-const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-white/8 bg-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#242424]"
+const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-white/8 bg-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#242424]"
 const labelCls = "text-[10px] text-neutral-600 uppercase tracking-wider block mb-1"
 const selectCls = "w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1 text-[11px] text-neutral-100 focus:outline-none"
 

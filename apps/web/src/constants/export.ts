@@ -51,7 +51,7 @@ export const BEZIER_PRESETS: BezierPreset[] = [
 
 /** Default playback settings */
 export const DEFAULT_PLAYBACK_SETTINGS: PlaybackSettings = {
-  autoplay: false,
+  autoplay: true,
   autoplayDelay: 3000,
   loop: true,
   transitionDuration: 500,

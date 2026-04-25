@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand'
-import type { Project } from '@motionslides/shared'
+import type { Project, Slide } from '@motionslides/shared'
 import { createDefaultProject } from '@/store/defaults'
 import type { EditorState } from '@/store/editorStore'
 
@@ -11,6 +11,7 @@ export interface ProjectSlice {
   deleteProject: (id: string) => void
   loadProject: (id: string) => void
   updateProjectName: (id: string, name: string) => void
+  addSlidesToProject: (projectId: string, slides: Slide[]) => void
 
   activeProject: () => Project | null
 }
@@ -25,7 +26,8 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   },
 
   createProject: (name) => {
-    const project = createDefaultProject(name)
+    const isFirst = get().projects.length === 0
+    const project = createDefaultProject(name, isFirst)
     set((s) => ({
       projects: [...s.projects, project],
       activeProjectId: project.id,
@@ -33,6 +35,21 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
       selectedElementIds: [],
     }))
     return project
+  },
+
+  addSlidesToProject: (projectId, newSlides) => {
+    set((s) => {
+      const project = s.projects.find(p => p.id === projectId)
+      if (!project) return s
+      
+      const startIndex = project.slides.length
+      return {
+        projects: s.projects.map((p) =>
+          p.id === projectId ? { ...p, slides: [...p.slides, ...newSlides], updatedAt: Date.now() } : p,
+        ),
+        activeSlideIndex: startIndex, // Jump to the first newly added slide
+      }
+    })
   },
 
   deleteProject: (id) => {

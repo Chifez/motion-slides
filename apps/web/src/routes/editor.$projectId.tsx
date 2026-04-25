@@ -9,6 +9,7 @@ import { useEditorShortcuts } from '@/hooks/useEditorShortcuts'
 
 import { InspectorPanel } from '@/components/editor/InspectorPanel'
 import { PresentationOverlay } from '@/components/editor/PresentationOverlay'
+import { AIChat } from '@/components/editor/AIChat'
 
 export const Route = createFileRoute('/editor/$projectId')({
   loader: ({ params }) => {
@@ -33,15 +34,14 @@ function EditorPage() {
     )
   }
 
-
-
   return (
     <div className="h-screen flex flex-col bg-[#0d0d0d] overflow-hidden">
       {!isPresenting && <EditorToolbar project={project} />}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {!isPresenting && !isPrototypeMode && <SlidePanel />}
         {isPrototypeMode ? <PrototypeCanvas /> : <CanvasStage />}
         {!isPresenting && !isPrototypeMode && <InspectorPanel />}
+        <AIChat />
       </div>
       <PresentationOverlay />
     </div>

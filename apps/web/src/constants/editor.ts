@@ -33,6 +33,8 @@ export const SHAPE_OPTIONS: { value: ShapeType; label: string }[] = [
   { value: 'bucket', label: 'Storage / Bucket' },
   { value: 'queue', label: 'Queue' },
   { value: 'document', label: 'Document' },
+  { value: 'aws-icon', label: 'AWS Icon' },
+  { value: 'gcp-icon', label: 'GCP Icon' },
 ]
 
 /** Font weight mapping for text elements */
@@ -63,7 +65,7 @@ export const RESIZE_HANDLES = ['tl', 'tm', 'tr', 'ml', 'mr', 'bl', 'bm', 'br'] a
 export const DEFAULT_TEXT_ELEMENT = {
   type: 'text' as const,
   position: { x: 100, y: 100 },
-  size: { width: 300, height: 60 },
+  size: { width: 200, height: 60 },
   rotation: 0,
   opacity: 1,
   zIndex: 10,
