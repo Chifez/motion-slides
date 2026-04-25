@@ -13,6 +13,8 @@ import { Route as ExportViewRouteImport } from './routes/export-view'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EditorProjectIdRouteImport } from './routes/editor.$projectId'
+import { Route as ApiGenerateReadmeRouteImport } from './routes/api/generate/readme'
+import { Route as ApiGenerateArchitectureRouteImport } from './routes/api/generate/architecture'
 
 const ExportViewRoute = ExportViewRouteImport.update({
   id: '/export-view',
@@ -34,18 +36,32 @@ const EditorProjectIdRoute = EditorProjectIdRouteImport.update({
   path: '/editor/$projectId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGenerateReadmeRoute = ApiGenerateReadmeRouteImport.update({
+  id: '/api/generate/readme',
+  path: '/api/generate/readme',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGenerateArchitectureRoute = ApiGenerateArchitectureRouteImport.update({
+  id: '/api/generate/architecture',
+  path: '/api/generate/architecture',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
   '/editor/$projectId': typeof EditorProjectIdRoute
+  '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
+  '/api/generate/readme': typeof ApiGenerateReadmeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
   '/editor/$projectId': typeof EditorProjectIdRoute
+  '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
+  '/api/generate/readme': typeof ApiGenerateReadmeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,34 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
   '/editor/$projectId': typeof EditorProjectIdRoute
+  '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
+  '/api/generate/readme': typeof ApiGenerateReadmeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/export-view' | '/editor/$projectId'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/export-view'
+    | '/editor/$projectId'
+    | '/api/generate/architecture'
+    | '/api/generate/readme'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/export-view' | '/editor/$projectId'
-  id: '__root__' | '/' | '/dashboard' | '/export-view' | '/editor/$projectId'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/export-view'
+    | '/editor/$projectId'
+    | '/api/generate/architecture'
+    | '/api/generate/readme'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/export-view'
+    | '/editor/$projectId'
+    | '/api/generate/architecture'
+    | '/api/generate/readme'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +104,8 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   ExportViewRoute: typeof ExportViewRoute
   EditorProjectIdRoute: typeof EditorProjectIdRoute
+  ApiGenerateArchitectureRoute: typeof ApiGenerateArchitectureRoute
+  ApiGenerateReadmeRoute: typeof ApiGenerateReadmeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +138,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditorProjectIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/generate/readme': {
+      id: '/api/generate/readme'
+      path: '/api/generate/readme'
+      fullPath: '/api/generate/readme'
+      preLoaderRoute: typeof ApiGenerateReadmeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/generate/architecture': {
+      id: '/api/generate/architecture'
+      path: '/api/generate/architecture'
+      fullPath: '/api/generate/architecture'
+      preLoaderRoute: typeof ApiGenerateArchitectureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +160,8 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   ExportViewRoute: ExportViewRoute,
   EditorProjectIdRoute: EditorProjectIdRoute,
+  ApiGenerateArchitectureRoute: ApiGenerateArchitectureRoute,
+  ApiGenerateReadmeRoute: ApiGenerateReadmeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

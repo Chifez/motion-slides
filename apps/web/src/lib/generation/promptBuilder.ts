@@ -26,6 +26,9 @@ Your goal is to transform technical content into beautiful, animated, high-fidel
 - Output ONLY valid JSON matching the provided schema.
 - Colors should be in hex format (e.g., #3b82f6).
 - Use a dark theme by default unless specified otherwise.
+
+## Units
+- All time durations (animationDelay, transition.duration) MUST be in MILLISECONDS (e.g., 1000 for 1 second).
 `
 
 export interface ReadmePromptOptions {

@@ -1,4 +1,4 @@
-import type { Slide } from '@shared/types'
+import type { Slide } from '@motionslides/shared'
 
 interface Props {
   slides: Slide[]

@@ -3,10 +3,10 @@ import { z } from 'zod'
 // ── Grid position ─────────────────────────────────────────────────────────────
 // 12 columns × 8 rows. The assembler converts to pixel coordinates.
 const AIPosition = z.object({
-  col:    z.number().int().min(0).max(11),
-  row:    z.number().int().min(0).max(7),
-  width:  z.number().int().min(1).max(12),
-  height: z.number().int().min(1).max(8),
+  col:    z.number().int().min(0).max(24),
+  row:    z.number().int().min(0).max(16),
+  width:  z.number().int().min(1).max(24),
+  height: z.number().int().min(1).max(16),
 })
 
 // ── Animation options ─────────────────────────────────────────────────────────
@@ -21,31 +21,31 @@ const AITextElement = z.object({
   role:           z.enum(['title', 'subtitle', 'heading', 'body', 'caption', 'label']),
   position:       AIPosition,
   style: z.object({
-    fontSize:   z.enum(['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl']).optional(),
-    fontWeight: z.enum(['normal', 'medium', 'semibold', 'bold']).optional(),
-    color:      z.string().optional(),
-    align:      z.enum(['left', 'center', 'right']).optional(),
-  }).optional(),
-  animation:      AnimationType.optional(),
-  animationDelay: z.number().int().min(0).max(5000).optional(),
+    fontSize:   z.enum(['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl']).nullable(),
+    fontWeight: z.enum(['normal', 'medium', 'semibold', 'bold']).nullable(),
+    color:      z.string().nullable(),
+    align:      z.enum(['left', 'center', 'right']).nullable(),
+  }).nullable(),
+  animation:      AnimationType.nullable(),
+  animationDelay: z.number().int().min(0).max(5000).nullable(),
 })
 
 const AIShapeElement = z.object({
   type:     z.literal('shape'),
   id:       z.string().min(1),
   shape:    z.enum(['rectangle', 'rounded-rectangle', 'circle', 'cylinder', 'diamond', 'hexagon', 'aws-icon']),
-  label:    z.string().optional(),
-  sublabel: z.string().optional(),
-  iconPath: z.string().optional(),
+  label:    z.string().nullable(),
+  sublabel: z.string().nullable(),
+  iconPath: z.string().nullable(),
   position: AIPosition,
   style: z.object({
-    backgroundColor: z.string().optional(),
-    borderColor:     z.string().optional(),
-    borderWidth:     z.number().optional(),
-    opacity:         z.number().min(0).max(1).optional(),
-  }).optional(),
-  animation:      AnimationType.optional(),
-  animationDelay: z.number().int().min(0).max(5000).optional(),
+    backgroundColor: z.string().nullable(),
+    borderColor:     z.string().nullable(),
+    borderWidth:     z.number().nullable(),
+    opacity:         z.number().min(0).max(1).nullable(),
+  }).nullable(),
+  animation:      AnimationType.nullable(),
+  animationDelay: z.number().int().min(0).max(5000).nullable(),
 })
 
 const AICodeElement = z.object({
@@ -54,8 +54,8 @@ const AICodeElement = z.object({
   code:           z.string().min(1),
   language:       z.string(),
   position:       AIPosition,
-  animation:      AnimationType.optional(),
-  animationDelay: z.number().int().min(0).max(5000).optional(),
+  animation:      AnimationType.nullable(),
+  animationDelay: z.number().int().min(0).max(5000).nullable(),
 })
 
 const AILineElement = z.object({
@@ -63,11 +63,11 @@ const AILineElement = z.object({
   id:             z.string().min(1),
   fromElementId:  z.string().min(1),
   toElementId:    z.string().min(1),
-  label:          z.string().optional(),
-  direction:      z.enum(['one-way', 'two-way', 'none']).optional(),
-  lineStyle:      z.enum(['solid', 'dashed', 'dotted']).optional(),
-  animation:      AnimationType.optional(),
-  animationDelay: z.number().int().min(0).max(5000).optional(),
+  label:          z.string().nullable(),
+  direction:      z.enum(['one-way', 'two-way', 'none']).nullable(),
+  lineStyle:      z.enum(['solid', 'dashed', 'dotted']).nullable(),
+  animation:      AnimationType.nullable(),
+  animationDelay: z.number().int().min(0).max(5000).nullable(),
 })
 
 const AIElement = z.discriminatedUnion('type', [
@@ -83,14 +83,14 @@ const AISlide = z.object({
   id:         z.string().min(1),
   title:      z.string().min(1),
   role:       z.enum(['title', 'content', 'diagram', 'code', 'summary', 'divider']),
-  background: z.string().optional(),
+  background: z.string().nullable(),
   elements:   z.array(AIElement).min(1),
   transition: z.object({
     type:     z.enum(['fade', 'slide', 'zoom', 'flip', 'morph', 'magic-move', 'none']),
-    duration: z.number().int().min(200).max(2000).optional(),
-    easing:   z.enum(['easeInOut', 'easeOut', 'spring', 'linear']).optional(),
-  }).optional(),
-  speakerNotes: z.string().optional(),
+    duration: z.number().min(0).max(5000).nullable(),
+    easing:   z.enum(['easeInOut', 'easeOut', 'spring', 'linear']).nullable(),
+  }).nullable(),
+  speakerNotes: z.string().nullable(),
 })
 
 // ── Presentation schema ───────────────────────────────────────────────────────
