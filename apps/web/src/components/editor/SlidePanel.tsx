@@ -19,7 +19,7 @@ export function SlidePanel() {
   const { slides } = project
 
   const panelContent = (
-    <div className={`h-full flex flex-col bg-[#161616] ${isMobile ? 'rounded-r-2xl shadow-2xl' : 'border-r border-white/8'}`}>
+    <div className={`flex-1 flex flex-col min-h-0 bg-[#161616] ${isMobile ? 'rounded-r-2xl shadow-2xl' : 'border-r border-white/8'}`}>
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/6 sticky top-0 bg-[#161616] z-10">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Slides & Layers</span>
@@ -66,7 +66,7 @@ export function SlidePanel() {
       </div>
 
       {/* Slide list */}
-      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 custom-scrollbar pb-10 md:pb-0">
+      <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2 custom-scrollbar pb-10 md:pb-0">
         {slides.map((slide, i) => (
           <SlideThumb
             key={slide.id}
@@ -304,23 +304,57 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
   }
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={false}
+      transition={{ duration: 0.2, ease: 'circOut' }}
+      className={`relative shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 transition-all group shadow-lg ${
+        isActive ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-white/5 hover:border-white/12 bg-white/2'
+      }`}
       onClick={onSelect}
-      className={`relative rounded-md overflow-hidden cursor-pointer border-2 transition-all group ${isActive ? 'border-blue-500' : 'border-transparent hover:border-white/12'
-        }`}
     >
       {/* Thumbnail body */}
       <div
-        className="aspect-video flex items-center justify-center"
+        className="aspect-video shrink-0 flex items-center justify-center relative bg-[#0a0a0a]"
         style={{ background }}
       >
-        <span className="text-[9px] text-neutral-700">
-          {elements.length > 0 ? `${elements.length} element${elements.length > 1 ? 's' : ''}` : 'Empty'}
+        <span className="text-[10px] text-neutral-600 font-medium opacity-40 group-hover:opacity-100 transition-opacity">
+          {elements.length > 0 ? `${elements.length} layer${elements.length > 1 ? 's' : ''}` : 'Empty'}
         </span>
+
+        {/* Index badge */}
+        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-md border border-white/5">
+          <span className="text-[10px] text-neutral-400 font-bold leading-none">{index + 1}</span>
+        </div>
+
+        {/* Action buttons on hover */}
+        {isActive && (
+          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={onDuplicate}
+              title="Duplicate"
+              className="p-1 rounded-md bg-black/40 backdrop-blur-md border border-white/5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <Copy size={11} />
+            </button>
+            <button
+              onClick={onDuplicateKeepIds}
+              title="Magic Move"
+              className="p-1 rounded-md bg-purple-500/20 backdrop-blur-md border border-purple-500/30 text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
+            >
+              <Sparkles size={11} />
+            </button>
+            {totalSlides > 1 && (
+              <button onClick={onDelete} className="p-1 rounded-md bg-red-500/20 backdrop-blur-md border border-red-500/30 text-red-400 hover:text-red-300 transition-colors cursor-pointer">
+                <Trash2 size={11} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Slide name label */}
-      <div className="px-1.5 py-1 bg-[#1a1a1a]" onDoubleClick={handleDoubleClick}>
+      <div className={`px-2 py-1.5 ${isActive ? 'bg-white/4' : 'bg-transparent'}`} onDoubleClick={handleDoubleClick}>
         {isEditing ? (
           <input
             autoFocus
@@ -328,99 +362,68 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
             onBlur={(e) => handleNameChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleNameChange((e.target as HTMLInputElement).value) }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full bg-transparent text-[9px] text-neutral-300 font-medium border-none outline-none px-0"
+            className="w-full bg-neutral-800 rounded px-1 py-0.5 text-[10px] text-white font-medium outline-none border border-blue-500/50"
           />
         ) : (
-          <span className="text-[9px] text-neutral-500 font-medium block truncate">{name}</span>
+          <span className={`text-[10px] font-medium block truncate ${isActive ? 'text-white' : 'text-neutral-500'}`}>
+            {name}
+          </span>
         )}
       </div>
 
-      {/* Index badge */}
-      <span className="absolute top-1 left-1.5 text-[9px] text-neutral-700/60 font-semibold">{index + 1}</span>
-
-      {/* Action buttons on hover */}
-      {isActive && (
-        <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-          {/* Regular duplicate — new IDs, no Magic Move */}
-          <button
-            onClick={onDuplicate}
-            title="Duplicate slide (new elements)"
-            className="p-0.5 rounded text-neutral-500 hover:text-neutral-100 hover:bg-white/10 cursor-pointer border-none bg-transparent"
-          >
-            <Copy size={9} />
-          </button>
-          {/* Magic Move duplicate — same IDs, morphing enabled */}
-          <button
-            onClick={onDuplicateKeepIds}
-            title="Duplicate for Magic Move (elements will morph)"
-            className="p-0.5 rounded text-purple-500 hover:text-purple-300 hover:bg-purple-500/10 cursor-pointer border-none bg-transparent"
-          >
-            <Sparkles size={9} />
-          </button>
-          {totalSlides > 1 && (
-            <button onClick={onDelete} className="p-0.5 rounded text-red-600 hover:text-red-400 hover:bg-red-500/10 cursor-pointer border-none bg-transparent">
-              <Trash2 size={9} />
-            </button>
-          )}
-        </div>
-      )}
-
       {/* ── Figma-style element layer list (active slide only) ── */}
-      {isActive && elements.length > 0 && (
-        <div className="bg-[#131313] border-t border-white/5" onClick={(e) => e.stopPropagation()}>
-          {/* Collapsible header */}
-          <button
-            onClick={() => setLayersOpen((o) => !o)}
-            className="w-full flex items-center gap-1 px-2 py-1 text-[9px] text-neutral-600 hover:text-neutral-400 uppercase tracking-wider cursor-pointer border-none bg-transparent transition-colors"
+      <AnimatePresence>
+        {isActive && elements.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-black/20 border-t border-white/5 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
-            {layersOpen
-              ? <ChevronDown size={9} />
-              : <ChevronRight size={9} />
-            }
-            Layers
-          </button>
+            {/* Collapsible header */}
+            <button
+              onClick={() => setLayersOpen((o) => !o)}
+              className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[9px] text-neutral-500 hover:text-neutral-300 uppercase tracking-widest font-bold cursor-pointer border-none bg-transparent transition-colors"
+            >
+              {layersOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+              Layers
+            </button>
 
-          {/* Element rows — reversed so top-z-index is first (Figma convention) */}
-          {layersOpen && (
-            <div className="pb-1 px-1 flex flex-col gap-px max-h-[160px] overflow-y-auto custom-scrollbar">
-              {(() => {
-                // Build a layer tree
-                interface LayerNode { type: 'element' | 'group', id: string, element?: SceneElement, children?: SceneElement[] }
-                const tree: LayerNode[] = []
-                const groupMap = new Map<string, LayerNode>()
-                
-                elements.forEach(el => {
-                  if (el.groupId) {
-                    if (!groupMap.has(el.groupId)) {
-                      const groupNode: LayerNode = { type: 'group', id: el.groupId, children: [] }
-                      groupMap.set(el.groupId, groupNode)
-                      tree.push(groupNode)
+            {/* Element rows */}
+            {layersOpen && (
+              <div className="pb-2 px-1 flex flex-col gap-px max-h-[240px] overflow-y-auto custom-scrollbar">
+                {(() => {
+                  interface LayerNode { type: 'element' | 'group', id: string, element?: SceneElement, children?: SceneElement[] }
+                  const tree: LayerNode[] = []
+                  const groupMap = new Map<string, LayerNode>()
+                  
+                  elements.forEach(el => {
+                    if (el.groupId) {
+                      if (!groupMap.has(el.groupId)) {
+                        const groupNode: LayerNode = { type: 'group', id: el.groupId, children: [] }
+                        groupMap.set(el.groupId, groupNode)
+                        tree.push(groupNode)
+                      }
+                      groupMap.get(el.groupId)!.children!.push(el)
+                    } else {
+                      tree.push({ type: 'element', id: el.id, element: el })
                     }
-                    groupMap.get(el.groupId)!.children!.push(el)
-                  } else {
-                    tree.push({ type: 'element', id: el.id, element: el })
-                  }
-                })
-                
-                // Reverse for top-to-bottom rendering
-                tree.reverse()
-                tree.forEach(node => {
-                  if (node.type === 'group' && node.children) {
-                    node.children.reverse()
-                  }
-                })
+                  })
+                  
+                  tree.reverse()
+                  tree.forEach(node => { if (node.type === 'group' && node.children) node.children.reverse() })
 
-                return tree.map(node => {
-                  if (node.type === 'group') {
-                    return <GroupRow key={node.id} groupId={node.id} childrenElements={node.children!} />
-                  }
-                  return <ElementRow key={node.id} element={node.element!} />
-                })
-              })()}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+                  return tree.map(node => {
+                    if (node.type === 'group') return <GroupRow key={node.id} groupId={node.id} childrenElements={node.children!} />
+                    return <ElementRow key={node.id} element={node.element!} />
+                  })
+                })()}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }
