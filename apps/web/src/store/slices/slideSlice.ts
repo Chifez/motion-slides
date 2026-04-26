@@ -8,18 +8,7 @@ export interface SlideSlice {
   activeSlideIndex: number
   addSlide: () => void
   deleteSlide: (index: number) => void
-  /**
-   * Duplicate a slide with NEW element IDs.
-   * Elements will NOT Magic Move between the original and the clone.
-   * Use this when you want a fully independent slide.
-   */
   duplicateSlide: (index: number) => void
-  /**
-   * Duplicate a slide PRESERVING all element IDs.
-   * Elements will Magic Move between the original and the clone —
-   * ideal for creating a "before/after" animation where items shift/morph.
-   */
-  duplicateSlideKeepIds: (index: number) => void
   setActiveSlide: (index: number) => void
   updateSlide: (updates: Partial<Pick<Slide, 'name' | 'background'>>) => void
   activeSlide: () => Slide | null
@@ -69,54 +58,40 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
   duplicateSlide: (index) => {
     const { activeProjectId } = get()
     if (!activeProjectId) return
-    set((s) => {
-      const project = s.projects.find((p) => p.id === activeProjectId)!
-      const original = project.slides[index]
-      const clone: Slide = {
-        ...original,
-        id: nanoid(),
-        name: `${original.name || 'Slide'} copy`,
-        // NEW IDs — no Magic Move between original and clone
-        elements: original.elements.map((el) => ({ ...el, id: nanoid() })),
-      }
-      const newSlides = [
-        ...project.slides.slice(0, index + 1),
-        clone,
-        ...project.slides.slice(index + 1),
-      ]
-      return {
-        projects: s.projects.map((p) =>
-          p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now() },
-        ),
-        activeSlideIndex: index + 1,
-      }
-    })
-  },
+    
+    const project = get().projects.find((p) => p.id === activeProjectId)!
+    const original = project.slides[index]
+    const newSlideId = nanoid()
 
-  duplicateSlideKeepIds: (index) => {
-    const { activeProjectId } = get()
-    if (!activeProjectId) return
-    set((s) => {
-      const project = s.projects.find((p) => p.id === activeProjectId)!
-      const original = project.slides[index]
-      const clone: Slide = {
-        ...original,
-        id: nanoid(),
-        name: `${original.name || 'Slide'} (Magic Move)`,
-        // SAME element IDs — enables Magic Move morphing between slides
-        elements: original.elements.map((el) => ({ ...el })),
-      }
-      const newSlides = [
-        ...project.slides.slice(0, index + 1),
-        clone,
-        ...project.slides.slice(index + 1),
-      ]
-      return {
-        projects: s.projects.map((p) =>
-          p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now() },
-        ),
-        activeSlideIndex: index + 1,
-      }
+    const clone: Slide = {
+      ...original,
+      id: newSlideId,
+      name: `${original.name || 'Slide'} (Copy)`,
+      // SAME element IDs — enables Magic Move morphing between slides
+      elements: original.elements.map((el) => ({ ...el })),
+    }
+
+    const newSlides = [
+      ...project.slides.slice(0, index + 1),
+      clone,
+      ...project.slides.slice(index + 1),
+    ]
+
+    set((s) => ({
+      projects: s.projects.map((p) =>
+        p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now() },
+      ),
+      activeSlideIndex: index + 1,
+    }))
+
+    // Automatically add a Magic Move transition from the original to the clone
+    get().addTransition({
+      fromSlideId: original.id,
+      toSlideId: newSlideId,
+      animation: 'magic-move',
+      duration: 0.8,
+      ease: { x1: 0.4, y1: 0, x2: 0.2, y2: 1 },
+      trigger: 'click'
     })
   },
 

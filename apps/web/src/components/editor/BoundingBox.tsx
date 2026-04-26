@@ -92,7 +92,20 @@ export function BoundingBox({ element }: Props) {
       if (corner.includes('b')) newH = Math.max(MIN_ELEMENT_HEIGHT, height + dy)
       if (corner.includes('t')) { newY = y + dy; newH = Math.max(MIN_ELEMENT_HEIGHT, height - dy) }
 
-      updateElement(element.id, { position: { x: newX, y: newY }, size: { width: newW, height: newH } })
+
+      const updates: Partial<SceneElement> = { 
+        position: { x: newX, y: newY }, 
+        size: { width: newW, height: newH } 
+      }
+
+      if (element.type === 'text') {
+        const affectsHeight = corner.includes('t') || corner.includes('b')
+        if (affectsHeight) {
+          updates.autoHeight = false
+        }
+      }
+
+      updateElement(element.id, updates)
     }
     const onUp = () => {
       window.removeEventListener('mousemove', onMove)

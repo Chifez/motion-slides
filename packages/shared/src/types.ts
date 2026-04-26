@@ -129,6 +129,8 @@ export interface SceneElement {
   groupId?: string
   animation?: AnimationType
   animationDelay?: number
+  autoWidth?: boolean
+  autoHeight?: boolean
   content: TextContent | CodeContent | ShapeContent | LineContent | ChartContent
 }
 

@@ -18,7 +18,7 @@ interface ShapeProps {
 function RectangleShape({ fill, stroke, transition }: ShapeProps) {
   return (
     <motion.rect
-      x="4" y="4" width="92" height="92" rx="6"
+      x="1" y="1" width="98" height="98" rx="6"
       animate={{ fill, stroke }}
       transition={transition}
       strokeWidth="2"
@@ -175,8 +175,8 @@ export function ShapeElement({ content }: Props) {
   const ShapeSVG = shapeMap[content.shapeType] ?? RectangleShape
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-      <svg viewBox="0 0 100 100" className="shape-svg" style={{ flex: 1, overflow: 'visible' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: content.label ? 4 : 0 }}>
+      <svg viewBox="0 0 100 100" className="shape-svg" style={{ flex: 1, overflow: 'hidden', display: 'block' }}>
         <ShapeSVG
           fill={content.fill}
           stroke={content.stroke}

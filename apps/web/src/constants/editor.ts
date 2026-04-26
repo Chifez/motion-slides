@@ -79,6 +79,7 @@ export const DEFAULT_TEXT_ELEMENT = {
     align: 'left' as const,
     listStyle: 'none' as const,
   },
+  autoHeight: true,
 }
 
 export const DEFAULT_CODE_ELEMENT = {

@@ -8,7 +8,7 @@ import type { SceneElement } from '@motionslides/shared'
 export function SlidePanel() {
   const {
     activeProject, activeSlideIndex, setActiveSlide, activeSlide,
-    addSlide, duplicateSlide, duplicateSlideKeepIds, deleteSlide,
+    addSlide, duplicateSlide, deleteSlide,
     mobileSlidesOpen, setMobileSlidesOpen,
     selectedElementIds, groupElements, ungroupElements
   } = useEditorStore()
@@ -18,7 +18,6 @@ export function SlidePanel() {
   if (!project) return null
   const { slides } = project
 
-  const sectionCls = "px-3 py-3 border-b border-(--ms-border)"
 
   const panelContent = (
     <div className={`h-full flex flex-col bg-(--ms-bg-surface) ${isMobile ? 'rounded-t-2xl shadow-2xl' : 'border-l border-(--ms-border)'} transition-colors`}>
@@ -32,7 +31,7 @@ export function SlidePanel() {
               const elements = slide?.elements.filter(e => selectedElementIds.includes(e.id)) || []
               const firstGroupId = elements[0]?.groupId
               const allSameGroup = firstGroupId && elements.every(el => el.groupId === firstGroupId) && elements.length > 1
-              
+
               if (allSameGroup) {
                 return (
                   <button onClick={() => ungroupElements(firstGroupId)} className="p-1 rounded-md text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 transition-colors cursor-pointer border-none bg-transparent" title="Ungroup">
@@ -40,7 +39,7 @@ export function SlidePanel() {
                   </button>
                 )
               }
-              
+
               return (
                 <button onClick={() => groupElements(selectedElementIds)} className="p-1 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent" title="Group Selection">
                   <Combine size={13} />
@@ -82,7 +81,6 @@ export function SlidePanel() {
               setActiveSlide(i)
             }}
             onDuplicate={() => duplicateSlide(i)}
-            onDuplicateKeepIds={() => duplicateSlideKeepIds(i)}
             onDelete={() => deleteSlide(i)}
           />
         ))}
@@ -228,12 +226,12 @@ function ElementRow({ element }: { element: SceneElement }) {
 function GroupRow({ childrenElements }: { groupId: string, childrenElements: SceneElement[] }) {
   const [isOpen, setIsOpen] = useState(true)
   const { selectedElementIds, setSelectedElements, isMultiSelectMode } = useEditorStore()
-  
+
   const allSelected = childrenElements.every(el => selectedElementIds.includes(el.id))
-  
+
   return (
     <div className="flex flex-col">
-      <div 
+      <div
         onClick={(e) => {
           e.stopPropagation()
           const ids = childrenElements.map(el => el.id)
@@ -249,12 +247,11 @@ function GroupRow({ childrenElements }: { groupId: string, childrenElements: Sce
             setSelectedElements(ids)
           }
         }}
-        className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer transition-colors ${
-          allSelected ? 'bg-blue-500/20 text-blue-400' : 'bg-transparent text-(--ms-text-muted) hover:bg-(--ms-border) hover:text-(--ms-text-primary)'
-        }`}
+        className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer transition-colors ${allSelected ? 'bg-blue-500/20 text-blue-400' : 'bg-transparent text-(--ms-text-muted) hover:bg-(--ms-border) hover:text-(--ms-text-primary)'
+          }`}
       >
-        <button 
-          onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen) }} 
+        <button
+          onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen) }}
           className="p-0 text-inherit bg-transparent border-none cursor-pointer hover:text-(--ms-text-primary)"
         >
           {isOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
@@ -262,7 +259,7 @@ function GroupRow({ childrenElements }: { groupId: string, childrenElements: Sce
         <Combine size={10} className="shrink-0" />
         <span className="text-[9px] font-medium truncate flex-1">Group</span>
       </div>
-      
+
       {isOpen && (
         <div className="pl-4 flex flex-col gap-px border-l border-(--ms-border) ml-3 my-0.5">
           {childrenElements.map(el => <ElementRow key={el.id} element={el} />)}
@@ -286,11 +283,10 @@ interface SlideThumbProps {
   totalSlides: number
   onSelect: () => void
   onDuplicate: () => void
-  onDuplicateKeepIds: () => void
   onDelete: () => void
 }
 
-function SlideThumb({ index, name, background, elements, isActive, totalSlides, onSelect, onDuplicate, onDuplicateKeepIds, onDelete }: SlideThumbProps) {
+function SlideThumb({ index, name, background, elements, isActive, totalSlides, onSelect, onDuplicate, onDelete }: SlideThumbProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [layersOpen, setLayersOpen] = useState(true)
   const { updateSlide, setActiveSlide } = useEditorStore()
@@ -312,9 +308,8 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
       layout
       initial={false}
       transition={{ duration: 0.2, ease: 'circOut' }}
-      className={`relative shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 transition-all group shadow-lg ${
-        isActive ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-(--ms-border) hover:border-(--ms-border-strong) bg-(--ms-bg-base)'
-      }`}
+      className={`relative shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 transition-all group shadow-lg ${isActive ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-(--ms-border) hover:border-(--ms-border-strong) bg-(--ms-bg-base)'
+        }`}
       onClick={onSelect}
     >
       {/* Thumbnail body */}
@@ -336,14 +331,7 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
           <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={onDuplicate}
-              title="Duplicate"
-              className="p-1 rounded-md bg-black/40 backdrop-blur-md border border-white/10 text-white/50 hover:text-white transition-colors cursor-pointer"
-            >
-              <Copy size={11} />
-            </button>
-            <button
-              onClick={onDuplicateKeepIds}
-              title="Magic Move"
+              title="Duplicate (Magic Move)"
               className="p-1 rounded-md bg-purple-500/20 backdrop-blur-md border border-purple-500/30 text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
             >
               <Sparkles size={11} />
@@ -401,7 +389,7 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
                   interface LayerNode { type: 'element' | 'group', id: string, element?: SceneElement, children?: SceneElement[] }
                   const tree: LayerNode[] = []
                   const groupMap = new Map<string, LayerNode>()
-                  
+
                   elements.forEach(el => {
                     if (el.groupId) {
                       if (!groupMap.has(el.groupId)) {
@@ -414,7 +402,7 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
                       tree.push({ type: 'element', id: el.id, element: el })
                     }
                   })
-                  
+
                   tree.reverse()
                   tree.forEach(node => { if (node.type === 'group' && node.children) node.children.reverse() })
 

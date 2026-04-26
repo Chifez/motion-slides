@@ -132,7 +132,7 @@ export function CanvasElement({ element }: Props) {
 
   function renderContent() {
     switch (element.type) {
-      case 'text': return <TextElement content={element.content as TextContent} />
+      case 'text': return <TextElement element={element} />
       case 'code': return <CodeElement content={element.content as CodeContent} elementId={element.id} />
       case 'shape': return <ShapeElement content={element.content as ShapeContent} />
       case 'line': return <LineElement element={element} isSelected={isSelected} />
