@@ -23,7 +23,7 @@ interface Props {
 export function CanvasElement({ element }: Props) {
   const {
     selectedElementIds, setSelectedElement, setSelectedElements, updateElementsBatch,
-    setMobileInspectorOpen, isMultiSelectMode
+    setMobileInspectorOpen, isMultiSelectMode, isEditingId, setEditingId
   } = useEditorStore()
   const isMobile = useIsMobile()
   const {
@@ -34,6 +34,7 @@ export function CanvasElement({ element }: Props) {
     transitionAnimation,
   } = useMotionContext()
   const isSelected = selectedElementIds.includes(element.id)
+  const isEditing = isEditingId === element.id
   const isDragging = useRef(false)
   const dragStartCoords = useRef<Record<string, { x: number, y: number }>>({})
   const dragStartPointer = useRef({ x: 0, y: 0 })
@@ -41,6 +42,8 @@ export function CanvasElement({ element }: Props) {
   // ── Identity Check ──
   // Is this element present in both the previous and current slide?
   const isContinuing = continuingIds.has(element.id)
+  // Only use morph (Magic Move) if the transition animation is explicitly set to magic-move
+  const shouldMorph = isContinuing && transitionAnimation === 'magic-move'
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
@@ -51,6 +54,9 @@ export function CanvasElement({ element }: Props) {
     if (!element.locked) {
       // Deep select
       setSelectedElement(element.id, false)
+      if (element.type === 'text') {
+        setEditingId(element.id)
+      }
       if (isMobile) {
         setMobileInspectorOpen(true)
       }
@@ -58,6 +64,7 @@ export function CanvasElement({ element }: Props) {
   }
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (isEditing) return
     if ((e.target as HTMLElement).closest('.bounding-box')) return
     e.stopPropagation()
 
@@ -128,7 +135,7 @@ export function CanvasElement({ element }: Props) {
 
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
-  }, [element.id, element.locked, element.groupId, isMultiSelectMode, setSelectedElement, setSelectedElements, updateElementsBatch])
+  }, [element.id, element.locked, element.groupId, isMultiSelectMode, isEditing, setSelectedElement, setSelectedElements, updateElementsBatch])
 
   function renderContent() {
     switch (element.type) {
@@ -180,10 +187,9 @@ export function CanvasElement({ element }: Props) {
   // ── Presentation Mode ──
 
   // CONTINUING ELEMENTS (exist in both slides):
-  // - Keep opacity at 1.0 (NO fade)
-  // - Let layoutId + layout handle the smooth FLIP position/size transition
-  // - Use spring physics for that weighted, Keynote-like feel
-  if (isContinuing) {
+  // - If shouldMorph (Magic Move): Let layoutId + layout handle the smooth morph.
+  // - Otherwise: Treat as a normal exit/enter so it respects Slide/Fade/Zoom.
+  if (shouldMorph) {
     return (
       <motion.div
         layoutId={element.id}
@@ -236,8 +242,6 @@ export function CanvasElement({ element }: Props) {
 
   return (
     <motion.div
-      layoutId={element.id}
-      layout
       className="canvas-element"
       style={{
         position: 'absolute',

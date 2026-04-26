@@ -3,12 +3,15 @@ import type { EditorState } from '@/store/editorStore'
 
 export interface UISlice {
   theme: 'dark' | 'light'
+  isEditingId: string | null
   setTheme: (theme: 'dark' | 'light') => void
   toggleTheme: () => void
+  setEditingId: (id: string | null) => void
 }
 
 export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set) => ({
   theme: 'dark',
+  isEditingId: null,
 
   setTheme: (theme) => {
     set({ theme })
@@ -28,4 +31,6 @@ export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set) =
       return { theme: newTheme }
     })
   },
+
+  setEditingId: (id) => set({ isEditingId: id }),
 })

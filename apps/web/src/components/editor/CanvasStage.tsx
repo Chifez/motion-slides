@@ -15,7 +15,7 @@ export function CanvasStage() {
   const {
     activeProject, activeSlide, activeSlideIndex, setActiveSlide,
     setSelectedElement, playbackSettings, updateSlide,
-    camera, setCamera, setMobileInspectorOpen
+    camera, setCamera, setMobileInspectorOpen, setEditingId
   } = useEditorStore()
   const project = activeProject()
   const slide = activeSlide()
@@ -58,6 +58,7 @@ export function CanvasStage() {
       className="flex-1 bg-(--ms-bg-base) flex items-center justify-center overflow-hidden relative p-2 md:p-0 transition-colors"
       onClick={() => {
         setSelectedElement(null)
+        setEditingId(null)
         setMobileInspectorOpen(false)
       }}
     >

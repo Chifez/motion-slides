@@ -13,6 +13,7 @@ const ANIMATIONS: { value: TransitionAnimation; label: string }[] = [
   { value: 'fade', label: '◐ Fade' },
   { value: 'zoom', label: '⊕ Zoom' },
   { value: 'flip', label: '↻ Flip' },
+  { value: 'magic-move', label: '✨ Magic Move' },
 ]
 
 interface Props {
