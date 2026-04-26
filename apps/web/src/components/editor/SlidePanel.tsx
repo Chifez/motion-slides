@@ -18,11 +18,13 @@ export function SlidePanel() {
   if (!project) return null
   const { slides } = project
 
+  const sectionCls = "px-3 py-3 border-b border-[var(--ms-border)]"
+
   const panelContent = (
-    <div className={`flex-1 flex flex-col min-h-0 bg-[#161616] ${isMobile ? 'rounded-r-2xl shadow-2xl' : 'border-r border-white/8'}`}>
+    <div className={`h-full flex flex-col bg-[var(--ms-bg-surface)] ${isMobile ? 'rounded-t-2xl shadow-2xl' : 'border-l border-[var(--ms-border)]'}`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/6 sticky top-0 bg-[#161616] z-10">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Slides & Layers</span>
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--ms-border)] sticky top-0 bg-[var(--ms-bg-surface)] z-10">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--ms-text-muted)]">Slides & Layers</span>
         <div className="flex items-center gap-1">
           {/* Show Group/Ungroup icon if multiple items or a group is selected */}
           {(() => {
@@ -87,10 +89,10 @@ export function SlidePanel() {
       </div>
 
       {/* Footer */}
-      <div className="p-2 border-t border-white/6">
+      <div className="p-2 border-t border-[var(--ms-border)]">
         <button
           onClick={addSlide}
-          className="w-full flex items-center justify-center gap-1.5 bg-white/4 hover:bg-white/8 border border-white/8 text-neutral-500 hover:text-neutral-200 text-xs font-medium py-1.5 rounded-md transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-1.5 bg-[var(--ms-bg-base)] hover:bg-[var(--ms-border)] border border-[var(--ms-border)] text-[var(--ms-text-secondary)] hover:text-[var(--ms-text-primary)] text-xs font-medium py-1.5 rounded-md transition-all cursor-pointer"
         >
           <Plus size={13} /> Add Slide
         </button>
@@ -128,7 +130,7 @@ export function SlidePanel() {
   }
 
   return (
-    <aside className="w-[220px] shrink-0 flex flex-col bg-[#161616] overflow-hidden">
+    <aside className="w-[220px] shrink-0 flex flex-col bg-[var(--ms-bg-surface)] overflow-hidden">
       {panelContent}
     </aside>
   )

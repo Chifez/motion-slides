@@ -12,8 +12,8 @@ export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
   const [showBgPicker, setShowBgPicker] = useState(false)
 
-  const { 
-    activeProject, activeSlide, activeSlideIndex, setActiveSlide, 
+  const {
+    activeProject, activeSlide, activeSlideIndex, setActiveSlide,
     setSelectedElement, playbackSettings, updateSlide,
     camera, setCamera, setMobileInspectorOpen
   } = useEditorStore()
@@ -55,7 +55,7 @@ export function CanvasStage() {
   return (
     <main
       ref={stageRef}
-      className="flex-1 bg-[#111111] flex items-center justify-center overflow-hidden relative p-2 md:p-0"
+      className="flex-1 bg-(--ms-bg-base) flex items-center justify-center overflow-hidden relative p-2 md:p-0 transition-colors"
       onClick={() => {
         setSelectedElement(null)
         setMobileInspectorOpen(false)
@@ -87,14 +87,14 @@ export function CanvasStage() {
         className="absolute top-3 left-3 flex items-center gap-2"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-[10px] text-neutral-600 font-medium bg-[#161616]/80 backdrop-blur-sm border border-white/6 rounded-md px-2 py-1">
+        <span className="text-[10px] text-(--ms-text-muted) font-medium bg-(--ms-bg-surface)/80 backdrop-blur-sm border border-(--ms-border) rounded-md px-2 py-1">
           {slideName}
         </span>
 
         <div className="relative">
           <button
             onClick={() => setShowBgPicker(!showBgPicker)}
-            className="flex items-center gap-1.5 text-[10px] text-neutral-500 hover:text-neutral-200 bg-[#161616]/80 backdrop-blur-sm border border-white/6 rounded-md px-2 py-1 cursor-pointer transition-colors"
+            className="flex items-center gap-1.5 text-[10px] text-(--ms-text-muted) hover:text-(--ms-text-primary) bg-(--ms-bg-surface)/80 backdrop-blur-sm border border-(--ms-border) rounded-md px-2 py-1 cursor-pointer transition-colors"
           >
             <div
               className="w-3 h-3 rounded-sm border border-white/15"
@@ -128,7 +128,7 @@ export function CanvasStage() {
       </div>
 
       {/* Playback nav bar */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-[#161616]/90 border border-white/8 rounded-full px-3 py-1.5 backdrop-blur-md">
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-(--ms-bg-surface)/90 border border-(--ms-border) rounded-full px-3 py-1.5 backdrop-blur-md">
         <button
           onClick={() => setActiveSlide(activeSlideIndex - 1)}
           disabled={activeSlideIndex === 0}

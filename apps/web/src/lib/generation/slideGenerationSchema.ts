@@ -70,11 +70,22 @@ const AILineElement = z.object({
   animationDelay: z.number().int().min(0).max(5000).nullable(),
 })
 
+const AIIconElement = z.object({
+  type:           z.literal('icon'),
+  id:             z.string().min(1),
+  iconPath:       z.string().min(1),   // AI copies this from <available_icons>
+  label:          z.string().nullable(),
+  position:       AIPosition,
+  animation:      AnimationType.nullable(),
+  animationDelay: z.number().int().min(0).max(5000).nullable(),
+})
+
 const AIElement = z.discriminatedUnion('type', [
   AITextElement,
   AIShapeElement,
   AICodeElement,
   AILineElement,
+  AIIconElement,
 ])
 
 // ── Slide schema ──────────────────────────────────────────────────────────────

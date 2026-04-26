@@ -40,6 +40,7 @@ export interface TextContent {
   fontStyle: 'normal' | 'italic'
   color: string
   align: 'left' | 'center' | 'right'
+  listStyle?: 'none' | 'bullet' | 'numbered'
 }
 
 export interface CodeContent {

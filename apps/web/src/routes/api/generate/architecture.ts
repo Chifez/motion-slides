@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { parseArchitecture, buildArchitectureBriefing } from '@/lib/generation/architectureParser'
-import { buildArchitecturePrompt } from '@/lib/generation/promptBuilder'
-import { generatePresentation } from '@/lib/generation/generationClient'
+import { generateFromArchitecture } from '@/lib/generation/generationClient'
 import { assembleSlides } from '@/lib/generation/slideAssembler'
 
 export const Route = createFileRoute("/api/generate/architecture")({
@@ -34,13 +33,13 @@ export const Route = createFileRoute("/api/generate/architecture")({
               const parsed = parseArchitecture(description)
               const briefing = buildArchitectureBriefing(parsed)
 
-              send({ stage: 'preparing', percent: 15, message: 'Building prompt…' })
-              const userPrompt = buildArchitecturePrompt({ briefing, diagramStyle, slideCount, theme })
-
               send({ stage: 'capturing', percent: 20, message: 'Generating diagram slides…' })
-              const generated = await generatePresentation({
-                userPrompt,
-                maxTokens: 12000,
+              const generated = await generateFromArchitecture({
+                briefing,
+                rawInput: description,
+                diagramStyle,
+                slideCount,
+                theme,
               })
 
               send({ stage: 'encoding', percent: 80, message: 'Assembling slides…' })

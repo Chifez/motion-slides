@@ -27,7 +27,7 @@ function EditorPage() {
   const project = activeProject()
   if (!project) {
     return (
-      <div className="flex items-center justify-center h-dvh text-neutral-600 flex-col gap-3">
+      <div className="flex items-center justify-center h-dvh text-[var(--ms-text-muted)] flex-col gap-3">
         <div className="text-[32px]">⚠</div>
         <div>Project not found. <Link to="/dashboard" className="text-blue-400 underline">Go to Dashboard</Link></div>
       </div>
@@ -35,7 +35,7 @@ function EditorPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0d0d0d] overflow-hidden">
+    <div className="h-screen flex flex-col bg-[var(--ms-bg-base)] overflow-hidden transition-colors">
       {!isPresenting && <EditorToolbar project={project} />}
       <div className="flex flex-1 overflow-hidden relative">
         {!isPresenting && !isPrototypeMode && <SlidePanel />}

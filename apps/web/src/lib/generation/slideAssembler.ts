@@ -2,6 +2,7 @@ import type { Slide, SceneElement, TextContent, ShapeContent, CodeContent, Anima
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../../constants/export'
 import { nanoid } from '../nanoid'
 import type { GeneratedPresentation, AISlideType, AIElementType } from './slideGenerationSchema'
+import { resolveIconPath } from './iconResolver'
 
 const CELL_W = CANVAS_WIDTH / 12
 const CELL_H = CANVAS_HEIGHT / 8
@@ -13,6 +14,8 @@ const CELL_H = CANVAS_HEIGHT / 8
  * Performs coordinate conversion and basic validation.
  */
 export function assembleSlides(generated: GeneratedPresentation): Slide[] {
+  const theme = generated.theme
+
   return generated.slides.map(aiSlide => {
     const slideId = aiSlide.id || nanoid()
 
@@ -55,13 +58,46 @@ export function assembleSlides(generated: GeneratedPresentation): Slide[] {
             ...common,
             type: 'shape',
             content: {
-              shapeType: aiEl.shape === 'aws-icon' ? 'aws-icon' : (aiEl.shape || 'rectangle') as any,
+              shapeType: (aiEl.shape || 'rectangle') as any,
               fill: aiEl.style?.backgroundColor ?? generated.theme.primaryColor,
               stroke: aiEl.style?.borderColor ?? generated.theme.accentColor,
               label: aiEl.label ?? undefined,
-              iconPath: aiEl.iconPath ?? undefined,
             } as ShapeContent
           }
+
+        case 'icon': {
+          const resolved = resolveIconPath(aiEl.iconPath ?? '')
+          if (resolved.found) {
+            return {
+              ...common,
+              type: 'shape',
+              content: {
+                shapeType:    'aws-icon',
+                iconPath:     resolved.path,
+                iconLabel:    resolved.label,
+                iconCategory: resolved.category,
+                label:        aiEl.label ?? resolved.label,
+                fill:         'transparent',
+                stroke:       theme.secondaryColor,
+                strokeWidth:  0,
+                opacity:      1,
+              } as any
+            }
+          } else {
+            return {
+              ...common,
+              type: 'shape',
+              content: {
+                shapeType: resolved.fallback,
+                label:     aiEl.label ?? '',
+                fill:      theme.primaryColor,
+                stroke:    theme.secondaryColor,
+                strokeWidth: 2,
+                opacity:   1,
+              } as ShapeContent
+            }
+          }
+        }
 
         case 'code':
           return {
@@ -83,7 +119,7 @@ export function assembleSlides(generated: GeneratedPresentation): Slide[] {
               x1: 0, y1: 0, x2: 1, y2: 1,
               style: aiEl.lineStyle ?? 'solid',
               arrow: aiEl.direction === 'one-way' ? 'end' : aiEl.direction === 'two-way' ? 'both' : 'none',
-              color: generated.theme.accentColor,
+              color: theme.accentColor,
               strokeWidth: 2,
               label: aiEl.label ?? undefined,
               startConnection: { elementId: aiEl.fromElementId, handleId: 'center' },
@@ -96,6 +132,8 @@ export function assembleSlides(generated: GeneratedPresentation): Slide[] {
       }
     }).filter(Boolean)
 
+    const elementsWithFixedAnims = enforceLineAnimationOrder(elements, aiSlide.role)
+
     const transition = aiSlide.transition ? {
       type: aiSlide.transition.type as any,
       duration: ensureMs(aiSlide.transition.duration, 500),
@@ -106,9 +144,32 @@ export function assembleSlides(generated: GeneratedPresentation): Slide[] {
       id: slideId,
       name: aiSlide.title,
       background: aiSlide.background ?? generated.theme.backgroundColor,
-      elements,
+      elements: elementsWithFixedAnims,
       transition
     }
+  })
+}
+
+function enforceLineAnimationOrder(elements: SceneElement[], slideRole: string): SceneElement[] {
+  if (slideRole !== 'diagram') return elements
+
+  const shapeDelays = elements
+    .filter(el => el.type === 'shape')
+    .map(el => el.animationDelay ?? 0)
+
+  if (shapeDelays.length === 0) return elements
+
+  const maxShapeDelay = Math.max(...shapeDelays)
+  const lineBaseDelay = maxShapeDelay + 500
+  let   lineOffset    = 0
+
+  return elements.map(el => {
+    if (el.type !== 'line') return el
+    const currentDelay = el.animationDelay ?? 0
+    if (currentDelay >= lineBaseDelay) return el
+    const corrected = lineBaseDelay + lineOffset
+    lineOffset += 150
+    return { ...el, animationDelay: corrected }
   })
 }
 
@@ -130,10 +191,6 @@ function mapFontFamily(themeFont: string): string {
   return fonts[themeFont] || 'Inter'
 }
 
-/**
- * Ensures a time value is in milliseconds.
- * If the AI provides a value like 0.5 or 1, we assume it's seconds and convert.
- */
 function ensureMs(val: number | null | undefined, fallback = 0): number {
   if (val === null || val === undefined) return fallback
   if (val > 0 && val < 20) return val * 1000

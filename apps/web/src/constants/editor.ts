@@ -77,6 +77,7 @@ export const DEFAULT_TEXT_ELEMENT = {
     fontStyle: 'normal' as const,
     color: '#ffffff',
     align: 'left' as const,
+    listStyle: 'none' as const,
   },
 }
 

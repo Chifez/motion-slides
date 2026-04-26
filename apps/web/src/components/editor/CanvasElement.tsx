@@ -135,7 +135,7 @@ export function CanvasElement({ element }: Props) {
       case 'text': return <TextElement content={element.content as TextContent} />
       case 'code': return <CodeElement content={element.content as CodeContent} elementId={element.id} />
       case 'shape': return <ShapeElement content={element.content as ShapeContent} />
-      case 'line': return <LineElement element={element} />
+      case 'line': return <LineElement element={element} isSelected={isSelected} />
       case 'chart': return <ChartElement content={element.content as ChartContent} />
       default: return null
     }

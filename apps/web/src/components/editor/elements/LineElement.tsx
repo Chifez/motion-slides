@@ -5,14 +5,40 @@ import { useMotionContext } from '@/context/MotionContext'
 import { CODE_PHASE } from '@/lib/motionEngine'
 import { getArrow } from 'perfect-arrows'
 
-interface Props { element: SceneElement }
+interface Props { 
+  element: SceneElement 
+  isSelected?: boolean
+}
+
+/** 
+ * toSafeNum
+ * Ensures coordinate is a number and not NaN/Infinity.
+ */
+function toSafeNum(val: any, fallback = 0): number {
+  const n = Number(val)
+  return isNaN(n) || !isFinite(n) ? fallback : n
+}
+
+/**
+ * hasValidCoordinates
+ * Guard to prevent <path> errors when coordinates aren't ready.
+ */
+function hasValidCoordinates(content: LineContent): boolean {
+  return (
+    typeof content.x1 === 'number' && !isNaN(content.x1) &&
+    typeof content.y1 === 'number' && !isNaN(content.y1) &&
+    typeof content.x2 === 'number' && !isNaN(content.x2) &&
+    typeof content.y2 === 'number' && !isNaN(content.y2)
+  )
+}
 
 /** Compute SVG path for a line within its bounding box */
 function buildLinePath(w: number, h: number, content: LineContent): string {
-  const x1 = content.x1 * w
-  const y1 = content.y1 * h
-  const x2 = content.x2 * w
-  const y2 = content.y2 * h
+  // Use safe numbers to avoid "undefined" or "NaN" in the path string
+  const x1 = toSafeNum(content.x1) * w
+  const y1 = toSafeNum(content.y1) * h
+  const x2 = toSafeNum(content.x2) * w
+  const y2 = toSafeNum(content.y2) * h
 
   switch (content.lineType) {
     case 'straight':
@@ -22,15 +48,23 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
       return `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`
     }
     case 'curved': {
-      const arrow = getArrow(x1, y1, x2, y2, {
-        bow: 0.2,
-        stretch: 0.5,
-        padStart: 0,
-        padEnd: 0,
-        straights: false,
-      })
-      const [sx, sy, cx, cy, ex, ey] = arrow
-      return `M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`
+      // getArrow can fail if points are overlapping
+      if (Math.abs(x1 - x2) < 0.1 && Math.abs(y1 - y2) < 0.1) {
+        return `M ${x1} ${y1} L ${x2} ${y2}`
+      }
+      try {
+        const arrow = getArrow(x1, y1, x2, y2, {
+          bow: 0.2,
+          stretch: 0.5,
+          padStart: 0,
+          padEnd: 0,
+          straights: false,
+        })
+        const [sx, sy, cx, cy, ex, ey] = arrow
+        return `M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`
+      } catch (e) {
+        return `M ${x1} ${y1} L ${x2} ${y2}`
+      }
     }
     case 'step-after':
       return `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`
@@ -43,8 +77,8 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
       
       if (content.branches) {
         content.branches.forEach(b => {
-          const bx = b.x * w
-          const by = b.y * h
+          const bx = toSafeNum(b.x) * w
+          const by = toSafeNum(b.y) * h
           const bmidX = (x1 + bx) / 2
           path += ` M ${x1} ${y1} L ${bmidX} ${y1} L ${bmidX} ${by} L ${bx} ${by}`
         })
@@ -56,10 +90,19 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
   }
 }
 
-export function LineElement({ element }: Props) {
+export function LineElement({ element, isSelected }: Props) {
   const content = element.content as LineContent
   const { isTransitioning, durationSec } = useMotionContext()
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
+
+  // CRITICAL: Early return if coordinates are not yet computed
+  if (!hasValidCoordinates(content)) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center opacity-0">
+        {/* Placeholder to prevent layout shift */}
+      </div>
+    )
+  }
 
   const pathTransition = isTransitioning
     ? {
@@ -69,7 +112,6 @@ export function LineElement({ element }: Props) {
       }
     : { duration: 0 }
 
-  // Use actual pixel dimensions to prevent squashing
   const w = element.size.width
   const h = element.size.height
 
@@ -153,8 +195,8 @@ export function LineElement({ element }: Props) {
           {content.label && (
             <LabelGroup 
               text={content.label} 
-              x={(content.x1 + content.x2) / 2 * w} 
-              y={(content.y1 + content.y2) / 2 * h} 
+              x={toSafeNum((content.x1 + content.x2) / 2) * w} 
+              y={toSafeNum((content.y1 + content.y2) / 2) * h} 
               fontSize={content.labelFontSize || 10}
             />
           )}
@@ -162,10 +204,10 @@ export function LineElement({ element }: Props) {
       )}
 
       {isFork && content.branches?.map((b, i) => {
-        const bx = b.x * w
-        const by = b.y * h
-        const x1 = content.x1 * w
-        const y1 = content.y1 * h
+        const bx = toSafeNum(b.x) * w
+        const by = toSafeNum(b.y) * h
+        const x1 = toSafeNum(content.x1) * w
+        const y1 = toSafeNum(content.y1) * h
         const bmidX = (x1 + bx) / 2
         const branchD = `M ${x1} ${y1} L ${bmidX} ${y1} L ${bmidX} ${by} L ${bx} ${by}`
         
@@ -212,6 +254,21 @@ export function LineElement({ element }: Props) {
           </React.Fragment>
         )
       })}
+      
+      {/* Selection Highlight (if needed) */}
+      {isSelected && (
+        <rect
+          x={-10}
+          y={-10}
+          width={w + 20}
+          height={h + 20}
+          fill="none"
+          stroke="#3b82f6"
+          strokeWidth={2}
+          strokeDasharray="4 2"
+          opacity={0.5}
+        />
+      )}
     </svg>
   )
 }
@@ -250,5 +307,4 @@ function LabelGroup({ text, x, y, fontSize }: { text: string, x: number, y: numb
   )
 }
 
-// Re-export CODE_PHASE so callers don't need a second import
 export { CODE_PHASE }

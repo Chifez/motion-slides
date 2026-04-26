@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Settings, X } from 'lucide-react'
+import { Settings, X, Sun, Moon } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import {
@@ -11,12 +11,12 @@ import {
 import type { AspectRatioKey } from '@motionslides/shared'
 import { BezierEditor } from './BezierEditor'
 
-const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-white/8 bg-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#242424]"
-const labelCls = "text-[10px] text-neutral-600 uppercase tracking-wider block mb-1"
-const selectCls = "w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1 text-[11px] text-neutral-100 focus:outline-none"
+const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-[var(--ms-border)] bg-[var(--ms-bg-elevated)] text-[var(--ms-text-secondary)] hover:text-[var(--ms-text-primary)] hover:bg-[var(--ms-border)]"
+const labelCls = "text-[10px] text-[var(--ms-text-muted)] uppercase tracking-wider block mb-1"
+const selectCls = "w-full bg-[var(--ms-bg-base)] border border-[var(--ms-border)] rounded-md px-2 py-1 text-[11px] text-[var(--ms-text-primary)] focus:outline-none"
 
 export function SettingsDropdown() {
-  const { playbackSettings, updatePlaybackSettings } = useEditorStore()
+  const { playbackSettings, updatePlaybackSettings, theme, toggleTheme } = useEditorStore()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useClickOutside(ref, () => setOpen(false))
@@ -38,14 +38,27 @@ export function SettingsDropdown() {
         <Settings size={13} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-999 p-3 w-72 max-h-[80vh] overflow-y-auto">
+        <div className="absolute right-0 top-full mt-1.5 bg-[var(--ms-bg-elevated)] border border-[var(--ms-border)] rounded-lg shadow-2xl z-999 p-3 w-72 max-h-[80vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Settings</span>
-            <button onClick={() => setOpen(false)} className="p-0.5 rounded text-neutral-600 hover:text-neutral-100 bg-transparent border-none cursor-pointer">
+            <span className="text-[11px] font-semibold text-[var(--ms-text-secondary)] uppercase tracking-wider">Settings</span>
+            <button onClick={() => setOpen(false)} className="p-0.5 rounded text-[var(--ms-text-muted)] hover:text-[var(--ms-text-primary)] bg-transparent border-none cursor-pointer">
               <X size={12} />
             </button>
           </div>
+          
           <div className="space-y-3">
+            {/* Theme Toggle */}
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--ms-border)]">
+              <span className="text-[11px] text-[var(--ms-text-secondary)]">Appearance</span>
+              <button
+                onClick={() => toggleTheme()}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--ms-bg-base)] border border-[var(--ms-border)] text-[var(--ms-text-primary)] text-xs font-medium hover:bg-[var(--ms-border)] transition-colors cursor-pointer"
+              >
+                {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              </button>
+            </div>
+
             {/* Autoplay */}
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -54,7 +67,7 @@ export function SettingsDropdown() {
                 onChange={(e) => updatePlaybackSettings({ autoplay: e.target.checked })}
                 className="accent-blue-500"
               />
-              <span className="text-[11px] text-neutral-200">Autoplay slides</span>
+              <span className="text-[11px] text-[var(--ms-text-primary)]">Autoplay slides</span>
             </label>
 
             {playbackSettings.autoplay && (
@@ -67,12 +80,12 @@ export function SettingsDropdown() {
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={playbackSettings.loop} onChange={(e) => updatePlaybackSettings({ loop: e.target.checked })} className="accent-blue-500" />
-                  <span className="text-[11px] text-neutral-200">Loop presentation</span>
+                  <span className="text-[11px] text-[var(--ms-text-primary)]">Loop presentation</span>
                 </label>
               </>
             )}
 
-            <div className="border-t border-white/6 pt-3">
+            <div className="border-t border-[var(--ms-border)] pt-3">
               <span className={labelCls}>Transition Duration</span>
               <select value={playbackSettings.transitionDuration} onChange={(e) => updatePlaybackSettings({ transitionDuration: +e.target.value })} className={selectCls}>
                 {TRANSITION_DURATION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -80,7 +93,7 @@ export function SettingsDropdown() {
             </div>
 
             {/* Bezier Curve Editor */}
-            <div className="border-t border-white/6 pt-3">
+            <div className="border-t border-[var(--ms-border)] pt-3">
               <span className={labelCls}>Transition Easing</span>
               <BezierEditor
                 value={playbackSettings.transitionEase}
@@ -89,7 +102,7 @@ export function SettingsDropdown() {
             </div>
 
             {/* Aspect Ratio */}
-            <div className="border-t border-white/6 pt-3">
+            <div className="border-t border-[var(--ms-border)] pt-3">
               <span className={labelCls}>Aspect Ratio</span>
               <select
                 value={activeRatio}

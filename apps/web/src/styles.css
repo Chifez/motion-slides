@@ -11,6 +11,32 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
+:root {
+  --ms-bg-base: #f4f4f5;
+  --ms-bg-surface: #ffffff;
+  --ms-bg-elevated: #ffffff;
+  --ms-text-primary: #09090b;
+  --ms-text-secondary: #52525b;
+  --ms-text-muted: #71717a;
+  --ms-border: rgba(0, 0, 0, 0.06);
+  --ms-border-strong: rgba(0, 0, 0, 0.1);
+  --ms-accent: #2563eb;
+  --ms-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+.dark {
+  --ms-bg-base: #111111;
+  --ms-bg-surface: #161616;
+  --ms-bg-elevated: #1a1a1a;
+  --ms-text-primary: #f4f4f5;
+  --ms-text-secondary: #a1a1aa;
+  --ms-text-muted: #52525b;
+  --ms-border: rgba(255, 255, 255, 0.08);
+  --ms-border-strong: rgba(255, 255, 255, 0.15);
+  --ms-accent: #3b82f6;
+  --ms-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+}
+
 /* ── Resets ────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -22,6 +48,9 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   font-family: var(--font-sans);
   font-size: 13px;
+  background-color: var(--ms-bg-base);
+  color: var(--ms-text-primary);
+  transition: all 0.2s ease;
 }
 
 

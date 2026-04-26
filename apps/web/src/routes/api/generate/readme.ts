@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { parseReadme, buildReadmeBriefing } from '@/lib/generation/markdownParser'
-import { buildReadmePrompt } from '@/lib/generation/promptBuilder'
-import { generatePresentation } from '@/lib/generation/generationClient'
+import { generateFromReadme } from '@/lib/generation/generationClient'
 import { assembleSlides } from '@/lib/generation/slideAssembler'
 
 export const Route = createFileRoute('/api/generate/readme')({
@@ -34,11 +33,14 @@ export const Route = createFileRoute('/api/generate/readme')({
               const parsed = parseReadme(markdown)
               const briefing = buildReadmeBriefing(parsed, slideCount)
 
-              send({ stage: 'preparing', percent: 15, message: 'Building prompt…' })
-              const userPrompt = buildReadmePrompt({ briefing, slideCount, style, theme })
-
               send({ stage: 'capturing', percent: 20, message: 'Generating with AI…' })
-              const generated = await generatePresentation({ userPrompt })
+              const generated = await generateFromReadme({
+                briefing,
+                rawMarkdown: markdown,
+                slideCount,
+                style,
+                theme
+              })
 
               send({ stage: 'encoding', percent: 80, message: 'Assembling slides…' })
               const slides = assembleSlides(generated)

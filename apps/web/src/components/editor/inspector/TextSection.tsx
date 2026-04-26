@@ -1,4 +1,4 @@
-import { Italic } from 'lucide-react'
+import { Italic, List, ListOrdered } from 'lucide-react'
 import type { TextContent } from '@motionslides/shared'
 import { FONT_FAMILIES } from '@/constants/editor'
 import { PropPair } from '@/components/ui/PropPair'
@@ -62,6 +62,25 @@ export function TextSection({ content, onUpdate }: Props) {
             <Italic size={13} />
           </button>
         </div>
+      </div>
+
+      {/* List Style */}
+      <div className="flex gap-1 mb-2">
+        {(['none', 'bullet', 'numbered'] as const).map((ls) => (
+          <button
+            key={ls}
+            onClick={() => onUpdate({ ...content, listStyle: ls })}
+            className={`flex-1 flex items-center justify-center gap-1.5 text-[10px] py-1.5 rounded-md border transition-colors cursor-pointer ${
+              content.listStyle === ls || (ls === 'none' && !content.listStyle)
+                ? 'border-blue-500 bg-blue-500/15 text-blue-400'
+                : 'border-white/8 bg-[#1c1c1c] text-neutral-500 hover:text-neutral-100'
+            }`}
+          >
+            {ls === 'bullet' && <List size={12} />}
+            {ls === 'numbered' && <ListOrdered size={12} />}
+            {ls === 'none' ? 'Plain' : ls.charAt(0).toUpperCase() + ls.slice(1)}
+          </button>
+        ))}
       </div>
 
       {/* Color + Size row */}

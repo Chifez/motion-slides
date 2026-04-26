@@ -72,9 +72,9 @@ export function ExportDropdown() {
     setOpen(false)
   }, [])
 
-  const handleExportVideo = useCallback(async () => {
+  const handleExportFormat = useCallback(async (format: 'mp4' | 'webm' | 'gif' | 'pdf') => {
     setOpen(false)
-    await startExport('mp4', (p) => setProgress(p))
+    await startExport(format, (p) => setProgress(p))
     setTimeout(() => setProgress(null), 5000)
   }, [])
 
@@ -105,13 +105,33 @@ export function ExportDropdown() {
             {/* Standard exports */}
             <div className="space-y-1 mb-3">
               <button
-                onClick={handleExportVideo}
+                onClick={() => handleExportFormat('mp4')}
                 className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-200 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
               >
                 <Film size={14} className="text-blue-400" />
                 <div>
-                  <div className="font-medium">Video (WebM)</div>
-                  <div className="text-[10px] text-neutral-600">Animated presentation</div>
+                  <div className="font-medium">Video (MP4)</div>
+                  <div className="text-[10px] text-neutral-600">Standard compatibility</div>
+                </div>
+              </button>
+              <button
+                onClick={() => handleExportFormat('gif')}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-200 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+              >
+                <Film size={14} className="text-purple-400" />
+                <div>
+                  <div className="font-medium">Animated GIF</div>
+                  <div className="text-[10px] text-neutral-600">Looping image</div>
+                </div>
+              </button>
+              <button
+                onClick={() => handleExportFormat('pdf')}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-200 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+              >
+                <FileText size={14} className="text-red-400" />
+                <div>
+                  <div className="font-medium">PDF Document</div>
+                  <div className="text-[10px] text-neutral-600">Static slide deck</div>
                 </div>
               </button>
               <button

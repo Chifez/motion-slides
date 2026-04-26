@@ -62,19 +62,19 @@ export function AIChat() {
       animate={{ x: 0 }}
       exit={{ x: 400 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed top-14 right-0 bottom-0 w-[380px] bg-[#161616] border-l border-white/8 z-60 shadow-2xl flex flex-col"
+      className="fixed top-14 right-0 bottom-0 w-[380px] bg-[var(--ms-bg-surface)] border-l border-[var(--ms-border)] z-60 shadow-2xl flex flex-col transition-colors"
     >
       {/* Header */}
-      <div className="h-12 flex items-center justify-between px-4 border-b border-white/8">
+      <div className="h-12 flex items-center justify-between px-4 border-b border-[var(--ms-border)]">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-purple-600/20 text-purple-400">
             <Sparkles size={16} />
           </div>
-          <span className="text-sm font-semibold text-neutral-100">AI Designer</span>
+          <span className="text-sm font-semibold text-[var(--ms-text-primary)]">AI Designer</span>
         </div>
         <button
           onClick={() => setChatOpen(false)}
-          className="p-1.5 rounded-md text-neutral-500 hover:text-neutral-100 hover:bg-white/6 transition-colors border-none bg-transparent cursor-pointer"
+          className="p-1.5 rounded-md text-[var(--ms-text-muted)] hover:text-[var(--ms-text-primary)] hover:bg-[var(--ms-border)] transition-colors border-none bg-transparent cursor-pointer"
         >
           <X size={18} />
         </button>
@@ -90,7 +90,7 @@ export function AIChat() {
               </div>
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white">Generating Slides</h3>
+              <h3 className="text-lg font-bold text-[var(--ms-text-primary)]">Generating Slides</h3>
               <p className="text-xs text-neutral-400 max-w-[200px] leading-relaxed">
                 {progress.message}
               </p>
@@ -122,7 +122,7 @@ export function AIChat() {
                   className="space-y-4"
                 >
                   <header>
-                    <h2 className="text-xl font-bold text-white mb-2">Magic Move Slides</h2>
+                    <h2 className="text-xl font-bold text-[var(--ms-text-primary)] mb-2">Magic Move Slides</h2>
                     <p className="text-xs text-neutral-400 leading-relaxed">
                       Transform your documentation or ideas into stunning presentations using AI.
                     </p>
@@ -188,7 +188,7 @@ export function AIChat() {
       </div>
 
       {/* Footer / Tip */}
-      <div className="p-4 bg-white/2 border-t border-white/5">
+      <div className="p-4 bg-[var(--ms-border)]/20 border-t border-[var(--ms-border)]">
         <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
           <div className="p-1 bg-blue-500/20 rounded">
             <Sparkles size={12} className="text-blue-400" />
@@ -213,13 +213,13 @@ function ModeCard({ icon, title, description, onClick, color, disabled }: any) {
     <button
       disabled={disabled}
       onClick={onClick}
-      className={`w-full text-left p-4 rounded-xl border border-white/8 bg-white/4 transition-all group border-none cursor-pointer ${colors[color] || ''}`}
+      className={`w-full text-left p-4 rounded-xl border border-[var(--ms-border)] bg-[var(--ms-bg-base)] transition-all group border-none cursor-pointer ${colors[color] || ''}`}
     >
       <div className="flex items-center gap-3 mb-2">
         <div className="p-2 rounded-lg bg-black/20 group-hover:bg-black/40 transition-colors">
           {icon}
         </div>
-        <h3 className="text-sm font-semibold text-neutral-100">{title}</h3>
+        <h3 className="text-sm font-semibold text-[var(--ms-text-primary)]">{title}</h3>
       </div>
       <p className="text-[11px] text-neutral-500 group-hover:text-neutral-400 leading-relaxed">
         {description}
