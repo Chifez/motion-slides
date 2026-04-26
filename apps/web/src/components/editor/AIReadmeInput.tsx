@@ -30,7 +30,7 @@ export function AIReadmeInput({ onGenerate, onBack }: Props) {
 
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 border-none bg-transparent cursor-pointer">
+      <button onClick={onBack} className="text-xs text-(--ms-text-muted) hover:text-(--ms-text-primary) flex items-center gap-1 border-none bg-transparent cursor-pointer transition-colors">
         ← Back
       </button>
 
@@ -39,12 +39,12 @@ export function AIReadmeInput({ onGenerate, onBack }: Props) {
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
         onClick={() => fileRef.current?.click()}
-        className="border-2 border-dashed border-neutral-700 hover:border-blue-500/60 rounded-xl p-6 text-center cursor-pointer transition-colors"
+        className="border-2 border-dashed border-(--ms-border) hover:border-blue-500/60 bg-(--ms-bg-elevated) rounded-xl p-6 text-center cursor-pointer transition-colors"
       >
         <div className="text-2xl mb-2">📁</div>
-        <div className="text-xs text-neutral-400">
+        <div className="text-xs text-(--ms-text-muted)">
           {markdown
-            ? <span className="text-green-400">✓ File loaded — drag to replace</span>
+            ? <span className="text-emerald-500">✓ File loaded — drag to replace</span>
             : 'Drop .md file here or click to browse'}
         </div>
       </div>
@@ -55,17 +55,17 @@ export function AIReadmeInput({ onGenerate, onBack }: Props) {
         value={markdown}
         onChange={e => setMarkdown(e.target.value)}
         placeholder="Or paste markdown here…"
-        className="w-full h-32 bg-neutral-800 border border-neutral-700 rounded-lg p-3 text-xs text-neutral-200 font-mono resize-none focus:outline-none focus:border-blue-500"
+        className="w-full h-32 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg p-3 text-xs text-(--ms-text-primary) placeholder-(--ms-text-muted) font-mono resize-none focus:outline-none focus:border-blue-500 transition-colors"
       />
 
       {/* Options */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-neutral-400 mb-1.5">Style</label>
+          <label className="block text-xs font-medium text-(--ms-text-muted) mb-1.5">Style</label>
           <select
             value={style}
             onChange={e => setStyle(e.target.value)}
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-1.5 text-xs text-white"
+            className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg px-2 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
           >
             <option value="technical">Technical</option>
             <option value="tutorial">Tutorial</option>
@@ -73,13 +73,13 @@ export function AIReadmeInput({ onGenerate, onBack }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+          <label className="block text-xs font-medium text-(--ms-text-muted) mb-1.5">
             Slides: {slideCount}
           </label>
           <input
             type="range" min={4} max={20} value={slideCount}
             onChange={e => setSlideCount(Number(e.target.value))}
-            className="w-full mt-1"
+            className="w-full mt-1 bg-(--ms-bg-elevated) rounded-lg h-1 appearance-none cursor-pointer accent-blue-500"
           />
         </div>
       </div>
@@ -87,7 +87,7 @@ export function AIReadmeInput({ onGenerate, onBack }: Props) {
       <button
         onClick={() => onGenerate({ markdown, slideCount, style, theme: 'dark' })}
         disabled={!markdown.trim()}
-        className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-700 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer border-none"
+        className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-(--ms-border) disabled:text-(--ms-text-muted) disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer border-none"
       >
         Generate Slides
       </button>

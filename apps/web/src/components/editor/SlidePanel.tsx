@@ -18,13 +18,13 @@ export function SlidePanel() {
   if (!project) return null
   const { slides } = project
 
-  const sectionCls = "px-3 py-3 border-b border-[var(--ms-border)]"
+  const sectionCls = "px-3 py-3 border-b border-(--ms-border)"
 
   const panelContent = (
-    <div className={`h-full flex flex-col bg-[var(--ms-bg-surface)] ${isMobile ? 'rounded-t-2xl shadow-2xl' : 'border-l border-[var(--ms-border)]'}`}>
+    <div className={`h-full flex flex-col bg-(--ms-bg-surface) ${isMobile ? 'rounded-t-2xl shadow-2xl' : 'border-l border-(--ms-border)'} transition-colors`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--ms-border)] sticky top-0 bg-[var(--ms-bg-surface)] z-10">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--ms-text-muted)]">Slides & Layers</span>
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-(--ms-border) sticky top-0 bg-(--ms-bg-surface) z-10 transition-colors">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted)">Slides & Layers</span>
         <div className="flex items-center gap-1">
           {/* Show Group/Ungroup icon if multiple items or a group is selected */}
           {(() => {
@@ -42,7 +42,7 @@ export function SlidePanel() {
               }
               
               return (
-                <button onClick={() => groupElements(selectedElementIds)} className="p-1 rounded-md text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer border-none bg-transparent" title="Group Selection">
+                <button onClick={() => groupElements(selectedElementIds)} className="p-1 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent" title="Group Selection">
                   <Combine size={13} />
                 </button>
               )
@@ -52,7 +52,7 @@ export function SlidePanel() {
 
           <button
             onClick={addSlide}
-            className="p-1 rounded-md text-neutral-600 hover:text-neutral-100 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent"
+            className="p-1 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent"
           >
             <Plus size={14} />
           </button>
@@ -89,10 +89,10 @@ export function SlidePanel() {
       </div>
 
       {/* Footer */}
-      <div className="p-2 border-t border-[var(--ms-border)]">
+      <div className="p-2 border-t border-(--ms-border)">
         <button
           onClick={addSlide}
-          className="w-full flex items-center justify-center gap-1.5 bg-[var(--ms-bg-base)] hover:bg-[var(--ms-border)] border border-[var(--ms-border)] text-[var(--ms-text-secondary)] hover:text-[var(--ms-text-primary)] text-xs font-medium py-1.5 rounded-md transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-1.5 bg-(--ms-bg-base) hover:bg-(--ms-border) border border-(--ms-border) text-(--ms-text-secondary) hover:text-(--ms-text-primary) text-xs font-medium py-1.5 rounded-md transition-all cursor-pointer"
         >
           <Plus size={13} /> Add Slide
         </button>
@@ -130,7 +130,7 @@ export function SlidePanel() {
   }
 
   return (
-    <aside className="w-[220px] shrink-0 flex flex-col bg-[var(--ms-bg-surface)] overflow-hidden">
+    <aside className="w-[220px] shrink-0 flex flex-col bg-(--ms-bg-surface) overflow-hidden border-r border-(--ms-border) transition-colors">
       {panelContent}
     </aside>
   )
@@ -196,8 +196,8 @@ function ElementRow({ element }: { element: SceneElement }) {
           }
         }}
         className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer transition-colors ${isSelected
-          ? 'bg-blue-500/20 text-blue-300'
-          : 'bg-transparent text-neutral-500 hover:bg-white/5 hover:text-neutral-300'
+          ? 'bg-blue-500/20 text-blue-400'
+          : 'bg-transparent text-(--ms-text-muted) hover:bg-(--ms-border) hover:text-(--ms-text-primary)'
           }`}
       >
         <ElementIcon type={element.type} />
@@ -207,7 +207,7 @@ function ElementRow({ element }: { element: SceneElement }) {
         {(isLocked || isSelected) && (
           <button
             onClick={(e) => { e.stopPropagation(); toggleElementLock(element.id) }}
-            className={`p-0.5 rounded transition-colors ${isLocked ? 'text-blue-400' : 'text-neutral-600 opacity-0 group-hover/row:opacity-100 hover:text-neutral-300'} border-none bg-transparent cursor-pointer`}
+            className={`p-0.5 rounded transition-colors ${isLocked ? 'text-blue-400' : 'text-(--ms-text-muted) opacity-0 group-hover/row:opacity-100 hover:text-(--ms-text-primary)'} border-none bg-transparent cursor-pointer`}
           >
             {isLocked ? <Lock size={8} /> : <Unlock size={8} />}
           </button>
@@ -216,7 +216,7 @@ function ElementRow({ element }: { element: SceneElement }) {
         {/* Delete button (only on hover) */}
         <button
           onClick={(e) => { e.stopPropagation(); deleteElement(element.id) }}
-          className="p-0.5 rounded text-neutral-600 opacity-0 group-hover/row:opacity-100 hover:text-red-400 border-none bg-transparent cursor-pointer"
+          className="p-0.5 rounded text-(--ms-text-muted) opacity-0 group-hover/row:opacity-100 hover:text-red-400 border-none bg-transparent cursor-pointer"
         >
           <Trash2 size={8} />
         </button>
@@ -250,12 +250,12 @@ function GroupRow({ childrenElements }: { groupId: string, childrenElements: Sce
           }
         }}
         className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded text-left cursor-pointer transition-colors ${
-          allSelected ? 'bg-blue-500/20 text-blue-300' : 'bg-transparent text-neutral-500 hover:bg-white/5 hover:text-neutral-300'
+          allSelected ? 'bg-blue-500/20 text-blue-400' : 'bg-transparent text-(--ms-text-muted) hover:bg-(--ms-border) hover:text-(--ms-text-primary)'
         }`}
       >
         <button 
           onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen) }} 
-          className="p-0 text-inherit bg-transparent border-none cursor-pointer hover:text-white"
+          className="p-0 text-inherit bg-transparent border-none cursor-pointer hover:text-(--ms-text-primary)"
         >
           {isOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         </button>
@@ -264,7 +264,7 @@ function GroupRow({ childrenElements }: { groupId: string, childrenElements: Sce
       </div>
       
       {isOpen && (
-        <div className="pl-4 flex flex-col gap-px border-l border-white/5 ml-3 my-0.5">
+        <div className="pl-4 flex flex-col gap-px border-l border-(--ms-border) ml-3 my-0.5">
           {childrenElements.map(el => <ElementRow key={el.id} element={el} />)}
         </div>
       )}
@@ -313,7 +313,7 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
       initial={false}
       transition={{ duration: 0.2, ease: 'circOut' }}
       className={`relative shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 transition-all group shadow-lg ${
-        isActive ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-white/5 hover:border-white/12 bg-white/2'
+        isActive ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-(--ms-border) hover:border-(--ms-border-strong) bg-(--ms-bg-base)'
       }`}
       onClick={onSelect}
     >
@@ -322,13 +322,13 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
         className="aspect-video shrink-0 flex items-center justify-center relative bg-[#0a0a0a]"
         style={{ background }}
       >
-        <span className="text-[10px] text-neutral-600 font-medium opacity-40 group-hover:opacity-100 transition-opacity">
+        <span className="text-[10px] text-(--ms-text-muted) font-medium opacity-40 group-hover:opacity-100 transition-opacity">
           {elements.length > 0 ? `${elements.length} layer${elements.length > 1 ? 's' : ''}` : 'Empty'}
         </span>
 
         {/* Index badge */}
-        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-md border border-white/5">
-          <span className="text-[10px] text-neutral-400 font-bold leading-none">{index + 1}</span>
+        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-md border border-white/10">
+          <span className="text-[10px] text-white/70 font-bold leading-none">{index + 1}</span>
         </div>
 
         {/* Action buttons on hover */}
@@ -337,7 +337,7 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
             <button
               onClick={onDuplicate}
               title="Duplicate"
-              className="p-1 rounded-md bg-black/40 backdrop-blur-md border border-white/5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              className="p-1 rounded-md bg-black/40 backdrop-blur-md border border-white/10 text-white/50 hover:text-white transition-colors cursor-pointer"
             >
               <Copy size={11} />
             </button>
@@ -358,7 +358,7 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
       </div>
 
       {/* Slide name label */}
-      <div className={`px-2 py-1.5 ${isActive ? 'bg-white/4' : 'bg-transparent'}`} onDoubleClick={handleDoubleClick}>
+      <div className={`px-2 py-1.5 ${isActive ? 'bg-blue-500/5' : 'bg-transparent'} transition-colors`} onDoubleClick={handleDoubleClick}>
         {isEditing ? (
           <input
             autoFocus
@@ -369,7 +369,7 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
             className="w-full bg-neutral-800 rounded px-1 py-0.5 text-[10px] text-white font-medium outline-none border border-blue-500/50"
           />
         ) : (
-          <span className={`text-[10px] font-medium block truncate ${isActive ? 'text-white' : 'text-neutral-500'}`}>
+          <span className={`text-[10px] font-medium block truncate ${isActive ? 'text-(--ms-text-primary)' : 'text-(--ms-text-muted)'}`}>
             {name}
           </span>
         )}
@@ -382,13 +382,13 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-black/20 border-t border-white/5 overflow-hidden"
+            className="bg-(--ms-bg-base) border-t border-(--ms-border) overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Collapsible header */}
             <button
               onClick={() => setLayersOpen((o) => !o)}
-              className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[9px] text-neutral-500 hover:text-neutral-300 uppercase tracking-widest font-bold cursor-pointer border-none bg-transparent transition-colors"
+              className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[9px] text-(--ms-text-muted) hover:text-(--ms-text-primary) uppercase tracking-widest font-bold cursor-pointer border-none bg-transparent transition-colors"
             >
               {layersOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
               Layers

@@ -8,7 +8,7 @@ import { SOCIAL_PRESETS, type SocialPreset } from '@/lib/socialExport'
 import { ExportProgressToast } from './ExportProgressToast'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 
-const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-white/8 bg-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#242424]"
+const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-(--ms-border) bg-(--ms-bg-elevated) text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)"
 
 /** Inline SVG platform logos */
 function PlatformIcon({ id }: { id: string }) {
@@ -17,7 +17,7 @@ function PlatformIcon({ id }: { id: string }) {
     case 'tiktok':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.3a6.34 6.34 0 0010.7 4.58V13.4a8.27 8.27 0 005.74 2.31V12.3a4.85 4.85 0 01-3.77-1.85V6.69h3.77z" fill="#fff"/>
+          <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.3a6.34 6.34 0 0010.7 4.58V13.4a8.27 8.27 0 005.74 2.31V12.3a4.85 4.85 0 01-3.77-1.85V6.69h3.77z" fill="currentColor"/>
         </svg>
       )
     case 'instagram-reels':
@@ -36,7 +36,7 @@ function PlatformIcon({ id }: { id: string }) {
       )
     case 'twitter':
       return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="#fff">
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
         </svg>
       )
@@ -101,64 +101,64 @@ export function ExportDropdown() {
           <Download size={13} /> {!useIsMobile() && "Export"}
         </button>
         {open && (
-          <div className="absolute right-0 top-full mt-1.5 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-999 p-3 w-64">
+          <div className="absolute right-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-999 p-3 w-64 transition-colors">
             {/* Standard exports */}
             <div className="space-y-1 mb-3">
               <button
                 onClick={() => handleExportFormat('mp4')}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-200 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent text-left"
               >
                 <Film size={14} className="text-blue-400" />
                 <div>
                   <div className="font-medium">Video (MP4)</div>
-                  <div className="text-[10px] text-neutral-600">Standard compatibility</div>
+                  <div className="text-[10px] text-(--ms-text-muted)">Standard compatibility</div>
                 </div>
               </button>
               <button
                 onClick={() => handleExportFormat('gif')}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-200 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent text-left"
               >
                 <Film size={14} className="text-purple-400" />
                 <div>
                   <div className="font-medium">Animated GIF</div>
-                  <div className="text-[10px] text-neutral-600">Looping image</div>
+                  <div className="text-[10px] text-(--ms-text-muted)">Looping image</div>
                 </div>
               </button>
               <button
                 onClick={() => handleExportFormat('pdf')}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-200 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent text-left"
               >
                 <FileText size={14} className="text-red-400" />
                 <div>
                   <div className="font-medium">PDF Document</div>
-                  <div className="text-[10px] text-neutral-600">Static slide deck</div>
+                  <div className="text-[10px] text-(--ms-text-muted)">Static slide deck</div>
                 </div>
               </button>
               <button
                 onClick={handleExportJSON}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-200 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent text-left"
               >
                 <FileText size={14} className="text-emerald-400" />
                 <div>
                   <div className="font-medium">Project (JSON)</div>
-                  <div className="text-[10px] text-neutral-600">Backup / import</div>
+                  <div className="text-[10px] text-(--ms-text-muted)">Backup / import</div>
                 </div>
               </button>
             </div>
 
             {/* Social export section */}
-            <div className="border-t border-white/6 pt-2.5">
-              <span className="text-[10px] font-semibold text-neutral-600 uppercase tracking-wider block mb-2">Export for Social</span>
+            <div className="border-t border-(--ms-border) pt-2.5">
+              <span className="text-[10px] font-semibold text-(--ms-text-muted) uppercase tracking-wider block mb-2">Export for Social</span>
               <div className="grid grid-cols-3 gap-1.5">
                 {SOCIAL_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     onClick={() => handleSocialExport(preset)}
-                    className="flex flex-col items-center gap-1 px-1.5 py-2 rounded-md hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent group"
+                    className="flex flex-col items-center gap-1 px-1.5 py-2 rounded-md hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent group"
                     title={`${preset.resolution.width}×${preset.resolution.height}${preset.maxDurationHint ? ` • max ${preset.maxDurationHint}` : ''}`}
                   >
                     <PlatformIcon id={preset.id} />
-                    <span className="text-[9px] text-neutral-500 group-hover:text-neutral-200 transition-colors leading-tight text-center">
+                    <span className="text-[9px] text-(--ms-text-muted) group-hover:text-(--ms-text-primary) transition-colors leading-tight text-center">
                       {preset.name}
                     </span>
                   </button>

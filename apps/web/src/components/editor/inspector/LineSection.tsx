@@ -2,8 +2,8 @@ import { Trash2, X } from 'lucide-react'
 import type { BranchContent, LineContent, LineType } from '@motionslides/shared'
 import { LINE_TYPE_OPTIONS } from '@/constants/editor'
 
-const labelCls = "text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2.5 block"
-const selectCls = "w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1.5 text-[12px] text-neutral-100 focus:outline-none focus:border-blue-500"
+const labelCls = "text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted) mb-2.5 block"
+const selectCls = "w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1.5 text-[12px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
 
 interface Props {
   content: LineContent
@@ -13,13 +13,13 @@ interface Props {
 
 export function LineSection({ content, onUpdate, onDelete }: Props) {
   return (
-    <div className="px-3 py-3 border-b border-white/6">
+    <div className="px-3 py-3 border-b border-(--ms-border)">
       <div className="flex items-center justify-between mb-3">
         <span className={labelCls.replace(' mb-2.5', '')}>Line</span>
         {onDelete && (
           <button
             onClick={onDelete}
-            className="p-1.5 rounded-md text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer border-none bg-transparent"
+            className="p-1 rounded bg-(--ms-bg-base) hover:bg-(--ms-border) text-(--ms-text-muted) hover:text-(--ms-text-primary) border border-(--ms-border) transition-colors cursor-pointer"
           >
             <Trash2 size={13} />
           </button>
@@ -28,7 +28,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
 
       {/* Line Type */}
       <div className="mb-2">
-        <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Type</span>
+        <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1">Type</span>
         <select
           value={content.lineType}
           onChange={(e) => {
@@ -54,7 +54,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
 
       {/* Line Style */}
       <div className="mb-2">
-        <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">Style</span>
+        <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1">Style</span>
         <div className="flex gap-1">
           {(['solid', 'dashed', 'dotted'] as const).map((s) => (
             <button
@@ -63,7 +63,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
               className={`flex-1 text-[10px] py-1.5 rounded-md border transition-colors cursor-pointer capitalize ${
                 content.style === s
                   ? 'border-blue-500 bg-blue-500/15 text-blue-400'
-                  : 'border-white/8 bg-[#1c1c1c] text-neutral-500 hover:text-neutral-100'
+                  : 'border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-secondary) hover:text-(--ms-text-primary)'
               }`}
             >
               {s}
@@ -74,7 +74,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
 
       {/* Arrow (Main Line) */}
       <div className="mb-2">
-        <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-1">
+        <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1">
           {content.lineType === 'branching' ? 'Default Arrow' : 'Arrow'}
         </span>
         <select
@@ -91,7 +91,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
       {/* Color + Width */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">
+          <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">
             {content.lineType === 'branching' ? 'Default Color' : 'Color'}
           </span>
           <input
@@ -102,7 +102,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
           />
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Width</span>
+          <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">Width</span>
           <select
             value={content.strokeWidth}
             onChange={(e) => onUpdate({ ...content, strokeWidth: +e.target.value })}
@@ -120,7 +120,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
       {/* Label & Font Size */}
       <div className="grid grid-cols-5 gap-2 mb-4">
         <div className="col-span-3 flex flex-col gap-0.5">
-          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">
+          <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">
             {content.lineType === 'branching' ? 'Default Label' : 'Label'}
           </span>
           {content.lineType !== 'branching' ? (
@@ -129,29 +129,29 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
               value={content.label ?? ''}
               onChange={(e) => onUpdate({ ...content, label: e.target.value })}
               placeholder="Label"
-              className="w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1.5 text-[11px] text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-blue-500"
+              className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1.5 text-[11px] text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:border-blue-500 transition-colors"
             />
           ) : (
-            <div className="text-[10px] text-neutral-700 italic py-1.5">Branch labels are individual</div>
+            <div className="text-[10px] text-(--ms-text-muted) italic py-1.5">Branch labels are individual</div>
           )}
         </div>
         <div className="col-span-2 flex flex-col gap-0.5">
-          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Size</span>
+          <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">Size</span>
           <input
             type="number"
             min="6"
             max="32"
             value={content.labelFontSize || 10}
             onChange={(e) => onUpdate({ ...content, labelFontSize: parseInt(e.target.value) })}
-            className="w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1.5 text-[11px] text-neutral-100 focus:outline-none focus:border-blue-500"
+            className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1.5 text-[11px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
           />
         </div>
       </div>
 
       {/* Connections Info */}
       {(content.startConnection || content.endConnection) && (
-        <div className="mb-4 mt-2 pt-3 border-t border-white/6">
-          <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-2">Connected To</span>
+        <div className="space-y-3 pt-2 border-t border-(--ms-border)">
+          <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-2">Connected To</span>
           <div className="flex flex-col gap-1.5">
             {content.startConnection && (
               <div className="flex items-center justify-between text-[11px] text-neutral-400 bg-white/5 p-2 rounded-md">
@@ -183,9 +183,12 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
 
       {/* Branches management */}
       {content.lineType === 'branching' && (
-        <div className="mb-2 mt-2 pt-3 border-t border-white/6">
+        <div className="pt-3 mt-1 border-t border-(--ms-border)">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] text-neutral-600 uppercase tracking-wider">Extra Branches</span>
+            <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider flex items-center gap-1.5">
+              <Palette size={10} className="text-(--ms-text-muted)" />
+              Series Colors
+            </span>
             <button 
               onClick={() => onUpdate({ ...content, branches: [...(content.branches || []), { id: `b-${Math.random().toString(36).slice(2, 8)}`, x: 1, y: 1 }] })}
               className="text-[10px] font-semibold text-blue-500 hover:text-blue-400 border-none bg-transparent cursor-pointer"
@@ -194,7 +197,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
             </button>
           </div>
           {(content.branches || []).map((b, idx) => (
-            <div key={b.id ?? idx} className="flex flex-col gap-3 p-3 bg-white/5 rounded-lg mb-3 border border-white/4">
+            <div key={b.id ?? idx} className="flex flex-col gap-3 p-3 bg-(--ms-bg-base) rounded-lg mb-3 border border-(--ms-border)">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-blue-400 tracking-tight">Branch {idx + 1}</span>
                 <button 
@@ -217,7 +220,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                     onUpdate({ ...content, branches: newBranches })
                   }}
                   placeholder="Branch label"
-                  className="w-full bg-[#1c1c1c] border border-white/8 rounded px-2 py-1 text-[11px] text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded px-2 py-1 text-[11px] text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
 
@@ -250,7 +253,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[9px] text-neutral-500 font-medium">Style</span>
+                  <span className="text-[9px] text-(--ms-text-muted) font-medium">Style</span>
                   <select
                     value={b.style || 'default'}
                     onChange={(e) => {
@@ -264,7 +267,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                       }
                       onUpdate({ ...content, branches: newBranches })
                     }}
-                    className="w-full bg-[#1c1c1c] border border-white/8 rounded px-1.5 py-1 text-[10px] text-neutral-100 focus:outline-none focus:border-blue-500"
+                    className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded px-1.5 py-1 text-[10px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
                   >
                     <option value="default">Default</option>
                     <option value="solid">Solid</option>
@@ -284,7 +287,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                       newBranches[idx] = { ...b, labelFontSize: parseInt(e.target.value) }
                       onUpdate({ ...content, branches: newBranches })
                     }}
-                    className="w-full bg-[#1c1c1c] border border-white/8 rounded px-1.5 py-1 text-[10px] text-neutral-100 focus:outline-none focus:border-blue-500"
+                    className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded px-1.5 py-1 text-[10px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
               </div>

@@ -15,10 +15,10 @@ function SlideNodeComponent({ data, selected }: NodeProps<SlideNodeType>) {
 
   return (
     <div
-      className={`rounded-lg overflow-hidden border-2 transition-all shadow-xl ${
-        selected ? 'border-blue-500 shadow-blue-500/20' : isActive ? 'border-blue-400/50' : 'border-white/10 hover:border-white/20'
+      className={`rounded-lg overflow-hidden border-2 transition-all shadow-xl bg-(--ms-bg-elevated) ${
+        selected ? 'border-blue-500 shadow-blue-500/20' : isActive ? 'border-blue-400/50' : 'border-(--ms-border) hover:border-(--ms-border-strong)'
       }`}
-      style={{ width: 240, background: '#161616' }}
+      style={{ width: 240 }}
     >
       {/* Slide preview */}
       <div
@@ -34,8 +34,8 @@ function SlideNodeComponent({ data, selected }: NodeProps<SlideNodeType>) {
       </div>
 
       {/* Label */}
-      <div className="px-2.5 py-1.5 flex items-center justify-between">
-        <span className="text-[10px] text-neutral-400 font-medium truncate">
+      <div className="px-2.5 py-1.5 flex items-center justify-between border-t border-(--ms-border)">
+        <span className="text-[10px] text-(--ms-text-muted) font-medium truncate">
           {slide.name || `Slide ${index + 1}`}
         </span>
       </div>

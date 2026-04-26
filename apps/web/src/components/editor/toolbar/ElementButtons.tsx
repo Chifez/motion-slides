@@ -10,7 +10,7 @@ import {
 import { useClickOutside } from '@/hooks/useClickOutside'
 import type { LineType, ShapeType, ChartType } from '@motionslides/shared'
 
-const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-white/8 bg-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#242424]"
+const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-(--ms-border) bg-(--ms-bg-elevated) text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)"
 
 export function ElementButtons() {
   const { addElement } = useEditorStore()
@@ -97,12 +97,12 @@ export function ElementButtons() {
           <Shapes size={13} /> Shape <ChevronDown size={10} />
         </button>
         {showShapeMenu && (
-          <div className="absolute left-0 top-full mt-1.5 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-50 p-1.5 w-44 max-h-64 overflow-y-auto custom-scrollbar">
+          <div className="absolute left-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-50 p-1.5 w-44 max-h-64 overflow-y-auto custom-scrollbar transition-colors">
             {SHAPE_OPTIONS.map((so) => (
               <button
                 key={so.value}
                 onClick={() => addShape(so.value as ShapeType)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-300 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent text-left"
               >
                 {so.label}
               </button>
@@ -116,12 +116,12 @@ export function ElementButtons() {
           <BarChart3 size={13} /> Chart <ChevronDown size={10} />
         </button>
         {showChartMenu && (
-          <div className="absolute left-0 top-full mt-1.5 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-50 p-1.5 w-36">
+          <div className="absolute left-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-50 p-1.5 w-36 transition-colors">
             {CHART_TYPE_OPTIONS.map((ct) => (
               <button
                 key={ct.value}
                 onClick={() => addChart(ct.value as ChartType)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-300 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent text-left"
               >
                 <span className="text-base w-4 text-center">{ct.icon}</span>
                 {ct.label}
@@ -131,7 +131,7 @@ export function ElementButtons() {
         )}
       </div>
 
-      <div className="w-px h-5 bg-white/8 mx-0.5" />
+      <div className="w-px h-5 bg-(--ms-border) mx-0.5" />
       <div className="relative" ref={lineRef}>
         <button
           className={btnBase}
@@ -140,12 +140,12 @@ export function ElementButtons() {
           <Minus size={13} /> Line <ChevronDown size={10} />
         </button>
         {showLineMenu && (
-          <div className="absolute left-0 top-full mt-1.5 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-50 p-1.5 w-36">
+          <div className="absolute left-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-50 p-1.5 w-36 transition-colors">
             {LINE_TYPE_OPTIONS.map((lt) => (
               <button
                 key={lt.value}
                 onClick={() => addLine(lt.value as LineType)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-neutral-300 hover:bg-white/6 transition-colors cursor-pointer border-none bg-transparent text-left"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent text-left"
               >
                 <span className="text-base w-4 text-center">{lt.icon}</span>
                 {lt.label}

@@ -17,17 +17,17 @@ export function AIArchInput({ onGenerate, onBack }: Props) {
 
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 border-none bg-transparent cursor-pointer">
+      <button onClick={onBack} className="text-xs text-(--ms-text-muted) hover:text-(--ms-text-primary) flex items-center gap-1 border-none bg-transparent cursor-pointer transition-colors">
         ← Back
       </button>
 
       <div className="space-y-1.5">
-        <label className="block text-xs font-medium text-neutral-400">Describe your system</label>
+        <label className="block text-xs font-medium text-(--ms-text-muted)">Describe your system</label>
         <textarea
           value={description}
           onChange={e => setDescription(e.target.value)}
           placeholder="e.g. A serverless web app that uses Lambda and S3…"
-          className="w-full h-36 bg-neutral-800 border border-neutral-700 rounded-lg p-3 text-xs text-neutral-200 resize-none focus:outline-none focus:border-blue-500"
+          className="w-full h-36 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg p-3 text-xs text-(--ms-text-primary) placeholder-(--ms-text-muted) resize-none focus:outline-none focus:border-blue-500 transition-colors"
         />
       </div>
 
@@ -37,7 +37,7 @@ export function AIArchInput({ onGenerate, onBack }: Props) {
           <button
             key={ex.label}
             onClick={() => setDescription(ex.value)}
-            className="text-[10px] px-2 py-1 bg-neutral-700 hover:bg-neutral-600 text-neutral-300 rounded border-none cursor-pointer"
+            className="text-[10px] px-2 py-1 bg-(--ms-bg-elevated) hover:bg-(--ms-border) text-(--ms-text-secondary) hover:text-(--ms-text-primary) rounded border border-(--ms-border) transition-colors cursor-pointer"
           >
             + {ex.label}
           </button>
@@ -47,11 +47,11 @@ export function AIArchInput({ onGenerate, onBack }: Props) {
       {/* Options */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-neutral-400 mb-1.5">Icon Set</label>
+          <label className="block text-xs font-medium text-(--ms-text-muted) mb-1.5">Icon Set</label>
           <select
             value={diagramStyle}
             onChange={e => setDiagramStyle(e.target.value)}
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-1.5 text-xs text-white"
+            className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg px-2 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
           >
             <option value="aws">AWS architecture</option>
             <option value="generic">Generic shapes</option>
@@ -59,13 +59,13 @@ export function AIArchInput({ onGenerate, onBack }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+          <label className="block text-xs font-medium text-(--ms-text-muted) mb-1.5">
             Slides: {slideCount}
           </label>
           <input
             type="range" min={3} max={12} value={slideCount}
             onChange={e => setSlideCount(Number(e.target.value))}
-            className="w-full mt-1"
+            className="w-full mt-1 bg-(--ms-bg-elevated) rounded-lg h-1 appearance-none cursor-pointer accent-blue-500"
           />
         </div>
       </div>
@@ -73,7 +73,7 @@ export function AIArchInput({ onGenerate, onBack }: Props) {
       <button
         onClick={() => onGenerate({ description, slideCount, diagramStyle, theme: 'dark' })}
         disabled={!description.trim()}
-        className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-700 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer border-none"
+        className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-(--ms-border) disabled:text-(--ms-text-muted) disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer border-none"
       >
         Generate Architecture
       </button>

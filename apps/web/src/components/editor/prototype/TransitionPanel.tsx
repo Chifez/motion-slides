@@ -2,8 +2,8 @@ import { X } from 'lucide-react'
 import type { SlideTransition, TransitionAnimation } from '@motionslides/shared'
 import { BezierEditor } from '../toolbar/BezierEditor'
 
-const selectCls = "w-full bg-[#1c1c1c] border border-white/8 rounded-md px-2 py-1.5 text-[12px] text-neutral-100 focus:outline-none focus:border-blue-500"
-const labelCls = "text-[10px] text-neutral-600 uppercase tracking-wider block mb-1"
+const selectCls = "w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1.5 text-[12px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
+const labelCls = "text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1"
 
 const ANIMATIONS: { value: TransitionAnimation; label: string }[] = [
   { value: 'slide-left', label: '← Slide Left' },
@@ -24,13 +24,13 @@ interface Props {
 
 export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Props) {
   return (
-    <div className="absolute top-4 right-4 w-72 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-50 overflow-hidden">
+    <div className="absolute top-4 right-4 w-72 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-50 overflow-hidden transition-colors">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/6">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500">Transition</span>
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-(--ms-border)">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted)">Transition</span>
         <button
           onClick={onClose}
-          className="p-0.5 rounded text-neutral-600 hover:text-neutral-100 bg-transparent border-none cursor-pointer"
+          className="p-0.5 rounded text-(--ms-text-muted) hover:text-(--ms-text-primary) bg-transparent border-none cursor-pointer"
         >
           <X size={12} />
         </button>
@@ -62,9 +62,9 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
               step={50}
               value={transition.duration}
               onChange={(e) => onUpdate({ duration: +e.target.value })}
-              className="flex-1 accent-blue-500"
+              className="flex-1 accent-blue-500 bg-(--ms-bg-base) rounded-lg h-1 appearance-none cursor-pointer"
             />
-            <span className="text-[10px] text-neutral-500 w-10 text-right">{transition.duration}ms</span>
+            <span className="text-[10px] text-(--ms-text-muted) w-10 text-right">{transition.duration}ms</span>
           </div>
         </div>
 
@@ -88,7 +88,7 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
                 className={`flex-1 text-[10px] py-1.5 rounded-md border transition-colors cursor-pointer capitalize ${
                   transition.trigger === t
                     ? 'border-blue-500 bg-blue-500/15 text-blue-400'
-                    : 'border-white/8 bg-[#1c1c1c] text-neutral-500 hover:text-neutral-100'
+                    : 'border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-secondary) hover:text-(--ms-text-primary)'
                 }`}
               >
                 {t}
@@ -108,15 +108,15 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
                 step={500}
                 value={transition.autoDelay ?? 2000}
                 onChange={(e) => onUpdate({ autoDelay: +e.target.value })}
-                className="flex-1 accent-blue-500"
+                className="flex-1 accent-blue-500 bg-(--ms-bg-base) rounded-lg h-1 appearance-none cursor-pointer"
               />
-              <span className="text-[10px] text-neutral-500 w-10 text-right">{((transition.autoDelay ?? 2000) / 1000).toFixed(1)}s</span>
+              <span className="text-[10px] text-(--ms-text-muted) w-10 text-right">{((transition.autoDelay ?? 2000) / 1000).toFixed(1)}s</span>
             </div>
           </div>
         )}
 
         {/* Delete */}
-        <div className="pt-2 border-t border-white/6">
+        <div className="pt-2 border-t border-(--ms-border)">
           <button
             onClick={onDelete}
             className="w-full py-1.5 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md border border-red-500/20 transition-colors cursor-pointer bg-transparent"

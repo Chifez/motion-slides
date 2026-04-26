@@ -1,7 +1,7 @@
 import type { SceneElement } from '@motionslides/shared'
 import { PropPair } from '@/components/ui/PropPair'
 
-const labelCls = "text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2.5 block"
+const labelCls = "text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted) mb-2.5 block"
 
 interface Props {
   element: SceneElement
@@ -10,7 +10,7 @@ interface Props {
 
 export function TransformSection({ element, onUpdate }: Props) {
   return (
-    <div className="px-3 py-3 border-b border-white/6">
+    <div className="px-3 py-3 border-b border-(--ms-border)">
       <span className={labelCls}>Transform</span>
       <div className="grid grid-cols-2 gap-2">
         <PropPair label="X" value={Math.round(element.position.x)} onChange={(v) => onUpdate({ position: { ...element.position, x: v } })} />

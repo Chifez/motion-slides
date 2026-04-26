@@ -127,7 +127,7 @@ export function PrototypeCanvas() {
   const selectedTransition = transitions.find((t) => t.id === selectedTransitionId)
 
   return (
-    <div className="flex-1 relative" style={{ background: '#0d0d0d' }}>
+    <div className="flex-1 relative bg-(--ms-bg-base) transition-colors">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -141,17 +141,17 @@ export function PrototypeCanvas() {
         fitView
         defaultEdgeOptions={{ type: 'transitionEdge', animated: true }}
         proOptions={{ hideAttribution: true }}
-        style={{ background: '#0d0d0d' }}
+        className="bg-(--ms-bg-base) transition-colors"
       >
-        <Background color="#222" gap={20} size={1} />
+        <Background color="var(--ms-border-strong)" gap={20} size={1} />
         <Controls
           showInteractive={false}
-          className="bg-[#1a1a1a]! border-white/8! rounded-lg! shadow-xl! [&>button]:bg-[#1c1c1c]! [&>button]:border-white/8! [&>button]:text-neutral-400! [&>button:hover]:bg-white/6!"
+          className="bg-(--ms-bg-elevated)! border-(--ms-border)! rounded-lg! shadow-xl! [&>button]:bg-(--ms-bg-base)! [&>button]:border-(--ms-border)! [&>button]:text-(--ms-text-muted)! [&>button:hover]:bg-(--ms-border)! transition-colors"
         />
         <MiniMap
-          nodeColor="#1e3a5f"
-          maskColor="rgba(0,0,0,0.7)"
-          className="bg-[#111]! border-white/8! rounded-lg!"
+          nodeColor="var(--ms-accent)"
+          maskColor="var(--ms-bg-base)"
+          className="bg-(--ms-bg-elevated)! border-(--ms-border)! rounded-lg! opacity-80"
         />
       </ReactFlow>
 
