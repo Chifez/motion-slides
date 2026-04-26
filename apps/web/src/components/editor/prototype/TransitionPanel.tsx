@@ -1,19 +1,18 @@
-import { X } from 'lucide-react'
+import { X, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Eye, Maximize2, RefreshCcw, Sparkles } from 'lucide-react'
 import type { SlideTransition, TransitionAnimation } from '@motionslides/shared'
 import { BezierEditor } from '../toolbar/BezierEditor'
 
-const selectCls = "w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1.5 text-[12px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
-const labelCls = "text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1"
+const labelCls = "text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1.5"
 
-const ANIMATIONS: { value: TransitionAnimation; label: string }[] = [
-  { value: 'slide-left', label: '← Slide Left' },
-  { value: 'slide-right', label: '→ Slide Right' },
-  { value: 'slide-up', label: '↑ Slide Up' },
-  { value: 'slide-down', label: '↓ Slide Down' },
-  { value: 'fade', label: '◐ Fade' },
-  { value: 'zoom', label: '⊕ Zoom' },
-  { value: 'flip', label: '↻ Flip' },
-  { value: 'magic-move', label: '✨ Magic Move' },
+const ANIMATIONS: { value: TransitionAnimation; label: string; icon: any }[] = [
+  { value: 'slide-left', label: 'Slide Left', icon: ArrowLeft },
+  { value: 'slide-right', label: 'Slide Right', icon: ArrowRight },
+  { value: 'slide-up', label: 'Slide Up', icon: ArrowUp },
+  { value: 'slide-down', label: 'Slide Down', icon: ArrowDown },
+  { value: 'fade', label: 'Fade', icon: Eye },
+  { value: 'zoom', label: 'Zoom', icon: Maximize2 },
+  { value: 'flip', label: 'Flip', icon: RefreshCcw },
+  { value: 'magic-move', label: 'Magic Move', icon: Sparkles },
 ]
 
 interface Props {
@@ -37,19 +36,31 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
         </button>
       </div>
 
-      <div className="p-3 space-y-3 max-h-[60vh] overflow-y-auto">
-        {/* Animation Type */}
+      <div className="p-3 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        {/* Animation Type Grid */}
         <div>
-          <span className={labelCls}>Animation</span>
-          <select
-            value={transition.animation}
-            onChange={(e) => onUpdate({ animation: e.target.value as TransitionAnimation })}
-            className={selectCls}
-          >
-            {ANIMATIONS.map((a) => (
-              <option key={a.value} value={a.value}>{a.label}</option>
-            ))}
-          </select>
+          <span className={labelCls}>Animation Type</span>
+          <div className="grid grid-cols-4 gap-1.5">
+            {ANIMATIONS.map((a) => {
+              const Icon = a.icon
+              const isActive = transition.animation === a.value
+              return (
+                <button
+                  key={a.value}
+                  onClick={() => onUpdate({ animation: a.value })}
+                  title={a.label}
+                  className={`flex flex-col items-center justify-center gap-1.5 aspect-square rounded-md border transition-all cursor-pointer ${
+                    isActive
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+                      : 'border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:border-(--ms-border-strong)'
+                  }`}
+                >
+                  <Icon size={14} strokeWidth={isActive ? 2.5 : 2} />
+                  <span className="text-[8px] font-medium text-center leading-none">{a.label.split(' ')[0]}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Duration */}
@@ -81,15 +92,15 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
         {/* Trigger */}
         <div>
           <span className={labelCls}>Trigger</span>
-          <div className="flex gap-1">
+          <div className="flex gap-1.5">
             {(['click', 'auto'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => onUpdate({ trigger: t })}
-                className={`flex-1 text-[10px] py-1.5 rounded-md border transition-colors cursor-pointer capitalize ${
+                className={`flex-1 text-[10px] py-2 rounded-md border transition-all cursor-pointer capitalize font-medium ${
                   transition.trigger === t
-                    ? 'border-blue-500 bg-blue-500/15 text-blue-400'
-                    : 'border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-secondary) hover:text-(--ms-text-primary)'
+                    ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+                    : 'border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                 }`}
               >
                 {t}
@@ -117,12 +128,12 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
         )}
 
         {/* Delete */}
-        <div className="pt-2 border-t border-(--ms-border)">
+        <div className="pt-2">
           <button
             onClick={onDelete}
-            className="w-full py-1.5 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md border border-red-500/20 transition-colors cursor-pointer bg-transparent"
+            className="w-full py-2 text-[10px] font-semibold uppercase tracking-wider text-red-400 hover:text-red-300 hover:bg-red-500/5 rounded-md border border-red-500/20 transition-all cursor-pointer bg-transparent"
           >
-            Delete Transition
+            Remove Transition
           </button>
         </div>
       </div>

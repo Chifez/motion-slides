@@ -33,8 +33,6 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition }
             <CanvasElement 
               key={el.id} 
               element={el} 
-              // staggerIndex is used for sequential builds in presentation mode
-              // staggerIndex={isPresentation ? ... : undefined}
             />
           ))}
         </AnimatePresence>
@@ -42,3 +40,5 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition }
     </MotionProvider>
   )
 }
+
+

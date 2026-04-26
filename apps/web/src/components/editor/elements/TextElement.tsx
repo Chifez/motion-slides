@@ -106,6 +106,9 @@ export function TextElement({ element }: Props) {
             height: 'auto',
             minHeight: '1em',
             cursor: 'text',
+            outline: 'none',
+            border: 'none',
+            background: 'transparent',
           }}
         >
           {content.value}
@@ -123,7 +126,6 @@ export function TextElement({ element }: Props) {
           paddingLeft: '1.4em',
           listStyleType: content.listStyle === 'bullet' ? 'disc' : 'decimal',
           width: '100%',
-          pointerEvents: 'none',
         }}>
           {lines.map((line, i) => (
             <li key={i} style={{ marginBottom: '0.2em' }}>
@@ -134,7 +136,8 @@ export function TextElement({ element }: Props) {
       )
     }
 
-    return <span style={{ pointerEvents: 'none' }}>{content.value}</span>
+    return <span>{content.value}</span>
+
   }
 
   return (

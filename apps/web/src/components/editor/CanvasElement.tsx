@@ -42,8 +42,6 @@ export function CanvasElement({ element }: Props) {
   // ── Identity Check ──
   // Is this element present in both the previous and current slide?
   const isContinuing = continuingIds.has(element.id)
-  // Only use morph (Magic Move) if the transition animation is explicitly set to magic-move
-  const shouldMorph = isContinuing && transitionAnimation === 'magic-move'
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
@@ -187,9 +185,10 @@ export function CanvasElement({ element }: Props) {
   // ── Presentation Mode ──
 
   // CONTINUING ELEMENTS (exist in both slides):
-  // - If shouldMorph (Magic Move): Let layoutId + layout handle the smooth morph.
-  // - Otherwise: Treat as a normal exit/enter so it respects Slide/Fade/Zoom.
-  if (shouldMorph) {
+  // - Keep opacity at 1.0 (NO fade)
+  // - Let layoutId + layout handle the smooth FLIP position/size transition
+  // - Use spring physics for that weighted, Keynote-like feel
+  if (isContinuing) {
     return (
       <motion.div
         layoutId={element.id}
@@ -242,6 +241,8 @@ export function CanvasElement({ element }: Props) {
 
   return (
     <motion.div
+      layoutId={element.id}
+      layout
       className="canvas-element"
       style={{
         position: 'absolute',
