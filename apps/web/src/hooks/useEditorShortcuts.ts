@@ -7,19 +7,37 @@ import { useEditorStore } from '@/store/editorStore'
 export function useEditorShortcuts() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in inputs
-      const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
+      // Don't trigger shortcuts when typing in inputs or content-editable elements
+      const target = e.target as HTMLElement
+      const isInput = 
+        target instanceof HTMLInputElement || 
+        target instanceof HTMLTextAreaElement || 
+        target.isContentEditable
+        
       if (isInput) return
 
       const state = useEditorStore.getState()
       const { 
         selectedElementIds, duplicateElement, deleteElement,
         activeSlideIndex, setActiveSlide, projects, activeProjectId,
-        groupElements, ungroupElements
+        groupElements, ungroupElements, isReadOnly
       } = state
 
       const project = projects.find(p => p.id === activeProjectId)
       if (!project) return
+
+      // --- Slide Navigation (Always allowed) ---
+      if (e.key === 'ArrowUp' && activeSlideIndex > 0) {
+        e.preventDefault()
+        setActiveSlide(activeSlideIndex - 1)
+      }
+      if (e.key === 'ArrowDown' && activeSlideIndex < project.slides.length - 1) {
+        e.preventDefault()
+        setActiveSlide(activeSlideIndex + 1)
+      }
+
+      // --- Modification Actions (Restricted) ---
+      if (isReadOnly) return
 
       // --- Group / Ungroup Actions ---
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'g') {
@@ -53,16 +71,6 @@ export function useEditorShortcuts() {
           // Delete all selected
           selectedElementIds.forEach(id => deleteElement(id))
         }
-      }
-
-      // --- Slide Navigation ---
-      if (e.key === 'ArrowUp' && activeSlideIndex > 0) {
-        e.preventDefault()
-        setActiveSlide(activeSlideIndex - 1)
-      }
-      if (e.key === 'ArrowDown' && activeSlideIndex < project.slides.length - 1) {
-        e.preventDefault()
-        setActiveSlide(activeSlideIndex + 1)
       }
     }
 

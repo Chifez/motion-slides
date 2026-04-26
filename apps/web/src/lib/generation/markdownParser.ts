@@ -41,7 +41,7 @@ export function parseReadme(markdown: string): ParsedReadme {
       if (token.type === 'text' || token.type === 'paragraph') {
         currentSection.content += token.text + '\n'
       } else if (token.type === 'list') {
-        token.items.forEach(item => currentSection?.elements.push(item.text))
+        token.items.forEach((item: any) => currentSection?.elements.push(item.text))
       } else if (token.type === 'code') {
         currentSection.elements.push(`CODE:${token.lang ?? 'text'}:${token.text}`)
       }

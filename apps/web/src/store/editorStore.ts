@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { get, set, del } from 'idb-keyval'
 import { createProjectSlice, type ProjectSlice } from './slices/projectSlice'
 import { createSlideSlice, type SlideSlice } from './slices/slideSlice'
 import { createElementSlice, type ElementSlice } from './slices/elementSlice'
@@ -24,8 +25,20 @@ export type EditorState =
   & UISlice
 
 // ─────────────────────────────────────────────
-// Zustand Store with SessionStorage persistence
+// Zustand Store with IndexedDB persistence
 // ─────────────────────────────────────────────
+
+const idbStorage = {
+  getItem: async (name: string): Promise<string | null> => {
+    return (await get(name)) || null
+  },
+  setItem: async (name: string, value: string): Promise<void> => {
+    await set(name, value)
+  },
+  removeItem: async (name: string): Promise<void> => {
+    await del(name)
+  },
+}
 
 export const useEditorStore = create<EditorState>()(
   persist(
@@ -41,7 +54,10 @@ export const useEditorStore = create<EditorState>()(
     }),
     {
       name: 'motionslides-session',
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => {
+        if (typeof window !== 'undefined') return idbStorage
+        return { getItem: () => null, setItem: () => {}, removeItem: () => {} } as any
+      }),
       partialize: (state) => ({
         projects: state.projects,
         activeProjectId: state.activeProjectId,
@@ -57,3 +73,22 @@ export const useEditorStore = create<EditorState>()(
 if (typeof window !== 'undefined') {
   (window as any).__motionslides_store__ = useEditorStore
 }
+
+// ─────────────────────────────────────────────
+// Async Hydration Helper
+// ─────────────────────────────────────────────
+export const storeHydrationPromise = new Promise<void>((resolve) => {
+  if (typeof window === 'undefined') {
+    resolve()
+    return
+  }
+  
+  if (useEditorStore.persist.hasHydrated()) {
+    resolve()
+  } else {
+    const unsub = useEditorStore.persist.onFinishHydration(() => {
+      resolve()
+      if (unsub) unsub()
+    })
+  }
+})

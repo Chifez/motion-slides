@@ -12,7 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ExportViewRouteImport } from './routes/export-view'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as EditorProjectIdRouteImport } from './routes/editor.$projectId'
+import { Route as PProjectIdRouteImport } from './routes/p.$projectId'
 import { Route as ApiGenerateReadmeRouteImport } from './routes/api/generate/readme'
 import { Route as ApiGenerateArchitectureRouteImport } from './routes/api/generate/architecture'
 
@@ -31,9 +31,9 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EditorProjectIdRoute = EditorProjectIdRouteImport.update({
-  id: '/editor/$projectId',
-  path: '/editor/$projectId',
+const PProjectIdRoute = PProjectIdRouteImport.update({
+  id: '/p/$projectId',
+  path: '/p/$projectId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGenerateReadmeRoute = ApiGenerateReadmeRouteImport.update({
@@ -51,7 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
-  '/editor/$projectId': typeof EditorProjectIdRoute
+  '/p/$projectId': typeof PProjectIdRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
 }
@@ -59,7 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
-  '/editor/$projectId': typeof EditorProjectIdRoute
+  '/p/$projectId': typeof PProjectIdRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
 }
@@ -68,7 +68,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
-  '/editor/$projectId': typeof EditorProjectIdRoute
+  '/p/$projectId': typeof PProjectIdRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
 }
@@ -78,7 +78,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/export-view'
-    | '/editor/$projectId'
+    | '/p/$projectId'
     | '/api/generate/architecture'
     | '/api/generate/readme'
   fileRoutesByTo: FileRoutesByTo
@@ -86,7 +86,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/export-view'
-    | '/editor/$projectId'
+    | '/p/$projectId'
     | '/api/generate/architecture'
     | '/api/generate/readme'
   id:
@@ -94,7 +94,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/export-view'
-    | '/editor/$projectId'
+    | '/p/$projectId'
     | '/api/generate/architecture'
     | '/api/generate/readme'
   fileRoutesById: FileRoutesById
@@ -103,7 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   ExportViewRoute: typeof ExportViewRoute
-  EditorProjectIdRoute: typeof EditorProjectIdRoute
+  PProjectIdRoute: typeof PProjectIdRoute
   ApiGenerateArchitectureRoute: typeof ApiGenerateArchitectureRoute
   ApiGenerateReadmeRoute: typeof ApiGenerateReadmeRoute
 }
@@ -131,11 +131,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/editor/$projectId': {
-      id: '/editor/$projectId'
-      path: '/editor/$projectId'
-      fullPath: '/editor/$projectId'
-      preLoaderRoute: typeof EditorProjectIdRouteImport
+    '/p/$projectId': {
+      id: '/p/$projectId'
+      path: '/p/$projectId'
+      fullPath: '/p/$projectId'
+      preLoaderRoute: typeof PProjectIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/generate/readme': {
@@ -159,7 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   ExportViewRoute: ExportViewRoute,
-  EditorProjectIdRoute: EditorProjectIdRoute,
+  PProjectIdRoute: PProjectIdRoute,
   ApiGenerateArchitectureRoute: ApiGenerateArchitectureRoute,
   ApiGenerateReadmeRoute: ApiGenerateReadmeRoute,
 }

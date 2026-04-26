@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand'
 import type { SlideTransition } from '@motionslides/shared'
-import { nanoid } from '@/lib/nanoid'
+import { uuid } from '@/lib/uuid'
 import type { EditorState } from '@/store/editorStore'
 
 export interface PrototypeSlice {
@@ -26,7 +26,7 @@ export const createPrototypeSlice: StateCreator<EditorState, [], [], PrototypeSl
   addTransition: (data) => {
     const { activeProjectId } = get()
     if (!activeProjectId) return
-    const transition: SlideTransition = { id: nanoid(), ...data }
+    const transition: SlideTransition = { id: uuid(), ...data }
     set((s) => ({
       projects: s.projects.map((p) =>
         p.id !== activeProjectId

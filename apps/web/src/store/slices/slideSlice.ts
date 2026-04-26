@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand'
 import type { Slide } from '@motionslides/shared'
-import { nanoid } from '@/lib/nanoid'
+import { uuid } from '@/lib/uuid'
 import { createDefaultSlide } from '@/store/defaults'
 import type { EditorState } from '@/store/editorStore'
 
@@ -61,14 +61,14 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
     
     const project = get().projects.find((p) => p.id === activeProjectId)!
     const original = project.slides[index]
-    const newSlideId = nanoid()
+    const newSlideId = uuid()
 
     const clone: Slide = {
       ...original,
       id: newSlideId,
       name: `${original.name || 'Slide'} (Copy)`,
       // SAME element IDs — enables Magic Move morphing between slides
-      elements: original.elements.map((el) => ({ ...el })),
+      elements: original.elements.map((el) => ({ ...el, id: el.id || uuid() })),
     }
 
     const newSlides = [

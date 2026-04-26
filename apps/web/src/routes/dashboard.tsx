@@ -1,10 +1,13 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { Plus, Layout, Clock, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore, storeHydrationPromise } from '@/store/editorStore'
 import { Logo } from '@/components/ui/Logo'
 
 export const Route = createFileRoute('/dashboard')({
+  loader: async () => {
+    await storeHydrationPromise
+  },
   component: Dashboard,
 })
 
@@ -19,7 +22,7 @@ function Dashboard() {
 
   function handleCreate() {
     const project = createProject('Untitled Deck')
-    navigate({ to: '/editor/$projectId', params: { projectId: project.id } })
+    navigate({ to: '/p/$projectId', params: { projectId: project.id } })
   }
 
   return (
@@ -64,7 +67,7 @@ function Dashboard() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              onClick={() => navigate({ to: '/editor/$projectId', params: { projectId: project.id } })}
+              onClick={() => navigate({ to: '/p/$projectId', params: { projectId: project.id } })}
               className="group bg-[#161616] border border-white/8 hover:border-white/16 rounded-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5"
             >
               {/* Preview area */}

@@ -101,6 +101,7 @@ async function callLLM(
     schema: GeneratedPresentationSchema,
     system: SYSTEM_PROMPT,
     prompt: userPrompt,
+    // @ts-ignore - maxTokens might not be typed depending on the exact 'ai' sdk version
     maxTokens: maxTokens,
     // Lower temperature for more stable JSON formatting
     temperature: 0.3,

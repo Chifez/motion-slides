@@ -16,7 +16,7 @@ import {
 import '@xyflow/react/dist/style.css'
 
 import { useEditorStore } from '@/store/editorStore'
-import { nanoid } from '@/lib/nanoid'
+import { uuid } from '@/lib/uuid'
 import { SlideNode } from './SlideNode'
 import { TransitionEdge } from './TransitionEdge'
 import { TransitionPanel } from './TransitionPanel'
@@ -103,16 +103,17 @@ export function PrototypeCanvas() {
     if (exists) return
 
     // Generate the ID here so ReactFlow edge and store transition share it
-    const id = nanoid()
-    addTransition({
+    const id = uuid()
+    const transition: any = {
       id,
       fromSlideId: connection.source,
       toSlideId: connection.target,
       animation: 'slide-left',
-      duration: 500,
-      ease: { ...DEFAULT_PLAYBACK_SETTINGS.transitionEase },
-      trigger: 'click',
-    })
+      duration: 600,
+      ease: { x1: 0.16, y1: 1, x2: 0.3, y2: 1 },
+      trigger: 'click'
+    }
+    addTransition(transition)
     // Edges are derived from store, so ReactFlow will auto-reflect the new one
   }, [transitions, addTransition])
 

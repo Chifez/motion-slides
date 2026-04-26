@@ -8,6 +8,7 @@ import { useAutoHide } from '@/hooks/useAutoHide'
 import { getCanvasDimensions } from '@motionslides/shared'
 import { MotionStage } from './MotionStage'
 import { PresentationControls } from './presentation/PresentationControls'
+import { useAccessControl } from '@/hooks/useAccessControl'
 
 /**
  * Returns the value from the PREVIOUS render cycle.
@@ -36,12 +37,14 @@ export function PresentationOverlay() {
   })
   const totalSlides = project?.slides.length ?? 0
 
-  const [autoplayPaused, setAutoplayPaused] = useState(false)
   const [controlsVisible, showControls] = useAutoHide(isPresenting)
+  const { autoplay: urlAutoplay } = useAccessControl()
+  const [autoplayPaused, setAutoplayPaused] = useState(false)
+
+  // ── Sync global autoplay with local state ──
+  const isAutoplayActive = (playbackSettings.autoplay || urlAutoplay) && !autoplayPaused
 
   // ── Track previous slide for identity-based diffing ──
-  // usePrevious returns the slide from the PREVIOUS render cycle,
-  // so continuingIds is always computed from the correct "from" state.
   const previousSlide = usePrevious(slide)
 
   // ── Keyboard navigation ──
@@ -66,10 +69,17 @@ export function PresentationOverlay() {
 
   useKeyboardShortcuts(isPresenting, onKey)
 
+  // ── Resolve active prototype transition ──────────────────────────────────
+  const activeTransition = previousSlide && project && slide
+    ? (project.transitions ?? []).find(
+        (t) => t.fromSlideId === previousSlide.id && t.toSlideId === slide.id,
+      ) ?? null
+    : null
+
   // ── Autoplay ──
   useAutoplay(
-    isPresenting && playbackSettings.autoplay && !autoplayPaused,
-    playbackSettings.autoplayDelay + playbackSettings.transitionDuration,
+    isPresenting && isAutoplayActive,
+    playbackSettings.autoplayDelay + (activeTransition?.duration ?? playbackSettings.transitionDuration),
     () => {
       const { activeSlideIndex: idx } = useEditorStore.getState()
       const proj = useEditorStore.getState().activeProject()
@@ -78,7 +88,7 @@ export function PresentationOverlay() {
       else if (playbackSettings.loop) setActiveSlide(0)
       else setAutoplayPaused(true)
     },
-    [activeSlideIndex],
+    [activeSlideIndex, isAutoplayActive],
   )
 
   // ── Fullscreen ──
@@ -99,16 +109,6 @@ export function PresentationOverlay() {
     if (activeSlideIndex < totalSlides - 1) setActiveSlide(activeSlideIndex + 1)
     else if (playbackSettings.loop) setActiveSlide(0)
   }
-
-  // ── Resolve active prototype transition ──────────────────────────────────
-  // Look up a SlideTransition defined in prototype mode that connects the
-  // previous slide to the current slide. When found, its animation direction,
-  // duration, and ease override the global playback settings.
-  const activeTransition = previousSlide && project
-    ? (project.transitions ?? []).find(
-        (t) => t.fromSlideId === previousSlide.id && t.toSlideId === slide.id,
-      ) ?? null
-    : null
 
   return (
     <div

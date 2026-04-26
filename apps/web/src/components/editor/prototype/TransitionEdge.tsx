@@ -20,6 +20,7 @@ const ANIMATION_LABELS: Record<TransitionAnimation, string> = {
   fade: '◐ Fade',
   zoom: '⊕ Zoom',
   flip: '↻ Flip',
+  'magic-move': '✨ Magic Move',
 }
 
 function TransitionEdgeComponent({

@@ -1,6 +1,6 @@
 import type { Slide, SceneElement, TextContent, ShapeContent, CodeContent, AnimationType } from '@motionslides/shared'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../../constants/export'
-import { nanoid } from '../nanoid'
+import { uuid } from '../uuid'
 import type { GeneratedPresentation, AISlideType, AIElementType } from './slideGenerationSchema'
 import { resolveIconPath } from './iconResolver'
 
@@ -17,7 +17,7 @@ export function assembleSlides(generated: GeneratedPresentation): Slide[] {
   const theme = generated.theme
 
   return generated.slides.map(aiSlide => {
-    const slideId = aiSlide.id || nanoid()
+    const slideId = aiSlide.id || uuid()
 
     const elements: SceneElement[] = aiSlide.elements.map(aiEl => {
       const pos = 'position' in aiEl ? aiEl.position : { col: 0, row: 0, width: 1, height: 1 }
@@ -27,7 +27,7 @@ export function assembleSlides(generated: GeneratedPresentation): Slide[] {
       const height = pos.height * CELL_H
 
       const common = {
-        id: aiEl.id || nanoid(),
+        id: aiEl.id || uuid(),
         position: { x, y },
         size: { width, height },
         rotation: 0,

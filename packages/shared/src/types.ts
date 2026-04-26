@@ -218,6 +218,10 @@ export interface Project {
   createdAt: number
   updatedAt: number
   synced: boolean
+  /** Metadata for sharing and future database sync */
+  shareKey: string
+  ownerId?: string
+  visibility: 'private' | 'link-shared' | 'public'
 }
 
 // ─── Serialized Scene Graph ───────────────────────────────────────────────────

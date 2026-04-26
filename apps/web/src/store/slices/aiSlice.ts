@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type { EditorState } from '@/store/editorStore'
-import type { AIChatMessage, Slide } from '@shared/types'
-import { nanoid } from '@/lib/nanoid'
+import type { AIChatMessage, Slide } from '@motionslides/shared'
+import { uuid } from '@/lib/uuid'
 
 export interface AISlice {
   // Chat history
@@ -30,7 +30,7 @@ export const createAISlice: StateCreator<EditorState, [], [], AISlice> = (set, g
   chatMessages: [],
 
   addChatMessage: (msg) => {
-    const id = nanoid()
+    const id = uuid()
     set(s => ({
       chatMessages: [
         ...s.chatMessages,

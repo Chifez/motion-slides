@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Play, PenSquare, GitBranch, CheckSquare, Layout, Sparkles, Sun, Moon } from 'lucide-react'
-import { useEffect } from 'react'
+import { ArrowLeft, Play, PenSquare, GitBranch, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@motionslides/shared'
 import { ElementButtons } from './toolbar/ElementButtons'
@@ -9,6 +9,7 @@ import { ExportDropdown } from './toolbar/ExportDropdown'
 import { Logo } from '@/components/ui/Logo'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { MobileElementDropdown } from './toolbar/MobileElementDropdown'
+import { ShareMenu } from './toolbar/ShareMenu'
 
 interface Props { project: Project }
 
@@ -118,6 +119,7 @@ export function EditorToolbar({ project }: Props) {
 
       <SettingsDropdown />
       <ExportDropdown />
+      <ShareMenu project={project} />
 
       <button
         className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"

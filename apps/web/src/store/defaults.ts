@@ -1,11 +1,11 @@
-import { type Slide } from '@motionslides/shared'
-import { nanoid } from '@/lib/nanoid'
+import { type Slide, type Project } from '@motionslides/shared'
+import { uuid } from '@/lib/uuid'
 import { CANVAS_BG } from '@/constants/export'
 
 /** Creates an empty slide with optional overrides */
 export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
   return {
-    id: nanoid(),
+    id: uuid(),
     name: '',
     elements: [],
     background: CANVAS_BG,
@@ -14,19 +14,25 @@ export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
 }
 
 /** Creates a seeded demo project with two slides */
-export function createDefaultProject(name = 'Untitled Deck', isFirst = false) {
+export function createDefaultProject(name = 'Untitled Deck', isFirst = false): Project {
+  const common = {
+    name,
+    description: isFirst ? 'A sample project demonstrating Magic Move.' : '',
+    prototypeLayout: {},
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    synced: false,
+    shareKey: uuid(),
+    visibility: 'private' as const,
+  }
+
   if (!isFirst) {
     const blankSlide = createDefaultSlide({ name: 'Slide 1' })
     return {
-      id: nanoid(),
-      name,
-      description: '',
+      ...common,
+      id: uuid(),
       slides: [blankSlide],
       transitions: [],
-      prototypeLayout: {},
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      synced: false,
     }
   }
 
@@ -61,7 +67,7 @@ export function createDefaultProject(name = 'Untitled Deck', isFirst = false) {
   })
 
   const transition: any = {
-    id: nanoid(),
+    id: uuid(),
     fromSlideId: slide1.id,
     toSlideId: slide2.id,
     animation: 'magic-move',
@@ -71,14 +77,10 @@ export function createDefaultProject(name = 'Untitled Deck', isFirst = false) {
   }
 
   return {
-    id: nanoid(),
-    name,
-    description: 'A sample project demonstrating Magic Move.',
+    ...common,
+    id: uuid(),
     slides: [slide1, slide2],
     transitions: [transition],
-    prototypeLayout: {},
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    synced: false,
   }
 }
+

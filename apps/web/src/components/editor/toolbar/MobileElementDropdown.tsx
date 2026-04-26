@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { Plus, Type, Code2, Shapes, Minus, BarChart3, ChevronRight } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
-import { nanoid } from '@/lib/nanoid'
+import { uuid } from '@/lib/uuid'
 import {
   DEFAULT_TEXT_ELEMENT,
   DEFAULT_CODE_ELEMENT,
@@ -24,16 +24,16 @@ export function MobileElementDropdown() {
     setShowLineSubmenu(false)
   })
 
-  const addText = () => { addElement({ ...DEFAULT_TEXT_ELEMENT, id: nanoid() }); setIsOpen(false) }
-  const addCode = () => { addElement({ ...DEFAULT_CODE_ELEMENT, id: nanoid() }); setIsOpen(false) }
-  const addShape = () => { addElement({ ...DEFAULT_SHAPE_ELEMENT, id: nanoid() }); setIsOpen(false) }
-  const addChart = () => { addElement({ ...DEFAULT_CHART_ELEMENT, id: nanoid() }); setIsOpen(false) }
+  const addText = () => { addElement({ ...DEFAULT_TEXT_ELEMENT, id: uuid() }); setIsOpen(false) }
+  const addCode = () => { addElement({ ...DEFAULT_CODE_ELEMENT, id: uuid() }); setIsOpen(false) }
+  const addShape = () => { addElement({ ...DEFAULT_SHAPE_ELEMENT, id: uuid() }); setIsOpen(false) }
+  const addChart = () => { addElement({ ...DEFAULT_CHART_ELEMENT, id: uuid() }); setIsOpen(false) }
 
 
   const addLine = (lineType: LineType) => {
     const lineContent = { ...DEFAULT_LINE_ELEMENT.content, lineType }
     const size = lineType === 'straight' ? { width: 200, height: 2 } : { width: 200, height: 100 }
-    addElement({ ...DEFAULT_LINE_ELEMENT, id: nanoid(), size, content: lineContent })
+    addElement({ ...DEFAULT_LINE_ELEMENT, id: uuid(), size, content: lineContent })
     setIsOpen(false)
     setShowLineSubmenu(false)
   }

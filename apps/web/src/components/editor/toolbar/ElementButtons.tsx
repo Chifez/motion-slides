@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { Type, Code2, Shapes, Minus, ChevronDown, BarChart3 } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
-import { nanoid } from '@/lib/nanoid'
+import { uuid } from '@/lib/uuid'
 import { 
   DEFAULT_TEXT_ELEMENT, DEFAULT_CODE_ELEMENT, DEFAULT_SHAPE_ELEMENT, 
   DEFAULT_LINE_ELEMENT, DEFAULT_CHART_ELEMENT, LINE_TYPE_OPTIONS, 
@@ -27,8 +27,8 @@ export function ElementButtons() {
   const chartRef = useRef<HTMLDivElement>(null)
   useClickOutside(chartRef, () => setShowChartMenu(false))
 
-  const addText = () => addElement({ ...DEFAULT_TEXT_ELEMENT, id: nanoid() })
-  const addCode = () => addElement({ ...DEFAULT_CODE_ELEMENT, id: nanoid() })
+  const addText = () => addElement({ ...DEFAULT_TEXT_ELEMENT, id: uuid() })
+  const addCode = () => addElement({ ...DEFAULT_CODE_ELEMENT, id: uuid() })
   
   const addShape = (shapeType: ShapeType = 'rectangle') => {
     const isAws = shapeType === 'aws-icon'
@@ -37,7 +37,7 @@ export function ElementButtons() {
 
     addElement({ 
       ...DEFAULT_SHAPE_ELEMENT, 
-      id: nanoid(),
+      id: uuid(),
       content: { 
         ...DEFAULT_SHAPE_ELEMENT.content, 
         shapeType,
@@ -57,7 +57,7 @@ export function ElementButtons() {
   const addChart = (chartType: ChartType = 'bar') => {
     addElement({ 
       ...DEFAULT_CHART_ELEMENT, 
-      id: nanoid(),
+      id: uuid(),
       content: { ...DEFAULT_CHART_ELEMENT.content, chartType }
     })
     setShowChartMenu(false)
@@ -76,7 +76,7 @@ export function ElementButtons() {
       
     addElement({
       ...DEFAULT_LINE_ELEMENT,
-      id: nanoid(),
+      id: uuid(),
       size,
       content: lineContent,
     })

@@ -8,6 +8,8 @@
 import { generateSceneGraph } from './sceneGraph'
 import type { ExportFormat, ExportProgressEvent } from '@motionslides/shared'
 
+export type { ExportProgressEvent }
+
 type ProgressCallback = (event: ExportProgressEvent) => void
 
 // ─── Main entry-point ─────────────────────────────────────────────────────────

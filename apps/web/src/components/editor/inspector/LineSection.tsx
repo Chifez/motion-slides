@@ -1,4 +1,4 @@
-import { Trash2, X } from 'lucide-react'
+import { Trash2, X, Palette } from 'lucide-react'
 import type { BranchContent, LineContent, LineType } from '@motionslides/shared'
 import { LINE_TYPE_OPTIONS } from '@/constants/editor'
 

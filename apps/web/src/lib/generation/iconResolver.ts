@@ -197,7 +197,7 @@ export function resolveIconPath(rawPath: string): IconResolution {
 
   // Strategy 6: No match — infer fallback shape from path content
   console.warn(`[IconResolver] No match for "${rawPath}" — using fallback shape`)
-  return { found: false, fallback: inferFallbackShape(rawPath) }
+  return inferFallbackShape(rawPath)
 }
 
 function inferFallbackShape(rawPath: string): IconResolution & { found: false } {
