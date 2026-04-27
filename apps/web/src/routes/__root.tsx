@@ -17,7 +17,17 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 })
 
+import { useEffect } from 'react'
+import { useEditorStore } from '@/store/editorStore'
+import { SyncFooter } from '@/components/ui/SyncFooter'
+
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const checkSession = useEditorStore((s) => s.checkSession)
+
+  useEffect(() => {
+    checkSession()
+  }, [checkSession])
+
   return (
     <html lang="en">
       <head>
@@ -25,6 +35,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <SyncFooter />
         <Scripts />
       </body>
     </html>

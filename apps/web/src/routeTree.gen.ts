@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PProjectIdRouteImport } from './routes/p.$projectId'
 import { Route as ApiGenerateReadmeRouteImport } from './routes/api/generate/readme'
 import { Route as ApiGenerateArchitectureRouteImport } from './routes/api/generate/architecture'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 
 const ExportViewRoute = ExportViewRouteImport.update({
   id: '/export-view',
@@ -46,12 +47,18 @@ const ApiGenerateArchitectureRoute = ApiGenerateArchitectureRouteImport.update({
   path: '/api/generate/architecture',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
   '/p/$projectId': typeof PProjectIdRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
   '/p/$projectId': typeof PProjectIdRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
   '/p/$projectId': typeof PProjectIdRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
 }
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/export-view'
     | '/p/$projectId'
+    | '/api/auth/$'
     | '/api/generate/architecture'
     | '/api/generate/readme'
   fileRoutesByTo: FileRoutesByTo
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/export-view'
     | '/p/$projectId'
+    | '/api/auth/$'
     | '/api/generate/architecture'
     | '/api/generate/readme'
   id:
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/export-view'
     | '/p/$projectId'
+    | '/api/auth/$'
     | '/api/generate/architecture'
     | '/api/generate/readme'
   fileRoutesById: FileRoutesById
@@ -104,6 +116,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   ExportViewRoute: typeof ExportViewRoute
   PProjectIdRoute: typeof PProjectIdRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiGenerateArchitectureRoute: typeof ApiGenerateArchitectureRoute
   ApiGenerateReadmeRoute: typeof ApiGenerateReadmeRoute
 }
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateArchitectureRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -160,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   ExportViewRoute: ExportViewRoute,
   PProjectIdRoute: PProjectIdRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiGenerateArchitectureRoute: ApiGenerateArchitectureRoute,
   ApiGenerateReadmeRoute: ApiGenerateReadmeRoute,
 }

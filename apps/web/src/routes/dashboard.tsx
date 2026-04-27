@@ -16,6 +16,8 @@ function formatDate(ts: number) {
   return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(diff, 'day')
 }
 
+import { UserMenu } from '@/components/auth/UserMenu'
+
 function Dashboard() {
   const navigate = useNavigate()
   const { projects, createProject, deleteProject } = useEditorStore()
@@ -34,12 +36,17 @@ function Dashboard() {
           <Logo expanded size={30} />
         </Link>
         <div className="flex-1" />
-        <button
-          onClick={handleCreate}
-          className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
-        >
-          <Plus size={14} /> New Project
-        </button>
+        
+        <div className="flex items-center gap-6">
+          <UserMenu />
+          <div className="w-[1px] h-6 bg-white/10" />
+          <button
+            onClick={handleCreate}
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
+          >
+            <Plus size={14} /> New Project
+          </button>
+        </div>
       </header>
 
       {/* Scrollable content */}
