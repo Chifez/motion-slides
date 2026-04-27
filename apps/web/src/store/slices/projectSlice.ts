@@ -12,6 +12,7 @@ export interface ProjectSlice {
   loadProject: (id: string) => void
   updateProjectName: (id: string, name: string) => void
   addSlidesToProject: (projectId: string, slides: Slide[]) => void
+  importProject: (project: Project) => void
 
   activeProject: () => Project | null
 }
@@ -57,6 +58,18 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
       projects: s.projects.filter((p) => p.id !== id),
       activeProjectId: s.activeProjectId === id ? null : s.activeProjectId,
     }))
+  },
+
+  importProject: (project) => {
+    set((s) => {
+      const exists = s.projects.some((p) => p.id === project.id)
+      if (exists) {
+        return {
+          projects: s.projects.map((p) => (p.id === project.id ? { ...project, synced: true } : p)),
+        }
+      }
+      return { projects: [...s.projects, { ...project, synced: true }] }
+    })
   },
 
   loadProject: (id) => {

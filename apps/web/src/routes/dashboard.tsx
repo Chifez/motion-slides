@@ -3,11 +3,14 @@ import { Plus, Layout, Clock, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEditorStore, storeHydrationPromise } from '@/store/editorStore'
 import { Logo } from '@/components/ui/Logo'
+import { LoadingPage } from '@/components/ui/LoadingPage'
+import { UserMenu } from '@/components/auth/UserMenu'
 
 export const Route = createFileRoute('/dashboard')({
   loader: async () => {
     await storeHydrationPromise
   },
+  pendingComponent: LoadingPage,
   component: Dashboard,
 })
 
@@ -16,7 +19,6 @@ function formatDate(ts: number) {
   return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(diff, 'day')
 }
 
-import { UserMenu } from '@/components/auth/UserMenu'
 
 function Dashboard() {
   const navigate = useNavigate()
@@ -36,10 +38,10 @@ function Dashboard() {
           <Logo expanded size={30} />
         </Link>
         <div className="flex-1" />
-        
+
         <div className="flex items-center gap-6">
           <UserMenu />
-          <div className="w-[1px] h-6 bg-white/10" />
+          <div className="w-px h-6 bg-white/10" />
           <button
             onClick={handleCreate}
             className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { authClient } from '@/lib/auth-client'
 import { useEditorStore } from '@/store/editorStore'
-import { X, Mail, Lock, User, Loader2, Github } from 'lucide-react'
+import { X, Mail, Lock, User, Loader2, Github, Chrome } from 'lucide-react'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -11,53 +11,65 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [form, setForm] = useState({
+    email: '',
+    password: '',
+    name: '',
+    loading: false,
+    error: '',
+  })
 
   const checkSession = useEditorStore((s) => s.checkSession)
   const syncProjects = useEditorStore((s) => s.syncProjects)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError('')
+    setForm((f) => ({ ...f, loading: true, error: '' }))
 
     try {
       if (mode === 'signup') {
         await authClient.signUp.email({
-          email,
-          password,
-          name,
+          email: form.email,
+          password: form.password,
+          name: form.name,
           callbackURL: window.location.origin
         })
       } else {
         await authClient.signIn.email({
-          email,
-          password,
+          email: form.email,
+          password: form.password,
           callbackURL: window.location.origin
         })
       }
-      
+
       // Refresh session in store
       await checkSession()
       // Auto-sync existing projects
       await syncProjects()
-      
+
       onClose()
     } catch (err: any) {
-      setError(err.message || 'Authentication failed')
-    } finally {
-      setLoading(false)
+      setForm((f) => ({ ...f, error: err.message || 'Authentication failed', loading: false }))
     }
   }
+
+  const handleSocialSignIn = async (provider: 'github' | 'google') => {
+    setForm((f) => ({ ...f, loading: true, error: '' }))
+    try {
+      await authClient.signIn.social({
+        provider,
+        callbackURL: window.location.origin,
+      })
+    } catch (err: any) {
+      setForm((f) => ({ ...f, error: err.message || 'Authentication failed', loading: false }))
+    }
+  }
+
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -65,7 +77,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         onClick={onClose}
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
-      
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -85,8 +97,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               {mode === 'login' ? 'Welcome back' : 'Create an account'}
             </h2>
             <p className="text-sm text-white/40">
-              {mode === 'login' 
-                ? 'Sign in to sync your projects to the cloud' 
+              {mode === 'login'
+                ? 'Sign in to sync your projects to the cloud'
                 : 'Join MotionSlides to share and collaborate'}
             </p>
           </header>
@@ -100,8 +112,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   <input
                     type="text"
                     required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={form.name}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                     placeholder="John Doe"
                     className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                   />
@@ -116,8 +128,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <input
                   type="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   placeholder="name@company.com"
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                 />
@@ -131,26 +143,26 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <input
                   type="password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={form.password}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                   placeholder="••••••••"
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                 />
               </div>
             </div>
 
-            {error && (
+            {form.error && (
               <p className="text-xs text-red-400 font-medium ml-1 bg-red-400/10 p-2 rounded-lg border border-red-400/20">
-                {error}
+                {form.error}
               </p>
             )}
 
-            <button
-              disabled={loading}
+             <button
+              disabled={form.loading}
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer border-none"
             >
-              {loading ? (
+              {form.loading ? (
                 <Loader2 className="animate-spin" size={20} />
               ) : (
                 mode === 'login' ? 'Sign In' : 'Create Account'
@@ -168,13 +180,25 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </span>
             </div>
 
-            <button
-              onClick={() => {}}
-              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-3 cursor-pointer"
-            >
-              <Github size={18} />
-              <span>GitHub</span>
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleSocialSignIn('github')}
+                type="button"
+                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Github size={16} />
+                <span className="text-sm">GitHub</span>
+              </button>
+
+              <button
+                onClick={() => handleSocialSignIn('google')}
+                type="button"
+                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Chrome size={16} />
+                <span className="text-sm">Google</span>
+              </button>
+            </div>
           </div>
 
           <footer className="mt-8 text-center text-xs text-white/40">
