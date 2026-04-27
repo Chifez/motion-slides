@@ -20,9 +20,13 @@ export const Route = createRootRoute({
 import { useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { SyncFooter } from '@/components/ui/SyncFooter'
+import { useSyncManager } from '@/hooks/useSyncManager'
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const checkSession = useEditorStore((s) => s.checkSession)
+  
+  // Initialize background sync
+  useSyncManager()
 
   useEffect(() => {
     checkSession()

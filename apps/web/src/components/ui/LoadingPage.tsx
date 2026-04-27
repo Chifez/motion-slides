@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react'
  */
 export function LoadingPage() {
   return (
-    <div className="fixed inset-0 bg-[#0d0d0d] flex flex-col items-center justify-center z-9999">
+    <div className="fixed inset-0 bg-[#0d0d0d] flex flex-col items-center justify-center z-[var(--z-modal)]">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

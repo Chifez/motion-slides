@@ -8,21 +8,29 @@ export interface PresentationSlice {
   playbackSettings: PlaybackSettings
   mobileSlidesOpen: boolean
   mobileInspectorOpen: boolean
-  startPresentation: () => void
+  startPresentation: (options?: { autoplay?: boolean }) => void
   stopPresentation: () => void
   updatePlaybackSettings: (updates: Partial<PlaybackSettings>) => void
   setMobileSlidesOpen: (open: boolean) => void
   setMobileInspectorOpen: (open: boolean) => void
+  getPlaybackTransitions: () => {
+    activeTransition: any | null
+    clickTransition: any | null
+    autoTransition: any | null
+  }
 }
 
-export const createPresentationSlice: StateCreator<EditorState, [], [], PresentationSlice> = (set) => ({
+export const createPresentationSlice: StateCreator<EditorState, [], [], PresentationSlice> = (set, get) => ({
   isPresenting: false,
   mobileSlidesOpen: false,
   mobileInspectorOpen: false,
   playbackSettings: { ...DEFAULT_PLAYBACK_SETTINGS },
 
-  startPresentation: () => {
-    set({ isPresenting: true, selectedElementIds: [], activeSlideIndex: 0 })
+  startPresentation: (options?: { autoplay?: boolean }) => {
+    set({ isPresenting: true, selectedElementIds: [], activeSlideIndex: 0, previousSlideIndex: null })
+    if (options?.autoplay !== undefined) {
+      get().updatePlaybackSettings({ autoplay: options.autoplay })
+    }
   },
 
   stopPresentation: () => {
@@ -40,4 +48,28 @@ export const createPresentationSlice: StateCreator<EditorState, [], [], Presenta
   setMobileInspectorOpen: (open) => {
     set({ mobileInspectorOpen: open })
   },
+
+  getPlaybackTransitions: () => {
+    const { activeProject, activeSlideIndex, previousSlideIndex } = get()
+    const project = activeProject()
+    if (!project) return { activeTransition: null, clickTransition: null, autoTransition: null }
+
+    const currentSlide = project.slides[activeSlideIndex]
+    const prevSlide = previousSlideIndex !== null ? project.slides[previousSlideIndex] : null
+    
+    if (!currentSlide) return { activeTransition: null, clickTransition: null, autoTransition: null }
+
+    const transitions = project.transitions ?? []
+    const activeTransition = prevSlide 
+      ? transitions.find(t => t.fromSlideId === prevSlide.id && t.toSlideId === currentSlide.id) ?? null
+      : null
+    
+    const outgoing = transitions.filter(t => t.fromSlideId === currentSlide.id)
+    
+    return {
+      activeTransition,
+      clickTransition: outgoing.find(t => t.trigger === 'click') ?? null,
+      autoTransition: outgoing.find(t => t.trigger === 'auto') ?? null
+    }
+  }
 })

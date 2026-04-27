@@ -5,6 +5,7 @@ import { getConnectionPos } from '@/store/slices/elementSlice'
 import { MIN_ELEMENT_WIDTH, MIN_ELEMENT_HEIGHT } from '@/constants/animation'
 import { RESIZE_HANDLES } from '@/constants/editor'
 import type { SceneElement, Position, LineContent } from '@motionslides/shared'
+import { useAccessControl } from '@/hooks/useAccessControl'
 
 interface Props { element: SceneElement }
 
@@ -15,9 +16,10 @@ function getCanvasScale(): number {
 }
 
 export function ConnectionAnchors() {
+  const { isReadOnly } = useAccessControl()
   const { activeSlide, selectedElementIds } = useEditorStore()
   const slide = activeSlide()
-  if (!slide || selectedElementIds.length !== 1) return null
+  if (isReadOnly || !slide || selectedElementIds.length !== 1) return null
 
   const element = slide.elements.find(el => el.id === selectedElementIds[0])
   if (element?.type !== 'line') return null
@@ -49,7 +51,10 @@ export function ConnectionAnchors() {
 }
 
 export function BoundingBox({ element }: Props) {
+  const { isReadOnly } = useAccessControl()
   const { updateElement } = useEditorStore()
+
+  if (isReadOnly) return null
 
   const startRotate = useCallback((e: React.MouseEvent) => {
     e.preventDefault()

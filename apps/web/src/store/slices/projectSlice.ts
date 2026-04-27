@@ -11,6 +11,8 @@ export interface ProjectSlice {
   deleteProject: (id: string) => void
   loadProject: (id: string) => void
   updateProjectName: (id: string, name: string) => void
+  updateProjectVisibility: (id: string, visibility: Project['visibility']) => void
+  updateProject: (id: string, updates: Partial<Project>) => void
   addSlidesToProject: (projectId: string, slides: Slide[]) => void
   importProject: (project: Project) => void
 
@@ -28,7 +30,8 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
 
   createProject: (name) => {
     const isFirst = get().projects.length === 0
-    const project = createDefaultProject(name, isFirst)
+    const user = get().user
+    const project = createDefaultProject(name, isFirst, user?.id)
     set((s) => ({
       projects: [...s.projects, project],
       activeProjectId: project.id,
@@ -54,10 +57,23 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   },
 
   deleteProject: (id) => {
-    set((s) => ({
-      projects: s.projects.filter((p) => p.id !== id),
-      activeProjectId: s.activeProjectId === id ? null : s.activeProjectId,
-    }))
+    set((s) => {
+      const project = s.projects.find(p => p.id === id)
+      
+      // If the project was synced/remote, we must explicitly delete it from the server
+      // because our bulk-sync only handles upserts, not deletions.
+      if (project?.synced) {
+        import('@/lib/actions/project').then(({ deleteRemoteProjectAction }) => {
+          deleteRemoteProjectAction({ data: { projectId: id } })
+            .catch(err => console.error('Failed to delete remote project:', err))
+        })
+      }
+
+      return {
+        projects: s.projects.filter((p) => p.id !== id),
+        activeProjectId: s.activeProjectId === id ? null : s.activeProjectId,
+      }
+    })
   },
 
   importProject: (project) => {
@@ -97,6 +113,22 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
     set((s) => ({
       projects: s.projects.map((p) =>
         p.id === id ? { ...p, name, updatedAt: Date.now() } : p,
+      ),
+    }))
+  },
+  
+  updateProjectVisibility: (id, visibility) => {
+    set((s) => ({
+      projects: s.projects.map((p) =>
+        p.id === id ? { ...p, visibility, updatedAt: Date.now() } : p,
+      ),
+    }))
+  },
+
+  updateProject: (id, updates) => {
+    set((s) => ({
+      projects: s.projects.map((p) =>
+        p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p,
       ),
     }))
   },

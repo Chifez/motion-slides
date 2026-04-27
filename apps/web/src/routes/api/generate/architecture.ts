@@ -3,10 +3,28 @@ import { parseArchitecture, buildArchitectureBriefing } from '@/lib/generation/a
 import { generateFromArchitecture } from '@/lib/generation/generationClient'
 import { assembleSlides } from '@/lib/generation/slideAssembler'
 
+// In-memory rate limiting (IP/Session based) for protection against API abuse
+const rateLimits = new Map<string, { count: number, resetAt: number }>()
+
 export const Route = createFileRoute("/api/generate/architecture")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const ip = request.headers.get('x-forwarded-for') || 'anonymous'
+        const now = Date.now()
+        const limit = rateLimits.get(ip)
+        
+        if (limit && now < limit.resetAt) {
+          if (limit.count >= 20) {
+            return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
+              status: 429, headers: { 'Content-Type': 'application/json' },
+            })
+          }
+          limit.count++
+        } else {
+          rateLimits.set(ip, { count: 1, resetAt: now + 3600000 }) // 1 hour reset
+        }
+
         const body = await request.json()
         const { description, options = {} } = body
         const { slideCount = 6, diagramStyle = 'generic', theme = 'dark' } = options
@@ -33,14 +51,18 @@ export const Route = createFileRoute("/api/generate/architecture")({
               let generated;
 
               if (body.refinementPrompt && body.previousPresentation) {
+                // Sanitize user refinement prompt
+                const cleanPrompt = body.refinementPrompt.replace(/<[^>]*>?/gm, '').trim()
                 send({ stage: 'capturing', percent: 20, message: 'Applying refinements…' })
                 const { refinePresentation } = await import('@/lib/generation/generationClient')
                 generated = await refinePresentation({
-                  instruction: body.refinementPrompt,
+                  instruction: cleanPrompt,
                   previousPresentation: body.previousPresentation,
                 })
               } else {
-                const parsed = parseArchitecture(description)
+                // Sanitize base input
+                const cleanDescription = description.replace(/<[^>]*>?/gm, '').trim()
+                const parsed = parseArchitecture(cleanDescription)
                 const briefing = buildArchitectureBriefing(parsed)
 
                 send({ stage: 'capturing', percent: 20, message: 'Generating diagram slides…' })

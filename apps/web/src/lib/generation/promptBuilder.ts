@@ -373,7 +373,7 @@ export function buildRefinementPrompt(opts: RefinementPromptOptions): string {
 You are refining an existing presentation based on user feedback.
 
 <existing_presentation>
-${JSON.stringify(opts.previousPresentation, null, 2)}
+${JSON.stringify(opts.previousPresentation)}
 </existing_presentation>
 
 <user_instruction>

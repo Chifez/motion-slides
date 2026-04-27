@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { Plus, Layout, Clock, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -5,6 +6,7 @@ import { useEditorStore, storeHydrationPromise } from '@/store/editorStore'
 import { Logo } from '@/components/ui/Logo'
 import { LoadingPage } from '@/components/ui/LoadingPage'
 import { UserMenu } from '@/components/auth/UserMenu'
+import { DeleteConfirmationModal } from '@/components/ui/DeleteConfirmationModal'
 
 export const Route = createFileRoute('/dashboard')({
   loader: async () => {
@@ -23,14 +25,29 @@ function formatDate(ts: number) {
 function Dashboard() {
   const navigate = useNavigate()
   const { projects, createProject, deleteProject } = useEditorStore()
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, projectId: string, projectName: string }>({
+    isOpen: false,
+    projectId: '',
+    projectName: '',
+  })
 
   function handleCreate() {
     const project = createProject('Untitled Deck')
     navigate({ to: '/p/$projectId', params: { projectId: project.id } })
   }
 
+  function confirmDelete(id: string, name: string) {
+    setDeleteModal({ isOpen: true, projectId: id, projectName: name })
+  }
+
   return (
     <div className="h-screen flex flex-col bg-[#0d0d0d] overflow-hidden">
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        projectName={deleteModal.projectName}
+        onClose={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => deleteProject(deleteModal.projectId)}
+      />
 
       {/* Header */}
       <header className="h-14 shrink-0 flex items-center gap-4 px-6 bg-[#161616] border-b border-white/8">
@@ -86,9 +103,7 @@ function Dashboard() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (confirm(`Are you sure you want to delete "${project.name}"?`)) {
-                      deleteProject(project.id)
-                    }
+                    confirmDelete(project.id, project.name)
                   }}
                   className="absolute top-2 right-2 p-1.5 rounded-md bg-black/60 text-neutral-500 hover:text-red-400 hover:bg-red-900/40 opacity-0 group-hover:opacity-100 transition-all border-none cursor-pointer"
                   title="Delete Project"

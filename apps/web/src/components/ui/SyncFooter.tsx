@@ -12,7 +12,7 @@ export function SyncFooter() {
   if (!user) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-6 bg-[#0d0d0d] border-t border-white/5 flex items-center justify-end px-4 z-50 pointer-events-none">
+    <div className="fixed bottom-4 right-4 bg-[#161616] border border-white/10 rounded-full px-3 py-1.5 shadow-lg z-[999] pointer-events-none">
       <AnimatePresence mode="wait">
         {isSyncing ? (
           <motion.div

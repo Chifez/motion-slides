@@ -12,10 +12,12 @@ export interface SlideSlice {
   setActiveSlide: (index: number) => void
   updateSlide: (updates: Partial<Pick<Slide, 'name' | 'background'>>) => void
   activeSlide: () => Slide | null
+  previousSlideIndex: number | null
 }
 
 export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (set, get) => ({
   activeSlideIndex: 0,
+  previousSlideIndex: null,
 
   activeSlide: () => {
     const { activeSlideIndex } = get()
@@ -111,6 +113,8 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
   },
 
   setActiveSlide: (index) => {
-    set({ activeSlideIndex: index, selectedElementIds: [] })
+    const current = get().activeSlideIndex
+    if (current === index) return
+    set({ previousSlideIndex: current, activeSlideIndex: index, selectedElementIds: [] })
   },
 })

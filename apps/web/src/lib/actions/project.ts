@@ -1,10 +1,11 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '../db'
 import { projects } from '../db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and, or, sql } from 'drizzle-orm'
 import { auth } from '../auth'
 import { z } from 'zod'
 import { getRequest } from '@tanstack/react-start/server'
+import { uuid } from '../uuid'
 
 
 const projectSchema = z.object({
@@ -28,7 +29,7 @@ const projectSchema = z.object({
  */
 export const syncProjectsAction = createServerFn({ method: 'POST' })
   .inputValidator(z.array(projectSchema))
-  .handler(async ({ data }) => {
+  .handler(async ({ data: projectsToSync }) => {
     const request = getRequest()
 
     const session = await auth.api.getSession({ headers: request.headers })
@@ -42,7 +43,7 @@ export const syncProjectsAction = createServerFn({ method: 'POST' })
     try {
       // Use a transaction to ensure atomic updates
       await db.transaction(async (tx) => {
-        for (const project of data) {
+        for (const project of projectsToSync) {
           // Perform an "Upsert" (Update or Insert)
           await tx.insert(projects)
             .values({
@@ -68,16 +69,48 @@ export const syncProjectsAction = createServerFn({ method: 'POST' })
                 prototypeLayout: project.prototypeLayout,
                 visibility: project.visibility,
                 updatedAt: project.updatedAt,
-              }
+              },
+              // Security & Data Integrity: Only allow update if the user owns the project
+              // OR if the project is in collaborative mode
+              // AND the incoming project has a newer timestamp (LWW fix).
+              where: and(
+                or(
+                  eq(projects.ownerId, userId),
+                  eq(projects.visibility, 'collaborative')
+                ),
+                sql`${projects.updatedAt} < ${project.updatedAt}::bigint`
+              )
             })
         }
       })
 
-      return { success: true, count: data.length }
+      return { success: true, count: projectsToSync.length }
     } catch (error: any) {
-      console.error('Sync error:', error)
+      console.error('Sync error:', error.message)
       return { success: false, error: error.message }
     }
+  })
+
+/**
+ * Server Action to rotate a project's share key (revokes old links).
+ */
+export const rotateShareKeyAction = createServerFn({ method: 'POST' })
+  .inputValidator(z.object({ projectId: z.string() }))
+  .handler(async ({ data: { projectId } }) => {
+    const request = getRequest()
+    const session = await auth.api.getSession({ headers: request.headers })
+    if (!session) throw new Error('Unauthorized')
+
+    const newKey = uuid()
+    
+    await db.update(projects)
+      .set({ shareKey: newKey, updatedAt: Date.now() })
+      .where(and(
+        eq(projects.id, projectId),
+        eq(projects.ownerId, session.user.id)
+      ))
+
+    return { success: true, newKey }
   })
 
 /**
@@ -120,10 +153,33 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
     if (isOwner) return result as any
 
     // Check share key
-    if (result.visibility === 'link-shared' && shareKey && shareKey === result.shareKey) {
+    const isShared = result.visibility === 'link-shared' || result.visibility === 'collaborative'
+    if (isShared && shareKey && shareKey === result.shareKey) {
       return result as any
     }
 
     // Access Denied
     throw new Error('Access Denied: You do not have permission to view this project.')
+  })
+
+/**
+ * Server Action to delete a project from the remote database.
+ */
+export const deleteRemoteProjectAction = createServerFn({ method: 'POST' })
+  .inputValidator(z.object({ projectId: z.string() }))
+  .handler(async ({ data: { projectId } }) => {
+    const request = getRequest()
+    const session = await auth.api.getSession({ headers: request.headers })
+    if (!session) throw new Error('Unauthorized')
+
+    // Ensure only the owner can delete
+    await db.delete(projects)
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.ownerId, session.user.id)
+        )
+      )
+
+    return { success: true }
   })

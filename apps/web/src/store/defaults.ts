@@ -14,7 +14,7 @@ export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
 }
 
 /** Creates a seeded demo project with two slides */
-export function createDefaultProject(name = 'Untitled Deck', isFirst = false): Project {
+export function createDefaultProject(name = 'Untitled Deck', isFirst = false, ownerId?: string): Project {
   const common = {
     name,
     description: isFirst ? 'A sample project demonstrating Magic Move.' : '',
@@ -24,6 +24,7 @@ export function createDefaultProject(name = 'Untitled Deck', isFirst = false): P
     synced: false,
     shareKey: uuid(),
     visibility: 'private' as const,
+    ownerId,
   }
 
   if (!isFirst) {
@@ -41,7 +42,7 @@ export function createDefaultProject(name = 'Untitled Deck', isFirst = false): P
     elements: [
       {
         id: 'demo-title', type: 'text',
-        position: { x: 200, y: 310 }, size: { width: 500, height: 100 },
+        position: { x: 80, y: 310 }, size: { width: 575, height: 100 },
         rotation: 0, opacity: 1, zIndex: 10,
         content: { value: 'Welcome to MotionSlides', fontSize: 48, fontWeight: 'bold', fontFamily: 'Outfit', fontStyle: 'normal', color: '#ffffff', align: 'center' },
       },
@@ -53,13 +54,13 @@ export function createDefaultProject(name = 'Untitled Deck', isFirst = false): P
     elements: [
       {
         id: 'demo-title', type: 'text',
-        position: { x: 200, y: 300 }, size: { width: 500, height: 60 },
+        position: { x: 80, y: 310 }, size: { width: 575, height: 100 },
         rotation: 0, opacity: 1, zIndex: 10,
         content: { value: 'Welcome to MotionSlides', fontSize: 48, fontWeight: 'bold', fontFamily: 'Outfit', fontStyle: 'normal', color: '#ffffff', align: 'center' },
       },
       {
         id: 'demo-subtitle', type: 'text',
-        position: { x: 220, y: 330 }, size: { width: 400, height: 40 },
+        position: { x: 160, y: 404 }, size: { width: 400, height: 70 },
         rotation: 0, opacity: 1, zIndex: 10,
         content: { value: 'High-fidelity presentations with Magic Move', fontSize: 24, fontWeight: 'medium', fontFamily: 'Inter', fontStyle: 'normal', color: '#888888', align: 'center' },
       },

@@ -90,8 +90,9 @@ export const createAuthSlice: StateCreator<
       if (localChanged) {
         set({ projects: updatedLocal })
       }
-    } catch (error) {
-      console.error('Failed to sync projects:', error)
+    } catch (error: any) {
+      console.error('Failed to sync projects:', error?.message || error)
+      if (error?.data) console.error('Sync error details:', error.data)
     } finally {
       setSyncing(false)
     }

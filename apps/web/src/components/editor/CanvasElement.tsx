@@ -13,6 +13,7 @@ import { ShapeElement } from './elements/ShapeElement'
 import { LineElement } from './elements/LineElement'
 import { ChartElement } from './elements/ChartElement'
 import { BoundingBox } from './BoundingBox'
+import { useAccessControl } from '@/hooks/useAccessControl'
 
 interface Props {
   element: SceneElement
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function CanvasElement({ element }: Props) {
+  const { isReadOnly } = useAccessControl()
   const {
     selectedElementIds, setSelectedElement, setSelectedElements, updateElementsBatch,
     setMobileInspectorOpen, isMultiSelectMode, isEditingId, setEditingId
@@ -44,10 +46,12 @@ export function CanvasElement({ element }: Props) {
   const isContinuing = continuingIds.has(element.id)
 
   function handleClick(e: React.MouseEvent) {
+    if (isReadOnly) return
     e.stopPropagation()
   }
 
   function handleDoubleClick(e: React.MouseEvent) {
+    if (isReadOnly) return
     e.stopPropagation()
     if (!element.locked) {
       // Deep select
@@ -62,7 +66,7 @@ export function CanvasElement({ element }: Props) {
   }
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (isEditing) return
+    if (isReadOnly || isEditing) return
     if ((e.target as HTMLElement).closest('.bounding-box')) return
     e.stopPropagation()
 
@@ -166,7 +170,7 @@ export function CanvasElement({ element }: Props) {
             rotate: element.rotation,
             opacity: element.opacity,
             zIndex: isSelected ? SELECTED_Z_INDEX : element.zIndex,
-            cursor: 'grab',
+            cursor: isReadOnly ? 'default' : 'grab',
             overflow: element.type === 'line' ? 'visible' : undefined,
           }}
           transition={{ layout: { duration: 0 }, default: { duration: 0 } }}

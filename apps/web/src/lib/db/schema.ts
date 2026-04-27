@@ -63,7 +63,7 @@ export const projects = pgTable('projects', {
   transitions:     jsonb('transitions').notNull().default([]),
   prototypeLayout: jsonb('prototypeLayout').notNull().default({}),
   shareKey:        text('shareKey').notNull(),
-  visibility:      text('visibility').notNull().default('private'),
+  visibility:      text('visibility').notNull().default('private'), // 'private' | 'link-shared' | 'collaborative' | 'public'
   createdAt:       bigint('createdAt', { mode: 'number' }).notNull(), // Epoch ms
   updatedAt:       bigint('updatedAt', { mode: 'number' }).notNull(), // Epoch ms
 })

@@ -11,16 +11,14 @@ import { AIChat } from '@/components/editor/AIChat'
 import { LoadingPage } from '@/components/ui/LoadingPage'
 import { useAccessControl } from '@/hooks/useAccessControl'
 import { ViewerOverlay } from '@/components/editor/presentation/ViewerOverlay'
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { z } from 'zod'
 
-// Define search params for professional routing
 const projectSearchSchema = z.object({
   mode: z.enum(['edit', 'view', 'present']).optional().catch('edit'),
   key: z.string().optional(),
   autoplay: z.string().optional().catch('false'),
 })
-
 
 export const Route = createFileRoute('/p/$projectId')({
   validateSearch: (search) => projectSearchSchema.parse(search),
@@ -29,13 +27,11 @@ export const Route = createFileRoute('/p/$projectId')({
     await storeHydrationPromise
     const store = useEditorStore.getState()
 
-    // 1. Try to find the project locally
     const existsLocally = store.projects.some(p => p.id === params.projectId)
 
     if (existsLocally) {
       store.loadProject(params.projectId)
     } else {
-      // 2. Fall back to the cloud (e.g., shareable link or cleared cache)
       try {
         const { getRemoteProjectAction } = await import('@/lib/actions/project')
         const remoteProject = await getRemoteProjectAction({
@@ -43,11 +39,9 @@ export const Route = createFileRoute('/p/$projectId')({
         })
 
         if (remoteProject) {
-          // Add to local state
           store.importProject(remoteProject as any)
           store.loadProject(params.projectId)
         } else {
-          // Ensure it's cleared if not found anywhere
           store.loadProject(params.projectId)
         }
       } catch (err) {
@@ -60,63 +54,84 @@ export const Route = createFileRoute('/p/$projectId')({
   component: ProjectPage,
 })
 
+/**
+ * Outer shell — owns only the SSR hydration guard.
+ *
+ * The server renders with Postgres data. On the client, the Zustand store
+ * needs a tick to determine whether to source state from Postgres (signed-in)
+ * or IndexedDB (guest/offline). Rendering <LoadingPage /> until mounted
+ * prevents a hydration mismatch between the two environments.
+ *
+ * useEffect is intentional: it is the correct React primitive for
+ * "run only on the client, after the first render".
+ */
 function ProjectPage() {
-  const { activeProject, isPresenting, isPrototypeMode, startPresentation, setReadOnly } = useEditorStore()
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted) return <LoadingPage />
+
+  return <ProjectPageInner />
+}
+
+/**
+ * Inner component — only rendered after mount, so the store is guaranteed
+ * to have resolved its Postgres vs. IndexedDB source before any hook runs.
+ * All hooks are unconditional; early returns only appear after them.
+ */
+function ProjectPageInner() {
+  const { activeProject, isPresenting, isPrototypeMode, startPresentation, setReadOnly } =
+    useEditorStore()
   const { mode, isReadOnly, autoplay } = useAccessControl()
 
   useEditorShortcuts()
 
-  // Sync access control to global store during render (React-approved pattern for derived state)
+  // Sync derived read-only state to the store (same-render write — avoids
+  // a redundant re-render that a useEffect would cause)
   const storeIsReadOnly = useEditorStore(s => s.isReadOnly)
   if (storeIsReadOnly !== isReadOnly) {
     setReadOnly(isReadOnly)
   }
 
-  // Handle immediate presentation mode if requested via URL (one-time)
+  // Trigger presentation mode once if the URL requests it on initial load
   const hasStartedPresentation = useRef(false)
   if (!hasStartedPresentation.current && (mode === 'present' || (mode === 'view' && autoplay))) {
     hasStartedPresentation.current = true
-    // Defer the state update to avoid React warnings about updating during render
-    setTimeout(() => startPresentation(), 0)
+    setTimeout(() => startPresentation({ autoplay: !!autoplay }), 0)
   }
 
+  // ✅ Safe to early-return here — all hooks are already above this line
   const project = activeProject()
-
   if (!project) {
     return (
       <div className="flex items-center justify-center h-dvh text-(--ms-text-muted) flex-col gap-3 bg-(--ms-bg-base)">
         <div className="text-[32px]">⚠</div>
         <div className="text-sm">Project not found or access denied.</div>
-        <Link to="/dashboard" className="text-blue-400 text-xs underline mt-2">Go to Dashboard</Link>
+        <Link to="/dashboard" className="text-blue-400 text-xs underline mt-2">
+          Go to Dashboard
+        </Link>
       </div>
     )
   }
 
-  // Determine what to show based on access mode
   const showEditorUI = !isPresenting && mode === 'edit'
   const isViewOnly = mode === 'view' || mode === 'present'
 
   return (
     <div className="h-screen flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors relative">
-      {/* Only show toolbar in Edit mode */}
       {showEditorUI && <EditorToolbar project={project} />}
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Hide panels in View/Present modes */}
         {showEditorUI && !isPrototypeMode && <SlidePanel />}
-
         {isPrototypeMode ? <PrototypeCanvas /> : <CanvasStage />}
-
         {showEditorUI && !isPrototypeMode && <InspectorPanel />}
-
-        {/* Only show AI chat in Edit mode */}
         {showEditorUI && <AIChat />}
       </div>
 
-      {/* Presentation Overlay is always present, but triggered by isPresenting */}
       <PresentationOverlay />
-
-      {/* Professional Viewer Controls for View Mode */}
       {isViewOnly && !isPresenting && <ViewerOverlay startPresentation={startPresentation} />}
     </div>
   )

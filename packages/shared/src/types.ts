@@ -221,7 +221,7 @@ export interface Project {
   /** Metadata for sharing and future database sync */
   shareKey: string
   ownerId?: string
-  visibility: 'private' | 'link-shared' | 'public'
+  visibility: 'private' | 'link-shared' | 'collaborative' | 'public'
 }
 
 // ─── Serialized Scene Graph ───────────────────────────────────────────────────
