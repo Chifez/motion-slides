@@ -9,7 +9,8 @@ export interface AccessControl {
   canEdit: boolean
   isReadOnly: boolean
   autoplay: boolean | null
-  isAuthenticated: boolean // Placeholder for future auth
+  isAuthenticated: boolean
+  isDenied: boolean
 }
 
 /**
@@ -40,27 +41,50 @@ export function useAccessControl(): AccessControl {
         isReadOnly: true,
         autoplay: false,
         isAuthenticated: false,
+        isDenied: false, // handeled by null project check in page
       }
     }
 
     const isOwner = user && project.ownerId === user.id
     const isCollaborative = project.visibility === 'collaborative'
+    const isLinkShared = project.visibility === 'link-shared'
+    const isPublic = project.visibility === 'public'
     const isLocalDraft = !project.synced
 
-    // 2. Share Key Validation
-    // If the project is private and we're in view mode, we MUST have the correct key.
+    // 2. Access Validation
     const hasValidKey = requestedKey === project.shareKey
     
+    // Logic for Denial:
+    // Deny if:
+    // 1. Project is NOT public AND
+    // 2. User is NOT owner AND
+    // 3. User is NOT local author AND
+    // 4. (Link-shared or Collaborative) AND Key is missing/wrong
+    // OR
+    // 5. Visibility is Private AND User is NOT owner/local
+    
+    let isDenied = false
+    if (!isOwner && !isLocalDraft) {
+      if (isPublic) {
+        isDenied = false
+      } else if (isLinkShared || isCollaborative) {
+        if (!hasValidKey) isDenied = true
+      } else {
+        // Must be Private
+        isDenied = true
+      }
+    }
+
     // 3. Final Permission Resolution
     let mode = requestedMode
     // canEdit is true if:
     // 1. You are the owner (always)
-    // 2. Visibility is collaborative
+    // 2. Visibility is collaborative (with valid key)
     // 3. It's a local draft (unsynced)
-    let canEdit = (isOwner || isCollaborative || isLocalDraft) && requestedMode === 'edit'
+    let canEdit = (isOwner || (isCollaborative && hasValidKey) || isLocalDraft) && requestedMode === 'edit'
     
     // Security Lock: If we try to edit without permission, force into view mode.
-    if (requestedMode === 'edit' && !isOwner && !isCollaborative && !isLocalDraft) {
+    if (requestedMode === 'edit' && !isOwner && !(isCollaborative && hasValidKey) && !isLocalDraft) {
       mode = 'view'
       canEdit = false
     }
@@ -76,6 +100,7 @@ export function useAccessControl(): AccessControl {
       isReadOnly: !canEdit,
       autoplay,
       isAuthenticated: !!user,
+      isDenied,
     }
   }, [project, user, search.mode, search.key, search.autoplay])
 }

@@ -7,10 +7,12 @@ import { getCanvasDimensions } from '@motionslides/shared'
 import { MotionStage } from './MotionStage'
 import { GroupBoundingBox } from './GroupBoundingBox'
 import { ConnectionAnchors } from './BoundingBox'
+import { useAccessControl } from '@/hooks/useAccessControl'
 
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
   const [showBgPicker, setShowBgPicker] = useState(false)
+  const { isReadOnly } = useAccessControl()
 
   const {
     activeProject, activeSlide, activeSlideIndex, setActiveSlide,
@@ -84,70 +86,74 @@ export function CanvasStage() {
       </div>
 
       {/* Slide name + background controls */}
-      <div
-        className="absolute top-3 left-3 flex items-center gap-2"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <span className="text-[10px] text-(--ms-text-muted) font-medium bg-(--ms-bg-surface)/80 backdrop-blur-sm border border-(--ms-border) rounded-md px-2 py-1">
-          {slideName}
-        </span>
+      {!isReadOnly && (
+        <div
+          className="absolute top-3 left-3 flex items-center gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="text-[10px] text-(--ms-text-muted) font-medium bg-(--ms-bg-surface)/80 backdrop-blur-sm border border-(--ms-border) rounded-md px-2 py-1">
+            {slideName}
+          </span>
 
-        <div className="relative">
-          <button
-            onClick={() => setShowBgPicker(!showBgPicker)}
-            className="flex items-center gap-1.5 text-[10px] text-(--ms-text-muted) hover:text-(--ms-text-primary) bg-(--ms-bg-surface)/80 backdrop-blur-sm border border-(--ms-border) rounded-md px-2 py-1 cursor-pointer transition-colors"
-          >
-            <div
-              className="w-3 h-3 rounded-sm border border-white/15"
-              style={{ background: slide?.background || '#0a0a0a' }}
-            />
-            <Palette size={11} />
-          </button>
-
-          {showBgPicker && (
-            <div className="absolute top-full mt-1.5 left-0 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-50 p-3 w-48">
-              <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-2">Slide Background</span>
-              <input
-                type="color"
-                value={slide?.background || '#0a0a0a'}
-                onChange={(e) => updateSlide({ background: e.target.value })}
-                className="w-full h-8 rounded-md cursor-pointer border-none bg-transparent mb-2"
+          <div className="relative">
+            <button
+              onClick={() => setShowBgPicker(!showBgPicker)}
+              className="flex items-center gap-1.5 text-[10px] text-(--ms-text-muted) hover:text-(--ms-text-primary) bg-(--ms-bg-surface)/80 backdrop-blur-sm border border-(--ms-border) rounded-md px-2 py-1 cursor-pointer transition-colors"
+            >
+              <div
+                className="w-3 h-3 rounded-sm border border-white/15"
+                style={{ background: slide?.background || '#0a0a0a' }}
               />
-              <div className="flex gap-1 flex-wrap">
-                {['#0a0a0a', '#111827', '#1e1b4b', '#0c4a6e', '#14532d', '#7f1d1d', '#ffffff', '#f5f5f4'].map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => updateSlide({ background: c })}
-                    className="w-6 h-6 rounded-md border border-white/10 cursor-pointer transition-transform hover:scale-110"
-                    style={{ background: c }}
-                  />
-                ))}
+              <Palette size={11} />
+            </button>
+
+            {showBgPicker && (
+              <div className="absolute top-full mt-1.5 left-0 bg-[#1a1a1a] border border-white/8 rounded-lg shadow-2xl z-50 p-3 w-48">
+                <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-2">Slide Background</span>
+                <input
+                  type="color"
+                  value={slide?.background || '#0a0a0a'}
+                  onChange={(e) => updateSlide({ background: e.target.value })}
+                  className="w-full h-8 rounded-md cursor-pointer border-none bg-transparent mb-2"
+                />
+                <div className="flex gap-1 flex-wrap">
+                  {['#0a0a0a', '#111827', '#1e1b4b', '#0c4a6e', '#14532d', '#7f1d1d', '#ffffff', '#f5f5f4'].map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => updateSlide({ background: c })}
+                      className="w-6 h-6 rounded-md border border-white/10 cursor-pointer transition-transform hover:scale-110"
+                      style={{ background: c }}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Playback nav bar */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-(--ms-bg-surface)/90 border border-(--ms-border) rounded-full px-3 py-1.5 backdrop-blur-md">
-        <button
-          onClick={() => setActiveSlide(activeSlideIndex - 1)}
-          disabled={activeSlideIndex === 0}
-          className="p-1 rounded-full text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer border-none bg-transparent"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <span className="text-xs text-neutral-500 min-w-[48px] text-center">
-          {activeSlideIndex + 1} / {totalSlides}
-        </span>
-        <button
-          onClick={() => setActiveSlide(activeSlideIndex + 1)}
-          disabled={activeSlideIndex >= totalSlides - 1}
-          className="p-1 rounded-full text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer border-none bg-transparent"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
+      {!isReadOnly && (
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-(--ms-bg-surface)/90 border border-(--ms-border) rounded-full px-3 py-1.5 backdrop-blur-md">
+          <button
+            onClick={() => setActiveSlide(activeSlideIndex - 1)}
+            disabled={activeSlideIndex === 0}
+            className="p-1 rounded-full text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer border-none bg-transparent"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="text-xs text-neutral-500 min-w-[48px] text-center">
+            {activeSlideIndex + 1} / {totalSlides}
+          </span>
+          <button
+            onClick={() => setActiveSlide(activeSlideIndex + 1)}
+            disabled={activeSlideIndex >= totalSlides - 1}
+            className="p-1 rounded-full text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer border-none bg-transparent"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </main>
   )
 }

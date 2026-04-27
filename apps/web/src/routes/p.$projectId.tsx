@@ -85,7 +85,7 @@ function ProjectPage() {
 function ProjectPageInner() {
   const { activeProject, isPresenting, isPrototypeMode, startPresentation, setReadOnly } =
     useEditorStore()
-  const { mode, isReadOnly, autoplay } = useAccessControl()
+  const { mode, isReadOnly, autoplay, isDenied } = useAccessControl()
 
   useEditorShortcuts()
 
@@ -105,7 +105,7 @@ function ProjectPageInner() {
 
   // ✅ Safe to early-return here — all hooks are already above this line
   const project = activeProject()
-  if (!project) {
+  if (!project || isDenied) {
     return (
       <div className="flex items-center justify-center h-dvh text-(--ms-text-muted) flex-col gap-3 bg-(--ms-bg-base)">
         <div className="text-[32px]">⚠</div>

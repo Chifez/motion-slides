@@ -1,6 +1,5 @@
 import { useAccessControl } from '@/hooks/useAccessControl'
 import { useEditorStore } from '@/store/editorStore'
-import { useNavigate, useParams } from '@tanstack/react-router'
 import { Play, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Props {
@@ -34,7 +33,7 @@ export function ViewerOverlay({ startPresentation }: Props) {
   }
 
   return (
-    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[var(--z-overlay)] flex items-center gap-4 bg-black/60 backdrop-blur-2xl border border-white/10 p-1.5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-(--z-overlay) flex items-center gap-4 bg-black/60 backdrop-blur-2xl border border-white/10 p-1.5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 duration-700">
       <button
         onClick={() => startPresentation({ autoplay: true })}
         className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold px-6 py-2 rounded-full transition-all shadow-lg shadow-blue-600/30 active:scale-95 group"
