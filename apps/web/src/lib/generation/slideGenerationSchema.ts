@@ -63,12 +63,16 @@ const AILineElement = z.object({
   id:             z.string().min(1),
   fromElementId:  z.string().min(1),
   toElementId:    z.string().min(1),
+  fromHandle:     z.enum(['top', 'right', 'bottom', 'left', 'center']).nullable(),
+  toHandle:       z.enum(['top', 'right', 'bottom', 'left', 'center']).nullable(),
   label:          z.string().nullable(),
   direction:      z.enum(['one-way', 'two-way', 'none']).nullable(),
+  lineType:       z.enum(['straight', 'curved', 'elbow']).nullable(),
   lineStyle:      z.enum(['solid', 'dashed', 'dotted']).nullable(),
   animation:      AnimationType.nullable(),
   animationDelay: z.number().int().min(0).max(5000).nullable(),
 })
+
 
 const AIIconElement = z.object({
   type:           z.literal('icon'),

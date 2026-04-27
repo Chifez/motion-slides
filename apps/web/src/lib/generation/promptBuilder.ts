@@ -24,6 +24,11 @@ Cell: 160px wide x 135px tall.
 Element position uses col (0-11), row (0-7), width (1-12), height (1-8).
 All coordinates are in GRID UNITS, not pixels.
 Padding: every element has 16px implicit padding inside its grid cell.
+
+CRITICAL BOUNDARY RULES:
+- An element MUST NOT exceed the right edge of the canvas. This means (col + width) MUST BE <= 12.
+- An element MUST NOT exceed the bottom edge of the canvas. This means (row + height) MUST BE <= 8.
+- Never place elements overlapping unless specifically required (lines are allowed to overlap).
 </canvas>
 
 <layout_templates>
@@ -157,6 +162,20 @@ Icon element format:
   "animationDelay": 200
 }
 </icon_rules>
+
+<smart_lines>
+For lines connecting shapes, you MUST explicitly define how they route:
+
+Handles:
+- fromHandle / toHandle: choose from ['top', 'right', 'bottom', 'left', 'center'].
+- Best practices: If Box A is to the left of Box B, use fromHandle: "right" and toHandle: "left". If Box A is above Box B, use fromHandle: "bottom" and toHandle: "top".
+
+Line Types:
+- lineType: choose from ['straight', 'curved', 'elbow'].
+- Use "elbow" for rigid architectural or flow diagrams.
+- Use "curved" for organic mind-maps or casual diagrams.
+- Use "straight" for simple direct connections.
+</smart_lines>
 
 <anti_patterns>
 NEVER do any of the following:
@@ -343,3 +362,32 @@ ${opts.availableIcons}
 Generate the complete GeneratedPresentation JSON now.
 `.trim()
 }
+
+export interface RefinementPromptOptions {
+  previousPresentation: any
+  instruction: string
+}
+
+export function buildRefinementPrompt(opts: RefinementPromptOptions): string {
+  return `
+You are refining an existing presentation based on user feedback.
+
+<existing_presentation>
+${JSON.stringify(opts.previousPresentation, null, 2)}
+</existing_presentation>
+
+<user_instruction>
+${opts.instruction}
+</user_instruction>
+
+<requirements>
+1. Maintain the overall structure of the presentation unless the user instruction specifically requires structural changes.
+2. Apply the user instruction precisely.
+3. You MUST output the ENTIRE updated presentation as valid JSON, adhering to all previous schemas, grid rules, and smart line rules.
+4. Do not drop existing elements or slides unless requested.
+</requirements>
+
+Generate the complete GeneratedPresentation JSON now.
+`.trim()
+}
+

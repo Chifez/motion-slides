@@ -20,17 +20,19 @@ export function AIChat() {
   const [activeTab, setActiveTab] = useState<Tab>('mode-select')
   const [progress, setProgress] = useState<{ percent: number; message: string }>({ percent: 0, message: '' })
   const [requiresRecalc, setRequiresRecalc] = useState(false)
+  const [lastOptions, setLastOptions] = useState<any>(null)
 
   if (!isChatOpen) return null
 
   const handleGenerate = async (opts: any) => {
+    setLastOptions(opts)
     setGenerating(true)
     setProgress({ percent: 0, message: 'Starting…' })
 
     const result = await generateSlides(opts, (ev) => {
       setProgress({ percent: ev.percent, message: ev.message })
       if (ev.stage === 'done' && ev.slides) {
-        setPendingSlides(ev.slides as any, ev.title)
+        setPendingSlides(ev.slides as any, ev.title, ev.rawPresentation)
         if (ev.requiresLineRecalc) setRequiresRecalc(true)
       }
     })
@@ -54,6 +56,17 @@ export function AIChat() {
 
   const handleReject = () => {
     clearPending()
+  }
+
+  const handleRefine = async (prompt: string) => {
+    const raw = useEditorStore.getState().pendingRawPresentation
+    if (!raw || !lastOptions) return
+
+    await handleGenerate({
+      ...lastOptions,
+      refinementPrompt: prompt,
+      previousPresentation: raw
+    })
   }
 
   return (
@@ -109,6 +122,7 @@ export function AIChat() {
             title={pendingTitle}
             onAccept={handleImport}
             onReject={handleReject}
+            onRefine={handleRefine}
           />
         ) : (
           <div className="p-6">

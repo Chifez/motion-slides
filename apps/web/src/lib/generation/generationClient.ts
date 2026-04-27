@@ -15,7 +15,8 @@ import {
 import { 
   SYSTEM_PROMPT, 
   buildReadmePrompt, 
-  buildArchitecturePrompt 
+  buildArchitecturePrompt,
+  buildRefinementPrompt
 } from './promptBuilder'
 import { buildIconHotlist } from './iconResolver'
 
@@ -83,6 +84,24 @@ export async function generateFromArchitecture(
     slideCount:    opts.slideCount,
     theme:         opts.theme,
     availableIcons,
+  })
+  
+  return callLLM(userPrompt, 12000)
+}
+
+// ─── Refinement Mode ──────────────────────────────────────────────────────────
+
+export interface RefinementOptions {
+  previousPresentation: any
+  instruction: string
+}
+
+export async function refinePresentation(
+  opts: RefinementOptions,
+): Promise<GeneratedPresentation> {
+  const userPrompt = buildRefinementPrompt({
+    previousPresentation: opts.previousPresentation,
+    instruction: opts.instruction,
   })
   
   return callLLM(userPrompt, 12000)

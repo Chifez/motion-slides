@@ -30,17 +30,28 @@ export const Route = createFileRoute('/api/generate/readme')({
 
             try {
               send({ stage: 'preparing', percent: 5, message: 'Parsing README…' })
-              const parsed = parseReadme(markdown)
-              const briefing = buildReadmeBriefing(parsed, slideCount)
+              let generated;
 
-              send({ stage: 'capturing', percent: 20, message: 'Generating with AI…' })
-              const generated = await generateFromReadme({
-                briefing,
-                rawMarkdown: markdown,
-                slideCount,
-                style,
-                theme
-              })
+              if (body.refinementPrompt && body.previousPresentation) {
+                send({ stage: 'capturing', percent: 20, message: 'Applying refinements…' })
+                const { refinePresentation } = await import('@/lib/generation/generationClient')
+                generated = await refinePresentation({
+                  instruction: body.refinementPrompt,
+                  previousPresentation: body.previousPresentation,
+                })
+              } else {
+                const parsed = parseReadme(markdown)
+                const briefing = buildReadmeBriefing(parsed, slideCount)
+
+                send({ stage: 'capturing', percent: 20, message: 'Generating with AI…' })
+                generated = await generateFromReadme({
+                  briefing,
+                  rawMarkdown: markdown,
+                  slideCount,
+                  style,
+                  theme
+                })
+              }
 
               send({ stage: 'encoding', percent: 80, message: 'Assembling slides…' })
               const slides = assembleSlides(generated)
@@ -52,6 +63,7 @@ export const Route = createFileRoute('/api/generate/readme')({
                 slides,
                 title: generated.title,
                 theme: generated.theme,
+                rawPresentation: generated,
               })
             } catch (err: any) {
               console.error('[generate/readme]', err)

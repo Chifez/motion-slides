@@ -41,9 +41,9 @@ export function createDefaultProject(name = 'Untitled Deck', isFirst = false): P
     elements: [
       {
         id: 'demo-title', type: 'text',
-        position: { x: 240, y: 310 }, size: { width: 800, height: 100 },
+        position: { x: 200, y: 310 }, size: { width: 500, height: 100 },
         rotation: 0, opacity: 1, zIndex: 10,
-        content: { value: 'Welcome to MotionSlides', fontSize: 54, fontWeight: 'bold', fontFamily: 'Outfit', fontStyle: 'normal', color: '#ffffff', align: 'center' },
+        content: { value: 'Welcome to MotionSlides', fontSize: 48, fontWeight: 'bold', fontFamily: 'Outfit', fontStyle: 'normal', color: '#ffffff', align: 'center' },
       },
     ],
   })
@@ -53,13 +53,13 @@ export function createDefaultProject(name = 'Untitled Deck', isFirst = false): P
     elements: [
       {
         id: 'demo-title', type: 'text',
-        position: { x: 240, y: 260 }, size: { width: 800, height: 60 },
+        position: { x: 200, y: 300 }, size: { width: 500, height: 60 },
         rotation: 0, opacity: 1, zIndex: 10,
         content: { value: 'Welcome to MotionSlides', fontSize: 48, fontWeight: 'bold', fontFamily: 'Outfit', fontStyle: 'normal', color: '#ffffff', align: 'center' },
       },
       {
         id: 'demo-subtitle', type: 'text',
-        position: { x: 240, y: 360 }, size: { width: 800, height: 40 },
+        position: { x: 220, y: 330 }, size: { width: 400, height: 40 },
         rotation: 0, opacity: 1, zIndex: 10,
         content: { value: 'High-fidelity presentations with Magic Move', fontSize: 24, fontWeight: 'medium', fontFamily: 'Inter', fontStyle: 'normal', color: '#888888', align: 'center' },
       },

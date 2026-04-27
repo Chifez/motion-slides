@@ -21,10 +21,15 @@ export function assembleSlides(generated: GeneratedPresentation): Slide[] {
 
     const elements: SceneElement[] = aiSlide.elements.map(aiEl => {
       const pos = 'position' in aiEl ? aiEl.position : { col: 0, row: 0, width: 1, height: 1 }
-      const x = pos.col * CELL_W
-      const y = pos.row * CELL_H
-      const width = pos.width * CELL_W
-      const height = pos.height * CELL_H
+      const col = pos.col
+      const row = pos.row
+      const clampedWidth = Math.min(pos.width, 12 - col)
+      const clampedHeight = Math.min(pos.height, 8 - row)
+      
+      const x = col * CELL_W
+      const y = row * CELL_H
+      const width = Math.max(1, clampedWidth) * CELL_W
+      const height = Math.max(1, clampedHeight) * CELL_H
 
       const common = {
         id: aiEl.id || uuid(),
@@ -115,15 +120,15 @@ export function assembleSlides(generated: GeneratedPresentation): Slide[] {
             type: 'line',
             zIndex: 5, // Lines behind shapes
             content: {
-              lineType: 'curved',
+              lineType: aiEl.lineType ?? 'curved',
               x1: 0, y1: 0, x2: 1, y2: 1,
               style: aiEl.lineStyle ?? 'solid',
               arrow: aiEl.direction === 'one-way' ? 'end' : aiEl.direction === 'two-way' ? 'both' : 'none',
               color: theme.accentColor,
               strokeWidth: 2,
               label: aiEl.label ?? undefined,
-              startConnection: { elementId: aiEl.fromElementId, handleId: 'center' },
-              endConnection: { elementId: aiEl.toElementId, handleId: 'center' },
+              startConnection: { elementId: aiEl.fromElementId, handleId: aiEl.fromHandle ?? 'center' },
+              endConnection: { elementId: aiEl.toElementId, handleId: aiEl.toHandle ?? 'center' },
             } as any
           }
 

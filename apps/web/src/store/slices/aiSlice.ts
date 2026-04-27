@@ -20,9 +20,10 @@ export interface AISlice {
   setGenerating: (v: boolean) => void
 
   // Pending preview — slides waiting for user to accept/reject
-  pendingSlides:    Slide[] | null
-  pendingTitle:     string
-  setPendingSlides: (slides: Slide[] | null, title?: string) => void
+  pendingSlides:          Slide[] | null
+  pendingTitle:           string
+  pendingRawPresentation: any | null
+  setPendingSlides:       (slides: Slide[] | null, title?: string, raw?: any) => void
   clearPending:     () => void
 }
 
@@ -54,8 +55,9 @@ export const createAISlice: StateCreator<EditorState, [], [], AISlice> = (set, g
   isGenerating:  false,
   setGenerating: (v) => set({ isGenerating: v }),
 
-  pendingSlides: null,
-  pendingTitle:  '',
-  setPendingSlides: (slides, title = '') => set({ pendingSlides: slides, pendingTitle: title }),
-  clearPending:     () => set({ pendingSlides: null, pendingTitle: '' }),
+  pendingSlides:          null,
+  pendingTitle:           '',
+  pendingRawPresentation: null,
+  setPendingSlides:       (slides, title = '', raw = null) => set({ pendingSlides: slides, pendingTitle: title, pendingRawPresentation: raw }),
+  clearPending:           () => set({ pendingSlides: null, pendingTitle: '', pendingRawPresentation: null }),
 })

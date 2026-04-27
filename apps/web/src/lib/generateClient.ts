@@ -8,6 +8,8 @@ export interface GenerationOptions {
   style?:       'technical' | 'executive' | 'tutorial'
   diagramStyle?: 'generic' | 'aws' | 'gcp' | 'minimal'
   theme?:       'dark' | 'light' | 'auto'
+  refinementPrompt?: string
+  previousPresentation?: any
 }
 
 export interface GenerationEvent {
@@ -18,6 +20,7 @@ export interface GenerationEvent {
   title?:   string
   theme?:   object
   requiresLineRecalc?: boolean
+  rawPresentation?: any
 }
 
 export async function generateSlides(
@@ -29,8 +32,8 @@ export async function generateSlides(
     : '/api/generate/architecture'
 
   const body = opts.mode === 'readme'
-    ? { markdown: opts.markdown, options: { slideCount: opts.slideCount, style: opts.style, theme: opts.theme } }
-    : { description: opts.description, options: { slideCount: opts.slideCount, diagramStyle: opts.diagramStyle, theme: opts.theme } }
+    ? { markdown: opts.markdown, refinementPrompt: opts.refinementPrompt, previousPresentation: opts.previousPresentation, options: { slideCount: opts.slideCount, style: opts.style, theme: opts.theme } }
+    : { description: opts.description, refinementPrompt: opts.refinementPrompt, previousPresentation: opts.previousPresentation, options: { slideCount: opts.slideCount, diagramStyle: opts.diagramStyle, theme: opts.theme } }
 
   let res: Response
   try {

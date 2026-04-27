@@ -30,17 +30,28 @@ export const Route = createFileRoute("/api/generate/architecture")({
 
             try {
               send({ stage: 'preparing', percent: 5, message: 'Analysing architecture…' })
-              const parsed = parseArchitecture(description)
-              const briefing = buildArchitectureBriefing(parsed)
+              let generated;
 
-              send({ stage: 'capturing', percent: 20, message: 'Generating diagram slides…' })
-              const generated = await generateFromArchitecture({
-                briefing,
-                rawInput: description,
-                diagramStyle,
-                slideCount,
-                theme,
-              })
+              if (body.refinementPrompt && body.previousPresentation) {
+                send({ stage: 'capturing', percent: 20, message: 'Applying refinements…' })
+                const { refinePresentation } = await import('@/lib/generation/generationClient')
+                generated = await refinePresentation({
+                  instruction: body.refinementPrompt,
+                  previousPresentation: body.previousPresentation,
+                })
+              } else {
+                const parsed = parseArchitecture(description)
+                const briefing = buildArchitectureBriefing(parsed)
+
+                send({ stage: 'capturing', percent: 20, message: 'Generating diagram slides…' })
+                generated = await generateFromArchitecture({
+                  briefing,
+                  rawInput: description,
+                  diagramStyle,
+                  slideCount,
+                  theme,
+                })
+              }
 
               send({ stage: 'encoding', percent: 80, message: 'Assembling slides…' })
               const slides = assembleSlides(generated)
@@ -53,6 +64,7 @@ export const Route = createFileRoute("/api/generate/architecture")({
                 title: generated.title,
                 theme: generated.theme,
                 requiresLineRecalc: true,
+                rawPresentation: generated,
               })
             } catch (err: any) {
               console.error('[generate/architecture]', err)

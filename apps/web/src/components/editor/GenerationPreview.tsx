@@ -1,13 +1,25 @@
+import { useState } from 'react'
 import type { Slide } from '@motionslides/shared'
+import { Send } from 'lucide-react'
 
 interface Props {
   slides: Slide[]
   title:  string
   onAccept: () => void
   onReject: () => void
+  onRefine?: (prompt: string) => void
 }
 
-export function GenerationPreview({ slides, title, onAccept, onReject }: Props) {
+export function GenerationPreview({ slides, title, onAccept, onReject, onRefine }: Props) {
+  const [refinePrompt, setRefinePrompt] = useState('')
+
+  const handleRefine = () => {
+    if (refinePrompt.trim() && onRefine) {
+      onRefine(refinePrompt.trim())
+      setRefinePrompt('')
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-(--ms-border)">
@@ -33,6 +45,26 @@ export function GenerationPreview({ slides, title, onAccept, onReject }: Props) 
       </div>
 
       <div className="p-4 bg-(--ms-bg-elevated) border-t border-(--ms-border) space-y-2 transition-colors">
+        {onRefine && (
+          <div className="relative mb-2">
+            <input
+              type="text"
+              value={refinePrompt}
+              onChange={(e) => setRefinePrompt(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleRefine()}
+              placeholder="Refine (e.g., 'Make titles bigger')"
+              className="w-full bg-black/20 border border-(--ms-border) rounded-xl py-2 pl-3 pr-10 text-xs text-(--ms-text-primary) placeholder:text-(--ms-text-muted) focus:outline-none focus:border-blue-500/50 transition-colors"
+            />
+            <button
+              onClick={handleRefine}
+              disabled={!refinePrompt.trim()}
+              className="absolute right-1 top-1 bottom-1 px-2 text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-center"
+            >
+              <Send size={14} />
+            </button>
+          </div>
+        )}
+
         <button
           onClick={onAccept}
           className="w-full py-2.5 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer border-none"
