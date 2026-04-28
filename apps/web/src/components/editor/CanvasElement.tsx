@@ -1,4 +1,5 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, memo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { motion } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
 import { useMotionContext } from '@/context/MotionContext'
@@ -21,12 +22,20 @@ interface Props {
   staggerIndex?: number
 }
 
-export function CanvasElement({ element }: Props) {
+export const CanvasElement = memo(function CanvasElement({ element }: Props) {
   const { isReadOnly } = useAccessControl()
-  const {
-    selectedElementIds, setSelectedElement, setSelectedElements, updateElementsBatch,
-    setMobileInspectorOpen, isMultiSelectMode, isEditingId, setEditingId
+  
+  // Targeted selectors for state values
+  const selectedElementIds = useEditorStore(s => s.selectedElementIds)
+  const isEditingId = useEditorStore(s => s.isEditingId)
+  const isMultiSelectMode = useEditorStore(s => s.isMultiSelectMode)
+  
+  // Actions are stable, safe to destructure
+  const { 
+    setSelectedElement, setSelectedElements, updateElementsBatch,
+    setMobileInspectorOpen, setEditingId 
   } = useEditorStore()
+
   const isMobile = useIsMobile()
   const {
     isTransitioning,
@@ -282,4 +291,4 @@ export function CanvasElement({ element }: Props) {
       {renderContent()}
     </motion.div>
   )
-}
+})

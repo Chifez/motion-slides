@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
-import { Share2, Copy, Lock, Check, Link as LinkIcon, Globe, Eye, Unlock } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Share2, Copy, Lock, Check, Link as LinkIcon, Eye, Unlock } from 'lucide-react'
 import type { Project } from '@motionslides/shared'
 import { useClickOutside } from '@/hooks/useClickOutside'
-import { useEditorStore } from '@/store/editorStore'
 import { motion } from 'framer-motion'
+import { useShareMenu } from '@/hooks/useShareMenu'
 
 interface Props {
   project: Project
@@ -13,97 +13,25 @@ export function ShareMenu({ project }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [copiedType, setCopiedType] = useState<'edit' | 'view' | null>(null)
   const ref = useRef<HTMLDivElement>(null)
-  const updateProjectVisibility = useEditorStore(s => s.updateProjectVisibility)
-  const updateProject = useEditorStore(s => s.updateProject)
-  const isSyncing = useEditorStore(s => s.isSyncing)
-  const syncProjects = useEditorStore(s => s.syncProjects)
+  
+  const {
+    shareState,
+    copyLink,
+    toggleSharing,
+    toggleCollaborative,
+    rotateKey
+  } = useShareMenu(project)
   
   useClickOutside(ref, () => setIsOpen(false))
 
-  const [baseUrl, setBaseUrl] = useState('')
-  const [isRotating, setIsRotating] = useState(false)
-
-  useEffect(() => {
-    setBaseUrl(window.location.origin)
-  }, [])
-
-  type ShareState =
-    | { status: 'unsynced' }
-    | { status: 'syncing' }
-    | { status: 'private' }
-    | { status: 'link-shared' }
-    | { status: 'collaborative' }
-
-  const shareState: ShareState = !project.synced 
-    ? { status: 'unsynced' } 
-    : isSyncing 
-      ? { status: 'syncing' } 
-      : { status: project.visibility as any }
+  const handleCopy = async (type: 'edit' | 'view') => {
+    await copyLink(type)
+    setCopiedType(type)
+    setTimeout(() => setCopiedType(null), 2000)
+  }
 
   const isShared = project.visibility !== 'private'
   const isCollaborative = project.visibility === 'collaborative'
-
-  const copyToClipboard = async (type: 'edit' | 'view') => {
-    if (shareState.status === 'unsynced') return
-    if (!baseUrl) return
-
-    // Always include the shareKey for any shared link (view or edit)
-    const url = `${baseUrl}/p/${project.id}?mode=${type}&key=${project.shareKey}`
-
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopiedType(type)
-      
-      // Soft warning if syncing
-      if (shareState.status === 'syncing') {
-        // We could use a toast here, but for now we'll just show the success state
-      }
-
-      setTimeout(() => setCopiedType(null), 2000)
-    } catch (err) {
-      console.error('Failed to copy:', err)
-    }
-  }
-
-  const toggleSharing = () => {
-    const nextVisibility = isShared ? 'private' : 'link-shared'
-    const updates: Partial<Project> = { 
-      visibility: nextVisibility,
-      updatedAt: Date.now()
-    }
-    
-    // Always rotate key when enabling sharing
-    if (!isShared) {
-      updates.shareKey = crypto.randomUUID()
-    }
-    
-    updateProject(project.id, updates)
-    // Force immediate sync so the guest doesn't get 'Access Denied'
-    syncProjects()
-  }
-
-  const toggleCollaborative = () => {
-    const nextVisibility = isCollaborative ? 'link-shared' : 'collaborative'
-    updateProjectVisibility(project.id, nextVisibility)
-    syncProjects()
-  }
-
-  const handleRotateKey = async () => {
-    if (isRotating) return
-    setIsRotating(true)
-    try {
-      const { rotateShareKeyAction } = await import('@/lib/actions/project')
-      const result = await rotateShareKeyAction({ data: { projectId: project.id } })
-      if (result.success) {
-        updateProject(project.id, { shareKey: result.newKey })
-        syncProjects()
-      }
-    } catch (err) {
-      console.error('Rotation failed:', err)
-    } finally {
-      setIsRotating(false)
-    }
-  }
 
   return (
     <div className="relative" ref={ref}>
@@ -157,15 +85,15 @@ export function ShareMenu({ project }: Props) {
                   <Eye size={10} /> View Only
                 </span>
                 <button 
-                  onClick={handleRotateKey}
-                  disabled={!isShared || isRotating || shareState.status === 'syncing'}
+                  onClick={rotateKey}
+                  disabled={!isShared || shareState.status === 'syncing'}
                   className="text-[9px] text-blue-400 hover:text-blue-300 transition-colors bg-transparent border-none cursor-pointer disabled:opacity-0"
                 >
-                  {isRotating ? 'Rotating...' : 'Revoke & Rotate Link'}
+                  {shareState.status === 'syncing' ? 'Syncing...' : 'Revoke & Rotate Link'}
                 </button>
               </div>
               <button
-                onClick={() => copyToClipboard('view')}
+                onClick={() => handleCopy('view')}
                 disabled={!isShared}
                 className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition-all cursor-pointer text-left group disabled:cursor-not-allowed"
               >
@@ -200,7 +128,7 @@ export function ShareMenu({ project }: Props) {
                 </button>
               </div>
               <button
-                onClick={() => copyToClipboard('edit')}
+                onClick={() => handleCopy('edit')}
                 disabled={!isCollaborative}
                 className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition-all cursor-pointer text-left group disabled:cursor-not-allowed"
               >

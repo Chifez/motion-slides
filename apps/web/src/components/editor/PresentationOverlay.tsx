@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react'
 import { X } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
+import { useShallow } from 'zustand/react/shallow'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAutoplay } from '@/hooks/useAutoplay'
 import { useFullscreen } from '@/hooks/useFullscreen'
@@ -11,14 +12,17 @@ import { PresentationControls } from './presentation/PresentationControls'
 import { useAccessControl } from '@/hooks/useAccessControl'
 
 export function PresentationOverlay() {
-  const isPresenting = useEditorStore((s) => s.isPresenting)
-  const stopPresentation = useEditorStore((s) => s.stopPresentation)
-  const activeSlideIndex = useEditorStore((s) => s.activeSlideIndex)
-  const setActiveSlide = useEditorStore((s) => s.setActiveSlide)
-  const playbackSettings = useEditorStore((s) => s.playbackSettings)
+  const isPresenting = useEditorStore(s => s.isPresenting)
+  const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
+  const previousSlideIndex = useEditorStore(s => s.previousSlideIndex)
+  const playbackSettings = useEditorStore(s => s.playbackSettings)
+  const activeProjectId = useEditorStore(s => s.activeProjectId)
+  
+  const stopPresentation = useEditorStore(s => s.stopPresentation)
+  const setActiveSlide = useEditorStore(s => s.setActiveSlide)
 
-  const project = useEditorStore((s) => s.projects.find((p) => p.id === s.activeProjectId) ?? null)
-  const previousSlideIndex = useEditorStore((s) => s.previousSlideIndex)
+  const project = useEditorStore(useShallow(s => s.projects.find(p => p.id === s.activeProjectId) ?? null))
+
   const slide = project?.slides[activeSlideIndex] ?? null
   const previousSlide = previousSlideIndex !== null ? (project?.slides[previousSlideIndex] ?? null) : null
   const totalSlides = project?.slides.length ?? 0
@@ -32,7 +36,9 @@ export function PresentationOverlay() {
   const isAutoplayActive = resolvedAutoplay && !autoplayPaused
 
   // ── Resolve Prototype Transitions ────────────────────────────────────────
-  const { activeTransition, clickTransition, autoTransition } = useEditorStore.getState().getPlaybackTransitions()
+  const { activeTransition, clickTransition, autoTransition } = useEditorStore(
+    useShallow(s => s.getPlaybackTransitions())
+  )
 
   const handleNext = useCallback(() => {
     if (clickTransition) {

@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
 export interface IconResource {
   id:       string
@@ -21,37 +22,16 @@ export interface IconManifest {
   categories:  IconCategory[]
 }
 
-const cache: Record<string, IconManifest> = {}
-
 export function useIconLibrary(provider: 'aws' | 'gcp' = 'aws') {
-  const [manifest, setManifest] = useState<IconManifest | null>(cache[provider] || null)
-  const [loading,  setLoading]  = useState(!cache[provider])
-  const [error,    setError]    = useState<string | null>(null)
-
-  useEffect(() => {
-    if (cache[provider]) {
-      setManifest(cache[provider])
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
-    fetch(`/icons/${provider}/manifest.json`)
-      .then(res => {
-        if (!res.ok) throw new Error(`${provider} manifest not found`)
-        return res.json()
-      })
-      .then(data => {
-        cache[provider] = data
-        setManifest(data)
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error('[useIconLibrary]', err)
-        setError(err.message)
-        setLoading(false)
-      })
-  }, [provider])
+  const { data: manifest, isLoading: loading, error } = useQuery<IconManifest>({
+    queryKey: ['icons', provider],
+    queryFn: async () => {
+      const res = await fetch(`/icons/${provider}/manifest.json`)
+      if (!res.ok) throw new Error(`${provider} manifest not found`)
+      return res.json()
+    },
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+  })
 
   const flatIcons = useMemo(() => {
     if (!manifest) return []
@@ -68,5 +48,5 @@ export function useIconLibrary(provider: 'aws' | 'gcp' = 'aws') {
     )
   }
 
-  return { manifest, loading, error, flatIcons, searchIcons }
+  return { manifest, loading, error: error instanceof Error ? error.message : null, flatIcons, searchIcons }
 }

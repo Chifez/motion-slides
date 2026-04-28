@@ -34,23 +34,31 @@ export const Route = createFileRoute('/p/$projectId')({
     }
 
     const { getRemoteProjectAction } = await import('@/lib/actions/project')
+    const key = deps.key
+
+    console.log(`[Loader] Fetching project ${params.projectId} (key: ${key ? 'present' : 'missing'})`)
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const remoteProject = await getRemoteProjectAction({
-          data: { projectId: params.projectId, shareKey: deps.key }
+          data: { projectId: params.projectId, shareKey: key }
         })
 
         if (remoteProject) {
+          console.log(`[Loader] Successfully fetched project ${params.projectId}`)
           store.importProject(remoteProject as any)
           store.loadProject(params.projectId)
           return
         }
-      } catch (err) {
-        console.error(`Loader attempt ${attempt} failed:`, err)
+      } catch (err: any) {
+        console.error(`[Loader] Attempt ${attempt} failed for ${params.projectId}:`, err.message)
       }
 
-      if (attempt < 3) await new Promise(r => setTimeout(r, 1000 * attempt)) // 1s, 2s backoff
+      if (attempt < 3) {
+        const delay = 1000 * attempt
+        console.log(`[Loader] Retrying in ${delay}ms...`)
+        await new Promise(r => setTimeout(r, delay))
+      }
     }
 
     store.loadProject(params.projectId) // resolves to null → "not found" UI

@@ -1,5 +1,6 @@
 import { useMemo, useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
+import { useShallow } from 'zustand/react/shallow'
 import { useSearch, useNavigate } from '@tanstack/react-router'
 
 export type AccessMode = 'edit' | 'view' | 'present'
@@ -26,9 +27,14 @@ export function useAccessControl(): AccessControl {
   const search = useSearch({ from: '/p/$projectId' }) as any
   const navigate = useNavigate()
 
-  // Single store subscription
-  const { user, activeProject, localAuthorId } = useEditorStore()
-  const project = activeProject()
+  // Targeted store subscription
+  const { user, project, localAuthorId } = useEditorStore(
+    useShallow((s) => ({
+      user: s.user,
+      project: s.activeProject(),
+      localAuthorId: s.localAuthorId,
+    }))
+  )
 
   const access = useMemo(() => {
     const requestedMode = (search.mode as AccessMode) || 'edit'

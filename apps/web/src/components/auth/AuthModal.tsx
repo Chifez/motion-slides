@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useActionState } from 'react'
+import { useFormStatus } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { authClient } from '@/lib/auth-client'
 import { useEditorStore } from '@/store/editorStore'
@@ -11,57 +12,53 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-    name: '',
-    loading: false,
-    error: '',
-  })
-
   const checkSession = useEditorStore((s) => s.checkSession)
   const syncProjects = useEditorStore((s) => s.syncProjects)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setForm((f) => ({ ...f, loading: true, error: '' }))
+  const [state, formAction] = useActionState(
+    async (_prevState: { error: string | null }, formData: FormData) => {
+      const email = formData.get('email') as string
+      const password = formData.get('password') as string
+      const name = formData.get('name') as string
 
-    try {
-      if (mode === 'signup') {
-        await authClient.signUp.email({
-          email: form.email,
-          password: form.password,
-          name: form.name,
-          callbackURL: window.location.origin
-        })
-      } else {
-        await authClient.signIn.email({
-          email: form.email,
-          password: form.password,
-          callbackURL: window.location.origin
-        })
+      try {
+        if (mode === 'signup') {
+          await authClient.signUp.email({
+            email,
+            password,
+            name,
+            callbackURL: window.location.origin
+          })
+        } else {
+          await authClient.signIn.email({
+            email,
+            password,
+            callbackURL: window.location.origin
+          })
+        }
+
+        // Refresh session in store
+        await checkSession()
+        // Auto-sync existing projects
+        await syncProjects()
+
+        onClose()
+        return { error: null }
+      } catch (err: any) {
+        return { error: err.message || 'Authentication failed' }
       }
-
-      // Refresh session in store
-      await checkSession()
-      // Auto-sync existing projects
-      await syncProjects()
-
-      onClose()
-    } catch (err: any) {
-      setForm((f) => ({ ...f, error: err.message || 'Authentication failed', loading: false }))
-    }
-  }
+    },
+    { error: null }
+  )
 
   const handleSocialSignIn = async (provider: 'github' | 'google') => {
-    setForm((f) => ({ ...f, loading: true, error: '' }))
     try {
       await authClient.signIn.social({
         provider,
         callbackURL: window.location.origin,
       })
     } catch (err: any) {
-      setForm((f) => ({ ...f, error: err.message || 'Authentication failed', loading: false }))
+      console.error('Social sign in failed:', err)
     }
   }
 
@@ -103,17 +100,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </p>
           </header>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action={formAction} className="space-y-4">
             {mode === 'signup' && (
               <div className="space-y-1">
                 <label className="text-xs font-medium text-white/60 ml-1">Full Name</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   <input
+                    name="name"
                     type="text"
                     required
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                     placeholder="John Doe"
                     className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                   />
@@ -126,10 +122,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                 <input
+                  name="email"
                   type="email"
                   required
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   placeholder="name@company.com"
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                 />
@@ -141,33 +136,22 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                 <input
+                  name="password"
                   type="password"
                   required
-                  value={form.password}
-                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                   placeholder="••••••••"
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                 />
               </div>
             </div>
 
-            {form.error && (
+            {state.error && (
               <p className="text-xs text-red-400 font-medium ml-1 bg-red-400/10 p-2 rounded-lg border border-red-400/20">
-                {form.error}
+                {state.error}
               </p>
             )}
 
-             <button
-              disabled={form.loading}
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer border-none"
-            >
-              {form.loading ? (
-                <Loader2 className="animate-spin" size={20} />
-              ) : (
-                mode === 'login' ? 'Sign In' : 'Create Account'
-              )}
-            </button>
+            <AuthSubmitButton mode={mode} />
           </form>
 
           <div className="mt-6">
@@ -227,5 +211,23 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </div>
       </motion.div>
     </div>
+  )
+}
+
+function AuthSubmitButton({ mode }: { mode: 'login' | 'signup' }) {
+  const { pending } = useFormStatus()
+
+  return (
+    <button
+      disabled={pending}
+      type="submit"
+      className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer border-none"
+    >
+      {pending ? (
+        <Loader2 className="animate-spin" size={20} />
+      ) : (
+        mode === 'login' ? 'Sign In' : 'Create Account'
+      )}
+    </button>
   )
 }

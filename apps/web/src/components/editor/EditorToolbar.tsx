@@ -14,19 +14,30 @@ import { ShareMenu } from './toolbar/ShareMenu'
 interface Props { project: Project }
 
 export function EditorToolbar({ project }: Props) {
+  // Reactive state selectors
+  const isPrototypeMode = useEditorStore(s => s.isPrototypeMode)
+  const mobileSlidesOpen = useEditorStore(s => s.mobileSlidesOpen)
+  const isMultiSelectMode = useEditorStore(s => s.isMultiSelectMode)
+  const isChatOpen = useEditorStore(s => s.isChatOpen)
+  const theme = useEditorStore(s => s.theme)
+
+  // Stable actions
   const {
-    updateProjectName, startPresentation, isPrototypeMode,
-    setPrototypeMode, mobileSlidesOpen, setMobileSlidesOpen,
-    isMultiSelectMode, setMultiSelectMode, toggleChat, isChatOpen,
-    theme, toggleTheme, setTheme
+    updateProjectName, startPresentation,
+    setPrototypeMode, setMobileSlidesOpen,
+    setMultiSelectMode, toggleChat,
+    toggleTheme
   } = useEditorStore()
 
-  // Sync theme on mount
-  useEffect(() => {
-    setTheme(theme)
-  }, [])
-
   const isMobile = useIsMobile();
+  
+  // ── Sync theme to DOM ──
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (theme === 'dark') document.documentElement.classList.add('dark')
+      else document.documentElement.classList.remove('dark')
+    }
+  }, [theme])
 
   return (
     <header className="h-14 shrink-0 flex items-center gap-1 md:gap-2 px-2 md:px-3 bg-(--ms-bg-surface) border-b border-(--ms-border) z-50 transition-colors">

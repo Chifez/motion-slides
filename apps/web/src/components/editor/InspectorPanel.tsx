@@ -4,22 +4,21 @@ import { useEditorStore } from '@/store/editorStore'
 import type { TextContent, CodeContent, ShapeContent, LineContent, ChartContent } from '@motionslides/shared'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { TransformSection } from './inspector/TransformSection'
-import { TextSection } from './inspector/TextSection'
-import { CodeSection } from './inspector/CodeSection'
-import { ShapeSection } from './inspector/ShapeSection'
-import { LineSection } from './inspector/LineSection'
-import { ChartSection } from './inspector/ChartSection'
+import { INSPECTOR_REGISTRY } from './inspector/registry'
 
 const sectionCls = "px-3 py-3 border-b border-[var(--ms-border)]"
 
 export function InspectorPanel() {
+  const selectedElementIds = useEditorStore(s => s.selectedElementIds)
+  const mobileInspectorOpen = useEditorStore(s => s.mobileInspectorOpen)
+  const slide = useEditorStore(s => s.activeSlide())
+  
   const { 
-    selectedElementIds, activeSlide, updateElement, updateElements, deleteElement,
-    groupElements, ungroupElements,
-    mobileInspectorOpen, setMobileInspectorOpen
+    updateElement, updateElements, deleteElement,
+    groupElements, ungroupElements, setMobileInspectorOpen
   } = useEditorStore()
+
   const isMobile = useIsMobile()
-  const slide = activeSlide()
   const element = slide?.elements.find((el) => el.id === selectedElementIds[0])
 
   const update = (data: Parameters<typeof updateElement>[1]) => {
@@ -112,26 +111,16 @@ export function InspectorPanel() {
 
           <div className="flex-1 overflow-y-auto custom-scrollbar pb-10 md:pb-0">
             <TransformSection element={element} onUpdate={update} />
-
-            {element.type === 'text' && (
-              <TextSection content={element.content as TextContent} onUpdate={(c) => update({ content: c })} />
-            )}
-            {element.type === 'code' && (
-              <CodeSection content={element.content as CodeContent} onUpdate={(c) => update({ content: c })} />
-            )}
-            {element.type === 'shape' && (
-              <ShapeSection content={element.content as ShapeContent} onUpdate={(c) => update({ content: c })} />
-            )}
-            {element.type === 'line' && (
-              <LineSection
-                content={element.content as LineContent}
-                onUpdate={(c) => update({ content: c })}
-                onDelete={() => deleteElement(element.id)}
-              />
-            )}
-            {element.type === 'chart' && (
-              <ChartSection content={element.content as ChartContent} onUpdate={(c) => update({ content: c })} />
-            )}
+            {(() => {
+              const Section = INSPECTOR_REGISTRY[element.type]
+              return Section ? (
+                <Section 
+                  element={element} 
+                  onUpdate={update} 
+                  onDelete={() => deleteElement(element.id)} 
+                />
+              ) : null
+            })()}
           </div>
         </>
       )}

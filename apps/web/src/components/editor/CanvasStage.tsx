@@ -12,18 +12,26 @@ import { useAccessControl } from '@/hooks/useAccessControl'
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
   const [showBgPicker, setShowBgPicker] = useState(false)
-  const { isReadOnly } = useAccessControl()
+  const isReadOnly = useAccessControl().isReadOnly
 
-  const {
-    activeProject, activeSlide, activeSlideIndex, setActiveSlide,
-    setSelectedElement, playbackSettings, updateSlide,
-    camera, setCamera, setMobileInspectorOpen, setEditingId
-  } = useEditorStore()
-  const project = activeProject()
-  const slide = activeSlide()
+  // Reactive state selectors
+  const playbackSettings = useEditorStore(s => s.playbackSettings)
+  const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
+  const camera = useEditorStore(s => s.camera)
+  const selectedElementIds = useEditorStore(s => s.selectedElementIds)
+
+  // Stable actions
+  const setActiveSlide = useEditorStore(s => s.setActiveSlide)
+  const setSelectedElement = useEditorStore(s => s.setSelectedElement)
+  const updateSlide = useEditorStore(s => s.updateSlide)
+  const setCamera = useEditorStore(s => s.setCamera)
+  const setMobileInspectorOpen = useEditorStore(s => s.setMobileInspectorOpen)
+  const setEditingId = useEditorStore(s => s.setEditingId)
+
+  const project = useEditorStore(s => s.activeProject())
+  const slide = useEditorStore(s => s.activeSlide())
   const totalSlides = project?.slides.length ?? 0
 
-  const selectedElementIds = useEditorStore((state) => state.selectedElementIds)
   const selectedElements = slide?.elements.filter(el => selectedElementIds.includes(el.id)) || []
   // We render the group bounding box if there are multiple selections, OR if the single selection is part of a group
   const isGroupSelection = selectedElements.length > 1 || (selectedElements.length === 1 && selectedElements[0].groupId)
