@@ -14,7 +14,7 @@ import { useClickOutside } from '@/hooks/useClickOutside'
 import type { LineType } from '@motionslides/shared'
 
 export function MobileElementDropdown() {
-  const { addElement } = useEditorStore()
+  const addElement = useEditorStore(s => s.addElement)
   const [isOpen, setIsOpen] = useState(false)
   const [showLineSubmenu, setShowLineSubmenu] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)

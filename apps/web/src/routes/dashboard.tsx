@@ -11,6 +11,10 @@ import { DeleteConfirmationModal } from '@/components/ui/DeleteConfirmationModal
 export const Route = createFileRoute('/dashboard')({
   loader: async () => {
     await storeHydrationPromise
+    const store = useEditorStore.getState()
+    if (store.user) {
+      await store.syncProjects()
+    }
   },
   pendingComponent: LoadingPage,
   component: Dashboard,

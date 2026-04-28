@@ -14,7 +14,7 @@ import { ShapeElement } from './elements/ShapeElement'
 import { LineElement } from './elements/LineElement'
 import { ChartElement } from './elements/ChartElement'
 import { BoundingBox } from './BoundingBox'
-import { useAccessControl } from '@/hooks/useAccessControl'
+import { usePermissions } from '@/context/PermissionContext'
 
 interface Props {
   element: SceneElement
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export const CanvasElement = memo(function CanvasElement({ element }: Props) {
-  const { isReadOnly } = useAccessControl()
+  const { isReadOnly } = usePermissions()
   
   // Targeted selectors for state values
   const selectedElementIds = useEditorStore(s => s.selectedElementIds)
@@ -49,6 +49,8 @@ export const CanvasElement = memo(function CanvasElement({ element }: Props) {
   const isDragging = useRef(false)
   const dragStartCoords = useRef<Record<string, { x: number, y: number }>>({})
   const dragStartPointer = useRef({ x: 0, y: 0 })
+  const lastDx = useRef(0)
+  const lastDy = useRef(0)
 
   // ── Identity Check ──
   // Is this element present in both the previous and current slide?
@@ -123,6 +125,9 @@ export const CanvasElement = memo(function CanvasElement({ element }: Props) {
       const dy = ev.clientY - dragStartPointer.current.y
       if (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX) isDragging.current = true
 
+      lastDx.current = dx
+      lastDy.current = dy
+
       const canvasBoard = el.parentElement
       const scale = canvasBoard ? canvasBoard.getBoundingClientRect().width / canvasBoard.offsetWidth : 1
 
@@ -135,12 +140,31 @@ export const CanvasElement = memo(function CanvasElement({ element }: Props) {
         }
       })
 
-      updateElementsBatch(updates)
+      updateElementsBatch(updates, { silent: true })
     }
 
     const onUp = () => {
       el.removeEventListener('pointermove', onMove)
       el.removeEventListener('pointerup', onUp)
+      
+      // Perform a final non-silent update to commit changes to state and trigger line recalculation
+      if (isDragging.current) {
+        const dx = lastDx.current
+        const dy = lastDy.current
+        const canvasBoard = el.parentElement
+        const scale = canvasBoard ? canvasBoard.getBoundingClientRect().width / canvasBoard.offsetWidth : 1
+
+        const updates = targetIds.map(id => {
+          const startX = dragStartCoords.current[id]?.x ?? 0
+          const startY = dragStartCoords.current[id]?.y ?? 0
+          return {
+            id,
+            changes: { position: { x: startX + dx / scale, y: startY + dy / scale } }
+          }
+        })
+        updateElementsBatch(updates, { silent: false })
+      }
+
       setTimeout(() => { isDragging.current = false }, DRAG_RESET_DELAY_MS)
     }
 

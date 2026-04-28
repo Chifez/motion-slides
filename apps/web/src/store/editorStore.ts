@@ -30,12 +30,22 @@ export type EditorState =
 // Zustand Store with IndexedDB persistence
 // ─────────────────────────────────────────────
 
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
 const idbStorage = {
   getItem: async (name: string): Promise<string | null> => {
     return (await get(name)) || null
   },
   setItem: async (name: string, value: string): Promise<void> => {
-    await set(name, value)
+    // Clear any existing timer
+    if (debounceTimer) clearTimeout(debounceTimer)
+
+    // Debounce the write operation. 
+    // 500ms is enough to bridge high-frequency drag events.
+    debounceTimer = setTimeout(async () => {
+      await set(name, value)
+      debounceTimer = null
+    }, 500)
   },
   removeItem: async (name: string): Promise<void> => {
     await del(name)

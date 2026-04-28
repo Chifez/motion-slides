@@ -11,6 +11,7 @@ import { AIChat } from '@/components/editor/AIChat'
 import { LoadingPage } from '@/components/ui/LoadingPage'
 import { useAccessControl } from '@/hooks/useAccessControl'
 import { ViewerOverlay } from '@/components/editor/presentation/ViewerOverlay'
+import { PermissionProvider } from '@/context/PermissionContext'
 import { useRef, useState, useEffect } from 'react'
 import { z } from 'zod'
 
@@ -30,6 +31,7 @@ export const Route = createFileRoute('/p/$projectId')({
     const existsLocally = store.projects.some(p => p.id === params.projectId)
     if (existsLocally) {
       store.loadProject(params.projectId)
+      if (store.user) store.syncProjects() // Background sync
       return
     }
 
@@ -48,7 +50,7 @@ export const Route = createFileRoute('/p/$projectId')({
           console.log(`[Loader] Successfully fetched project ${params.projectId}`)
           store.importProject(remoteProject as any)
           store.loadProject(params.projectId)
-          return
+          return { project: remoteProject as any }
         }
       } catch (err: any) {
         console.error(`[Loader] Attempt ${attempt} failed for ${params.projectId}:`, err.message)
@@ -61,7 +63,9 @@ export const Route = createFileRoute('/p/$projectId')({
       }
     }
 
-    store.loadProject(params.projectId) // resolves to null → "not found" UI
+    store.loadProject(params.projectId) 
+    const project = store.activeProject()
+    return { project }
   },
   pendingComponent: LoadingPage,
   component: ProjectPage,
@@ -96,8 +100,25 @@ function ProjectPage() {
  * All hooks are unconditional; early returns only appear after them.
  */
 function ProjectPageInner() {
-  const { activeProject, isPresenting, isPrototypeMode, startPresentation, setReadOnly } =
-    useEditorStore()
+  const loaderData = Route.useLoaderData()
+  const loaderProject = loaderData?.project
+  const activeProject = useEditorStore(s => s.activeProject)
+  const isPresenting = useEditorStore(s => s.isPresenting)
+  const isPrototypeMode = useEditorStore(s => s.isPrototypeMode)
+  const startPresentation = useEditorStore(s => s.startPresentation)
+  const setReadOnly = useEditorStore(s => s.setReadOnly)
+  const importProject = useEditorStore(s => s.importProject)
+  const loadProject = useEditorStore(s => s.loadProject)
+
+  // Hydrate store from loader data if necessary (critical for guest/incognito access)
+  useEffect(() => {
+    if (loaderProject && !activeProject()) {
+      console.log('[Hydration] Importing project from loader data')
+      importProject(loaderProject)
+      loadProject(loaderProject.id)
+    }
+  }, [loaderProject, activeProject, importProject, loadProject])
+
   const { mode, isReadOnly, autoplay, isDenied } = useAccessControl()
 
   useEditorShortcuts()
@@ -137,18 +158,20 @@ function ProjectPageInner() {
   const isViewOnly = mode === 'view' || mode === 'present'
 
   return (
-    <div className="h-screen flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors relative">
-      {showEditorUI && <EditorToolbar project={project} />}
+    <PermissionProvider>
+      <div className="h-screen flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors relative">
+        {showEditorUI && <EditorToolbar project={project} />}
 
-      <div className="flex flex-1 overflow-hidden relative">
-        {showEditorUI && !isPrototypeMode && <SlidePanel />}
-        {isPrototypeMode ? <PrototypeCanvas /> : <CanvasStage />}
-        {showEditorUI && !isPrototypeMode && <InspectorPanel />}
-        {showEditorUI && <AIChat />}
+        <div className="flex flex-1 overflow-hidden relative">
+          {showEditorUI && !isPrototypeMode && <SlidePanel />}
+          {isPrototypeMode ? <PrototypeCanvas /> : <CanvasStage />}
+          {showEditorUI && !isPrototypeMode && <InspectorPanel />}
+          {showEditorUI && <AIChat />}
+        </div>
+
+        <PresentationOverlay />
+        {isViewOnly && !isPresenting && <ViewerOverlay startPresentation={startPresentation} />}
       </div>
-
-      <PresentationOverlay />
-      {isViewOnly && !isPresenting && <ViewerOverlay startPresentation={startPresentation} />}
-    </div>
+    </PermissionProvider>
   )
 }

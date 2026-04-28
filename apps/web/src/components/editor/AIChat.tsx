@@ -11,11 +11,17 @@ import { generateSlides } from '@/lib/generateClient'
 type Tab = 'mode-select' | 'readme' | 'architecture' | 'chat'
 
 export function AIChat() {
-  const {
-    isChatOpen, setChatOpen, isGenerating, setGenerating,
-    pendingSlides, pendingTitle, setPendingSlides, clearPending,
-    addSlidesToProject, activeProjectId, recalculateLines
-  } = useEditorStore()
+  const isChatOpen = useEditorStore(s => s.isChatOpen)
+  const setChatOpen = useEditorStore(s => s.setChatOpen)
+  const isGenerating = useEditorStore(s => s.isGenerating)
+  const setGenerating = useEditorStore(s => s.setGenerating)
+  const pendingSlides = useEditorStore(s => s.pendingSlides)
+  const pendingTitle = useEditorStore(s => s.pendingTitle)
+  const setPendingSlides = useEditorStore(s => s.setPendingSlides)
+  const clearPending = useEditorStore(s => s.clearPending)
+  const addSlidesToProject = useEditorStore(s => s.addSlidesToProject)
+  const activeProjectId = useEditorStore(s => s.activeProjectId)
+  const recalculateLines = useEditorStore(s => s.recalculateLines)
 
   const [activeTab, setActiveTab] = useState<Tab>('mode-select')
   const [progress, setProgress] = useState<{ percent: number; message: string }>({ percent: 0, message: '' })

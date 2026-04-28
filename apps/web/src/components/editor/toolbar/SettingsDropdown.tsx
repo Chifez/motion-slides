@@ -16,7 +16,10 @@ const labelCls = "text-[10px] text-(--ms-text-muted) uppercase tracking-wider bl
 const selectCls = "w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1 text-[11px] text-(--ms-text-primary) focus:outline-none"
 
 export function SettingsDropdown() {
-  const { playbackSettings, updatePlaybackSettings, theme, toggleTheme } = useEditorStore()
+  const playbackSettings = useEditorStore(s => s.playbackSettings)
+  const theme = useEditorStore(s => s.theme)
+  const updatePlaybackSettings = useEditorStore(s => s.updatePlaybackSettings)
+  const toggleTheme = useEditorStore(s => s.toggleTheme)
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useClickOutside(ref, () => setOpen(false))

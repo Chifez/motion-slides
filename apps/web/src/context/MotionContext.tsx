@@ -124,7 +124,10 @@ export function MotionProvider({ settings, previousSlide, currentSlide, activeTr
     settings.transitionEase.x1, settings.transitionEase.y1,
     settings.transitionEase.x2, settings.transitionEase.y2,
     activeTransition,
-    previousSlide, currentSlide,
+    previousSlide?.id, 
+    currentSlide?.id,
+    previousSlide?.elements.length,
+    currentSlide?.elements.length
   ])
 
   return <MotionCtx value={value}>{children}</MotionCtx>

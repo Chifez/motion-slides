@@ -11,15 +11,19 @@ const sectionCls = "px-3 py-3 border-b border-[var(--ms-border)]"
 export function InspectorPanel() {
   const selectedElementIds = useEditorStore(s => s.selectedElementIds)
   const mobileInspectorOpen = useEditorStore(s => s.mobileInspectorOpen)
-  const slide = useEditorStore(s => s.activeSlide())
+  const element = useEditorStore(s => {
+    const slide = s.activeSlide()
+    return slide?.elements.find(el => el.id === selectedElementIds[0])
+  })
   
-  const { 
-    updateElement, updateElements, deleteElement,
-    groupElements, ungroupElements, setMobileInspectorOpen
-  } = useEditorStore()
+  const updateElement = useEditorStore(s => s.updateElement)
+  const updateElements = useEditorStore(s => s.updateElements)
+  const deleteElement = useEditorStore(s => s.deleteElement)
+  const groupElements = useEditorStore(s => s.groupElements)
+  const ungroupElements = useEditorStore(s => s.ungroupElements)
+  const setMobileInspectorOpen = useEditorStore(s => s.setMobileInspectorOpen)
 
   const isMobile = useIsMobile()
-  const element = slide?.elements.find((el) => el.id === selectedElementIds[0])
 
   const update = (data: Parameters<typeof updateElement>[1]) => {
     if (selectedElementIds.length === 1 && element) {
@@ -52,7 +56,7 @@ export function InspectorPanel() {
           <div className="flex flex-col gap-2">
             {/* If all selected share the exact same groupId, they are a Group. Offer Ungroup. */}
             {(() => {
-              const elements = selectedElementIds.map(id => slide?.elements.find(e => e.id === id)).filter(Boolean) as any[]
+              const elements = useEditorStore.getState().activeSlide()?.elements.filter(e => selectedElementIds.includes(e.id)) || []
               const firstGroupId = elements[0]?.groupId
               const allSameGroup = firstGroupId && elements.every(el => el.groupId === firstGroupId) && elements.length > 1
               

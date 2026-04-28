@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 
-import { ChevronLeft, ChevronRight, Palette } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Palette, Cloud } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useCanvasScale } from '@/hooks/useCanvasScale'
 import { getCanvasDimensions } from '@motionslides/shared'
@@ -14,11 +14,20 @@ export function CanvasStage() {
   const [showBgPicker, setShowBgPicker] = useState(false)
   const isReadOnly = useAccessControl().isReadOnly
 
-  // Reactive state selectors
   const playbackSettings = useEditorStore(s => s.playbackSettings)
   const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
   const camera = useEditorStore(s => s.camera)
   const selectedElementIds = useEditorStore(s => s.selectedElementIds)
+  const isSyncing = useEditorStore(s => s.isSyncing)
+  const slideBackground = useEditorStore(s => s.activeSlide()?.background || '#0a0a0a')
+  const slideName = useEditorStore(s => {
+    const slide = s.activeSlide()
+    return slide?.name || `Slide ${s.activeSlideIndex + 1}`
+  })
+
+  const slide = useEditorStore(s => s.activeSlide())
+  const project = useEditorStore(s => s.activeProject())
+  const totalSlides = useEditorStore(s => s.activeProject()?.slides.length ?? 0)
 
   // Stable actions
   const setActiveSlide = useEditorStore(s => s.setActiveSlide)
@@ -27,14 +36,17 @@ export function CanvasStage() {
   const setCamera = useEditorStore(s => s.setCamera)
   const setMobileInspectorOpen = useEditorStore(s => s.setMobileInspectorOpen)
   const setEditingId = useEditorStore(s => s.setEditingId)
+  const syncProjects = useEditorStore(s => s.syncProjects)
 
-  const project = useEditorStore(s => s.activeProject())
-  const slide = useEditorStore(s => s.activeSlide())
-  const totalSlides = project?.slides.length ?? 0
-
-  const selectedElements = slide?.elements.filter(el => selectedElementIds.includes(el.id)) || []
-  // We render the group bounding box if there are multiple selections, OR if the single selection is part of a group
-  const isGroupSelection = selectedElements.length > 1 || (selectedElements.length === 1 && selectedElements[0].groupId)
+  const selectedElements = useMemo(() => 
+    slide?.elements.filter(el => selectedElementIds.includes(el.id)) || [],
+    [slide?.elements, selectedElementIds]
+  )
+  
+  const isGroupSelection = useMemo(() => 
+    selectedElements.length > 1 || (selectedElements.length === 1 && selectedElements[0].groupId),
+    [selectedElements]
+  )
 
   const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
   const scale = useCanvasScale(stageRef, canvasW, canvasH)
@@ -60,7 +72,7 @@ export function CanvasStage() {
     return () => el.removeEventListener('wheel', handleWheel)
   }, [setCamera])
 
-  const slideName = slide?.name || `Slide ${activeSlideIndex + 1}`
+
 
   return (
     <main
@@ -78,7 +90,7 @@ export function CanvasStage() {
         style={{
           width: canvasW,
           height: canvasH,
-          background: slide?.background || '#0a0a0a',
+          background: slideBackground,
           transform: `translate(${camera.x}px, ${camera.y}px) scale(${scale * camera.zoom})`,
           transformOrigin: 'center center',
         }}
@@ -110,7 +122,7 @@ export function CanvasStage() {
             >
               <div
                 className="w-3 h-3 rounded-sm border border-white/15"
-                style={{ background: slide?.background || '#0a0a0a' }}
+                style={{ background: slideBackground }}
               />
               <Palette size={11} />
             </button>
@@ -120,7 +132,7 @@ export function CanvasStage() {
                 <span className="text-[10px] text-neutral-600 uppercase tracking-wider block mb-2">Slide Background</span>
                 <input
                   type="color"
-                  value={slide?.background || '#0a0a0a'}
+                  value={slideBackground}
                   onChange={(e) => updateSlide({ background: e.target.value })}
                   className="w-full h-8 rounded-md cursor-pointer border-none bg-transparent mb-2"
                 />
@@ -137,6 +149,22 @@ export function CanvasStage() {
               </div>
             )}
           </div>
+
+          {/* Save Button (Cloud Icon) - Only shows when unsynced */}
+          {!isReadOnly && project && !project.synced && (
+            <button
+              onClick={() => {
+                console.log('[CanvasStage] Manual Save clicked')
+                syncProjects()
+              }}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 text-[10px] text-orange-400 hover:text-orange-300 bg-orange-500/10 backdrop-blur-sm border border-orange-500/30 rounded-md px-2 py-1 cursor-pointer transition-colors disabled:opacity-50"
+              title="Unsaved changes - click to sync to cloud"
+            >
+              <Cloud size={11} className={isSyncing ? 'animate-pulse' : ''} />
+              <span>{isSyncing ? 'Saving...' : 'Save'}</span>
+            </button>
+          )}
         </div>
       )}
 

@@ -2,41 +2,37 @@ import { useEffect, useRef } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 
 /**
- * useSyncManager — Background synchronization hook.
- * Watches for local changes and pushes them to the server with debouncing.
+ * useSyncManager — Intentional Synchronization Manager.
+ * 
+ * In version 3, we move away from "sync on every change" to a session-based model.
+ * Sync only happens on:
+ * 1. Manual Save (Cloud icon click)
+ * 2. Page Leave (beforeunload)
+ * 3. Dashboard Open (handled in dashboard route)
  */
 export function useSyncManager() {
   const syncProjects = useEditorStore((s) => s.syncProjects)
   const projects = useEditorStore((s) => s.projects)
-  const user = useEditorStore((s) => s.user)
-  const isSyncing = useEditorStore((s) => s.isSyncing)
-  
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
-  const isFirstMount = useRef(true)
 
-  // Trigger sync when projects change (debounced)
+  // Sync on page leave (beforeunload)
   useEffect(() => {
-    if (!user) return
-    
-    // Skip the very first mount if projects were just hydrated
-    if (isFirstMount.current) {
-      isFirstMount.current = false
-      // But still do an initial sync to get remote projects
-      syncProjects()
-      return
-    }
-
-    if (debounceTimer.current) clearTimeout(debounceTimer.current)
-
-    // Debounce sync to prevent hammering the server on every keystroke
-    debounceTimer.current = setTimeout(() => {
-      if (!isSyncing) {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const hasUnsynced = projects.some(p => !p.synced)
+      if (hasUnsynced) {
+        // We trigger the sync, but beforeunload is synchronous and 
+        // doesn't wait for promises. Most modern browsers will kill 
+        // the request unless we use navigator.sendBeacon (which our 
+        // server actions don't use yet).
+        // For now, we'll just try our best.
         syncProjects()
+        
+        // Show a confirmation dialog to give the sync a chance to finish
+        e.preventDefault()
+        e.returnValue = ''
       }
-    }, 3000)
-
-    return () => {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current)
     }
-  }, [projects, user, syncProjects])
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [projects, syncProjects])
 }

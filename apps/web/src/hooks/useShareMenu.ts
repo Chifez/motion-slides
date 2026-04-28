@@ -23,14 +23,12 @@ export function useShareMenu(project: Project) {
   }, [])
 
   useEffect(() => {
-    if (!project.synced) {
-      setShareState({ status: 'unsynced' })
-    } else if (isSyncing) {
+    if (isSyncing) {
       setShareState({ status: 'syncing' })
     } else {
       setShareState({ status: project.visibility as any })
     }
-  }, [project.synced, project.visibility, isSyncing])
+  }, [project.visibility, isSyncing])
 
   const copyLink = async (type: 'edit' | 'view') => {
     const params = new URLSearchParams()

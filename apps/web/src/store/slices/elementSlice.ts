@@ -9,7 +9,10 @@ export interface ElementSlice {
   addElement: (element: SceneElement) => void
   updateElement: (id: string, updates: Partial<SceneElement>) => void
   updateElements: (ids: string[], updates: Partial<SceneElement>) => void
-  updateElementsBatch: (updates: { id: string; changes: Partial<SceneElement> }[]) => void
+  updateElementsBatch: (
+    updates: { id: string; changes: Partial<SceneElement> }[],
+    options?: { silent?: boolean }
+  ) => void
   deleteElement: (id: string) => void
   toggleElementLock: (id: string) => void
   duplicateElement: (id: string) => void
@@ -284,9 +287,13 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
     get().recalculateLines()
   },
 
-  updateElementsBatch: (updates) => {
+  updateElementsBatch: (updates, options = {}) => {
     const { activeProjectId, activeSlideIndex } = get()
     if (!activeProjectId || updates.length === 0) return
+
+    // Convert updates array to a Map for O(1) lookup during the elements loop
+    const updateMap = new Map(updates.map(u => [u.id, u.changes]))
+
     set((s) => ({
       projects: s.projects.map((p) => {
         if (p.id !== activeProjectId) return p
@@ -295,15 +302,26 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
           return {
             ...sl,
             elements: sl.elements.map((el) => {
-              const update = updates.find((u) => u.id === el.id)
-              return update ? ({ ...el, ...update.changes } as SceneElement) : el
+              const changes = updateMap.get(el.id)
+              return changes ? ({ ...el, ...changes } as SceneElement) : el
             }),
           }
         })
-        return { ...p, slides, updatedAt: Date.now() }
+
+        // Optimized Sync: Only update project-level metadata if not silent.
+        // This prevents triggering expensive global re-renders during high-frequency drags.
+        return { 
+          ...p, 
+          slides, 
+          ...(options.silent ? { synced: false } : { updatedAt: Date.now(), synced: false })
+        }
       }),
     }))
-    get().recalculateLines()
+
+    // Line recalculation is expensive; only run if not silent or specifically needed
+    if (!options.silent) {
+      get().recalculateLines()
+    }
   },
 
   /**

@@ -6,17 +6,16 @@ import { useEditorStore } from '@/store/editorStore'
 import type { SceneElement } from '@motionslides/shared'
 
 export function SlidePanel() {
-  const {
-    activeProject, activeSlideIndex, setActiveSlide, activeSlide,
-    addSlide, duplicateSlide, deleteSlide,
-    mobileSlidesOpen, setMobileSlidesOpen,
-    selectedElementIds, groupElements, ungroupElements
-  } = useEditorStore()
+  const slides = useEditorStore(s => s.activeProject()?.slides || [])
+  const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
+  const mobileSlidesOpen = useEditorStore(s => s.mobileSlidesOpen)
+  
+  const setActiveSlide = useEditorStore(s => s.setActiveSlide)
+  const addSlide = useEditorStore(s => s.addSlide)
+  const setMobileSlidesOpen = useEditorStore(s => s.setMobileSlidesOpen)
+  const setMobileInspectorOpen = useEditorStore(s => s.setMobileInspectorOpen)
   const isMobile = useIsMobile()
-  const project = activeProject()
-  const slide = activeSlide()
-  if (!project) return null
-  const { slides } = project
+  const totalSlides = slides.length
 
 
   const panelContent = (
@@ -25,29 +24,7 @@ export function SlidePanel() {
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-(--ms-border) sticky top-0 bg-(--ms-bg-surface) z-10 transition-colors">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted)">Slides & Layers</span>
         <div className="flex items-center gap-1">
-          {/* Show Group/Ungroup icon if multiple items or a group is selected */}
-          {(() => {
-            if (selectedElementIds.length > 1) {
-              const elements = slide?.elements.filter(e => selectedElementIds.includes(e.id)) || []
-              const firstGroupId = elements[0]?.groupId
-              const allSameGroup = firstGroupId && elements.every(el => el.groupId === firstGroupId) && elements.length > 1
-
-              if (allSameGroup) {
-                return (
-                  <button onClick={() => ungroupElements(firstGroupId)} className="p-1 rounded-md text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 transition-colors cursor-pointer border-none bg-transparent" title="Ungroup">
-                    <Ungroup size={13} />
-                  </button>
-                )
-              }
-
-              return (
-                <button onClick={() => groupElements(selectedElementIds)} className="p-1 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent" title="Group Selection">
-                  <Combine size={13} />
-                </button>
-              )
-            }
-            return null
-          })()}
+          {/* Group controls moved to SlideThumb/ElementRow context or handled globally */}
 
           <button
             onClick={addSlide}
@@ -68,20 +45,13 @@ export function SlidePanel() {
 
       {/* Slide list */}
       <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2 custom-scrollbar pb-10 md:pb-0">
-        {slides.map((slide, i) => (
+        {slides.map((s, i) => (
           <SlideThumb
-            key={slide.id}
+            key={s.id}
+            slideId={s.id}
             index={i}
-            name={slide.name || `Slide ${i + 1}`}
-            background={slide.background}
-            elements={slide.elements}
             isActive={activeSlideIndex === i}
-            totalSlides={slides.length}
-            onSelect={() => {
-              setActiveSlide(i)
-            }}
-            onDuplicate={() => duplicateSlide(i)}
-            onDelete={() => deleteSlide(i)}
+            totalSlides={totalSlides}
           />
         ))}
       </div>
@@ -168,10 +138,14 @@ function elementLabel(el: SceneElement): string {
 // ─────────────────────────────────────────────
 
 function ElementRow({ element }: { element: SceneElement }) {
-  const {
-    selectedElementIds, setSelectedElement, setSelectedElements, toggleElementLock, deleteElement,
-    setMobileInspectorOpen, setMobileSlidesOpen, isMultiSelectMode
-  } = useEditorStore()
+  const selectedElementIds = useEditorStore(s => s.selectedElementIds)
+  const setSelectedElement = useEditorStore(s => s.setSelectedElement)
+  const setSelectedElements = useEditorStore(s => s.setSelectedElements)
+  const toggleElementLock = useEditorStore(s => s.toggleElementLock)
+  const deleteElement = useEditorStore(s => s.deleteElement)
+  const setMobileInspectorOpen = useEditorStore(s => s.setMobileInspectorOpen)
+  const setMobileSlidesOpen = useEditorStore(s => s.setMobileSlidesOpen)
+  const isMultiSelectMode = useEditorStore(s => s.isMultiSelectMode)
   const isMobile = useIsMobile()
   const isSelected = selectedElementIds.includes(element.id)
   const isLocked = element.locked
@@ -275,21 +249,34 @@ function GroupRow({ childrenElements }: { groupId: string, childrenElements: Sce
 // ─────────────────────────────────────────────
 
 interface SlideThumbProps {
+  slideId: string
   index: number
-  name: string
-  background: string
-  elements: SceneElement[]
   isActive: boolean
   totalSlides: number
-  onSelect: () => void
-  onDuplicate: () => void
-  onDelete: () => void
 }
 
-function SlideThumb({ index, name, background, elements, isActive, totalSlides, onSelect, onDuplicate, onDelete }: SlideThumbProps) {
+import { memo } from 'react'
+
+export const SlideThumb = memo(function SlideThumb({ slideId, index, isActive, totalSlides }: SlideThumbProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [layersOpen, setLayersOpen] = useState(true)
-  const { updateSlide, setActiveSlide } = useEditorStore()
+
+  // Granular slide data selection
+  const slide = useEditorStore(s => {
+    const p = s.projects.find(p => p.id === s.activeProjectId)
+    return p?.slides.find(sl => sl.id === slideId)
+  })
+
+  const { updateSlide, setActiveSlide, duplicateSlide, deleteSlide } = useEditorStore()
+
+  if (!slide) return null
+
+  const { name, background, elements } = slide
+  const slideName = name || `Slide ${index + 1}`
+
+  const onSelect = () => setActiveSlide(index)
+  const onDuplicate = () => duplicateSlide(index)
+  const onDelete = () => deleteSlide(index)
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -358,7 +345,7 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
           />
         ) : (
           <span className={`text-[10px] font-medium block truncate ${isActive ? 'text-(--ms-text-primary)' : 'text-(--ms-text-muted)'}`}>
-            {name}
+            {slideName}
           </span>
         )}
       </div>
@@ -418,4 +405,4 @@ function SlideThumb({ index, name, background, elements, isActive, totalSlides, 
       </AnimatePresence>
     </motion.div>
   )
-}
+})

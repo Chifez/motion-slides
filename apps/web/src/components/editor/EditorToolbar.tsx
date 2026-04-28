@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Play, PenSquare, GitBranch, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@motionslides/shared'
@@ -22,12 +22,17 @@ export function EditorToolbar({ project }: Props) {
   const theme = useEditorStore(s => s.theme)
 
   // Stable actions
-  const {
-    updateProjectName, startPresentation,
-    setPrototypeMode, setMobileSlidesOpen,
-    setMultiSelectMode, toggleChat,
-    toggleTheme
-  } = useEditorStore()
+  const updateProjectName = useEditorStore(s => s.updateProjectName)
+  const startPresentation = useEditorStore(s => s.startPresentation)
+  const setPrototypeMode = useEditorStore(s => s.setPrototypeMode)
+  const setMobileSlidesOpen = useEditorStore(s => s.setMobileSlidesOpen)
+  const setMultiSelectMode = useEditorStore(s => s.setMultiSelectMode)
+  const toggleChat = useEditorStore(s => s.toggleChat)
+  const toggleTheme = useEditorStore(s => s.toggleTheme)
+  const syncProjects = useEditorStore(s => s.syncProjects)
+  
+  const isSyncing = useEditorStore(s => s.isSyncing)
+  const projectName = useEditorStore(s => s.projects.find(p => p.id === project.id)?.name || '')
 
   const isMobile = useIsMobile();
   
@@ -41,7 +46,11 @@ export function EditorToolbar({ project }: Props) {
 
   return (
     <header className="h-14 shrink-0 flex items-center gap-1 md:gap-2 px-2 md:px-3 bg-(--ms-bg-surface) border-b border-(--ms-border) z-50 transition-colors">
-      <Link to="/dashboard" className="p-1 md:p-1.5 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors">
+      <Link 
+        to="/dashboard" 
+        onClick={() => syncProjects()}
+        className="p-1 md:p-1.5 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors"
+      >
         <ArrowLeft size={16} />
       </Link>
       <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1" />
@@ -66,11 +75,11 @@ export function EditorToolbar({ project }: Props) {
         </>
       )}
 
-      <Link to="/" className="items-center no-underline hidden sm:flex">
+      <Link to="/" onClick={() => syncProjects()} className="items-center no-underline hidden sm:flex">
         <Logo expanded={false} size={22} />
       </Link>
       <input
-        value={project.name}
+        value={projectName}
         onChange={(e) => updateProjectName(project.id, e.target.value)}
         onBlur={(e) => { if (!e.target.value.trim()) updateProjectName(project.id, 'Untitled Deck') }}
         spellCheck={false}

@@ -41,9 +41,7 @@ export function ShareMenu({ project }: Props) {
         title="Share Project"
       >
         <Share2 size={13} />
-        <span className="hidden md:inline">
-          {shareState.status === 'unsynced' ? 'Syncing...' : 'Share'}
-        </span>
+        <span className="hidden md:inline">Share</span>
       </button>
 
       {isOpen && (
@@ -56,17 +54,14 @@ export function ShareMenu({ project }: Props) {
               <div>
                 <div className="text-sm font-semibold text-(--ms-text-primary)">Link Sharing</div>
                 <div className="text-[10px] text-(--ms-text-muted)">
-                  {shareState.status === 'unsynced' 
-                    ? 'Wait for sync to share' 
-                    : isShared ? 'Anyone with the link' : 'Only you can access'}
+                  {isShared ? 'Anyone with the link' : 'Only you can access'}
                 </div>
               </div>
             </div>
             
             <button
               onClick={toggleSharing}
-              disabled={shareState.status === 'unsynced'}
-              className={`relative w-9 h-5 rounded-full transition-colors border-none cursor-pointer outline-none disabled:opacity-30 disabled:cursor-not-allowed ${isShared ? 'bg-blue-600' : 'bg-neutral-800'}`}
+              className={`relative w-9 h-5 rounded-full transition-colors border-none cursor-pointer outline-none ${isShared ? 'bg-blue-600' : 'bg-neutral-800'}`}
             >
               <motion.div
                 animate={{ x: isShared ? 18 : 2 }}
@@ -152,9 +147,7 @@ export function ShareMenu({ project }: Props) {
 
           <div className="mt-4 pt-4 border-t border-(--ms-border)">
             <div className="text-[10px] text-(--ms-text-muted) leading-relaxed">
-              {shareState.status === 'unsynced'
-                ? "This project hasn't been saved to the cloud yet. Please wait a moment before sharing."
-                : shareState.status === 'syncing'
+              {shareState.status === 'syncing'
                   ? "Syncing changes... Guests might see a slightly older version for a few seconds."
                   : isShared 
                     ? "Link sharing is active. You can revoke access anytime by rotating the link."
