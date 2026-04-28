@@ -13,6 +13,8 @@ export interface CanvasSlice {
   resetCamera: () => void
   isMultiSelectMode: boolean
   setMultiSelectMode: (isMultiSelectMode: boolean) => void
+  isDragging: boolean
+  setIsDragging: (isDragging: boolean) => void
 }
 
 export const createCanvasSlice: StateCreator<EditorState, [], [], CanvasSlice> = (set) => ({
@@ -24,4 +26,6 @@ export const createCanvasSlice: StateCreator<EditorState, [], [], CanvasSlice> =
 
   isMultiSelectMode: false,
   setMultiSelectMode: (isMultiSelectMode) => set({ isMultiSelectMode }),
+  isDragging: false,
+  setIsDragging: (isDragging) => set({ isDragging }),
 })

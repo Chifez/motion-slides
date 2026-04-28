@@ -28,16 +28,31 @@ export function useAccessControl(): AccessControl {
   const navigate = useNavigate()
 
   // Targeted store subscription
-  const { user, project, localAuthorId } = useEditorStore(
+  const { user, project, localAuthorId, hasHydrated } = useEditorStore(
     useShallow((s) => ({
       user: s.user,
       project: s.activeProject(),
       localAuthorId: s.localAuthorId,
+      hasHydrated: s.persist.hasHydrated(),
     }))
   )
 
   const access = useMemo(() => {
     const requestedMode = (search.mode as AccessMode) || 'edit'
+    
+    // If we haven't hydrated yet, we assume the user's requested mode is valid.
+    // This prevents "Mode Flickering" and incorrect URL rewrites on refresh.
+    if (!hasHydrated) {
+      return {
+        mode: requestedMode,
+        canEdit: true, // Optimistic edit during hydration
+        isReadOnly: false,
+        autoplay: null,
+        isAuthenticated: false,
+        isDenied: false,
+      }
+    }
+
     const requestedKey = search.key as string
     const autoplayParam = search.autoplay
     const autoplay = autoplayParam === 'true' ? true : autoplayParam === 'false' ? false : null

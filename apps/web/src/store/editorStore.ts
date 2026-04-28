@@ -27,24 +27,44 @@ export type EditorState =
   & AuthSlice
 
 // ─────────────────────────────────────────────
-// Zustand Store with IndexedDB persistence
+// Zustand Store with Optimized IndexedDB persistence
 // ─────────────────────────────────────────────
 
+/**
+ * Optimized Storage Wrapper
+ * 
+ * Version-2 Smoothness Replicator:
+ * Instead of serializing the state on every frame (which blocks the main thread),
+ * we debounce the serialization itself. During a drag, we skip all persistence
+ * overhead.
+ */
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-const idbStorage = {
-  getItem: async (name: string): Promise<string | null> => {
-    return (await get(name)) || null
+const optimizedStorage = {
+  getItem: async (name: string): Promise<any | null> => {
+    const raw = await get(name)
+    if (!raw) return null
+    // We store the data as a string in IDB for compatibility
+    return JSON.parse(raw)
   },
-  setItem: async (name: string, value: string): Promise<void> => {
-    // Clear any existing timer
+  setItem: async (name: string, value: any): Promise<void> => {
+    // 1. Skip all work if we are actively dragging
+    if (useEditorStore.getState()?.isDragging) return
+
+    // 2. Clear any pending save
     if (debounceTimer) clearTimeout(debounceTimer)
 
-    // Debounce the write operation. 
-    // 500ms is enough to bridge high-frequency drag events.
+    // 3. Debounce the serialization AND the write
     debounceTimer = setTimeout(async () => {
-      await set(name, value)
-      debounceTimer = null
+      try {
+        // Serialization happens here, outside the high-frequency loop
+        const serialized = JSON.stringify(value)
+        await set(name, serialized)
+      } catch (e) {
+        console.error('[Storage] Failed to persist state:', e)
+      } finally {
+        debounceTimer = null
+      }
     }, 500)
   },
   removeItem: async (name: string): Promise<void> => {
@@ -67,10 +87,9 @@ export const useEditorStore = create<EditorState>()(
     }),
     {
       name: 'motionslides-session',
-      storage: createJSONStorage(() => {
-        if (typeof window !== 'undefined') return idbStorage
-        return { getItem: () => null, setItem: () => {}, removeItem: () => {} } as any
-      }),
+      // We don't use createJSONStorage here because we want the raw object 
+      // in setItem to debounce the serialization itself.
+      storage: typeof window !== 'undefined' ? optimizedStorage : undefined,
       partialize: (state) => ({
         projects: state.projects,
         activeProjectId: state.activeProjectId,

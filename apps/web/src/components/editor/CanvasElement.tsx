@@ -33,7 +33,7 @@ export const CanvasElement = memo(function CanvasElement({ element }: Props) {
   // Actions are stable, safe to destructure
   const { 
     setSelectedElement, setSelectedElements, updateElementsBatch,
-    setMobileInspectorOpen, setEditingId 
+    setMobileInspectorOpen, setEditingId, setIsDragging
   } = useEditorStore()
 
   const isMobile = useIsMobile()
@@ -118,6 +118,7 @@ export const CanvasElement = memo(function CanvasElement({ element }: Props) {
 
     const el = e.currentTarget as HTMLElement
     el.setPointerCapture(e.pointerId)
+    setIsDragging(true)
 
     const onMove = (ev: PointerEvent) => {
       if (element.locked) return
@@ -165,12 +166,13 @@ export const CanvasElement = memo(function CanvasElement({ element }: Props) {
         updateElementsBatch(updates, { silent: false })
       }
 
+      setIsDragging(false)
       setTimeout(() => { isDragging.current = false }, DRAG_RESET_DELAY_MS)
     }
 
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
-  }, [element.id, element.locked, element.groupId, isMultiSelectMode, isEditing, setSelectedElement, setSelectedElements, updateElementsBatch])
+  }, [element.id, element.locked, element.groupId, isMultiSelectMode, isEditing, setSelectedElement, setSelectedElements, updateElementsBatch, setIsDragging])
 
   function renderContent() {
     switch (element.type) {
