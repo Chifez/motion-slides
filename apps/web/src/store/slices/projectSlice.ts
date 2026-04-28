@@ -2,10 +2,12 @@ import type { StateCreator } from 'zustand'
 import type { Project, Slide } from '@motionslides/shared'
 import { createDefaultProject } from '@/store/defaults'
 import type { EditorState } from '@/store/editorStore'
+import { uuid } from '@/lib/uuid'
 
 export interface ProjectSlice {
   projects: Project[]
   activeProjectId: string | null
+  localAuthorId: string
 
   createProject: (name?: string) => Project
   deleteProject: (id: string) => void
@@ -22,6 +24,7 @@ export interface ProjectSlice {
 export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice> = (set, get) => ({
   projects: [],
   activeProjectId: null,
+  localAuthorId: uuid(), // Stable ID generated once and persisted via zustand/persist
 
   activeProject: () => {
     const { projects, activeProjectId } = get()
@@ -31,7 +34,8 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   createProject: (name) => {
     const isFirst = get().projects.length === 0
     const user = get().user
-    const project = createDefaultProject(name, isFirst, user?.id)
+    const localAuthorId = get().localAuthorId
+    const project = createDefaultProject(name, isFirst, user?.id, localAuthorId)
     set((s) => ({
       projects: [...s.projects, project],
       activeProjectId: project.id,
@@ -112,7 +116,7 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   updateProjectName: (id, name) => {
     set((s) => ({
       projects: s.projects.map((p) =>
-        p.id === id ? { ...p, name, updatedAt: Date.now() } : p,
+        p.id === id ? { ...p, name, updatedAt: Date.now(), synced: false } : p,
       ),
     }))
   },
@@ -120,7 +124,7 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   updateProjectVisibility: (id, visibility) => {
     set((s) => ({
       projects: s.projects.map((p) =>
-        p.id === id ? { ...p, visibility, updatedAt: Date.now() } : p,
+        p.id === id ? { ...p, visibility, updatedAt: Date.now(), synced: false } : p,
       ),
     }))
   },
@@ -128,7 +132,7 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   updateProject: (id, updates) => {
     set((s) => ({
       projects: s.projects.map((p) =>
-        p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p,
+        p.id === id ? { ...p, ...updates, updatedAt: Date.now(), synced: false } : p,
       ),
     }))
   },

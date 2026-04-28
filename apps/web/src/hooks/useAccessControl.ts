@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
-import { useSearch } from '@tanstack/react-router'
+import { useSearch, useNavigate } from '@tanstack/react-router'
 
 export type AccessMode = 'edit' | 'view' | 'present'
 
@@ -24,11 +24,13 @@ export interface AccessControl {
 export function useAccessControl(): AccessControl {
   // Use a generic catch-all for search params since they can vary
   const search = useSearch({ from: '/p/$projectId' }) as any
-  const { user } = useEditorStore()
-  const { activeProject } = useEditorStore()
+  const navigate = useNavigate()
+
+  // Single store subscription
+  const { user, activeProject, localAuthorId } = useEditorStore()
   const project = activeProject()
 
-  return useMemo(() => {
+  const access = useMemo(() => {
     const requestedMode = (search.mode as AccessMode) || 'edit'
     const requestedKey = search.key as string
     const autoplayParam = search.autoplay
@@ -36,33 +38,26 @@ export function useAccessControl(): AccessControl {
 
     if (!project) {
       return {
-        mode: 'view',
+        mode: 'view' as AccessMode,
         canEdit: false,
         isReadOnly: true,
-        autoplay: false,
-        isAuthenticated: false,
-        isDenied: false, // handeled by null project check in page
+        autoplay: null,
+        isAuthenticated: !!user,
+        isDenied: false, // let the !project check in the page handle the UI
       }
     }
 
-    const isOwner = user && project.ownerId === user.id
+    const isOwner = !!user && project.ownerId === user.id
     const isCollaborative = project.visibility === 'collaborative'
     const isLinkShared = project.visibility === 'link-shared'
     const isPublic = project.visibility === 'public'
-    const isLocalDraft = !project.synced
 
-    // 2. Access Validation
+    // Requires matching localAuthorId to prevent draft collision between devices
+    const isLocalDraft = !project.synced && project.localAuthorId === localAuthorId
+
     const hasValidKey = requestedKey === project.shareKey
-    
-    // Logic for Denial:
-    // Deny if:
-    // 1. Project is NOT public AND
-    // 2. User is NOT owner AND
-    // 3. User is NOT local author AND
-    // 4. (Link-shared or Collaborative) AND Key is missing/wrong
-    // OR
-    // 5. Visibility is Private AND User is NOT owner/local
-    
+
+    // Access denial — guests with no valid path to the project
     let isDenied = false
     if (!isOwner && !isLocalDraft) {
       if (isPublic) {
@@ -70,37 +65,38 @@ export function useAccessControl(): AccessControl {
       } else if (isLinkShared || isCollaborative) {
         if (!hasValidKey) isDenied = true
       } else {
-        // Must be Private
-        isDenied = true
+        isDenied = true // private project
       }
     }
 
-    // 3. Final Permission Resolution
-    let mode = requestedMode
-    // canEdit is true if:
-    // 1. You are the owner (always)
-    // 2. Visibility is collaborative (with valid key)
-    // 3. It's a local draft (unsynced)
-    let canEdit = (isOwner || (isCollaborative && hasValidKey) || isLocalDraft) && requestedMode === 'edit'
-    
-    // Security Lock: If we try to edit without permission, force into view mode.
-    if (requestedMode === 'edit' && !isOwner && !(isCollaborative && hasValidKey) && !isLocalDraft) {
-      mode = 'view'
-      canEdit = false
-    }
+    // canEdit is a capability derived purely from data — never from the URL mode
+    const canEdit = isOwner || isLocalDraft || (isCollaborative && hasValidKey)
 
-    // If it's a shared view link, ensure canEdit is always false for this hook's output
-    if (requestedMode !== 'edit') {
-      canEdit = false
-    }
+    // Graceful mode downgrade — never show an error when view is possible
+    const effectiveMode: AccessMode = (requestedMode === 'edit' && !canEdit) ? 'view' : requestedMode
 
     return {
-      mode,
-      canEdit,
-      isReadOnly: !canEdit,
+      mode: effectiveMode,
+      canEdit,              // capability — independent of current mode
+      isReadOnly: !canEdit, // write guard for store/server operations
       autoplay,
       isAuthenticated: !!user,
       isDenied,
     }
-  }, [project, user, search.mode, search.key, search.autoplay])
+  }, [project, user, localAuthorId, search.mode, search.key, search.autoplay])
+
+  // Silent URL rewrite when mode is downgraded, so the URL reflects reality
+  // CRITICAL: Only perform the rewrite if the project actually exists to avoid 
+  // navigating during initial route load/hydration.
+  useEffect(() => {
+    if (project && access.mode !== search.mode) {
+      (navigate as any)({
+        search: (s: any) => ({ ...s, mode: access.mode }),
+        replace: true
+      })
+    }
+  }, [project, access.mode, search.mode, navigate])
+
+  return access
 }
+

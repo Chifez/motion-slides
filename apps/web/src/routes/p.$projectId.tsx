@@ -28,12 +28,15 @@ export const Route = createFileRoute('/p/$projectId')({
     const store = useEditorStore.getState()
 
     const existsLocally = store.projects.some(p => p.id === params.projectId)
-
     if (existsLocally) {
       store.loadProject(params.projectId)
-    } else {
+      return
+    }
+
+    const { getRemoteProjectAction } = await import('@/lib/actions/project')
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const { getRemoteProjectAction } = await import('@/lib/actions/project')
         const remoteProject = await getRemoteProjectAction({
           data: { projectId: params.projectId, shareKey: deps.key }
         })
@@ -41,14 +44,16 @@ export const Route = createFileRoute('/p/$projectId')({
         if (remoteProject) {
           store.importProject(remoteProject as any)
           store.loadProject(params.projectId)
-        } else {
-          store.loadProject(params.projectId)
+          return
         }
       } catch (err) {
-        console.error('Failed to load remote project:', err)
-        store.loadProject(params.projectId)
+        console.error(`Loader attempt ${attempt} failed:`, err)
       }
+
+      if (attempt < 3) await new Promise(r => setTimeout(r, 1000 * attempt)) // 1s, 2s backoff
     }
+
+    store.loadProject(params.projectId) // resolves to null → "not found" UI
   },
   pendingComponent: LoadingPage,
   component: ProjectPage,
@@ -89,19 +94,22 @@ function ProjectPageInner() {
 
   useEditorShortcuts()
 
-  // Sync derived read-only state to the store (same-render write — avoids
-  // a redundant re-render that a useEffect would cause)
+  // Sync derived read-only state to the store
   const storeIsReadOnly = useEditorStore(s => s.isReadOnly)
-  if (storeIsReadOnly !== isReadOnly) {
-    setReadOnly(isReadOnly)
-  }
+  useEffect(() => {
+    if (storeIsReadOnly !== isReadOnly) {
+      setReadOnly(isReadOnly)
+    }
+  }, [isReadOnly, storeIsReadOnly, setReadOnly])
 
   // Trigger presentation mode once if the URL requests it on initial load
   const hasStartedPresentation = useRef(false)
-  if (!hasStartedPresentation.current && (mode === 'present' || (mode === 'view' && autoplay))) {
-    hasStartedPresentation.current = true
-    setTimeout(() => startPresentation({ autoplay: !!autoplay }), 0)
-  }
+  useEffect(() => {
+    if (!hasStartedPresentation.current && (mode === 'present' || (mode === 'view' && autoplay))) {
+      hasStartedPresentation.current = true
+      startPresentation({ autoplay: !!autoplay })
+    }
+  }, [mode, autoplay, startPresentation])
 
   // ✅ Safe to early-return here — all hooks are already above this line
   const project = activeProject()

@@ -14,11 +14,12 @@ export function ShareMenu({ project }: Props) {
   const [copiedType, setCopiedType] = useState<'edit' | 'view' | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const updateProjectVisibility = useEditorStore(s => s.updateProjectVisibility)
+  const updateProject = useEditorStore(s => s.updateProject)
+  const isSyncing = useEditorStore(s => s.isSyncing)
+  const syncProjects = useEditorStore(s => s.syncProjects)
   
   useClickOutside(ref, () => setIsOpen(false))
 
-  const isShared = project.visibility !== 'private'
-  const isCollaborative = project.visibility === 'collaborative'
   const [baseUrl, setBaseUrl] = useState('')
   const [isRotating, setIsRotating] = useState(false)
 
@@ -26,19 +27,38 @@ export function ShareMenu({ project }: Props) {
     setBaseUrl(window.location.origin)
   }, [])
 
+  type ShareState =
+    | { status: 'unsynced' }
+    | { status: 'syncing' }
+    | { status: 'private' }
+    | { status: 'link-shared' }
+    | { status: 'collaborative' }
+
+  const shareState: ShareState = !project.synced 
+    ? { status: 'unsynced' } 
+    : isSyncing 
+      ? { status: 'syncing' } 
+      : { status: project.visibility as any }
+
+  const isShared = project.visibility !== 'private'
+  const isCollaborative = project.visibility === 'collaborative'
+
   const copyToClipboard = async (type: 'edit' | 'view') => {
-    if (!isShared && type === 'view') return
+    if (shareState.status === 'unsynced') return
     if (!baseUrl) return
 
-    let url = `${baseUrl}/p/${project.id}?mode=${type}`
-    
-    if (type === 'view') {
-      url += `&key=${project.shareKey}`
-    }
+    // Always include the shareKey for any shared link (view or edit)
+    const url = `${baseUrl}/p/${project.id}?mode=${type}&key=${project.shareKey}`
 
     try {
       await navigator.clipboard.writeText(url)
       setCopiedType(type)
+      
+      // Soft warning if syncing
+      if (shareState.status === 'syncing') {
+        // We could use a toast here, but for now we'll just show the success state
+      }
+
       setTimeout(() => setCopiedType(null), 2000)
     } catch (err) {
       console.error('Failed to copy:', err)
@@ -47,12 +67,25 @@ export function ShareMenu({ project }: Props) {
 
   const toggleSharing = () => {
     const nextVisibility = isShared ? 'private' : 'link-shared'
-    updateProjectVisibility(project.id, nextVisibility)
+    const updates: Partial<Project> = { 
+      visibility: nextVisibility,
+      updatedAt: Date.now()
+    }
+    
+    // Always rotate key when enabling sharing
+    if (!isShared) {
+      updates.shareKey = crypto.randomUUID()
+    }
+    
+    updateProject(project.id, updates)
+    // Force immediate sync so the guest doesn't get 'Access Denied'
+    syncProjects()
   }
 
   const toggleCollaborative = () => {
     const nextVisibility = isCollaborative ? 'link-shared' : 'collaborative'
     updateProjectVisibility(project.id, nextVisibility)
+    syncProjects()
   }
 
   const handleRotateKey = async () => {
@@ -62,8 +95,8 @@ export function ShareMenu({ project }: Props) {
       const { rotateShareKeyAction } = await import('@/lib/actions/project')
       const result = await rotateShareKeyAction({ data: { projectId: project.id } })
       if (result.success) {
-        // Local update to store to avoid waiting for sync
-        useEditorStore.getState().updateProject(project.id, { shareKey: result.newKey })
+        updateProject(project.id, { shareKey: result.newKey })
+        syncProjects()
       }
     } catch (err) {
       console.error('Rotation failed:', err)
@@ -80,7 +113,9 @@ export function ShareMenu({ project }: Props) {
         title="Share Project"
       >
         <Share2 size={13} />
-        <span className="hidden md:inline">Share</span>
+        <span className="hidden md:inline">
+          {shareState.status === 'unsynced' ? 'Syncing...' : 'Share'}
+        </span>
       </button>
 
       {isOpen && (
@@ -92,13 +127,18 @@ export function ShareMenu({ project }: Props) {
               </div>
               <div>
                 <div className="text-sm font-semibold text-(--ms-text-primary)">Link Sharing</div>
-                <div className="text-[10px] text-(--ms-text-muted)">{isShared ? 'Anyone with the link' : 'Only you can access'}</div>
+                <div className="text-[10px] text-(--ms-text-muted)">
+                  {shareState.status === 'unsynced' 
+                    ? 'Wait for sync to share' 
+                    : isShared ? 'Anyone with the link' : 'Only you can access'}
+                </div>
               </div>
             </div>
             
             <button
               onClick={toggleSharing}
-              className={`relative w-9 h-5 rounded-full transition-colors border-none cursor-pointer outline-none ${isShared ? 'bg-blue-600' : 'bg-neutral-800'}`}
+              disabled={shareState.status === 'unsynced'}
+              className={`relative w-9 h-5 rounded-full transition-colors border-none cursor-pointer outline-none disabled:opacity-30 disabled:cursor-not-allowed ${isShared ? 'bg-blue-600' : 'bg-neutral-800'}`}
             >
               <motion.div
                 animate={{ x: isShared ? 18 : 2 }}
@@ -118,7 +158,7 @@ export function ShareMenu({ project }: Props) {
                 </span>
                 <button 
                   onClick={handleRotateKey}
-                  disabled={!isShared || isRotating}
+                  disabled={!isShared || isRotating || shareState.status === 'syncing'}
                   className="text-[9px] text-blue-400 hover:text-blue-300 transition-colors bg-transparent border-none cursor-pointer disabled:opacity-0"
                 >
                   {isRotating ? 'Rotating...' : 'Revoke & Rotate Link'}
@@ -126,7 +166,8 @@ export function ShareMenu({ project }: Props) {
               </div>
               <button
                 onClick={() => copyToClipboard('view')}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition-all cursor-pointer text-left group"
+                disabled={!isShared}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition-all cursor-pointer text-left group disabled:cursor-not-allowed"
               >
                 <div className="flex items-center gap-2 overflow-hidden">
                   <LinkIcon size={12} className="text-blue-400 shrink-0" />
@@ -141,14 +182,15 @@ export function ShareMenu({ project }: Props) {
             </div>
 
             {/* Edit Link */}
-            <div className={`space-y-1.5 transition-opacity duration-300 ${isShared ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+            <div className={`space-y-1.5 transition-opacity duration-300 ${isCollaborative ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium text-(--ms-text-secondary) flex items-center gap-1">
                   <Unlock size={10} className={isCollaborative ? 'text-orange-400' : ''} /> Collaborative Edit
                 </span>
                 <button
                   onClick={toggleCollaborative}
-                  className={`relative w-7 h-4 rounded-full transition-colors border-none cursor-pointer outline-none ${isCollaborative ? 'bg-orange-500' : 'bg-neutral-800'}`}
+                  disabled={!isShared}
+                  className={`relative w-7 h-4 rounded-full transition-colors border-none cursor-pointer outline-none disabled:cursor-not-allowed ${isCollaborative ? 'bg-orange-500' : 'bg-neutral-800'}`}
                 >
                   <motion.div
                     animate={{ x: isCollaborative ? 14 : 2 }}
@@ -159,7 +201,8 @@ export function ShareMenu({ project }: Props) {
               </div>
               <button
                 onClick={() => copyToClipboard('edit')}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition-all cursor-pointer text-left group"
+                disabled={!isCollaborative}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition-all cursor-pointer text-left group disabled:cursor-not-allowed"
               >
                 <div className="flex items-center gap-2 overflow-hidden">
                   <LinkIcon size={12} className="text-orange-400 shrink-0" />
@@ -174,16 +217,20 @@ export function ShareMenu({ project }: Props) {
               <div className="text-[9px] text-(--ms-text-muted) pl-1">
                 {isCollaborative 
                   ? "⚠️ Anyone with the link can edit the original."
-                  : "Only you can edit. Link sharing is view-only."}
+                  : isShared ? "Enable collaborative mode to allow others to edit." : "Sharing must be enabled to use this."}
               </div>
             </div>
           </div>
 
           <div className="mt-4 pt-4 border-t border-(--ms-border)">
             <div className="text-[10px] text-(--ms-text-muted) leading-relaxed">
-              {isShared 
-                ? "Link sharing is active. You can revoke access anytime by rotating the link."
-                : "Enable link sharing to allow others to view this presentation."}
+              {shareState.status === 'unsynced'
+                ? "This project hasn't been saved to the cloud yet. Please wait a moment before sharing."
+                : shareState.status === 'syncing'
+                  ? "Syncing changes... Guests might see a slightly older version for a few seconds."
+                  : isShared 
+                    ? "Link sharing is active. You can revoke access anytime by rotating the link."
+                    : "Enable link sharing to allow others to view this presentation."}
             </div>
           </div>
         </div>

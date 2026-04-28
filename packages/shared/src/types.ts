@@ -221,6 +221,7 @@ export interface Project {
   /** Metadata for sharing and future database sync */
   shareKey: string
   ownerId?: string
+  localAuthorId?: string
   visibility: 'private' | 'link-shared' | 'collaborative' | 'public'
 }
 

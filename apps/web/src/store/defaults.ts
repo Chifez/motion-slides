@@ -14,7 +14,7 @@ export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
 }
 
 /** Creates a seeded demo project with two slides */
-export function createDefaultProject(name = 'Untitled Deck', isFirst = false, ownerId?: string): Project {
+export function createDefaultProject(name = 'Untitled Deck', isFirst = false, ownerId?: string, localAuthorId?: string): Project {
   const common = {
     name,
     description: isFirst ? 'A sample project demonstrating Magic Move.' : '',
@@ -25,6 +25,7 @@ export function createDefaultProject(name = 'Untitled Deck', isFirst = false, ow
     shareKey: uuid(),
     visibility: 'private' as const,
     ownerId,
+    localAuthorId,
   }
 
   if (!isFirst) {

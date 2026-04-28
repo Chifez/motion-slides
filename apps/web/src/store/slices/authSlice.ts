@@ -84,6 +84,10 @@ export const createAuthSlice: StateCreator<
             if (idx !== -1) updatedLocal[idx].synced = true
           })
           localChanged = true
+        } else {
+          console.error('Server sync failed:', result.error)
+          // If the server rejected it, we might want to flag this project as "stale" or "denied"
+          // For now, we'll just log it.
         }
       }
 

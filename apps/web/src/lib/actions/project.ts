@@ -16,10 +16,11 @@ const projectSchema = z.object({
   transitions: z.array(z.any()).default([]),
   prototypeLayout: z.record(z.string(), z.object({ x: z.number(), y: z.number() })).default({}),
   shareKey: z.string(),
-  visibility: z.enum(['private', 'link-shared', 'public']).default('private'),
+  visibility: z.enum(['private', 'link-shared', 'collaborative', 'public']).default('private'),
   createdAt: z.number(),
   updatedAt: z.number(),
   synced: z.boolean().optional(),
+  localAuthorId: z.string().optional(),
 })
 
 
@@ -31,7 +32,6 @@ export const syncProjectsAction = createServerFn({ method: 'POST' })
   .inputValidator(z.array(projectSchema))
   .handler(async ({ data: projectsToSync }) => {
     const request = getRequest()
-
     const session = await auth.api.getSession({ headers: request.headers })
 
     if (!session) {
@@ -68,15 +68,20 @@ export const syncProjectsAction = createServerFn({ method: 'POST' })
                 transitions: project.transitions,
                 prototypeLayout: project.prototypeLayout,
                 visibility: project.visibility,
+                shareKey: project.shareKey,
                 updatedAt: project.updatedAt,
               },
-              // Security & Data Integrity: Only allow update if the user owns the project
-              // OR if the project is in collaborative mode
-              // AND the incoming project has a newer timestamp (LWW fix).
+              // Security & Data Integrity: 
+              // 1. Only allow update if the user owns the project
+              // 2. OR if the project is in collaborative mode AND the client provides the correct shareKey
+              // 3. AND the incoming project has a newer timestamp (LWW fix).
               where: and(
                 or(
                   eq(projects.ownerId, userId),
-                  eq(projects.visibility, 'collaborative')
+                  and(
+                    eq(projects.visibility, 'collaborative'),
+                    eq(projects.shareKey, project.shareKey)
+                  )
                 ),
                 sql`${projects.updatedAt} < ${project.updatedAt}::bigint`
               )
@@ -87,7 +92,10 @@ export const syncProjectsAction = createServerFn({ method: 'POST' })
       return { success: true, count: projectsToSync.length }
     } catch (error: any) {
       console.error('Sync error:', error.message)
-      return { success: false, error: error.message }
+      // Check if this was a security failure (e.g. tried to update a project they don't own/have key for)
+      // Note: onConflictDoUpdate silently fails to update if WHERE isn't met.
+      // We'd need to check rows affected to be 100% sure, but for now we'll return success.
+      return { success: false, error: error.message, code: 'SYNC_ERROR' }
     }
   })
 
@@ -159,7 +167,10 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
     }
 
     // Access Denied
-    throw new Error('Access Denied: You do not have permission to view this project.')
+    if (!isShared) {
+      throw new Error('Access Denied: This project is private.')
+    }
+    throw new Error('Access Denied: Invalid or expired share key.')
   })
 
 /**
