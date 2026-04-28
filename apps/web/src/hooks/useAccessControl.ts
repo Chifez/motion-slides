@@ -33,7 +33,7 @@ export function useAccessControl(): AccessControl {
       user: s.user,
       project: s.activeProject(),
       localAuthorId: s.localAuthorId,
-      hasHydrated: s.persist.hasHydrated(),
+      hasHydrated: s.hasHydrated,
     }))
   )
 
@@ -104,19 +104,19 @@ export function useAccessControl(): AccessControl {
       isAuthenticated: !!user,
       isDenied,
     }
-  }, [project, user, localAuthorId, search.mode, search.key, search.autoplay])
+  }, [project, user, localAuthorId, hasHydrated, search.mode, search.key, search.autoplay])
 
   // Silent URL rewrite when mode is downgraded, so the URL reflects reality
   // CRITICAL: Only perform the rewrite if the project actually exists to avoid 
   // navigating during initial route load/hydration.
   useEffect(() => {
-    if (project && access.mode !== search.mode) {
+    if (hasHydrated && project && access.mode !== search.mode) {
       (navigate as any)({
         search: (s: any) => ({ ...s, mode: access.mode }),
         replace: true
       })
     }
-  }, [project, access.mode, search.mode, navigate])
+  }, [hasHydrated, project, access.mode, search.mode, navigate])
 
   return access
 }
