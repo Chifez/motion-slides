@@ -12,6 +12,7 @@ export interface AccessControl {
   autoplay: boolean | null
   isAuthenticated: boolean
   isDenied: boolean
+  isPending: boolean
 }
 
 /**
@@ -28,28 +29,31 @@ export function useAccessControl(): AccessControl {
   const navigate = useNavigate()
 
   // Targeted store subscription
-  const { user, project, localAuthorId } = useEditorStore(
+  const { user, project, localAuthorId, sessionStatus } = useEditorStore(
     useShallow((s) => ({
       user: s.user,
       project: s.activeProject(),
       localAuthorId: s.localAuthorId,
+      sessionStatus: s.sessionStatus,
     }))
   )
 
   const access = useMemo(() => {
+    const isPending = sessionStatus === 'loading'
     const requestedMode = (search.mode as AccessMode) || 'edit'
     const requestedKey = search.key as string
     const autoplayParam = search.autoplay
     const autoplay = autoplayParam === 'true' ? true : autoplayParam === 'false' ? false : null
 
-    if (!project) {
+    if (!project || isPending) {
       return {
-        mode: 'view' as AccessMode,
-        canEdit: false,
-        isReadOnly: true,
+        mode: requestedMode, // Keep what the URL says while pending
+        canEdit: requestedMode === 'edit', // Optimistic for initial render
+        isReadOnly: requestedMode !== 'edit',
         autoplay: null,
         isAuthenticated: !!user,
-        isDenied: false, // let the !project check in the page handle the UI
+        isDenied: false,
+        isPending,
       }
     }
 
@@ -59,9 +63,9 @@ export function useAccessControl(): AccessControl {
     const isPublic = project.visibility === 'public'
 
     // Requires matching localAuthorId to prevent draft collision between devices
-    const isLocalDraft = !project.synced && project.localAuthorId === localAuthorId
+    const isLocalDraft = project.localAuthorId === localAuthorId
 
-    const hasValidKey = requestedKey === project.shareKey
+    const hasValidKey = !!requestedKey && requestedKey === project.shareKey
 
     // Access denial — guests with no valid path to the project
     let isDenied = false
@@ -74,6 +78,22 @@ export function useAccessControl(): AccessControl {
         isDenied = true // private project
       }
     }
+
+    // DIAGNOSTIC LOGGING
+    console.group(`[AccessControl] Project: ${project.id}`)
+    console.table({
+      userId: user?.id || 'guest',
+      projectOwnerId: project.ownerId || 'none',
+      projectLocalAuthorId: project.localAuthorId || 'none',
+      storeLocalAuthorId: localAuthorId,
+      visibility: project.visibility,
+      isOwner,
+      isLocalDraft,
+      isDenied,
+      hasValidKey,
+      sessionStatus
+    })
+    console.groupEnd()
 
     // canEdit is a capability derived purely from data — never from the URL mode
     const canEdit = isOwner || isLocalDraft || (isCollaborative && hasValidKey)
@@ -88,20 +108,20 @@ export function useAccessControl(): AccessControl {
       autoplay,
       isAuthenticated: !!user,
       isDenied,
+      isPending: false,
     }
-  }, [project, user, localAuthorId, search.mode, search.key, search.autoplay])
+  }, [project, user, localAuthorId, search.mode, search.key, search.autoplay, sessionStatus])
 
   // Silent URL rewrite when mode is downgraded, so the URL reflects reality
-  // CRITICAL: Only perform the rewrite if the project actually exists to avoid 
-  // navigating during initial route load/hydration.
+  // CRITICAL: Only perform the rewrite if the project actually exists and session is ready
   useEffect(() => {
-    if (project && access.mode !== search.mode) {
+    if (project && !access.isPending && access.mode !== search.mode) {
       (navigate as any)({
         search: (s: any) => ({ ...s, mode: access.mode }),
         replace: true
       })
     }
-  }, [project, access.mode, search.mode, navigate])
+  }, [project, access.mode, access.isPending, search.mode, navigate])
 
   return access
 }

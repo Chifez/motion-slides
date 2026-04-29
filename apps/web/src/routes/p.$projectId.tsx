@@ -29,7 +29,10 @@ export const Route = createFileRoute('/p/$projectId')({
     const store = useEditorStore.getState()
 
     const existsLocally = store.projects.some(p => p.id === params.projectId)
+    console.log(`[ProjectLoader] ID: ${params.projectId} | Exists locally: ${existsLocally}`)
+
     if (existsLocally) {
+      console.log(`[ProjectLoader] Loading from local store...`)
       store.loadProject(params.projectId)
       if (store.user) store.syncProjects() // Background sync
       return
@@ -38,7 +41,7 @@ export const Route = createFileRoute('/p/$projectId')({
     const { getRemoteProjectAction } = await import('@/lib/actions/project')
     const key = deps.key
 
-    console.log(`[Loader] Fetching project ${params.projectId} (key: ${key ? 'present' : 'missing'})`)
+    console.log(`[ProjectLoader] Fetching from server (key: ${key ? 'yes' : 'no'})...`)
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
@@ -48,9 +51,18 @@ export const Route = createFileRoute('/p/$projectId')({
 
         if (remoteProject) {
           console.log(`[Loader] Successfully fetched project ${params.projectId}`)
-          store.importProject(remoteProject as any)
+          
+          // CRITICAL: Attach the key from the URL to the project metadata.
+          // The server omits it from JSON for security, but the client needs it 
+          // to satisfy the useAccessControl permission check in the UI.
+          const projectWithKey = {
+            ...remoteProject,
+            shareKey: key || (remoteProject as any).shareKey
+          }
+
+          store.importProject(projectWithKey as any)
           store.loadProject(params.projectId)
-          return { project: remoteProject as any }
+          return { project: projectWithKey as any }
         }
       } catch (err: any) {
         console.error(`[Loader] Attempt ${attempt} failed for ${params.projectId}:`, err.message)
@@ -119,28 +131,31 @@ function ProjectPageInner() {
     }
   }, [loaderProject, activeProject, importProject, loadProject])
 
-  const { mode, isReadOnly, autoplay, isDenied } = useAccessControl()
+  const { mode, isReadOnly, autoplay, isDenied, isPending } = useAccessControl()
 
   useEditorShortcuts()
 
   // Sync derived read-only state to the store
   const storeIsReadOnly = useEditorStore(s => s.isReadOnly)
   useEffect(() => {
-    if (storeIsReadOnly !== isReadOnly) {
+    if (!isPending && storeIsReadOnly !== isReadOnly) {
       setReadOnly(isReadOnly)
     }
-  }, [isReadOnly, storeIsReadOnly, setReadOnly])
+  }, [isReadOnly, storeIsReadOnly, setReadOnly, isPending])
 
   // Trigger presentation mode once if the URL requests it on initial load
   const hasStartedPresentation = useRef(false)
   useEffect(() => {
-    if (!hasStartedPresentation.current && (mode === 'present' || (mode === 'view' && autoplay))) {
+    if (!isPending && !hasStartedPresentation.current && (mode === 'present' || (mode === 'view' && autoplay))) {
       hasStartedPresentation.current = true
       startPresentation({ autoplay: !!autoplay })
     }
-  }, [mode, autoplay, startPresentation])
+  }, [mode, autoplay, startPresentation, isPending])
 
   // ✅ Safe to early-return here — all hooks are already above this line
+  
+  if (isPending) return <LoadingPage />
+
   const project = activeProject()
   if (!project || isDenied) {
     return (

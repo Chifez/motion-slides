@@ -2,8 +2,11 @@ import type { StateCreator } from 'zustand'
 import type { EditorState } from '../editorStore'
 import { authClient } from '@/lib/auth-client'
 
+export type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated'
+
 export interface AuthSlice {
   user: any | null
+  sessionStatus: SessionStatus
   isSyncing: boolean
   setSyncing: (isSyncing: boolean) => void
   checkSession: () => Promise<void>
@@ -18,13 +21,22 @@ export const createAuthSlice: StateCreator<
   AuthSlice
 > = (set, get) => ({
   user: null,
+  sessionStatus: 'loading',
   isSyncing: false,
 
   setSyncing: (isSyncing) => set({ isSyncing }),
 
   checkSession: async () => {
-    const { data: session } = await authClient.getSession()
-    set({ user: session?.user ?? null })
+    set({ sessionStatus: 'loading' })
+    try {
+      const { data: session } = await authClient.getSession()
+      set({ 
+        user: session?.user ?? null,
+        sessionStatus: session?.user ? 'authenticated' : 'unauthenticated'
+      })
+    } catch (err) {
+      set({ user: null, sessionStatus: 'unauthenticated' })
+    }
   },
 
   logout: async () => {
@@ -55,9 +67,9 @@ export const createAuthSlice: StateCreator<
           // Local is newer or missing on server
           toUpload.push(local)
         } else if (remote.updatedAt > local.updatedAt) {
-          // Remote is newer
+          // Remote is newer - Preserve localAuthorId to maintain offline access
           const idx = updatedLocal.findIndex(p => p.id === local.id)
-          updatedLocal[idx] = { ...remote, synced: true }
+          updatedLocal[idx] = { ...remote, localAuthorId: local.localAuthorId, synced: true }
           localChanged = true
         } else if (remote.updatedAt === local.updatedAt && !local.synced) {
           // Exact same version, but local thinks it's not synced
