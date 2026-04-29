@@ -1,10 +1,17 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, redirect, Link } from '@tanstack/react-router'
 import { ChevronRight, Zap, LayoutTemplate, Code2, Share2, WifiOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { LandingNavbar } from '@/components/LandingNavbar'
 import { LandingFooter } from '@/components/LandingFooter'
+import { getSessionFn } from '@/lib/auth-actions'
 
 export const Route = createFileRoute('/')({
+  beforeLoad: async () => {
+    const session = await getSessionFn()
+    if (session?.user) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: LandingPage,
 })
 

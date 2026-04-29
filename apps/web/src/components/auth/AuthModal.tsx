@@ -22,18 +22,23 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       const name = formData.get('name') as string
 
       try {
+        const currentPath = window.location.pathname
+        const callbackURL = currentPath === '/' 
+          ? `${window.location.origin}/dashboard` 
+          : window.location.href
+
         if (mode === 'signup') {
           await authClient.signUp.email({
             email,
             password,
             name,
-            callbackURL: window.location.origin
+            callbackURL
           })
         } else {
           await authClient.signIn.email({
             email,
             password,
-            callbackURL: window.location.origin
+            callbackURL
           })
         }
 
@@ -53,9 +58,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   const handleSocialSignIn = async (provider: 'github' | 'google') => {
     try {
+      const currentPath = window.location.pathname
+      const callbackURL = currentPath === '/' 
+        ? `${window.location.origin}/dashboard` 
+        : window.location.href
+
       await authClient.signIn.social({
         provider,
-        callbackURL: window.location.origin,
+        callbackURL,
       })
     } catch (err: any) {
       console.error('Social sign in failed:', err)

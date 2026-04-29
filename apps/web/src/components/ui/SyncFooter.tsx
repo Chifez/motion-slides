@@ -1,6 +1,7 @@
 import { useEditorStore } from '@/store/editorStore'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Cloud, CloudCheck, RefreshCw } from 'lucide-react'
+import { CloudCheck, RefreshCw } from 'lucide-react'
+import { useLocation } from '@tanstack/react-router'
 
 /**
  * SyncFooter — Minimalist status bar for background synchronization.
@@ -8,8 +9,9 @@ import { Cloud, CloudCheck, RefreshCw } from 'lucide-react'
 export function SyncFooter() {
   const isSyncing = useEditorStore((s) => s.isSyncing)
   const user = useEditorStore((s) => s.user)
+  const location = useLocation()
   
-  if (!user) return null
+  if (!user || location.pathname === '/') return null
 
   return (
     <div className="fixed bottom-4 right-4 bg-[#161616] border border-white/10 rounded-full px-3 py-1.5 shadow-lg z-[999] pointer-events-none">
