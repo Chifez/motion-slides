@@ -28,31 +28,16 @@ export function useAccessControl(): AccessControl {
   const navigate = useNavigate()
 
   // Targeted store subscription
-  const { user, project, localAuthorId, hasHydrated } = useEditorStore(
+  const { user, project, localAuthorId } = useEditorStore(
     useShallow((s) => ({
       user: s.user,
       project: s.activeProject(),
       localAuthorId: s.localAuthorId,
-      hasHydrated: s.hasHydrated,
     }))
   )
 
   const access = useMemo(() => {
     const requestedMode = (search.mode as AccessMode) || 'edit'
-    
-    // If we haven't hydrated yet, we assume the user's requested mode is valid.
-    // This prevents "Mode Flickering" and incorrect URL rewrites on refresh.
-    if (!hasHydrated) {
-      return {
-        mode: requestedMode,
-        canEdit: true, // Optimistic edit during hydration
-        isReadOnly: false,
-        autoplay: null,
-        isAuthenticated: false,
-        isDenied: false,
-      }
-    }
-
     const requestedKey = search.key as string
     const autoplayParam = search.autoplay
     const autoplay = autoplayParam === 'true' ? true : autoplayParam === 'false' ? false : null
@@ -104,19 +89,19 @@ export function useAccessControl(): AccessControl {
       isAuthenticated: !!user,
       isDenied,
     }
-  }, [project, user, localAuthorId, hasHydrated, search.mode, search.key, search.autoplay])
+  }, [project, user, localAuthorId, search.mode, search.key, search.autoplay])
 
   // Silent URL rewrite when mode is downgraded, so the URL reflects reality
   // CRITICAL: Only perform the rewrite if the project actually exists to avoid 
   // navigating during initial route load/hydration.
   useEffect(() => {
-    if (hasHydrated && project && access.mode !== search.mode) {
+    if (project && access.mode !== search.mode) {
       (navigate as any)({
         search: (s: any) => ({ ...s, mode: access.mode }),
         replace: true
       })
     }
-  }, [hasHydrated, project, access.mode, search.mode, navigate])
+  }, [project, access.mode, search.mode, navigate])
 
   return access
 }

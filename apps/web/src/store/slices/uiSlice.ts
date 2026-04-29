@@ -9,8 +9,6 @@ export interface UISlice {
   toggleTheme: () => void
   setEditingId: (id: string | null) => void
   setReadOnly: (readOnly: boolean) => void
-  hasHydrated: boolean
-  setHydrated: (hydrated: boolean) => void
 }
 
 export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set) => ({
@@ -39,6 +37,4 @@ export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set) =
 
   setEditingId: (id) => set({ isEditingId: id }),
   setReadOnly: (readOnly) => set({ isReadOnly: readOnly }),
-  hasHydrated: false,
-  setHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 })

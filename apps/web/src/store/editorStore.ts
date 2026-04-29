@@ -116,11 +116,9 @@ export const storeHydrationPromise = new Promise<void>((resolve) => {
   }
   
   if (useEditorStore.persist.hasHydrated()) {
-    useEditorStore.getState().setHydrated(true)
     resolve()
   } else {
     const unsub = useEditorStore.persist.onFinishHydration(() => {
-      useEditorStore.getState().setHydrated(true)
       resolve()
       if (unsub) unsub()
     })
