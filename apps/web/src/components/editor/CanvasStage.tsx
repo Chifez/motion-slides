@@ -12,7 +12,7 @@ import { useAccessControl } from '@/hooks/useAccessControl'
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
   const [showBgPicker, setShowBgPicker] = useState(false)
-  const isReadOnly = useAccessControl().isReadOnly
+  const { isReadOnly, isAuthenticated } = useAccessControl()
 
   const playbackSettings = useEditorStore(s => s.playbackSettings)
   const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
@@ -150,8 +150,8 @@ export function CanvasStage() {
             )}
           </div>
 
-          {/* Save Button (Cloud Icon) - Only shows when unsynced */}
-          {!isReadOnly && project && !project.synced && (
+          {/* Save Button (Cloud Icon) - Only shows when unsynced and authenticated */}
+          {!isReadOnly && isAuthenticated && project && !project.synced && (
             <button
               onClick={() => {
                 console.log('[CanvasStage] Manual Save clicked')

@@ -144,13 +144,18 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
   .inputValidator(z.object({ projectId: z.string(), shareKey: z.string().optional() }))
   .handler(async ({ data: { projectId, shareKey } }) => {
     const request = getRequest()
-
+    console.log(`[getRemoteProjectAction] Fetching: ${projectId} | Key: ${shareKey ? 'provided' : 'missing'}`)
 
     const result = await db.query.projects.findFirst({
       where: eq(projects.id, projectId)
     })
 
-    if (!result) return null
+    if (!result) {
+      console.log(`[getRemoteProjectAction] Project NOT FOUND in DB: ${projectId}`)
+      return null
+    }
+
+    console.log(`[getRemoteProjectAction] Found: ${result.name} | Visibility: ${result.visibility}`)
 
     // Access Control Logic
     if (result.visibility === 'public') return result as any
@@ -162,8 +167,12 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
 
     // Check share key
     const isShared = result.visibility === 'link-shared' || result.visibility === 'collaborative'
-    if (isShared && shareKey && shareKey === result.shareKey) {
-      return result as any
+    if (isShared) {
+      const keysMatch = shareKey === result.shareKey
+      console.log(`[getRemoteProjectAction] Shared access check. Key Match: ${keysMatch}`)
+      if (shareKey && keysMatch) {
+        return result as any
+      }
     }
 
     // Access Denied

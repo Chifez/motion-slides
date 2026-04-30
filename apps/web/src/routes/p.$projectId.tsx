@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useParams } from '@tanstack/react-router'
 import { useEditorStore, storeHydrationPromise } from '@/store/editorStore'
 import { EditorToolbar } from '@/components/editor/EditorToolbar'
 import { SlidePanel } from '@/components/editor/SlidePanel'
@@ -28,11 +28,13 @@ export const Route = createFileRoute('/p/$projectId')({
     await storeHydrationPromise
     const store = useEditorStore.getState()
 
-    const existsLocally = store.projects.some(p => p.id === params.projectId)
-    console.log(`[ProjectLoader] ID: ${params.projectId} | Exists locally: ${existsLocally}`)
+    const isServer = typeof window === 'undefined'
+    const existsLocally = !isServer && store.projects.some(p => p.id === params.projectId)
+    
+    console.log(`[ProjectLoader] ID: ${params.projectId} | Exists locally: ${existsLocally} | isServer: ${isServer}`)
 
     if (existsLocally) {
-      console.log(`[ProjectLoader] Loading from local store...`)
+      console.log(`[ProjectLoader] Found in client store, using local data.`)
       store.loadProject(params.projectId)
       if (store.user) store.syncProjects() // Background sync
       return
@@ -41,7 +43,7 @@ export const Route = createFileRoute('/p/$projectId')({
     const { getRemoteProjectAction } = await import('@/lib/actions/project')
     const key = deps.key
 
-    console.log(`[ProjectLoader] Fetching from server (key: ${key ? 'yes' : 'no'})...`)
+    console.log(`[ProjectLoader] Requesting remote project from server...`)
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
@@ -114,22 +116,28 @@ function ProjectPage() {
 function ProjectPageInner() {
   const loaderData = Route.useLoaderData()
   const loaderProject = loaderData?.project
-  const activeProject = useEditorStore(s => s.activeProject)
+  const { projectId } = useParams({ from: '/p/$projectId' })
+  const project = useEditorStore(s => s.projects.find(p => p.id === projectId))
   const isPresenting = useEditorStore(s => s.isPresenting)
+  
   const isPrototypeMode = useEditorStore(s => s.isPrototypeMode)
   const startPresentation = useEditorStore(s => s.startPresentation)
   const setReadOnly = useEditorStore(s => s.setReadOnly)
   const importProject = useEditorStore(s => s.importProject)
   const loadProject = useEditorStore(s => s.loadProject)
 
+  console.log(`[ProjectPage] Render ID: ${projectId}`)
+  console.log(`- Project in store: ${project ? 'YES' : 'NO'}`)
+  console.log(`- Loader Project: ${loaderProject ? 'YES' : 'NO'}`)
+
   // Hydrate store from loader data if necessary (critical for guest/incognito access)
   useEffect(() => {
-    if (loaderProject && !activeProject()) {
-      console.log('[Hydration] Importing project from loader data')
+    if (loaderProject && !project) {
+      console.log('[ProjectPage] Action: Importing remote project into store...')
       importProject(loaderProject)
       loadProject(loaderProject.id)
     }
-  }, [loaderProject, activeProject, importProject, loadProject])
+  }, [loaderProject, project, importProject, loadProject])
 
   const { mode, isReadOnly, autoplay, isDenied, isPending } = useAccessControl()
 
@@ -154,9 +162,8 @@ function ProjectPageInner() {
 
   // ✅ Safe to early-return here — all hooks are already above this line
   
-  if (isPending) return <LoadingPage />
+  if (isPending || (loaderProject && !project)) return <LoadingPage />
 
-  const project = activeProject()
   if (!project || isDenied) {
     return (
       <div className="flex items-center justify-center h-dvh text-(--ms-text-muted) flex-col gap-3 bg-(--ms-bg-base)">

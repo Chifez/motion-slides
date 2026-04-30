@@ -1,7 +1,7 @@
 import { useMemo, useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { useShallow } from 'zustand/react/shallow'
-import { useSearch, useNavigate } from '@tanstack/react-router'
+import { useSearch, useNavigate, useParams } from '@tanstack/react-router'
 
 export type AccessMode = 'edit' | 'view' | 'present'
 
@@ -26,13 +26,14 @@ export interface AccessControl {
 export function useAccessControl(): AccessControl {
   // Use a generic catch-all for search params since they can vary
   const search = useSearch({ from: '/p/$projectId' }) as any
+  const { projectId } = useParams({ from: '/p/$projectId' })
   const navigate = useNavigate()
 
   // Targeted store subscription
   const { user, project, localAuthorId, sessionStatus } = useEditorStore(
     useShallow((s) => ({
       user: s.user,
-      project: s.activeProject(),
+      project: s.projects.find(p => p.id === projectId) ?? null,
       localAuthorId: s.localAuthorId,
       sessionStatus: s.sessionStatus,
     }))
@@ -61,41 +62,31 @@ export function useAccessControl(): AccessControl {
     const isCollaborative = project.visibility === 'collaborative'
     const isLinkShared = project.visibility === 'link-shared'
     const isPublic = project.visibility === 'public'
-
-    // Requires matching localAuthorId to prevent draft collision between devices
     const isLocalDraft = project.localAuthorId === localAuthorId
 
     const hasValidKey = !!requestedKey && requestedKey === project.shareKey
 
-    // Access denial — guests with no valid path to the project
+    // Access denial logic
     let isDenied = false
     if (!isOwner && !isLocalDraft) {
-      if (isPublic) {
-        isDenied = false
-      } else if (isLinkShared || isCollaborative) {
+      if (isPublic) isDenied = false
+      else if (isLinkShared || isCollaborative) {
         if (!hasValidKey) isDenied = true
       } else {
-        isDenied = true // private project
+        isDenied = true
       }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
     // DIAGNOSTIC LOGGING
+    // ─────────────────────────────────────────────────────────────────────────
     console.group(`[AccessControl] Project: ${project.id}`)
-    console.table({
-      userId: user?.id || 'guest',
-      projectOwnerId: project.ownerId || 'none',
-      projectLocalAuthorId: project.localAuthorId || 'none',
-      storeLocalAuthorId: localAuthorId,
-      visibility: project.visibility,
-      isOwner,
-      isLocalDraft,
-      isDenied,
-      hasValidKey,
-      sessionStatus
-    })
+    console.log(`- User: ${user?.id || 'guest'} | LocalAuthor: ${localAuthorId}`)
+    console.log(`- Project: Owner=${project.ownerId} | LocalAuthor=${project.localAuthorId} | Vis=${project.visibility}`)
+    console.log(`- Security: isOwner=${isOwner} | isLocal=${isLocalDraft} | isDenied=${isDenied} | hasKey=${hasValidKey}`)
     console.groupEnd()
+    // ─────────────────────────────────────────────────────────────────────────
 
-    // canEdit is a capability derived purely from data — never from the URL mode
     const canEdit = isOwner || isLocalDraft || (isCollaborative && hasValidKey)
 
     // Graceful mode downgrade — never show an error when view is possible

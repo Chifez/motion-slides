@@ -10,6 +10,7 @@ import { Logo } from '@/components/ui/Logo'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { MobileElementDropdown } from './toolbar/MobileElementDropdown'
 import { ShareMenu } from './toolbar/ShareMenu'
+import { useAccessControl } from '@/hooks/useAccessControl'
 
 interface Props { project: Project }
 
@@ -119,7 +120,7 @@ export function EditorToolbar({ project }: Props) {
       )}
 
       <div className="flex-1" />
-
+      
       <button
         onClick={() => toggleChat()}
         className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-all cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
@@ -139,7 +140,7 @@ export function EditorToolbar({ project }: Props) {
 
       <SettingsDropdown />
       <ExportDropdown />
-      <ShareMenu project={project} />
+      {useAccessControl().isAuthenticated && <ShareMenu project={project} />}
 
       <button
         className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
