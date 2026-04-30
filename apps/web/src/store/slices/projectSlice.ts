@@ -7,7 +7,6 @@ import { uuid } from '@/lib/uuid'
 export interface ProjectSlice {
   projects: Project[]
   activeProjectId: string | null
-  localAuthorId: string
 
   createProject: (name?: string) => Project
   deleteProject: (id: string) => void
@@ -24,7 +23,6 @@ export interface ProjectSlice {
 export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice> = (set, get) => ({
   projects: [],
   activeProjectId: null,
-  localAuthorId: uuid(), // Stable ID generated once and persisted via zustand/persist
 
   activeProject: () => {
     const { projects, activeProjectId } = get()
@@ -80,15 +78,26 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
     })
   },
 
-  importProject: (project) => {
+  importProject: (remoteProject) => {
     set((s) => {
-      const exists = s.projects.some((p) => p.id === project.id)
-      if (exists) {
+      const local = s.projects.find((p) => p.id === remoteProject.id)
+      
+      // Merge Strategy:
+      // 1. Remote data is the source of truth for content (slides, transitions, etc.)
+      // 2. Local data is preserved for device-specific metadata (localAuthorId)
+      // 3. 'synced' is set to true because this project just came from the server
+      const reconciled: Project = {
+        ...remoteProject,
+        localAuthorId: local?.localAuthorId ?? remoteProject.localAuthorId,
+        synced: true,
+      }
+
+      if (local) {
         return {
-          projects: s.projects.map((p) => (p.id === project.id ? { ...project, synced: true } : p)),
+          projects: s.projects.map((p) => (p.id === remoteProject.id ? reconciled : p)),
         }
       }
-      return { projects: [...s.projects, { ...project, synced: true }] }
+      return { projects: [...s.projects, reconciled] }
     })
   },
 

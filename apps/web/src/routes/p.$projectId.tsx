@@ -12,6 +12,8 @@ import { LoadingPage } from '@/components/ui/LoadingPage'
 import { useAccessControl } from '@/hooks/useAccessControl'
 import { ViewerOverlay } from '@/components/editor/presentation/ViewerOverlay'
 import { PermissionProvider } from '@/context/PermissionContext'
+import { UnsavedChangesModal } from '@/components/ui/UnsavedChangesModal'
+import { useBlocker } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { z } from 'zod'
 
@@ -30,20 +32,15 @@ export const Route = createFileRoute('/p/$projectId')({
 
     const isServer = typeof window === 'undefined'
     const existsLocally = !isServer && store.projects.some(p => p.id === params.projectId)
-    
-    console.log(`[ProjectLoader] ID: ${params.projectId} | Exists locally: ${existsLocally} | isServer: ${isServer}`)
 
     if (existsLocally) {
-      console.log(`[ProjectLoader] Found in client store, using local data.`)
       store.loadProject(params.projectId)
-      if (store.user) store.syncProjects() // Background sync
+      if (store.user) store.syncProjects()
       return
     }
 
     const { getRemoteProjectAction } = await import('@/lib/actions/project')
     const key = deps.key
-
-    console.log(`[ProjectLoader] Requesting remote project from server...`)
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
@@ -52,11 +49,6 @@ export const Route = createFileRoute('/p/$projectId')({
         })
 
         if (remoteProject) {
-          console.log(`[Loader] Successfully fetched project ${params.projectId}`)
-          
-          // CRITICAL: Attach the key from the URL to the project metadata.
-          // The server omits it from JSON for security, but the client needs it 
-          // to satisfy the useAccessControl permission check in the UI.
           const projectWithKey = {
             ...remoteProject,
             shareKey: key || (remoteProject as any).shareKey
@@ -67,19 +59,25 @@ export const Route = createFileRoute('/p/$projectId')({
           return { project: projectWithKey as any }
         }
       } catch (err: any) {
-        console.error(`[Loader] Attempt ${attempt} failed for ${params.projectId}:`, err.message)
+        // If it's an explicit access denial, don't bother retrying
+        const isAccessDenied = err.message?.includes('Access Denied')
+        
+        if (isServer || isAccessDenied) {
+          // On the server, we never throw. We return null and let the client hydrate.
+          // This prevents crashing when a user has a private project locally but is signed out.
+          return { project: null }
+        }
+
+        if (attempt === 3) throw err 
       }
 
       if (attempt < 3) {
-        const delay = 1000 * attempt
-        console.log(`[Loader] Retrying in ${delay}ms...`)
-        await new Promise(r => setTimeout(r, delay))
+        await new Promise(r => setTimeout(r, 1000 * attempt))
       }
     }
 
     store.loadProject(params.projectId) 
-    const project = store.activeProject()
-    return { project }
+    return { project: null }
   },
   pendingComponent: LoadingPage,
   component: ProjectPage,
@@ -126,20 +124,22 @@ function ProjectPageInner() {
   const importProject = useEditorStore(s => s.importProject)
   const loadProject = useEditorStore(s => s.loadProject)
 
-  console.log(`[ProjectPage] Render ID: ${projectId}`)
-  console.log(`- Project in store: ${project ? 'YES' : 'NO'}`)
-  console.log(`- Loader Project: ${loaderProject ? 'YES' : 'NO'}`)
-
   // Hydrate store from loader data if necessary (critical for guest/incognito access)
   useEffect(() => {
     if (loaderProject && !project) {
-      console.log('[ProjectPage] Action: Importing remote project into store...')
       importProject(loaderProject)
       loadProject(loaderProject.id)
     }
   }, [loaderProject, project, importProject, loadProject])
 
   const { mode, isReadOnly, autoplay, isDenied, isPending } = useAccessControl()
+  const user = useEditorStore(s => s.user)
+  const syncProjects = useEditorStore(s => s.syncProjects)
+
+  // Navigation Blocker for internal routing
+  const { proceed, reset, status } = useBlocker({
+    condition: !isPending && !!user && !!project && !project.synced,
+  })
 
   useEditorShortcuts()
 
@@ -193,6 +193,16 @@ function ProjectPageInner() {
 
         <PresentationOverlay />
         {isViewOnly && !isPresenting && <ViewerOverlay startPresentation={startPresentation} />}
+        
+        <UnsavedChangesModal 
+          isOpen={status === 'blocked'}
+          onClose={() => reset?.()}
+          onDiscard={() => proceed?.()}
+          onConfirm={async () => {
+            await syncProjects()
+            proceed?.()
+          }}
+        />
       </div>
     </PermissionProvider>
   )

@@ -24,13 +24,15 @@ import { useSyncManager } from '@/hooks/useSyncManager'
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const checkSession = useEditorStore((s) => s.checkSession)
+  const initializeIdentity = useEditorStore((s) => s.initializeIdentity)
   
   // Initialize background sync
   useSyncManager()
 
   useEffect(() => {
     checkSession()
-  }, [checkSession])
+    initializeIdentity()
+  }, [checkSession, initializeIdentity])
 
   return (
     <html lang="en">

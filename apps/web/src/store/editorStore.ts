@@ -10,6 +10,7 @@ import { createCanvasSlice, type CanvasSlice } from './slices/canvasSlice'
 import { createAISlice, type AISlice } from './slices/aiSlice'
 import { createUISlice, type UISlice } from './slices/uiSlice'
 import { createAuthSlice, type AuthSlice } from './slices/authSlice'
+import { createIdentitySlice, type IdentitySlice } from './slices/identitySlice'
 
 // ─────────────────────────────────────────────
 // Combined Store Type
@@ -25,6 +26,7 @@ export type EditorState =
   & AISlice
   & UISlice
   & AuthSlice
+  & IdentitySlice
 
 // ─────────────────────────────────────────────
 // Zustand Store with Optimized IndexedDB persistence
@@ -84,6 +86,7 @@ export const useEditorStore = create<EditorState>()(
       ...createAISlice(...a),
       ...createUISlice(...a),
       ...createAuthSlice(...a),
+      ...createIdentitySlice(...a),
     }),
     {
       name: 'motionslides-session',

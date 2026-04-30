@@ -13,20 +13,22 @@ import { useEditorStore } from '@/store/editorStore'
 export function useSyncManager() {
   const syncProjects = useEditorStore((s) => s.syncProjects)
   const projects = useEditorStore((s) => s.projects)
+  const user = useEditorStore((s) => s.user)
 
   // Sync on page leave (beforeunload)
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Offline mode (unauthenticated) doesn't need cloud sync warnings
+      if (!user) return
+
       const hasUnsynced = projects.some(p => !p.synced)
       if (hasUnsynced) {
-        // We trigger the sync, but beforeunload is synchronous and 
-        // doesn't wait for promises. Most modern browsers will kill 
-        // the request unless we use navigator.sendBeacon (which our 
-        // server actions don't use yet).
-        // For now, we'll just try our best.
+        // Trigger background sync
         syncProjects()
         
-        // Show a confirmation dialog to give the sync a chance to finish
+        // Show native confirmation dialog for external reload/close
         e.preventDefault()
         e.returnValue = ''
       }
@@ -34,5 +36,5 @@ export function useSyncManager() {
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [projects, syncProjects])
+  }, [projects, syncProjects, user])
 }
