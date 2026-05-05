@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { AnimatePresence, LayoutGroup } from 'framer-motion'
 import { MotionProvider } from '@/context/MotionContext'
 import { CanvasElement } from './CanvasElement'
@@ -17,7 +18,7 @@ interface Props {
  * Handles the Match → Diff → Measure → Invert → Animate lifecycle.
  * Used in both the Editor and Presentation mode to ensure visual parity.
  */
-export function MotionStage({ slide, previousSlide, settings, activeTransition }: Props) {
+export const MotionStage = memo(function MotionStage({ slide, previousSlide, settings, activeTransition }: Props) {
   if (!slide) return null
 
   return (
@@ -39,6 +40,6 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition }
       </LayoutGroup>
     </MotionProvider>
   )
-}
+})
 
 

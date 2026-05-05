@@ -12,9 +12,9 @@ import { MobileElementDropdown } from './toolbar/MobileElementDropdown'
 import { ShareMenu } from './toolbar/ShareMenu'
 import { useAccessControl } from '@/hooks/useAccessControl'
 
-interface Props { project: Project }
+interface Props { projectId: string }
 
-export function EditorToolbar({ project }: Props) {
+export function EditorToolbar({ projectId }: Props) {
   // Reactive state selectors
   const isPrototypeMode = useEditorStore(s => s.isPrototypeMode)
   const mobileSlidesOpen = useEditorStore(s => s.mobileSlidesOpen)
@@ -33,7 +33,8 @@ export function EditorToolbar({ project }: Props) {
   const syncProjects = useEditorStore(s => s.syncProjects)
   
   const isSyncing = useEditorStore(s => s.isSyncing)
-  const projectName = useEditorStore(s => s.projects.find(p => p.id === project.id)?.name || '')
+  const projectName = useEditorStore(s => s.projects.find(p => p.id === projectId)?.name || '')
+  const project = useEditorStore(s => s.projects.find(p => p.id === projectId))
 
   const isMobile = useIsMobile();
   
@@ -44,6 +45,8 @@ export function EditorToolbar({ project }: Props) {
       else document.documentElement.classList.remove('dark')
     }
   }, [theme])
+
+  if (!project) return null
 
   return (
     <header className="h-14 shrink-0 flex items-center gap-1 md:gap-2 px-2 md:px-3 bg-(--ms-bg-surface) border-b border-(--ms-border) z-50 transition-colors">
@@ -81,8 +84,8 @@ export function EditorToolbar({ project }: Props) {
       </Link>
       <input
         value={projectName}
-        onChange={(e) => updateProjectName(project.id, e.target.value)}
-        onBlur={(e) => { if (!e.target.value.trim()) updateProjectName(project.id, 'Untitled Deck') }}
+        onChange={(e) => updateProjectName(projectId, e.target.value)}
+        onBlur={(e) => { if (!e.target.value.trim()) updateProjectName(projectId, 'Untitled Deck') }}
         spellCheck={false}
         className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-md px-1 md:px-2 py-1 text-[13px] text-(--ms-text-primary) font-medium min-w-[60px] md:min-w-[130px] max-w-[220px] focus:outline-none transition-all truncate hidden md:block"
       />

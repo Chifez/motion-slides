@@ -30,11 +30,13 @@ export const CanvasElement = memo(function CanvasElement({ element }: Props) {
   const isEditingId = useEditorStore(s => s.isEditingId)
   const isMultiSelectMode = useEditorStore(s => s.isMultiSelectMode)
   
-  // Actions are stable, safe to destructure
-  const { 
-    setSelectedElement, setSelectedElements, updateElementsBatch,
-    setMobileInspectorOpen, setEditingId, setIsDragging
-  } = useEditorStore()
+  // Actions — Use individual selectors to prevent re-renders when other state changes
+  const setSelectedElement = useEditorStore(s => s.setSelectedElement)
+  const setSelectedElements = useEditorStore(s => s.setSelectedElements)
+  const updateElementsBatch = useEditorStore(s => s.updateElementsBatch)
+  const setMobileInspectorOpen = useEditorStore(s => s.setMobileInspectorOpen)
+  const setEditingId = useEditorStore(s => s.setEditingId)
+  const setIsDragging = useEditorStore(s => s.setIsDragging)
 
   const isMobile = useIsMobile()
   const {

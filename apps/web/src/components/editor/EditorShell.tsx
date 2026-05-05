@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { EditorToolbar } from '@/components/editor/EditorToolbar'
 import { SlidePanel } from '@/components/editor/SlidePanel'
@@ -12,7 +13,7 @@ import { usePermissions } from '@/context/PermissionContext'
 import type { Project } from '@motionslides/shared'
 
 interface Props {
-  project: Project
+  projectId: string
   blocker: {
     proceed: (() => void) | undefined
     reset: (() => void) | undefined
@@ -21,7 +22,7 @@ interface Props {
   }
 }
 
-export function EditorShell({ project, blocker }: Props) {
+export const EditorShell = memo(function EditorShell({ projectId, blocker }: Props) {
   const { mode } = usePermissions()
   const isPresenting = useEditorStore(s => s.isPresenting)
   const isPrototypeMode = useEditorStore(s => s.isPrototypeMode)
@@ -32,7 +33,7 @@ export function EditorShell({ project, blocker }: Props) {
 
   return (
     <div className="h-screen flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors relative">
-      {showEditorUI && <EditorToolbar project={project} />}
+      {showEditorUI && <EditorToolbar projectId={projectId} />}
 
       <div className="flex flex-1 overflow-hidden relative">
         {showEditorUI && !isPrototypeMode && <SlidePanel />}
@@ -55,5 +56,5 @@ export function EditorShell({ project, blocker }: Props) {
       />
     </div>
   )
-}
+})
 

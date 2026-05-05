@@ -1,10 +1,13 @@
 import { useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
+import { usePermissions } from '@/context/PermissionContext'
 
 /**
  * Global keyboard shortcuts for the editor (Duplicate, Delete, etc.)
  */
 export function useEditorShortcuts() {
+  const { isReadOnly } = usePermissions()
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       // Don't trigger shortcuts when typing in inputs or content-editable elements
@@ -20,7 +23,7 @@ export function useEditorShortcuts() {
       const { 
         selectedElementIds, duplicateElement, deleteElement,
         activeSlideIndex, setActiveSlide, projects, activeProjectId,
-        groupElements, ungroupElements, isReadOnly
+        groupElements, ungroupElements
       } = state
 
       const project = projects.find(p => p.id === activeProjectId)
@@ -76,5 +79,5 @@ export function useEditorShortcuts() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [isReadOnly])
 }

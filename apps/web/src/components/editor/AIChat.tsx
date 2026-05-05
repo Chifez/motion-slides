@@ -5,8 +5,7 @@ import { useEditorStore } from '@/store/editorStore'
 import { AIReadmeInput } from './AIReadmeInput'
 import { AIArchInput } from './AIArchInput'
 import { GenerationPreview } from './GenerationPreview'
-import { generateSlides } from '@/lib/generateClient'
-
+import { useAIGeneration } from '@/hooks/useAIGeneration'
 
 type Tab = 'mode-select' | 'readme' | 'architecture' | 'chat'
 
@@ -14,44 +13,31 @@ export function AIChat() {
   const isChatOpen = useEditorStore(s => s.isChatOpen)
   const setChatOpen = useEditorStore(s => s.setChatOpen)
   const isGenerating = useEditorStore(s => s.isGenerating)
-  const setGenerating = useEditorStore(s => s.setGenerating)
   const pendingSlides = useEditorStore(s => s.pendingSlides)
   const pendingTitle = useEditorStore(s => s.pendingTitle)
-  const setPendingSlides = useEditorStore(s => s.setPendingSlides)
   const clearPending = useEditorStore(s => s.clearPending)
   const addSlidesToProject = useEditorStore(s => s.addSlidesToProject)
   const activeProjectId = useEditorStore(s => s.activeProjectId)
   const recalculateLines = useEditorStore(s => s.recalculateLines)
 
   const [activeTab, setActiveTab] = useState<Tab>('mode-select')
-  const [progress, setProgress] = useState<{ percent: number; message: string }>({ percent: 0, message: '' })
-  const [requiresRecalc, setRequiresRecalc] = useState(false)
-  const [lastOptions, setLastOptions] = useState<any>(null)
+  
+  const { 
+    progress, 
+    requiresRecalc, 
+    handleGenerate, 
+    handleRefine,
+    setRequiresRecalc 
+  } = useAIGeneration()
 
   if (!isChatOpen) return null
-
-  const handleGenerate = async (opts: any) => {
-    setLastOptions(opts)
-    setGenerating(true)
-    setProgress({ percent: 0, message: 'Starting…' })
-
-    const result = await generateSlides(opts, (ev) => {
-      setProgress({ percent: ev.percent, message: ev.message })
-      if (ev.stage === 'done' && ev.slides) {
-        setPendingSlides(ev.slides as any, ev.title, ev.rawPresentation)
-        if (ev.requiresLineRecalc) setRequiresRecalc(true)
-      }
-    })
-
-    setGenerating(false)
-  }
 
   const handleImport = () => {
     if (pendingSlides && activeProjectId) {
       addSlidesToProject(activeProjectId, pendingSlides)
       if (requiresRecalc) {
-        // Wait for slides to be added to state before recalculating
-        setTimeout(() => recalculateLines(), 50)
+        // Synchronous recalculation instead of setTimeout race condition hack
+        useEditorStore.getState().recalculateLines()
       }
       setChatOpen(false)
       clearPending()
@@ -62,17 +48,6 @@ export function AIChat() {
 
   const handleReject = () => {
     clearPending()
-  }
-
-  const handleRefine = async (prompt: string) => {
-    const raw = useEditorStore.getState().pendingRawPresentation
-    if (!raw || !lastOptions) return
-
-    await handleGenerate({
-      ...lastOptions,
-      refinementPrompt: prompt,
-      previousPresentation: raw
-    })
   }
 
   return (
