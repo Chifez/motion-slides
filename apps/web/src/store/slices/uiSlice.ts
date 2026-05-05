@@ -9,13 +9,21 @@ export interface UISlice {
   setEditingId: (id: string | null) => void
 }
 
+const getInitialTheme = (): 'dark' | 'light' => {
+  if (typeof window === 'undefined') return 'dark'
+  const saved = localStorage.getItem('ms-theme') as 'dark' | 'light' | null
+  if (saved) return saved
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
 export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set) => ({
-  theme: 'dark',
+  theme: getInitialTheme(),
   isEditingId: null,
 
   setTheme: (theme) => {
     set({ theme })
-    if (typeof document !== 'undefined') {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ms-theme', theme)
       if (theme === 'dark') document.documentElement.classList.add('dark')
       else document.documentElement.classList.remove('dark')
     }
@@ -24,7 +32,8 @@ export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set) =
   toggleTheme: () => {
     set((s) => {
       const newTheme = s.theme === 'dark' ? 'light' : 'dark'
-      if (typeof document !== 'undefined') {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('ms-theme', newTheme)
         if (newTheme === 'dark') document.documentElement.classList.add('dark')
         else document.documentElement.classList.remove('dark')
       }

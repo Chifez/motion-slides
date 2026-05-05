@@ -1,6 +1,7 @@
 import { Trash2, X, Palette } from 'lucide-react'
 import type { BranchContent, LineContent, LineType } from '@motionslides/shared'
 import { LINE_TYPE_OPTIONS } from '@/constants/editor'
+import { PropPair } from '@/components/ui/PropPair'
 
 const labelCls = "text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted) mb-2.5 block"
 const selectCls = "w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1.5 text-[12px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
@@ -94,32 +95,28 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">
             {content.lineType === 'branching' ? 'Default Color' : 'Color'}
           </span>
-          <input
-            type="color"
-            value={content.color.startsWith('rgba') ? '#808080' : content.color}
-            onChange={(e) => onUpdate({ ...content, color: e.target.value })}
-            className="w-full h-8 rounded-md cursor-pointer border-none bg-transparent"
-          />
+          <div className="flex items-center gap-2 bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1">
+            <input
+              type="color"
+              value={content.color.startsWith('rgba') ? '#808080' : content.color}
+              onChange={(e) => onUpdate({ ...content, color: e.target.value })}
+              className="w-5 h-5 rounded cursor-pointer border-none bg-transparent"
+            />
+            <span className="text-[10px] text-(--ms-text-muted) font-mono uppercase">{content.color}</span>
+          </div>
         </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">Width</span>
-          <select
-            value={content.strokeWidth}
-            onChange={(e) => onUpdate({ ...content, strokeWidth: +e.target.value })}
-            className={selectCls}
-          >
-            <option value={1}>Thin (1px)</option>
-            <option value={2}>Default (2px)</option>
-            <option value={3}>Medium (3px)</option>
-            <option value={4}>Thick (4px)</option>
-            <option value={6}>Heavy (6px)</option>
-          </select>
-        </div>
+        <PropPair 
+          label="Width" 
+          value={content.strokeWidth} 
+          min={1} 
+          max={20} 
+          onChange={(v: number) => onUpdate({ ...content, strokeWidth: Math.round(v) })} 
+        />
       </div>
 
       {/* Label & Font Size */}
-      <div className="grid grid-cols-5 gap-2 mb-4">
-        <div className="col-span-3 flex flex-col gap-0.5">
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="flex flex-col gap-0.5">
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">
             {content.lineType === 'branching' ? 'Default Label' : 'Label'}
           </span>
@@ -132,20 +129,16 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
               className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1.5 text-[11px] text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:border-blue-500 transition-colors"
             />
           ) : (
-            <div className="text-[10px] text-(--ms-text-muted) italic py-1.5">Branch labels are individual</div>
+            <div className="text-[10px] text-(--ms-text-muted) italic py-1.5">Branches separate</div>
           )}
         </div>
-        <div className="col-span-2 flex flex-col gap-0.5">
-          <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">Size</span>
-          <input
-            type="number"
-            min="6"
-            max="32"
-            value={content.labelFontSize || 10}
-            onChange={(e) => onUpdate({ ...content, labelFontSize: parseInt(e.target.value) })}
-            className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1.5 text-[11px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
-          />
-        </div>
+        <PropPair 
+          label="Label Size" 
+          value={content.labelFontSize || 10} 
+          min={6} 
+          max={48} 
+          onChange={(v: number) => onUpdate({ ...content, labelFontSize: Math.round(v) })} 
+        />
       </div>
 
       {/* Connections Info */}
@@ -292,9 +285,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                 </div>
               </div>
 
-              {/* Individual Styling Row 2: Arrow */}
-              <div className="flex flex-col gap-1">
-                <span className="text-[9px] text-neutral-500 font-medium">Branch Arrow</span>
+                  <span className="text-[9px] text-neutral-500 font-medium">Branch Arrow</span>
                 <select
                   value={b.arrow || 'default'}
                   onChange={(e) => {
@@ -308,13 +299,12 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                     }
                     onUpdate({ ...content, branches: newBranches })
                   }}
-                  className="w-full bg-[#1c1c1c] border border-white/8 rounded px-1.5 py-1 text-[10px] text-neutral-100 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded px-1.5 py-1 text-[10px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"
                 >
                   <option value="default">Follow Main</option>
                   <option value="none">None</option>
                   <option value="end">End →</option>
                 </select>
-              </div>
 
               {/* Position Sliders */}
               <div className="flex flex-col gap-2 pt-1">

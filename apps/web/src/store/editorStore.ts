@@ -98,7 +98,6 @@ export const useEditorStore = create<EditorState>()(
         activeProjectId: state.activeProjectId,
         activeSlideIndex: state.activeSlideIndex,
         playbackSettings: state.playbackSettings,
-        theme: state.theme,
         localAuthorId: state.localAuthorId,
       }),
     },

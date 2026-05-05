@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, X, MessageSquare, BookOpen, Layers, Loader2 } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { AIReadmeInput } from './AIReadmeInput'
 import { AIArchInput } from './AIArchInput'
 import { GenerationPreview } from './GenerationPreview'
 import { useAIGeneration } from '@/hooks/useAIGeneration'
+
+import { AIChatHeader } from './ai/AIChatHeader'
+import { AIGeneratingView } from './ai/AIGeneratingView'
+import { AIModeSelect } from './ai/AIModeSelect'
 
 type Tab = 'mode-select' | 'readme' | 'architecture' | 'chat'
 
@@ -18,7 +22,6 @@ export function AIChat() {
   const clearPending = useEditorStore(s => s.clearPending)
   const addSlidesToProject = useEditorStore(s => s.addSlidesToProject)
   const activeProjectId = useEditorStore(s => s.activeProjectId)
-  const recalculateLines = useEditorStore(s => s.recalculateLines)
 
   const [activeTab, setActiveTab] = useState<Tab>('mode-select')
   
@@ -36,7 +39,6 @@ export function AIChat() {
     if (pendingSlides && activeProjectId) {
       addSlidesToProject(activeProjectId, pendingSlides)
       if (requiresRecalc) {
-        // Synchronous recalculation instead of setTimeout race condition hack
         useEditorStore.getState().recalculateLines()
       }
       setChatOpen(false)
@@ -46,9 +48,7 @@ export function AIChat() {
     }
   }
 
-  const handleReject = () => {
-    clearPending()
-  }
+  const handleReject = () => clearPending()
 
   return (
     <motion.div
@@ -58,45 +58,11 @@ export function AIChat() {
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className="fixed top-14 right-0 bottom-0 w-[380px] bg-(--ms-bg-base) border-l border-(--ms-border) z-60 shadow-2xl flex flex-col transition-colors"
     >
-      {/* Header */}
-      <div className="h-12 flex items-center justify-between px-4 border-b border-(--ms-border)">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-purple-600/20 text-purple-400">
-            <Sparkles size={16} />
-          </div>
-          <span className="text-sm font-semibold text-(--ms-text-primary)">AI Designer</span>
-        </div>
-        <button
-          onClick={() => setChatOpen(false)}
-          className="p-1.5 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors border-none bg-transparent cursor-pointer"
-        >
-          <X size={18} />
-        </button>
-      </div>
+      <AIChatHeader onClose={() => setChatOpen(false)} />
 
       <div className="flex-1 overflow-y-auto">
         {isGenerating ? (
-          <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
-            <div className="relative">
-              <Loader2 className="animate-spin text-blue-500" size={48} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles size={16} className="text-purple-400 animate-pulse" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-bold text-(--ms-text-primary)">Generating Slides</h3>
-              <p className="text-xs text-(--ms-text-muted) max-w-[200px] leading-relaxed">
-                {progress.message}
-              </p>
-            </div>
-            <div className="w-full max-w-[240px] h-1.5 bg-(--ms-bg-elevated) rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-blue-500"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress.percent}%` }}
-              />
-            </div>
-          </div>
+          <AIGeneratingView progress={progress} />
         ) : pendingSlides ? (
           <GenerationPreview
             slides={pendingSlides}
@@ -109,45 +75,7 @@ export function AIChat() {
           <div className="p-6">
             <AnimatePresence mode="wait">
               {activeTab === 'mode-select' && (
-                <motion.div
-                  key="select"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-4"
-                >
-                  <header>
-                    <h2 className="text-xl font-bold text-(--ms-text-primary) mb-2">Magic Move Slides</h2>
-                    <p className="text-xs text-(--ms-text-muted) leading-relaxed">
-                      Transform your documentation or ideas into stunning presentations using AI.
-                    </p>
-                  </header>
-
-                  <div className="grid gap-3 pt-2">
-                    <ModeCard
-                      icon={<BookOpen size={20} />}
-                      title="From README"
-                      description="Paste or upload a Markdown file to generate project slides."
-                      onClick={() => setActiveTab('readme')}
-                      color="blue"
-                    />
-                    <ModeCard
-                      icon={<Layers size={20} />}
-                      title="Architecture Walkthrough"
-                      description="Describe your system and generate a multi-slide diagram."
-                      onClick={() => setActiveTab('architecture')}
-                      color="purple"
-                    />
-                    <ModeCard
-                      icon={<MessageSquare size={20} />}
-                      title="Free Prompt (Coming soon)"
-                      description="Describe what you want to see and the AI will build it."
-                      onClick={() => { }}
-                      color="neutral"
-                      disabled
-                    />
-                  </div>
-                </motion.div>
+                <AIModeSelect onSelectTab={(tab) => setActiveTab(tab)} />
               )}
 
               {activeTab === 'readme' && (
@@ -182,7 +110,6 @@ export function AIChat() {
         )}
       </div>
 
-      {/* Footer / Tip */}
       <div className="p-4 bg-(--ms-bg-elevated) border-t border-(--ms-border)">
         <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
           <div className="p-1 bg-blue-500/20 rounded">
@@ -194,31 +121,5 @@ export function AIChat() {
         </div>
       </div>
     </motion.div>
-  )
-}
-
-function ModeCard({ icon, title, description, onClick, color, disabled }: any) {
-  const colors: any = {
-    blue: 'hover:border-blue-500/40 hover:bg-blue-500/5 text-blue-400',
-    purple: 'hover:border-purple-500/40 hover:bg-purple-500/5 text-purple-400',
-    neutral: 'opacity-50 cursor-not-allowed',
-  }
-
-  return (
-    <button
-      disabled={disabled}
-      onClick={onClick}
-      className={`w-full text-left p-4 rounded-xl border border-(--ms-border) bg-(--ms-bg-elevated) transition-all group border-none cursor-pointer ${colors[color] || ''}`}
-    >
-      <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 rounded-lg bg-black/10 group-hover:bg-black/20 transition-colors">
-          {icon}
-        </div>
-        <h3 className="text-sm font-semibold text-(--ms-text-primary)">{title}</h3>
-      </div>
-      <p className="text-[11px] text-(--ms-text-muted) group-hover:text-(--ms-text-primary) leading-relaxed">
-        {description}
-      </p>
-    </button>
   )
 }

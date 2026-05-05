@@ -9,6 +9,7 @@ import { ExportDropdown } from './toolbar/ExportDropdown'
 import { Logo } from '@/components/ui/Logo'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { MobileElementDropdown } from './toolbar/MobileElementDropdown'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { ShareMenu } from './toolbar/ShareMenu'
 import { useAccessControl } from '@/hooks/useAccessControl'
 
@@ -20,7 +21,6 @@ export function EditorToolbar({ projectId }: Props) {
   const mobileSlidesOpen = useEditorStore(s => s.mobileSlidesOpen)
   const isMultiSelectMode = useEditorStore(s => s.isMultiSelectMode)
   const isChatOpen = useEditorStore(s => s.isChatOpen)
-  const theme = useEditorStore(s => s.theme)
 
   // Stable actions
   const updateProjectName = useEditorStore(s => s.updateProjectName)
@@ -29,23 +29,13 @@ export function EditorToolbar({ projectId }: Props) {
   const setMobileSlidesOpen = useEditorStore(s => s.setMobileSlidesOpen)
   const setMultiSelectMode = useEditorStore(s => s.setMultiSelectMode)
   const toggleChat = useEditorStore(s => s.toggleChat)
-  const toggleTheme = useEditorStore(s => s.toggleTheme)
   const syncProjects = useEditorStore(s => s.syncProjects)
   
-  const isSyncing = useEditorStore(s => s.isSyncing)
   const projectName = useEditorStore(s => s.projects.find(p => p.id === projectId)?.name || '')
   const project = useEditorStore(s => s.projects.find(p => p.id === projectId))
 
   const isMobile = useIsMobile();
   
-  // ── Sync theme to DOM ──
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      if (theme === 'dark') document.documentElement.classList.add('dark')
-      else document.documentElement.classList.remove('dark')
-    }
-  }, [theme])
-
   if (!project) return null
 
   return (
@@ -91,7 +81,6 @@ export function EditorToolbar({ projectId }: Props) {
       />
       <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1 hidden md:block" />
 
-      {/* Design / Prototype mode toggle - Figma-style */}
       <div className="flex items-center bg-(--ms-bg-elevated) border border-(--ms-border) rounded-md p-0.5">
         <button
           onClick={() => setPrototypeMode(false)}
@@ -133,13 +122,7 @@ export function EditorToolbar({ projectId }: Props) {
         {!isMobile && <span>AI Chat</span>}
       </button>
 
-      <button
-        onClick={() => toggleTheme()}
-        className="hidden md:flex p-1.5 md:p-2 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors border-none bg-transparent cursor-pointer"
-        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-      >
-        {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-      </button>
+      <ThemeToggle className="hidden md:flex" />
 
       <SettingsDropdown />
       <ExportDropdown />

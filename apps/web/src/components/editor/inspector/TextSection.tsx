@@ -86,22 +86,23 @@ export function TextSection({ content, onUpdate }: Props) {
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">Color</span>
-          <input
-            type="color"
-            value={content.color}
-            onChange={(e) => onUpdate({ ...content, color: e.target.value })}
-            className="w-full h-8 rounded-md cursor-pointer border-none bg-transparent"
-          />
+          <div className="flex items-center gap-2 bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1">
+            <input
+              type="color"
+              value={content.color}
+              onChange={(e) => onUpdate({ ...content, color: e.target.value })}
+              className="w-6 h-6 rounded-md cursor-pointer border-none bg-transparent"
+            />
+            <span className="text-[10px] text-(--ms-text-muted) font-mono uppercase">{content.color}</span>
+          </div>
         </div>
-        <div>
-          <span className="text-[9px] text-(--ms-text-muted) uppercase tracking-widest block mb-1">Font Size</span>
-          <input
-            type="number"
-            value={content.fontSize || 12}
-            onChange={(e) => onUpdate({ ...content, fontSize: parseInt(e.target.value) || 12 })}
-            className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1 text-[11px] text-(--ms-text-secondary) transition-colors"
-          />
-        </div>
+        <PropPair 
+          label="Size" 
+          value={content.fontSize || 12} 
+          min={4} 
+          max={500} 
+          onChange={(v) => onUpdate({ ...content, fontSize: Math.round(v) })} 
+        />
       </div>
 
       {/* Alignment */}

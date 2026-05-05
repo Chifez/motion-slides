@@ -10,6 +10,10 @@ interface AuthModalProps {
   onClose: () => void
 }
 
+/**
+ * Authentication modal with theme-flexible styling.
+ * Replaces hardcoded dark-mode hex values with MS design system tokens.
+ */
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const checkSession = useEditorStore((s) => s.checkSession)
@@ -42,9 +46,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           })
         }
 
-        // Refresh session in store
         await checkSession()
-        // Auto-sync existing projects
         await syncProjects()
 
         onClose()
@@ -89,21 +91,21 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-md bg-[#161616] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md bg-(--ms-bg-surface) border border-(--ms-border) rounded-2xl shadow-2xl overflow-hidden transition-colors"
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-white/40 hover:text-white transition-colors"
+          className="absolute top-4 right-4 p-2 text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors border-none bg-transparent cursor-pointer"
         >
           <X size={20} />
         </button>
 
         <div className="p-8">
           <header className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="text-2xl font-bold text-(--ms-text-primary) mb-2">
               {mode === 'login' ? 'Welcome back' : 'Create an account'}
             </h2>
-            <p className="text-sm text-white/40">
+            <p className="text-sm text-(--ms-text-muted)">
               {mode === 'login'
                 ? 'Sign in to sync your projects to the cloud'
                 : 'Join MotionSlides to share and collaborate'}
@@ -113,44 +115,44 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <form action={formAction} className="space-y-4">
             {mode === 'signup' && (
               <div className="space-y-1">
-                <label className="text-xs font-medium text-white/60 ml-1">Full Name</label>
+                <label className="text-xs font-medium text-(--ms-text-muted) ml-1">Full Name</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-(--ms-text-muted) opacity-40" size={18} />
                   <input
                     name="name"
                     type="text"
                     required
                     placeholder="John Doe"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                   />
                 </div>
               </div>
             )}
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-white/60 ml-1">Email Address</label>
+              <label className="text-xs font-medium text-(--ms-text-muted) ml-1">Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-(--ms-text-muted) opacity-40" size={18} />
                 <input
                   name="email"
                   type="email"
                   required
                   placeholder="name@company.com"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-white/60 ml-1">Password</label>
+              <label className="text-xs font-medium text-(--ms-text-muted) ml-1">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-(--ms-text-muted) opacity-40" size={18} />
                 <input
                   name="password"
                   type="password"
                   required
                   placeholder="••••••••"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                 />
               </div>
             </div>
@@ -167,9 +169,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <div className="mt-6">
             <div className="relative flex items-center justify-center mb-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/5"></div>
+                <div className="w-full border-t border-(--ms-border)"></div>
               </div>
-              <span className="relative px-3 bg-[#161616] text-[10px] uppercase tracking-wider text-white/30 font-bold">
+              <span className="relative px-3 bg-(--ms-bg-surface) text-[10px] uppercase tracking-wider text-(--ms-text-muted) font-bold">
                 Or continue with
               </span>
             </div>
@@ -178,7 +180,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <button
                 onClick={() => handleSocialSignIn('github')}
                 type="button"
-                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-(--ms-bg-base) hover:bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-primary) font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Github size={16} />
                 <span className="text-sm">GitHub</span>
@@ -187,7 +189,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <button
                 onClick={() => handleSocialSignIn('google')}
                 type="button"
-                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-(--ms-bg-base) hover:bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-primary) font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Chrome size={16} />
                 <span className="text-sm">Google</span>
@@ -195,13 +197,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </div>
           </div>
 
-          <footer className="mt-8 text-center text-xs text-white/40">
+          <footer className="mt-8 text-center text-xs text-(--ms-text-muted)">
             {mode === 'login' ? (
               <>
                 Don't have an account?{' '}
                 <button
                   onClick={() => setMode('signup')}
-                  className="text-blue-400 hover:text-blue-300 font-medium underline underline-offset-4 cursor-pointer bg-transparent border-none"
+                  className="text-blue-500 hover:text-blue-400 font-medium underline underline-offset-4 cursor-pointer bg-transparent border-none"
                 >
                   Create one now
                 </button>
@@ -211,7 +213,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 Already have an account?{' '}
                 <button
                   onClick={() => setMode('login')}
-                  className="text-blue-400 hover:text-blue-300 font-medium underline underline-offset-4 cursor-pointer bg-transparent border-none"
+                  className="text-blue-500 hover:text-blue-400 font-medium underline underline-offset-4 cursor-pointer bg-transparent border-none"
                 >
                   Sign in instead
                 </button>
