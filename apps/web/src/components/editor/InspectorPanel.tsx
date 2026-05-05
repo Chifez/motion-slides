@@ -1,30 +1,29 @@
-import { Trash2, X } from 'lucide-react'
+import { memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
 import { useIsMobile } from '@/hooks/useMediaQuery'
-import { TransformSection } from './inspector/TransformSection'
-import { INSPECTOR_REGISTRY } from './inspector/registry'
 
-const sectionCls = "px-3 py-3 border-b border-[var(--ms-border)]"
+import { EmptyInspector } from './inspector/EmptyInspector'
+import { MultiInspector } from './inspector/MultiInspector'
+import { SingleInspector } from './inspector/SingleInspector'
 
-export function InspectorPanel() {
+export const InspectorPanel = memo(function InspectorPanel() {
   const selectedElementIds = useEditorStore(s => s.selectedElementIds)
   const mobileInspectorOpen = useEditorStore(s => s.mobileInspectorOpen)
+  
   const element = useEditorStore(s => {
     const slide = s.activeSlide()
     return slide?.elements.find(el => el.id === selectedElementIds[0])
   })
-
+  
   const updateElement = useEditorStore(s => s.updateElement)
   const updateElements = useEditorStore(s => s.updateElements)
   const deleteElement = useEditorStore(s => s.deleteElement)
-  const groupElements = useEditorStore(s => s.groupElements)
-  const ungroupElements = useEditorStore(s => s.ungroupElements)
   const setMobileInspectorOpen = useEditorStore(s => s.setMobileInspectorOpen)
 
   const isMobile = useIsMobile()
 
-  const update = (data: Parameters<typeof updateElement>[1]) => {
+  const handleUpdate = (data: any) => {
     if (selectedElementIds.length === 1 && element) {
       updateElement(element.id, data)
     } else if (selectedElementIds.length > 1) {
@@ -32,99 +31,41 @@ export function InspectorPanel() {
     }
   }
 
-  const panelContent = (
+  const handleClose = () => setMobileInspectorOpen(false)
+
+  const renderContent = () => {
+    if (selectedElementIds.length === 0) {
+      return <EmptyInspector />
+    }
+    
+    if (selectedElementIds.length > 1) {
+      return (
+        <MultiInspector 
+          selectedIds={selectedElementIds} 
+          isMobile={isMobile} 
+          onClose={handleClose} 
+        />
+      )
+    }
+    
+    if (element) {
+      return (
+        <SingleInspector 
+          element={element} 
+          isMobile={isMobile} 
+          onUpdate={handleUpdate}
+          onDelete={() => deleteElement(element.id)}
+          onClose={handleClose}
+        />
+      )
+    }
+    
+    return null
+  }
+
+  const panelContainer = (
     <div className={`h-full flex flex-col bg-(--ms-bg-surface) ${isMobile ? 'rounded-t-2xl shadow-2xl' : 'border-l border-(--ms-border)'}`}>
-      {selectedElementIds.length === 0 ? (
-        <div className={sectionCls}>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted) mb-2.5 block">Inspector</span>
-          <p className="text-[12px] text-(--ms-text-secondary)">Select an element to inspect its properties.</p>
-        </div>
-      ) : selectedElementIds.length > 1 ? (
-        <div className={sectionCls}>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[11px] font-semibold text-(--ms-text-secondary) uppercase tracking-wider">Multiple Selected ({selectedElementIds.length})</span>
-            {isMobile && (
-              <button
-                onClick={() => setMobileInspectorOpen(false)}
-                className="p-1.5 rounded-md text-neutral-500 hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            {(() => {
-              const elements = useEditorStore.getState().activeSlide()?.elements.filter(e => selectedElementIds.includes(e.id)) || []
-              const firstGroupId = elements[0]?.groupId
-              const allSameGroup = firstGroupId && elements.every(el => el.groupId === firstGroupId) && elements.length > 1
-
-              if (allSameGroup) {
-                return (
-                  <button
-                    onClick={() => ungroupElements(firstGroupId)}
-                    className="w-full flex items-center justify-center gap-1.5 bg-white/4 hover:bg-white/8 border border-white/8 text-neutral-300 hover:text-white text-xs font-medium py-2 rounded-md transition-all cursor-pointer"
-                  >
-                    Ungroup Elements
-                  </button>
-                )
-              }
-
-              return (
-                <button
-                  onClick={() => groupElements(selectedElementIds)}
-                  className="w-full flex items-center justify-center gap-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 text-blue-300 hover:text-blue-200 text-xs font-medium py-2 rounded-md transition-all cursor-pointer"
-                >
-                  Group Elements
-                </button>
-              )
-            })()}
-            <button
-              onClick={() => {
-                selectedElementIds.forEach(id => deleteElement(id))
-              }}
-              className="w-full flex items-center justify-center gap-1.5 bg-red-600/10 hover:bg-red-600/20 border border-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium py-2 rounded-md transition-all cursor-pointer"
-            >
-              <Trash2 size={13} /> Delete All
-            </button>
-          </div>
-        </div>
-      ) : element && (
-        <>
-          <div className={`${sectionCls} flex items-center justify-between sticky top-0 bg-(--ms-bg-surface) z-10`}>
-            <span className="text-[11px] font-semibold text-(--ms-text-secondary) uppercase tracking-wider">{element.type}</span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => deleteElement(element.id)}
-                className="p-1.5 rounded-md text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer border-none bg-transparent"
-              >
-                <Trash2 size={13} />
-              </button>
-              {isMobile && (
-                <button
-                  onClick={() => setMobileInspectorOpen(false)}
-                  className="p-1.5 rounded-md text-neutral-500 hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto custom-scrollbar pb-10 md:pb-0">
-            <TransformSection element={element} onUpdate={update} />
-            {(() => {
-              const Section = INSPECTOR_REGISTRY[element.type]
-              return Section ? (
-                <Section
-                  element={element}
-                  onUpdate={update}
-                  onDelete={() => deleteElement(element.id)}
-                />
-              ) : null
-            })()}
-          </div>
-        </>
-      )}
+      {renderContent()}
     </div>
   )
 
@@ -137,7 +78,7 @@ export function InspectorPanel() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setMobileInspectorOpen(false)}
+              onClick={handleClose}
               className="fixed inset-0 bg-black/60 z-100 backdrop-blur-sm"
             />
             <motion.aside
@@ -147,7 +88,7 @@ export function InspectorPanel() {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="fixed bottom-0 left-0 right-0 h-[60vh] z-101 overflow-hidden"
             >
-              {panelContent}
+              {panelContainer}
             </motion.aside>
           </>
         )}
@@ -157,7 +98,7 @@ export function InspectorPanel() {
 
   return (
     <aside className="w-[280px] shrink-0 bg-(--ms-bg-surface) overflow-hidden">
-      {panelContent}
+      {panelContainer}
     </aside>
   )
-}
+})
