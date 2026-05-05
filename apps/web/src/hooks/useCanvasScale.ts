@@ -1,5 +1,5 @@
-import { useEffect, useState, type RefObject } from 'react'
-import { CANVAS_PADDING } from '@/constants/export'
+import { useLayoutEffect, useState, type RefObject } from 'react'
+import { CANVAS_PADDING, CANVAS_PADDING_MOBILE } from '@motionslides/shared'
 import { useIsMobile } from './useMediaQuery'
 
 /**
@@ -14,14 +14,14 @@ export function useCanvasScale(
   const [scale, setScale] = useState(1)
   const isMobile = useIsMobile()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = containerRef.current
     if (!el) return
 
     function resize() {
       if (!el) return
       const { clientWidth: w, clientHeight: h } = el
-      const padding = isMobile ? 12 : CANVAS_PADDING
+      const padding = isMobile ? CANVAS_PADDING_MOBILE : CANVAS_PADDING
       setScale(Math.min((w - padding) / canvasWidth, (h - padding) / canvasHeight))
     }
 
