@@ -12,8 +12,7 @@ export function UnsavedChangesModal({ isOpen, onClose, onConfirm, onDiscard }: P
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-(--z-modal) flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -22,7 +21,7 @@ export function UnsavedChangesModal({ isOpen, onClose, onConfirm, onDiscard }: P
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
 
-          {/* Modal Container */}
+
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -37,11 +36,11 @@ export function UnsavedChangesModal({ isOpen, onClose, onConfirm, onDiscard }: P
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-white">Unsaved Changes</h3>
                   <p className="text-sm text-neutral-400 mt-1 leading-relaxed">
-                    You have changes that haven't been synced to the cloud yet. 
+                    You have changes that haven't been synced to the cloud yet.
                     Would you like to save them before leaving?
                   </p>
                 </div>
-                <button 
+                <button
                   onClick={onClose}
                   className="p-1 text-neutral-500 hover:text-white transition-colors border-none bg-transparent cursor-pointer"
                 >
@@ -57,7 +56,7 @@ export function UnsavedChangesModal({ isOpen, onClose, onConfirm, onDiscard }: P
                   <Save size={16} />
                   Save and Leave
                 </button>
-                
+
                 <div className="flex gap-2">
                   <button
                     onClick={onDiscard}

@@ -12,12 +12,7 @@ interface Props {
   mode: 'editor' | 'presentation'
 }
 
-/**
- * 🎬 MotionStage — The Unified Render Engine
- * 
- * Handles the Match → Diff → Measure → Invert → Animate lifecycle.
- * Used in both the Editor and Presentation mode to ensure visual parity.
- */
+
 export const MotionStage = memo(function MotionStage({ slide, previousSlide, settings, activeTransition }: Props) {
   if (!slide) return null
 
@@ -31,9 +26,9 @@ export const MotionStage = memo(function MotionStage({ slide, previousSlide, set
       <LayoutGroup>
         <AnimatePresence mode="sync" initial={false}>
           {slide.elements.map((el) => (
-            <CanvasElement 
-              key={el.id} 
-              element={el} 
+            <CanvasElement
+              key={el.id}
+              elementId={el.id}
             />
           ))}
         </AnimatePresence>

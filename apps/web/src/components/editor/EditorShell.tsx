@@ -10,7 +10,6 @@ import { AIChat } from '@/components/editor/AIChat'
 import { ViewerOverlay } from '@/components/editor/presentation/ViewerOverlay'
 import { UnsavedChangesModal } from '@/components/ui/UnsavedChangesModal'
 import { usePermissions } from '@/context/PermissionContext'
-import type { Project } from '@motionslides/shared'
 
 interface Props {
   projectId: string
