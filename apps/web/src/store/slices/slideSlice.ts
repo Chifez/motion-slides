@@ -86,7 +86,6 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
       activeSlideIndex: index + 1,
     }))
 
-    // Automatically add a Magic Move transition from the original to the clone
     get().addTransition({
       fromSlideId: original.id,
       toSlideId: newSlideId,

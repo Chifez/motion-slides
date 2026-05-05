@@ -1,7 +1,6 @@
 import { Trash2, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
-import type { TextContent, CodeContent, ShapeContent, LineContent, ChartContent } from '@motionslides/shared'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { TransformSection } from './inspector/TransformSection'
 import { INSPECTOR_REGISTRY } from './inspector/registry'
@@ -15,7 +14,7 @@ export function InspectorPanel() {
     const slide = s.activeSlide()
     return slide?.elements.find(el => el.id === selectedElementIds[0])
   })
-  
+
   const updateElement = useEditorStore(s => s.updateElement)
   const updateElements = useEditorStore(s => s.updateElements)
   const deleteElement = useEditorStore(s => s.deleteElement)
@@ -34,16 +33,16 @@ export function InspectorPanel() {
   }
 
   const panelContent = (
-    <div className={`h-full flex flex-col bg-[var(--ms-bg-surface)] ${isMobile ? 'rounded-t-2xl shadow-2xl' : 'border-l border-[var(--ms-border)]'}`}>
+    <div className={`h-full flex flex-col bg-(--ms-bg-surface) ${isMobile ? 'rounded-t-2xl shadow-2xl' : 'border-l border-(--ms-border)'}`}>
       {selectedElementIds.length === 0 ? (
         <div className={sectionCls}>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--ms-text-muted)] mb-2.5 block">Inspector</span>
-          <p className="text-[12px] text-[var(--ms-text-secondary)]">Select an element to inspect its properties.</p>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted) mb-2.5 block">Inspector</span>
+          <p className="text-[12px] text-(--ms-text-secondary)">Select an element to inspect its properties.</p>
         </div>
       ) : selectedElementIds.length > 1 ? (
         <div className={sectionCls}>
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[11px] font-semibold text-[var(--ms-text-secondary)] uppercase tracking-wider">Multiple Selected ({selectedElementIds.length})</span>
+            <span className="text-[11px] font-semibold text-(--ms-text-secondary) uppercase tracking-wider">Multiple Selected ({selectedElementIds.length})</span>
             {isMobile && (
               <button
                 onClick={() => setMobileInspectorOpen(false)}
@@ -54,12 +53,11 @@ export function InspectorPanel() {
             )}
           </div>
           <div className="flex flex-col gap-2">
-            {/* If all selected share the exact same groupId, they are a Group. Offer Ungroup. */}
             {(() => {
               const elements = useEditorStore.getState().activeSlide()?.elements.filter(e => selectedElementIds.includes(e.id)) || []
               const firstGroupId = elements[0]?.groupId
               const allSameGroup = firstGroupId && elements.every(el => el.groupId === firstGroupId) && elements.length > 1
-              
+
               if (allSameGroup) {
                 return (
                   <button
@@ -70,7 +68,7 @@ export function InspectorPanel() {
                   </button>
                 )
               }
-              
+
               return (
                 <button
                   onClick={() => groupElements(selectedElementIds)}
@@ -92,9 +90,8 @@ export function InspectorPanel() {
         </div>
       ) : element && (
         <>
-          {/* Header */}
-          <div className={`${sectionCls} flex items-center justify-between sticky top-0 bg-[var(--ms-bg-surface)] z-10`}>
-            <span className="text-[11px] font-semibold text-[var(--ms-text-secondary)] uppercase tracking-wider">{element.type}</span>
+          <div className={`${sectionCls} flex items-center justify-between sticky top-0 bg-(--ms-bg-surface) z-10`}>
+            <span className="text-[11px] font-semibold text-(--ms-text-secondary) uppercase tracking-wider">{element.type}</span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => deleteElement(element.id)}
@@ -118,10 +115,10 @@ export function InspectorPanel() {
             {(() => {
               const Section = INSPECTOR_REGISTRY[element.type]
               return Section ? (
-                <Section 
-                  element={element} 
-                  onUpdate={update} 
-                  onDelete={() => deleteElement(element.id)} 
+                <Section
+                  element={element}
+                  onUpdate={update}
+                  onDelete={() => deleteElement(element.id)}
                 />
               ) : null
             })()}
@@ -159,7 +156,7 @@ export function InspectorPanel() {
   }
 
   return (
-    <aside className="w-[280px] shrink-0 bg-[var(--ms-bg-surface)] overflow-hidden">
+    <aside className="w-[280px] shrink-0 bg-(--ms-bg-surface) overflow-hidden">
       {panelContent}
     </aside>
   )

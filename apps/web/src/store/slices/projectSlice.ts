@@ -2,7 +2,6 @@ import type { StateCreator } from 'zustand'
 import type { Project, Slide } from '@motionslides/shared'
 import { createDefaultProject } from '@/store/defaults'
 import type { EditorState } from '@/store/editorStore'
-import { uuid } from '@/lib/uuid'
 
 export interface ProjectSlice {
   projects: Project[]
@@ -53,7 +52,7 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
         projects: s.projects.map((p) =>
           p.id === projectId ? { ...p, slides: [...p.slides, ...newSlides], updatedAt: Date.now() } : p,
         ),
-        activeSlideIndex: startIndex, // Jump to the first newly added slide
+        activeSlideIndex: startIndex,
       }
     })
   },
@@ -102,7 +101,6 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   },
 
   loadProject: (id) => {
-    // Migrate existing projects that might lack new fields
     set((s) => ({
       activeProjectId: id,
       activeSlideIndex: 0,

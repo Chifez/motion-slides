@@ -35,7 +35,6 @@ export const MotionWrapper = memo(function MotionWrapper({
 }: Props) {
   const { isTransitioning, durationSec, ease, transitionAnimation } = useMotionContext()
 
-  // 1. Editor Mode Style
   const commonStyle = {
     position: 'absolute' as const,
     left: element.position.x,
