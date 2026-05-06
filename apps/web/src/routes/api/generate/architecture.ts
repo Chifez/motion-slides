@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/generate/architecture")({
 
         const body = await request.json()
         const { description, options = {} } = body
-        const { slideCount = 6, diagramStyle = 'generic', theme = 'dark' } = options
+        const { slideCount = 6, diagramStyle = 'generic', theme = 'dark', canvasWidth = 1280, canvasHeight = 720 } = options
 
         if (!description || typeof description !== 'string') {
           return new Response(JSON.stringify({ error: 'description is required' }), {
@@ -72,6 +72,11 @@ export const Route = createFileRoute("/api/generate/architecture")({
                   diagramStyle,
                   slideCount,
                   theme,
+                  canvas: {
+                    canvasWidth,
+                    canvasHeight,
+                    aspectRatio: `${canvasWidth}:${canvasHeight}`,
+                  },
                 })
               }
 

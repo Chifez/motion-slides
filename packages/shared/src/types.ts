@@ -18,7 +18,7 @@ export type ShapeType =
 
 export type LineType = 'straight' | 'elbow' | 'curved' | 'step-after' | 'step-before' | 'branching'
 
-export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line' | 'chart'
+export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line' | 'chart' | 'section'
 
 export type AspectRatioKey = '16:9' | '9:16' | '1:1' | '4:3'
 
@@ -79,6 +79,21 @@ export interface ShapeContent {
   iconPath?:     string
   iconCategory?: string
   iconLabel?:    string
+  strokeWidth?: number
+  sublabel?: string
+}
+
+/**
+ * SectionContent — visual grouping container for diagram tiers and boundary boxes.
+ * Phase 1: Visual wrapper only (no parent/child ownership).
+ */
+export interface SectionContent {
+  label?: string
+  backgroundColor: string
+  borderColor: string
+  borderStyle: 'solid' | 'dashed' | 'dotted' | 'none'
+  borderWidth: number
+  cornerRadius: number
 }
 
 export interface Connection {
@@ -131,7 +146,7 @@ export interface SceneElement {
   animationDelay?: number
   autoWidth?: boolean
   autoHeight?: boolean
-  content: TextContent | CodeContent | ShapeContent | LineContent | ChartContent
+  content: TextContent | CodeContent | ShapeContent | LineContent | ChartContent | SectionContent
 }
 
 export interface Slide {

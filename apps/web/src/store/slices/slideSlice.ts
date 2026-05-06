@@ -9,6 +9,7 @@ export interface SlideSlice {
   addSlide: () => void
   deleteSlide: (index: number) => void
   duplicateSlide: (index: number) => void
+  reorderSlides: (fromIndex: number, toIndex: number) => void
   setActiveSlide: (index: number) => void
   updateSlide: (updates: Partial<Pick<Slide, 'name' | 'background'>>) => void
   activeSlide: () => Slide | null
@@ -40,6 +41,35 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
       ),
       activeSlideIndex: get().activeProject()!.slides.length,
     }))
+  },
+
+  reorderSlides: (fromIndex, toIndex) => {
+    const { activeProjectId, activeSlideIndex } = get()
+    if (!activeProjectId || fromIndex === toIndex) return
+    set((s) => {
+      const project = s.projects.find(p => p.id === activeProjectId)
+      if (!project) return s
+      const slides = [...project.slides]
+      const [moved] = slides.splice(fromIndex, 1)
+      slides.splice(toIndex, 0, moved)
+
+      // Track activeSlideIndex to follow the moved slide
+      let newActiveIndex = activeSlideIndex
+      if (activeSlideIndex === fromIndex) {
+        newActiveIndex = toIndex
+      } else if (fromIndex < activeSlideIndex && toIndex >= activeSlideIndex) {
+        newActiveIndex = activeSlideIndex - 1
+      } else if (fromIndex > activeSlideIndex && toIndex <= activeSlideIndex) {
+        newActiveIndex = activeSlideIndex + 1
+      }
+
+      return {
+        projects: s.projects.map(p =>
+          p.id !== activeProjectId ? p : { ...p, slides, updatedAt: Date.now() }
+        ),
+        activeSlideIndex: newActiveIndex,
+      }
+    })
   },
 
   deleteSlide: (index) => {

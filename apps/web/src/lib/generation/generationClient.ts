@@ -47,6 +47,7 @@ export interface ReadmeGenerationOptions {
   slideCount:  number
   style:       'technical' | 'executive' | 'tutorial'
   theme:       'dark' | 'light' | 'auto'
+  canvas?:     { canvasWidth: number; canvasHeight: number; aspectRatio: string }
 }
 
 export async function generateFromReadme(
@@ -59,6 +60,7 @@ export async function generateFromReadme(
     style:         opts.style,
     theme:         opts.theme,
     availableIcons,
+    canvas:        opts.canvas,
   })
   
   return callLLM(userPrompt, 8000)
@@ -72,6 +74,7 @@ export interface ArchGenerationOptions {
   diagramStyle: 'generic' | 'aws' | 'gcp' | 'minimal'
   slideCount:   number
   theme:        'dark' | 'light' | 'auto'
+  canvas?:      { canvasWidth: number; canvasHeight: number; aspectRatio: string }
 }
 
 export async function generateFromArchitecture(
@@ -84,6 +87,7 @@ export async function generateFromArchitecture(
     slideCount:    opts.slideCount,
     theme:         opts.theme,
     availableIcons,
+    canvas:        opts.canvas,
   })
   
   return callLLM(userPrompt, 12000)

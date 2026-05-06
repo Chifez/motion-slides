@@ -1,12 +1,13 @@
 import { z } from 'zod'
 
-// ── Grid position ─────────────────────────────────────────────────────────────
-// 12 columns × 8 rows. The assembler converts to pixel coordinates.
-const AIPosition = z.object({
-  col:    z.number().int().min(0).max(24),
-  row:    z.number().int().min(0).max(16),
-  width:  z.number().int().min(1).max(24),
-  height: z.number().int().min(1).max(16),
+// ── Normalized position ────────────────────────────────────────────────────────
+// All values are 0.0–1.0 relative to canvas width/height.
+// The assembler converts these to pixel coordinates at generation time.
+const AIRelativePosition = z.object({
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+  w: z.number().min(0.01).max(1),
+  h: z.number().min(0.01).max(1),
 })
 
 // ── Animation options ─────────────────────────────────────────────────────────
@@ -19,7 +20,7 @@ const AITextElement = z.object({
   id:             z.string().min(1),
   content:        z.string().min(1),
   role:           z.enum(['title', 'subtitle', 'heading', 'body', 'caption', 'label']),
-  position:       AIPosition,
+  position:       AIRelativePosition,
   style: z.object({
     fontSize:   z.enum(['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl']).nullable(),
     fontWeight: z.enum(['normal', 'medium', 'semibold', 'bold']).nullable(),
@@ -37,7 +38,7 @@ const AIShapeElement = z.object({
   label:    z.string().nullable(),
   sublabel: z.string().nullable(),
   iconPath: z.string().nullable(),
-  position: AIPosition,
+  position: AIRelativePosition,
   style: z.object({
     backgroundColor: z.string().nullable(),
     borderColor:     z.string().nullable(),
@@ -53,7 +54,7 @@ const AICodeElement = z.object({
   id:             z.string().min(1),
   code:           z.string().min(1),
   language:       z.string(),
-  position:       AIPosition,
+  position:       AIRelativePosition,
   animation:      AnimationType.nullable(),
   animationDelay: z.number().int().min(0).max(5000).nullable(),
 })
@@ -73,18 +74,37 @@ const AILineElement = z.object({
   animationDelay: z.number().int().min(0).max(5000).nullable(),
 })
 
-
 const AIIconElement = z.object({
   type:           z.literal('icon'),
   id:             z.string().min(1),
-  iconPath:       z.string().min(1),   // AI copies this from <available_icons>
+  iconPath:       z.string().min(1),
   label:          z.string().nullable(),
-  position:       AIPosition,
+  position:       AIRelativePosition,
   animation:      AnimationType.nullable(),
   animationDelay: z.number().int().min(0).max(5000).nullable(),
 })
 
+/**
+ * AISectionElement — visual grouping container for diagram tiers and boundary boxes.
+ * Always placed first in the elements array so it renders behind everything else.
+ * Phase 1: Visual wrapper only (no parent/child ownership).
+ */
+const AISectionElement = z.object({
+  type:            z.literal('section'),
+  id:              z.string().min(1),
+  label:           z.string().nullable(),
+  position:        AIRelativePosition,
+  backgroundColor: z.string(),
+  borderColor:     z.string(),
+  borderStyle:     z.enum(['solid', 'dashed', 'dotted', 'none']),
+  borderWidth:     z.number().min(0).max(8),
+  cornerRadius:    z.number().min(0).max(24),
+  animation:       AnimationType.nullable(),
+  animationDelay:  z.number().int().min(0).max(5000).nullable(),
+})
+
 const AIElement = z.discriminatedUnion('type', [
+  AISectionElement,
   AITextElement,
   AIShapeElement,
   AICodeElement,
@@ -99,6 +119,11 @@ const AISlide = z.object({
   title:      z.string().min(1),
   role:       z.enum(['title', 'content', 'diagram', 'code', 'summary', 'divider']),
   background: z.string().nullable(),
+  /**
+   * Spatial planning field — the AI MUST describe its zone assignment and
+   * layout strategy BEFORE the elements array. Forces chain-of-thought reasoning.
+   */
+  spatialPlan: z.string().min(1),
   elements:   z.array(AIElement).min(1),
   transition: z.object({
     type:     z.enum(['fade', 'slide', 'zoom', 'flip', 'morph', 'magic-move', 'none']),
@@ -127,3 +152,4 @@ export const GeneratedPresentationSchema = z.object({
 export type GeneratedPresentation = z.infer<typeof GeneratedPresentationSchema>
 export type AISlideType            = z.infer<typeof AISlide>
 export type AIElementType          = z.infer<typeof AIElement>
+export type AISectionElementType   = z.infer<typeof AISectionElement>
