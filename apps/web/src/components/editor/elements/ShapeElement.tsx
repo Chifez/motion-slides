@@ -133,8 +133,8 @@ function AwsIconShape({ iconPath }: { iconPath?: string }) {
     <foreignObject x="0" y="0" width="100" height="100">
       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <img
-          src={`/${iconPath}`}
-          alt="AWS Icon"
+          src={`/${encodeURI(iconPath)}`}
+          alt="Icon"
           style={{
             maxWidth: '90%',
             maxHeight: '90%',

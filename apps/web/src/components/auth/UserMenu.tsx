@@ -34,7 +34,7 @@ export function UserMenu() {
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full bg-(--ms-bg-elevated) hover:bg-(--ms-border) border border-(--ms-border) transition-all cursor-pointer text-left"
       >
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-inner">
+        <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-inner">
           {user.name?.[0] || 'U'}
         </div>
         <span className="text-[11px] font-medium text-(--ms-text-primary) max-w-[80px] truncate">
@@ -46,9 +46,9 @@ export function UserMenu() {
       <AnimatePresence>
         {isDropdownOpen && (
           <>
-            <div 
-              className="fixed inset-0 z-40" 
-              onClick={() => setIsDropdownOpen(false)} 
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setIsDropdownOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -71,7 +71,7 @@ export function UserMenu() {
                 <span>Sync Preferences</span>
               </button>
 
-              <button 
+              <button
                 onClick={() => {
                   logout()
                   setIsDropdownOpen(false)

@@ -18,6 +18,7 @@ export interface ElementSlice {
   duplicateElement: (id: string) => void
   groupElements: (ids: string[]) => void
   ungroupElements: (groupId: string) => void
+  addSection: () => void
   recalculateLines: () => void
 }
 
@@ -414,5 +415,77 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
         return { ...p, slides, updatedAt: Date.now() }
       }),
     }))
+  },
+
+  addSection: () => {
+    const { activeProjectId, activeSlideIndex, selectedElementIds, activeProject, setEditingId, setSelectedElement } = get()
+    if (!activeProjectId) return
+    const project = activeProject()
+    if (!project) return
+    const slide = project.slides[activeSlideIndex]
+    if (!slide) return
+
+    let x, y, width, height
+    const PADDING = 30
+
+    if (selectedElementIds.length > 0) {
+      // Pattern: Magic Wrap
+      const selectedElements = slide.elements.filter(el => selectedElementIds.includes(el.id))
+      const minX = Math.min(...selectedElements.map(el => el.position.x))
+      const minY = Math.min(...selectedElements.map(el => el.position.y))
+      const maxX = Math.max(...selectedElements.map(el => el.position.x + el.size.width))
+      const maxY = Math.max(...selectedElements.map(el => el.position.y + el.size.height))
+
+      x = minX - PADDING
+      y = minY - PADDING
+      width = (maxX - minX) + (PADDING * 2)
+      height = (maxY - minY) + (PADDING * 2)
+    } else {
+      // Pattern: Viewport Drop (using slide center as proxy for now)
+      width = 400
+      height = 300
+      x = 1280 / 2 - width / 2
+      y = 720 / 2 - height / 2
+    }
+
+    const newSection: SceneElement = {
+      id: `section-${Math.random().toString(36).substr(2, 9)}`,
+      type: 'section',
+      position: { x, y },
+      size: { width, height },
+      rotation: 0,
+      opacity: 1,
+      zIndex: 1, // Sections always stay at the bottom
+      animation: 'fade-in',
+      animationDelay: 0,
+      content: {
+        label: 'Section',
+        backgroundColor: 'color-mix(in srgb, var(--ms-accent), transparent 95%)',
+        borderColor: 'color-mix(in srgb, var(--ms-accent), transparent 70%)',
+        borderStyle: 'dashed',
+        borderWidth: 2,
+        cornerRadius: 12,
+      } as any
+    }
+
+    set((s) => ({
+      projects: s.projects.map((p) => {
+        if (p.id !== activeProjectId) return p
+        return {
+          ...p,
+          slides: p.slides.map((sl, i) =>
+            i !== activeSlideIndex
+              ? sl
+              : { ...sl, elements: [newSection, ...sl.elements] } // Section inserted at the bottom (index 0)
+          ),
+          updatedAt: Date.now()
+        }
+      }),
+      activeTool: 'select' // Reset tool after use
+    }))
+
+    // Immediate focus for labeling
+    setSelectedElement(newSection.id)
+    setEditingId(newSection.id)
   },
 })

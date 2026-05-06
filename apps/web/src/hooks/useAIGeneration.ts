@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { generateSlides } from '@/lib/generateClient'
+import { getCanvasDimensions } from '@motionslides/shared'
 
 export function useAIGeneration() {
   const setGenerating = useEditorStore(s => s.setGenerating)
@@ -15,7 +16,14 @@ export function useAIGeneration() {
     setGenerating(true)
     setProgress({ percent: 0, message: 'Starting…' })
 
-    await generateSlides(opts, (ev) => {
+    const { playbackSettings } = useEditorStore.getState()
+    const { width, height } = getCanvasDimensions(playbackSettings.aspectRatio)
+
+    await generateSlides({
+      ...opts,
+      canvasWidth: width,
+      canvasHeight: height,
+    }, (ev) => {
       setProgress({ percent: ev.percent, message: ev.message })
       if (ev.stage === 'done' && ev.slides) {
         setPendingSlides(ev.slides as any, ev.title, ev.rawPresentation)

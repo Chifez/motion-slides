@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Type, Code2, Shapes, Minus, ChevronDown, BarChart3 } from 'lucide-react'
+import { Type, Code2, Shapes, Minus, ChevronDown, BarChart3, Layout } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { uuid } from '@/lib/uuid'
 import { 
@@ -13,7 +13,7 @@ import type { LineType, ShapeType, ChartType } from '@motionslides/shared'
 const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-(--ms-border) bg-(--ms-bg-elevated) text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)"
 
 export function ElementButtons() {
-  const { addElement } = useEditorStore()
+  const { addElement, addSection } = useEditorStore()
   
   const [showLineMenu, setShowLineMenu] = useState(false)
   const lineRef = useRef<HTMLDivElement>(null)
@@ -44,7 +44,7 @@ export function ElementButtons() {
         iconPath: isAws 
           ? 'icons/aws/Architecture-Service-Icons_01302026/Arch_Compute/32/Arch_Amazon-EC2_32.svg'
           : isGcp
-          ? 'icons/gcp/Compute/Compute Engine.svg'
+          ? 'icons/gcp/Compute Engine/SVG/ComputeEngine-512-color-rgb.svg'
           : undefined,
         iconLabel: isAws ? 'Amazon EC2' : isGcp ? 'Compute Engine' : undefined,
         iconCategory: isAws ? 'Arch_Compute' : isGcp ? 'Compute' : undefined,
@@ -87,6 +87,9 @@ export function ElementButtons() {
     <>
       <button className={btnBase} onClick={addText}>
         <Type size={13} /> Text
+      </button>
+      <button className={btnBase} onClick={addSection}>
+        <Layout size={13} /> Section
       </button>
       <button className={btnBase} onClick={addCode}>
         <Code2 size={13} /> Code

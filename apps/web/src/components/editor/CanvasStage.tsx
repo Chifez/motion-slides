@@ -1,4 +1,4 @@
-import { useRef, useCallback, memo, useMemo } from 'react'
+import { useRef, useCallback, memo, useMemo, useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { useCanvasScale } from '@/hooks/useCanvasScale'
 import { useCanvasCamera } from '@/hooks/useCanvasCamera'
@@ -20,6 +20,7 @@ export const CanvasStage = memo(function CanvasStage() {
 
   const playbackSettings = useEditorStore(s => s.playbackSettings)
   const camera = useEditorStore(s => s.camera)
+  const activeTool = useEditorStore(s => s.activeTool)
   const slide = useEditorStore(s => s.activeSlide())
   const slideBackground = slide?.background || '#0a0a0a'
   const slideName = slide?.name || `Slide ${(useEditorStore.getState().activeSlideIndex) + 1}`
@@ -41,23 +42,97 @@ export const CanvasStage = memo(function CanvasStage() {
   const setSelectedElement = useEditorStore(s => s.setSelectedElement)
   const setMobileInspectorOpen = useEditorStore(s => s.setMobileInspectorOpen)
   const setEditingId = useEditorStore(s => s.setEditingId)
+  const addElement = useEditorStore(s => s.addElement)
+  const setActiveTool = useEditorStore(s => s.setActiveTool)
+
+  // ─── Lasso Draw Logic ───────────────────────────────────────────────────────
+  const [lasso, setLasso] = useState<{ x1: number, y1: number, x2: number, y2: number } | null>(null)
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (isReadOnly || activeTool !== 'section') return
+    if (e.button !== 0) return // Only left click
+
+    const rect = stageRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    // Convert screen -> canvas coordinates
+    const x = (e.clientX - rect.left - (rect.width / 2) - camera.x) / (scale * camera.zoom) + (canvasW / 2)
+    const y = (e.clientY - rect.top - (rect.height / 2) - camera.y) / (scale * camera.zoom) + (canvasH / 2)
+
+    setLasso({ x1: x, y1: y, x2: x, y2: y })
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!lasso) return
+    const rect = stageRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    const x = (e.clientX - rect.left - (rect.width / 2) - camera.x) / (scale * camera.zoom) + (canvasW / 2)
+    const y = (e.clientY - rect.top - (rect.height / 2) - camera.y) / (scale * camera.zoom) + (canvasH / 2)
+
+    setLasso(prev => prev ? { ...prev, x2: x, y2: y } : null)
+  }
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!lasso) return
+    setLasso(null)
+    e.currentTarget.releasePointerCapture(e.pointerId)
+
+    const x = Math.min(lasso.x1, lasso.x2)
+    const y = Math.min(lasso.y1, lasso.y2)
+    const width = Math.abs(lasso.x2 - lasso.x1)
+    const height = Math.abs(lasso.y2 - lasso.y1)
+
+    // Only create if it's larger than a simple click
+    if (width > 10 && height > 10) {
+      const newSection = {
+        id: `section-${Math.random().toString(36).substr(2, 9)}`,
+        type: 'section',
+        position: { x, y },
+        size: { width, height },
+        rotation: 0,
+        opacity: 1,
+        zIndex: 1,
+        animation: 'fade-in',
+        animationDelay: 0,
+        content: {
+          label: 'Section',
+          backgroundColor: 'rgba(59, 130, 246, 0.05)',
+          borderColor: 'rgba(59, 130, 246, 0.3)',
+          borderStyle: 'dashed',
+          borderWidth: 2,
+          cornerRadius: 12,
+        }
+      }
+      addElement(newSection as any)
+      setSelectedElement(newSection.id)
+      setEditingId(newSection.id)
+      setActiveTool('select')
+    }
+  }
 
   const handleStageClick = useCallback(() => {
+    if (activeTool !== 'select') return
     setSelectedElement(null)
     setEditingId(null)
     setMobileInspectorOpen(false)
-  }, [setSelectedElement, setEditingId, setMobileInspectorOpen])
+  }, [setSelectedElement, setEditingId, setMobileInspectorOpen, activeTool])
 
   return (
     <main
       ref={stageRef}
-      className="flex-1 bg-(--ms-bg-base) flex items-center justify-center overflow-hidden relative p-2 md:p-0 transition-colors"
+      className={`flex-1 bg-(--ms-bg-base) flex items-center justify-center overflow-hidden relative p-2 md:p-0 transition-colors ${activeTool === 'section' ? 'cursor-crosshair' : ''
+        }`}
       onClick={handleStageClick}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
     >
 
       <div
         data-canvas-board
-        className="relative rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)] overflow-hidden"
+        className="relative rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)]"
         style={{
           width: canvasW,
           height: canvasH,
@@ -74,8 +149,20 @@ export const CanvasStage = memo(function CanvasStage() {
         />
         <ConnectionAnchors />
         {isGroupSelection && <GroupBoundingBox elements={selectedElements} />}
-      </div>
 
+        {/* Lasso Preview */}
+        {lasso && (
+          <div
+            className="absolute border-2 border-blue-500 bg-blue-500/10 pointer-events-none z-1000"
+            style={{
+              left: Math.min(lasso.x1, lasso.x2),
+              top: Math.min(lasso.y1, lasso.y2),
+              width: Math.abs(lasso.x2 - lasso.x1),
+              height: Math.abs(lasso.y2 - lasso.y1),
+            }}
+          />
+        )}
+      </div>
 
       {!isReadOnly && (
         <div className="absolute top-3 left-3 flex items-center gap-2">

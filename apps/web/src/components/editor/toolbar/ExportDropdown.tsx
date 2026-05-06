@@ -58,7 +58,7 @@ function PlatformIcon({ id }: { id: string }) {
   }
 }
 
-export function ExportDropdown() {
+export function ExportDropdown({ isMobile }: { isMobile?: boolean }) {
   const [open, setOpen] = useState(false)
   const [progress, setProgress] = useState<ExportProgressEvent | null>(null)
   const ref = useRef<HTMLDivElement>(null)
@@ -97,8 +97,12 @@ export function ExportDropdown() {
   return (
     <>
       <div className="relative" ref={ref}>
-        <button className={btnBase} onClick={() => setOpen(!open)} title="Export">
-          <Download size={13} /> {!useIsMobile() && "Export"}
+        <button 
+          className={isMobile ? "absolute inset-0 w-full h-full opacity-0 cursor-pointer" : btnBase} 
+          onClick={() => setOpen(!open)} 
+          title="Export"
+        >
+          {!isMobile && <Download size={13} />} {!isMobile && !useIsMobile() && "Export"}
         </button>
         {open && (
           <div className="absolute right-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-999 p-3 w-64 transition-colors">

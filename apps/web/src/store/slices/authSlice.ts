@@ -8,8 +8,10 @@ export interface AuthSlice {
   user: any | null
   sessionStatus: SessionStatus
   isSyncing: boolean
+  isOnline: boolean
   setSyncing: (isSyncing: boolean) => void
   checkSession: () => Promise<void>
+  checkHeartbeat: () => Promise<void>
   logout: () => Promise<void>
   syncProjects: () => Promise<void>
 }
@@ -23,6 +25,7 @@ export const createAuthSlice: StateCreator<
   user: null,
   sessionStatus: 'loading',
   isSyncing: false,
+  isOnline: true,
 
   setSyncing: (isSyncing) => set({ isSyncing }),
 
@@ -32,10 +35,21 @@ export const createAuthSlice: StateCreator<
       const { data: session } = await authClient.getSession()
       set({ 
         user: session?.user ?? null,
-        sessionStatus: session?.user ? 'authenticated' : 'unauthenticated'
+        sessionStatus: session?.user ? 'authenticated' : 'unauthenticated',
+        isOnline: true // If we get a response, the server is at least reachable
       })
     } catch (err) {
-      set({ user: null, sessionStatus: 'unauthenticated' })
+      set({ user: null, sessionStatus: 'unauthenticated', isOnline: false })
+    }
+  },
+
+  checkHeartbeat: async () => {
+    try {
+      const { pingAction } = await import('@/lib/actions/project')
+      const result = await pingAction()
+      set({ isOnline: !!result.success })
+    } catch (e) {
+      set({ isOnline: false })
     }
   },
 

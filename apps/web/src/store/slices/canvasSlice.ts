@@ -7,6 +7,8 @@ export interface Camera {
   zoom: number
 }
 
+export type EditorTool = 'select' | 'section' | 'hand'
+
 export interface CanvasSlice {
   camera: Camera
   setCamera: (camera: Partial<Camera>) => void
@@ -15,6 +17,8 @@ export interface CanvasSlice {
   setMultiSelectMode: (isMultiSelectMode: boolean) => void
   isDragging: boolean
   setIsDragging: (isDragging: boolean) => void
+  activeTool: EditorTool
+  setActiveTool: (tool: EditorTool) => void
 }
 
 export const createCanvasSlice: StateCreator<EditorState, [], [], CanvasSlice> = (set) => ({
@@ -28,4 +32,6 @@ export const createCanvasSlice: StateCreator<EditorState, [], [], CanvasSlice> =
   setMultiSelectMode: (isMultiSelectMode) => set({ isMultiSelectMode }),
   isDragging: false,
   setIsDragging: (isDragging) => set({ isDragging }),
+  activeTool: 'select',
+  setActiveTool: (activeTool) => set({ activeTool }),
 })

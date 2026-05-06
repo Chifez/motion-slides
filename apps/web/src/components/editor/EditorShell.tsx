@@ -10,6 +10,8 @@ import { AIChat } from '@/components/editor/AIChat'
 import { ViewerOverlay } from '@/components/editor/presentation/ViewerOverlay'
 import { UnsavedChangesModal } from '@/components/ui/UnsavedChangesModal'
 import { usePermissions } from '@/context/PermissionContext'
+import { useIsMobile } from '@/hooks/useMediaQuery'
+import { MobileFloatingDock } from '@/components/editor/toolbar/MobileFloatingDock'
 
 interface Props {
   projectId: string
@@ -27,6 +29,7 @@ export const EditorShell = memo(function EditorShell({ projectId, blocker }: Pro
   const isPrototypeMode = useEditorStore(s => s.isPrototypeMode)
   const startPresentation = useEditorStore(s => s.startPresentation)
   
+  const isMobile = useIsMobile()
   const showEditorUI = !isPresenting && mode === 'edit'
   const isViewOnly = mode === 'view' || mode === 'present'
 
@@ -40,6 +43,8 @@ export const EditorShell = memo(function EditorShell({ projectId, blocker }: Pro
         {showEditorUI && !isPrototypeMode && <InspectorPanel />}
         {showEditorUI && <AIChat />}
       </div>
+
+      {showEditorUI && isMobile && <MobileFloatingDock />}
 
       <PresentationOverlay />
       {isViewOnly && !isPresenting && <ViewerOverlay startPresentation={startPresentation} />}

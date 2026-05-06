@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { Trash2, X } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
+import { useShallow } from 'zustand/react/shallow'
 
 const sectionCls = "px-3 py-3 border-b border-(--ms-border)"
 
@@ -15,10 +16,10 @@ export const MultiInspector = memo(function MultiInspector({ selectedIds, isMobi
   const ungroupElements = useEditorStore(s => s.ungroupElements)
   const deleteElement = useEditorStore(s => s.deleteElement)
 
-  const elements = useEditorStore(s => 
+  const elements = useEditorStore(useShallow(s =>
     s.activeSlide()?.elements.filter(e => selectedIds.includes(e.id)) || []
-  )
-  
+  ))
+
   const firstGroupId = elements[0]?.groupId
   const allSameGroup = firstGroupId && elements.every(el => el.groupId === firstGroupId) && elements.length > 1
 
@@ -37,7 +38,7 @@ export const MultiInspector = memo(function MultiInspector({ selectedIds, isMobi
           </button>
         )}
       </div>
-      
+
       <div className="flex flex-col gap-2">
         {allSameGroup ? (
           <button
@@ -54,7 +55,7 @@ export const MultiInspector = memo(function MultiInspector({ selectedIds, isMobi
             Group Elements
           </button>
         )}
-        
+
         <button
           onClick={() => selectedIds.forEach(id => deleteElement(id))}
           className="w-full flex items-center justify-center gap-1.5 bg-red-600/10 hover:bg-red-600/20 border border-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium py-2 rounded-md transition-all cursor-pointer"

@@ -69,7 +69,7 @@ export function IconLibrarySection({ content, onUpdate }: Props) {
             title={icon.label}
             className={`aspect-square p-1 rounded-md border transition-all cursor-pointer bg-transparent ${content.iconPath === icon.path ? 'border-blue-500 bg-blue-500/10' : 'border-(--ms-border) hover:border-(--ms-border-strong) hover:bg-(--ms-bg-base)'}`}
           >
-            <img src={`/${icon.path}`} alt={icon.label} className="w-full h-full object-contain pointer-events-none" />
+            <img src={`/${encodeURI(icon.path)}`} alt={icon.label} className="w-full h-full object-contain pointer-events-none" />
           </button>
         ))}
       </div>
@@ -81,7 +81,7 @@ export function IconLibrarySection({ content, onUpdate }: Props) {
       {content.iconLabel && (
         <div className="flex items-center gap-2 p-2 bg-blue-500/5 border border-blue-500/20 rounded-md">
           <div className="w-6 h-6 shrink-0">
-            <img src={`/${content.iconPath}`} className="w-full h-full object-contain" />
+            <img src={`/${encodeURI(content.iconPath!)}`} className="w-full h-full object-contain" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[10px] font-medium text-blue-300 truncate">{content.iconLabel}</div>

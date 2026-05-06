@@ -15,7 +15,7 @@ const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px
 const labelCls = "text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1"
 const selectCls = "w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1 text-[11px] text-(--ms-text-primary) focus:outline-none"
 
-export function SettingsDropdown() {
+export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
   const playbackSettings = useEditorStore(s => s.playbackSettings)
   const theme = useEditorStore(s => s.theme)
   const updatePlaybackSettings = useEditorStore(s => s.updatePlaybackSettings)
@@ -37,8 +37,12 @@ export function SettingsDropdown() {
 
   return (
     <div className="relative" ref={ref}>
-      <button className={btnBase} onClick={() => setOpen(!open)} title="Project Settings">
-        <Settings size={13} />
+      <button 
+        className={isMobile ? "absolute inset-0 w-full h-full opacity-0 cursor-pointer" : btnBase} 
+        onClick={() => setOpen(!open)} 
+        title="Project Settings"
+      >
+        {!isMobile && <Settings size={13} />}
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-999 p-3 w-72 max-h-[80vh] overflow-y-auto custom-scrollbar">

@@ -8,15 +8,12 @@ interface Props {
   projectName: string
 }
 
-/**
- * Theme-flexible delete confirmation modal.
- * Uses MS tokens for consistent behavior across light/dark modes.
- */
+
 export function DeleteConfirmationModal({ isOpen, onClose, onConfirm, projectName }: Props) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-(--z-modal) flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -39,11 +36,11 @@ export function DeleteConfirmationModal({ isOpen, onClose, onConfirm, projectNam
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-(--ms-text-primary)">Delete Project</h3>
                   <p className="text-sm text-(--ms-text-muted) mt-1 leading-relaxed">
-                    Are you sure you want to delete <span className="text-(--ms-text-primary) font-medium">"{projectName}"</span>? 
+                    Are you sure you want to delete <span className="text-(--ms-text-primary) font-medium">"{projectName}"</span>?
                     This action cannot be undone and will permanently remove all slides and prototype data.
                   </p>
                 </div>
-                <button 
+                <button
                   onClick={onClose}
                   className="p-1 text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors border-none bg-transparent cursor-pointer"
                 >

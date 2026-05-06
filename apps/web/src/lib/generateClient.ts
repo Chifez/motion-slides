@@ -10,6 +10,8 @@ export interface GenerationOptions {
   theme?:       'dark' | 'light' | 'auto'
   refinementPrompt?: string
   previousPresentation?: any
+  canvasWidth?: number
+  canvasHeight?: number
 }
 
 export interface GenerationEvent {
@@ -32,8 +34,8 @@ export async function generateSlides(
     : '/api/generate/architecture'
 
   const body = opts.mode === 'readme'
-    ? { markdown: opts.markdown, refinementPrompt: opts.refinementPrompt, previousPresentation: opts.previousPresentation, options: { slideCount: opts.slideCount, style: opts.style, theme: opts.theme } }
-    : { description: opts.description, refinementPrompt: opts.refinementPrompt, previousPresentation: opts.previousPresentation, options: { slideCount: opts.slideCount, diagramStyle: opts.diagramStyle, theme: opts.theme } }
+    ? { markdown: opts.markdown, refinementPrompt: opts.refinementPrompt, previousPresentation: opts.previousPresentation, options: { slideCount: opts.slideCount, style: opts.style, theme: opts.theme, canvasWidth: opts.canvasWidth, canvasHeight: opts.canvasHeight } }
+    : { description: opts.description, refinementPrompt: opts.refinementPrompt, previousPresentation: opts.previousPresentation, options: { slideCount: opts.slideCount, diagramStyle: opts.diagramStyle, theme: opts.theme, canvasWidth: opts.canvasWidth, canvasHeight: opts.canvasHeight } }
 
   let res: Response
   try {

@@ -4,6 +4,16 @@ import { useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { SyncFooter } from '@/components/ui/SyncFooter'
 import { useSyncManager } from '@/hooks/useSyncManager'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 1000 * 60 * 5,
+    },
+  },
+})
 
 const THEME_SCRIPT = `
   (function () {
@@ -35,6 +45,7 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const checkSession = useEditorStore((s) => s.checkSession)
+  const checkHeartbeat = useEditorStore((s) => s.checkHeartbeat)
   const initializeIdentity = useEditorStore((s) => s.initializeIdentity)
   const theme = useEditorStore((s) => s.theme)
 
@@ -44,8 +55,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     checkSession()
     initializeIdentity()
+    
+    // Start heartbeat
+    checkHeartbeat()
+    const interval = setInterval(checkHeartbeat, 30000) // Every 30s
+
     document.body.classList.add('transitions-enabled')
-  }, [checkSession, initializeIdentity])
+    return () => clearInterval(interval)
+  }, [checkSession, checkHeartbeat, initializeIdentity])
 
 
   useEffect(() => {
@@ -59,8 +76,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="bg-(--ms-bg-base) text-(--ms-text-primary)">
-        {children}
-        <SyncFooter />
+        <QueryClientProvider client={queryClient}>
+          {children}
+          <SyncFooter />
+        </QueryClientProvider>
         <Scripts />
       </body>
     </html>
