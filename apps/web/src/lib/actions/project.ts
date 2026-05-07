@@ -203,18 +203,3 @@ export const deleteRemoteProjectAction = createServerFn({ method: 'POST' })
 
     return { success: true }
   })
-
-/**
- * Server Action to verify DB connectivity (Heartbeat).
- */
-export const pingAction = createServerFn({ method: 'GET' })
-  .handler(async () => {
-    try {
-      // Perform a minimal DB query to verify reachability
-      await db.execute(sql`SELECT 1`)
-      return { success: true }
-    } catch (e) {
-      console.error('[Heartbeat] Database unreachable')
-      return { success: false }
-    }
-  })

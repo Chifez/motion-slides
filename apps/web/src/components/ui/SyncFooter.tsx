@@ -9,13 +9,12 @@ import { useLocation } from '@tanstack/react-router'
  */
 export function SyncFooter() {
   const isSyncing = useEditorStore((s) => s.isSyncing)
-  const isOnline = useEditorStore((s) => s.isOnline)
   const user = useEditorStore((s) => s.user)
   const location = useLocation()
 
   const isProject = location.pathname.startsWith('/p')
 
-  if (!user || !isOnline || location.pathname === '/') return null
+  if (!user || location.pathname === '/') return null
 
   return (
     <div className="fixed bottom-4 right-4 bg-(--ms-bg-surface) border border-(--ms-border) rounded-full px-3 py-1.5 shadow-lg z-999 pointer-events-none transition-colors">

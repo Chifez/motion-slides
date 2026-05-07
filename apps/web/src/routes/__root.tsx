@@ -45,7 +45,6 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const checkSession = useEditorStore((s) => s.checkSession)
-  const checkHeartbeat = useEditorStore((s) => s.checkHeartbeat)
   const initializeIdentity = useEditorStore((s) => s.initializeIdentity)
   const theme = useEditorStore((s) => s.theme)
 
@@ -55,14 +54,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     checkSession()
     initializeIdentity()
-    
-    // Start heartbeat
-    checkHeartbeat()
-    const interval = setInterval(checkHeartbeat, 30000) // Every 30s
-
     document.body.classList.add('transitions-enabled')
-    return () => clearInterval(interval)
-  }, [checkSession, checkHeartbeat, initializeIdentity])
+  }, [checkSession, initializeIdentity])
 
 
   useEffect(() => {

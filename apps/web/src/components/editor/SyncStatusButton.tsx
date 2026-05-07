@@ -10,10 +10,9 @@ interface Props {
 export const SyncStatusButton = memo(function SyncStatusButton({ isAuthenticated, isReadOnly }: Props) {
   const project = useEditorStore(s => s.activeProject())
   const isSyncing = useEditorStore(s => s.isSyncing)
-  const isOnline = useEditorStore(s => s.isOnline)
   const syncProjects = useEditorStore(s => s.syncProjects)
 
-  if (isReadOnly || !isAuthenticated || !isOnline || !project || project.synced) return null
+  if (isReadOnly || !isAuthenticated || !project || project.synced) return null
 
   return (
     <button

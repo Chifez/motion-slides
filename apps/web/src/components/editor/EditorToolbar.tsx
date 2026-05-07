@@ -32,7 +32,6 @@ export function EditorToolbar({ projectId }: Props) {
   const projectName = useEditorStore(s => s.projects.find(p => p.id === projectId)?.name || '')
   const project = useEditorStore(s => s.projects.find(p => p.id === projectId))
 
-  const isOnline = useEditorStore(s => s.isOnline)
   const { isAuthenticated } = useAccessControl()
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const isMobile = useIsMobile();
@@ -144,7 +143,7 @@ export function EditorToolbar({ projectId }: Props) {
                       <span className="text-sm text-(--ms-text-secondary)">Export</span>
                       <ExportDropdown isMobile />
                     </div>
-                    {isAuthenticated && isOnline && (
+                    {isAuthenticated && (
                       <div className="relative h-10 w-full flex items-center gap-2.5 px-3 rounded-lg hover:bg-(--ms-border) transition-colors">
                         <Users size={16} className="text-(--ms-text-muted)" />
                         <span className="text-sm text-(--ms-text-secondary)">Share</span>
@@ -178,7 +177,7 @@ export function EditorToolbar({ projectId }: Props) {
 
           <SettingsDropdown />
           <ExportDropdown />
-          {isAuthenticated && isOnline && <ShareMenu project={project} />}
+          {isAuthenticated && <ShareMenu project={project} />}
 
           <button
             className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
