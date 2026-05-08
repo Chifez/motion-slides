@@ -8,10 +8,12 @@ export interface AuthSlice {
   user: any | null
   sessionStatus: SessionStatus
   isSyncing: boolean
+  syncError: string | null
   setSyncing: (isSyncing: boolean) => void
   checkSession: () => Promise<void>
   logout: () => Promise<void>
   syncProjects: () => Promise<void>
+  clearSyncError: () => void
 }
 
 export const createAuthSlice: StateCreator<
@@ -23,8 +25,10 @@ export const createAuthSlice: StateCreator<
   user: null,
   sessionStatus: 'loading',
   isSyncing: false,
+  syncError: null,
 
   setSyncing: (isSyncing) => set({ isSyncing }),
+  clearSyncError: () => set({ syncError: null }),
 
   checkSession: async () => {
     set({ sessionStatus: 'loading' })
@@ -41,7 +45,7 @@ export const createAuthSlice: StateCreator<
 
   logout: async () => {
     await authClient.signOut()
-    set({ user: null })
+    set({ user: null, sessionStatus: 'unauthenticated', syncError: null })
   },
 
   syncProjects: async () => {
@@ -49,6 +53,7 @@ export const createAuthSlice: StateCreator<
     if (!user) return
 
     setSyncing(true)
+    set({ syncError: null })
     try {
       const { syncProjectsAction, listRemoteProjectsAction } = await import('@/lib/actions/project')
       
@@ -108,6 +113,7 @@ export const createAuthSlice: StateCreator<
       }
     } catch (error: any) {
       console.error('Failed to sync projects:', error?.message || error)
+      set({ syncError: error?.message || 'Sync failed' })
       if (error?.data) console.error('Sync error details:', error.data)
     } finally {
       setSyncing(false)

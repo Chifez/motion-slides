@@ -132,7 +132,9 @@ export const CanvasStage = memo(function CanvasStage() {
 
       <div
         data-canvas-board
-        className="relative rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)]"
+        className={`relative rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)] ${
+          playbackSettings.clipContent ? 'overflow-hidden' : ''
+        }`}
         style={{
           width: canvasW,
           height: canvasH,

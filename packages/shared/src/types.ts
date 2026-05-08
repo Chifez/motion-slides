@@ -196,6 +196,7 @@ export interface PlaybackSettings {
   transitionEase: CubicBezier
   aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
   exportResolution: { width: number; height: number; label: string }
+  clipContent?: boolean
 }
 
 // ─────────────────────────────────────────────

@@ -9,6 +9,7 @@ import { useLocation } from '@tanstack/react-router'
  */
 export function SyncFooter() {
   const isSyncing = useEditorStore((s) => s.isSyncing)
+  const syncError = useEditorStore((s) => s.syncError)
   const user = useEditorStore((s) => s.user)
   const location = useLocation()
 
@@ -29,6 +30,16 @@ export function SyncFooter() {
           >
             <RefreshCw size={10} className="animate-spin" />
             <span>Syncing database...</span>
+          </motion.div>
+        ) : syncError ? (
+          <motion.div
+            key="error"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-2 text-[10px] text-red-400 font-semibold"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+            <span>Sync failed (Offline)</span>
           </motion.div>
         ) : (
           <motion.div

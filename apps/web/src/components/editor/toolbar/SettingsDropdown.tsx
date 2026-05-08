@@ -77,6 +77,16 @@ export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
               <span className="text-[11px] text-(--ms-text-primary) group-hover:text-blue-400 transition-colors">Autoplay slides</span>
             </label>
 
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={playbackSettings.clipContent}
+                onChange={(e) => updatePlaybackSettings({ clipContent: e.target.checked })}
+                className="accent-blue-500"
+              />
+              <span className="text-[11px] text-(--ms-text-primary) group-hover:text-blue-400 transition-colors">Clip content (Hide overflow)</span>
+            </label>
+
             {playbackSettings.autoplay && (
               <>
                 <div>

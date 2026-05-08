@@ -58,4 +58,5 @@ export const DEFAULT_PLAYBACK_SETTINGS: PlaybackSettings = {
   transitionEase: { x1: 0.25, y1: 0.1, x2: 0.25, y2: 1 }, // Apple
   aspectRatio: '16:9',
   exportResolution: { ...EXPORT_RESOLUTIONS['16:9'][1] },
+  clipContent: true,
 }
