@@ -1,215 +1,85 @@
 /**
  * iconResolver.ts
  *
- * Two responsibilities:
- *   1. buildIconHotlist() — called before generation. Reads the manifest,
- *      selects relevant icons based on the user's input text, injects them
- *      into the prompt so the AI copies exact paths.
- *
- *   2. resolveIconPath() — called in the assembler. Fuzzy-matches any
- *      AI-generated path against the full manifest and returns the closest
- *      valid path, or a fallback shape type if nothing matches.
+ * Comprehensive mapping for AWS Architecture & Resource icons.
  */
 
-import fs   from 'fs'
-import path from 'path'
+export type IconEntry = {
+  path: string;
+  tier: 'aws' | 'gcp' | 'generic';
+  confidence: number;
+};
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+const AWS_ICON_MAP: Record<string, string> = {
+  // --- Architecture Service Icons (32px SVG) ---
+  'lambda': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Compute/32/Arch_AWS-Lambda_32.svg',
+  'ec2': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Compute/32/Arch_Amazon-EC2_32.svg',
+  'ecs': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Compute/32/Arch_Amazon-Elastic-Container-Service_32.svg',
+  'eks': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Compute/32/Arch_Amazon-Elastic-Kubernetes-Service_32.svg',
+  'fargate': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Compute/32/Arch_AWS-Fargate_32.svg',
+  's3': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Storage/32/Arch_Amazon-S3_32.svg',
+  'rds': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Databases/32/Arch_Amazon-RDS_32.svg',
+  'dynamodb': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Databases/32/Arch_Amazon-DynamoDB_32.svg',
+  'cloudfront': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Networking-Content-Delivery/32/Arch_Amazon-CloudFront_32.svg',
+  'api gateway': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Networking-Content-Delivery/32/Arch_Amazon-API-Gateway_32.svg',
+  'vpc': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Networking-Content-Delivery/32/Arch_Amazon-VPC_32.svg',
+  'sqs': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Application-Integration/32/Arch_Amazon-Simple-Queue-Service_32.svg',
+  'sns': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Application-Integration/32/Arch_Amazon-Simple-Notification-Service_32.svg',
+  'eventbridge': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Application-Integration/32/Arch_Amazon-EventBridge_32.svg',
+  'kinesis': 'icons/aws/Architecture-Service-Icons_01302026/Arch_Analytics/32/Arch_Amazon-Kinesis_32.svg',
 
-export interface AwsIcon {
-  id:       string
-  label:    string
-  path:     string
-  category: string
-  keywords: string[]
-}
+  // --- General & Resource Icons (fallback to Resource icons for clarity) ---
+  'user': 'icons/aws/Resource-Icons_01302026/Res_General-Icons/Res_48_Dark/Res_User_48_Dark.svg',
+  'client': 'icons/aws/Resource-Icons_01302026/Res_General-Icons/Res_48_Dark/Res_User_48_Dark.svg',
+  'mobile': 'icons/aws/Resource-Icons_01302026/Res_General-Icons/Res_48_Dark/Res_Mobile-Client_48_Dark.svg',
+  'browser': 'icons/aws/Resource-Icons_01302026/Res_General-Icons/Res_48_Dark/Res_Generic-Application_48_Dark.svg',
+  'database': 'icons/aws/Resource-Icons_01302026/Res_Databases/Res_48_Dark/Res_Amazon-RDS_Amazon-Aurora-Instance_48_Dark.svg',
+  'internet': 'icons/aws/Resource-Icons_01302026/Res_General-Icons/Res_48_Dark/Res_Internet_48_Dark.svg',
+};
 
-export interface AwsManifest {
-  version:    number
-  totalIcons: number
-  categories: Array<{
-    id:    string
-    label: string
-    icons: AwsIcon[]
-  }>
-}
+const GCP_ICON_MAP: Record<string, string> = {
+  'cloud functions': 'icons/gcp/compute/cloud-functions.svg',
+  'gce': 'icons/gcp/compute/compute-engine.svg',
+  'gke': 'icons/gcp/compute/kubernetes-engine.svg',
+  'gcs': 'icons/gcp/storage/cloud-storage.svg',
+  'bigquery': 'icons/gcp/data/bigquery.svg',
+};
 
-export type IconResolution =
-  | { found: true;  path: string; label: string; category: string }
-  | { found: false; fallback: 'rectangle' | 'cylinder' | 'hexagon' | 'rounded-rectangle' }
+export function resolveIcon(keyword: string): IconEntry {
+  const normalized = keyword.toLowerCase().trim();
+  if (AWS_ICON_MAP[normalized]) return { path: AWS_ICON_MAP[normalized], tier: 'aws', confidence: 1.0 };
+  if (GCP_ICON_MAP[normalized]) return { path: GCP_ICON_MAP[normalized], tier: 'gcp', confidence: 1.0 };
 
-// ─── Manifest cache ────────────────────────────────────────────────────────────
-
-let   _loaded    = false
-let   _allIcons: AwsIcon[] = []
-const _byId      = new Map<string, AwsIcon>()
-const _byLabel   = new Map<string, AwsIcon>()
-
-function loadManifest(): void {
-  if (_loaded) return
-
-  // Adjusted for monorepo structure
-  const manifestPath = path.resolve(process.cwd(), 'apps', 'web', 'public', 'icons', 'aws', 'manifest.json')
-
-  if (!fs.existsSync(manifestPath)) {
-    console.warn(`[IconResolver] manifest.json not found at ${manifestPath}.`)
-    _loaded = true
-    return
-  }
-
-  try {
-    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as AwsManifest
-    _allIcons = manifest.categories.flatMap(c => c.icons)
-
-    for (const icon of _allIcons) {
-      _byId.set(icon.id, icon)
-      _byLabel.set(icon.label.toLowerCase(), icon)
-      // Also index by short name without "Amazon " or "AWS " prefix
-      const short = icon.label.replace(/^(Amazon|AWS) /i, '').toLowerCase()
-      _byLabel.set(short, icon)
+  for (const [key, path] of Object.entries(AWS_ICON_MAP)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return { path, tier: 'aws', confidence: 0.75 };
     }
-
-    _loaded = true
-    console.log(`[IconResolver] Loaded ${_allIcons.length} icons`)
-  } catch (err) {
-    console.error(`[IconResolver] Failed to load manifest:`, err)
-    _loaded = true
   }
+
+  // Fallbacks
+  return { path: 'icons/aws/Architecture-Service-Icons_01302026/Arch_General-Icons/32/Arch_Generic-Application_32.svg', tier: 'aws', confidence: 0.3 };
 }
 
-// ─── Prompt injection ─────────────────────────────────────────────────────────
-
-// These icons are always included regardless of the user's input
-const UNIVERSAL_HOTLIST = [
-  'amazon-ec2', 'aws-lambda', 'amazon-ecs', 'aws-fargate', 'amazon-eks',
-  'amazon-rds', 'amazon-dynamodb', 'amazon-aurora', 'amazon-elasticache',
-  'amazon-redshift', 'amazon-s3', 'amazon-efs', 'amazon-cloudfront',
-  'amazon-route-53', 'elastic-load-balancing', 'aws-api-gateway',
-  'amazon-sqs', 'amazon-sns', 'amazon-eventbridge', 'amazon-kinesis',
-  'aws-iam', 'amazon-cognito', 'amazon-cloudwatch', 'amazon-vpc',
-  'amazon-sagemaker', 'amazon-bedrock', 'amazon-ecr', 'aws-codepipeline',
-]
-
-/**
- * Build the <available_icons> text block to inject into the AI prompt.
- * Pass the user's raw input text so we can select contextually relevant icons.
- */
-export function buildIconHotlist(userInput: string): string {
-  loadManifest()
-
-  if (_allIcons.length === 0) {
-    return '(No icons available. Use shape elements only.)'
-  }
-
-  const selected = new Map<string, AwsIcon>()
-
-  // 1. Always include the universal hotlist
-  for (const id of UNIVERSAL_HOTLIST) {
-    const icon = _byId.get(id)
-    if (icon) selected.set(icon.id, icon)
-  }
-
-  // 2. Add icons whose keywords match words in the user's input
-  const inputWords = userInput
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 2)
-
-  for (const icon of _allIcons) {
-    if (selected.has(icon.id)) continue
-    const matches =
-      icon.keywords.some(k => inputWords.includes(k)) ||
-      inputWords.some(w => icon.label.toLowerCase().includes(w))
-    if (matches) selected.set(icon.id, icon)
-  }
-
-  // 3. Format as "Label -> path" for the AI to copy
-  const lines: string[] = []
-  const byCategory = new Map<string, AwsIcon[]>()
-
-  for (const icon of selected.values()) {
-    if (!byCategory.has(icon.category)) byCategory.set(icon.category, [])
-    byCategory.get(icon.category)!.push(icon)
-  }
-
-  for (const [cat, icons] of byCategory.entries()) {
-    lines.push(`# ${cat}`)
-    for (const icon of icons) {
-      lines.push(`${icon.label} -> ${icon.path}`)
-    }
-    lines.push('')
-  }
-
-  lines.push('RULES:')
-  lines.push('- Copy the path after -> EXACTLY, character for character')
-  lines.push('- If a service is not listed above, use a shape element instead')
-  lines.push('- Never modify, abbreviate, or guess any path')
-
-  return lines.join('\n')
-}
-
-// ─── Assembler fuzzy-match ────────────────────────────────────────────────────
-
-/**
- * Called in slideAssembler.ts for every icon element the AI outputs.
- * Tries to match the AI's path against the manifest using multiple strategies.
- * Returns the real path if found, or a fallback shape type if not.
- */
-export function resolveIconPath(rawPath: string): IconResolution {
-  loadManifest()
-
-  if (!rawPath || _allIcons.length === 0) {
-    return { found: false, fallback: 'rectangle' }
-  }
-
-  // Strategy 1: Exact match
-  const exact = _allIcons.find(i => i.path === rawPath)
-  if (exact) return { found: true, path: exact.path, label: exact.label, category: exact.category }
-
-  // Strategy 2: Case-insensitive match
-  const lower = rawPath.toLowerCase()
-  const caseMatch = _allIcons.find(i => i.path.toLowerCase() === lower)
-  if (caseMatch) return { found: true, path: caseMatch.path, label: caseMatch.label, category: caseMatch.category }
-
-  // Strategy 3: Match by filename substring (AI may omit the folder prefix)
-  const filename = rawPath.split('/').pop()?.toLowerCase().replace('.svg', '') ?? ''
-  if (filename) {
-    const fileMatch = _allIcons.find(i =>
-      i.path.toLowerCase().includes(filename)
-    )
-    if (fileMatch) return { found: true, path: fileMatch.path, label: fileMatch.label, category: fileMatch.category }
-  }
-
-  // Strategy 4: Match by label derived from the raw path
-  const pathWords = rawPath
-    .split('/').pop()?.replace('.svg', '')
-    .replace(/[-_]/g, ' ').toLowerCase() ?? ''
-  const labelMatch = _byLabel.get(pathWords)
-  if (labelMatch) return { found: true, path: labelMatch.path, label: labelMatch.label, category: labelMatch.category }
-
-  // Strategy 5: Keyword match — any word in the path matching an icon keyword
-  const words = pathWords.split(/\s+/).filter(w => w.length > 2)
+export function buildIconHotlist(userPrompt: string): string[] {
+  const words = userPrompt.toLowerCase().split(/\s+|,|\.|\//);
+  const resolved = new Set<string>();
   for (const word of words) {
-    const kwMatch = _allIcons.find(i => i.keywords.includes(word))
-    if (kwMatch) return { found: true, path: kwMatch.path, label: kwMatch.label, category: kwMatch.category }
+    if (word.length < 2) continue;
+    const entry = resolveIcon(word);
+    if (entry.confidence >= 0.7) resolved.add(entry.path);
   }
-
-  // Strategy 6: No match — infer fallback shape from path content
-  console.warn(`[IconResolver] No match for "${rawPath}" — using fallback shape`)
-  return inferFallbackShape(rawPath)
+  return Array.from(resolved);
 }
 
-function inferFallbackShape(rawPath: string): IconResolution & { found: false } {
-  const l = rawPath.toLowerCase()
-  if (l.includes('database') || l.includes('rds') || l.includes('dynamo') ||
-      l.includes('aurora') || l.includes('sql') || l.includes('db'))
-    return { found: false, fallback: 'cylinder' }
-  if (l.includes('queue') || l.includes('sqs') || l.includes('sns') ||
-      l.includes('kafka') || l.includes('eventbridge') || l.includes('pubsub'))
-    return { found: false, fallback: 'hexagon' }
-  if (l.includes('frontend') || l.includes('client') || l.includes('browser') ||
-      l.includes('mobile') || l.includes('react') || l.includes('vue'))
-    return { found: false, fallback: 'rounded-rectangle' }
-  return { found: false, fallback: 'rectangle' }
+export function resolveIconPath(path: string) {
+  const entry = resolveIcon(path);
+  const parts = entry.path.split('/');
+  return {
+    found: true,
+    path: entry.path,
+    tier: entry.tier,
+    category: parts[parts.length - 2] || 'general',
+    label: parts[parts.length - 1].replace('.svg', '').replace(/Arch_|Res_|_48_Dark|_32/g, ''),
+    fallback: 'rectangle' as const
+  };
 }

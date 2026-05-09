@@ -26,7 +26,7 @@ export const Route = createFileRoute('/api/generate/readme')({
 
         const body = await request.json()
         const { markdown, options = {} } = body
-        const { slideCount = 10, style = 'technical', theme = 'dark' } = options
+        const { slideCount = 10, style = 'technical', theme = 'dark', canvasWidth = 1280, canvasHeight = 720, model = 'gpt-4o' } = options
 
         if (!markdown || typeof markdown !== 'string') {
           return new Response(JSON.stringify({ error: 'markdown is required' }), {
@@ -56,6 +56,7 @@ export const Route = createFileRoute('/api/generate/readme')({
                 generated = await refinePresentation({
                   instruction: cleanPrompt,
                   previousPresentation: body.previousPresentation,
+                  model,
                 })
               } else {
                 const cleanMarkdown = markdown.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').trim()
@@ -64,16 +65,17 @@ export const Route = createFileRoute('/api/generate/readme')({
 
                 send({ stage: 'capturing', percent: 20, message: 'Generating with AI…' })
                 generated = await generateFromReadme({
-                  briefing,
+                  markdown,
                   rawMarkdown: markdown,
                   slideCount,
                   style,
-                  theme
+                  theme,
+                  model
                 })
               }
 
               send({ stage: 'encoding', percent: 80, message: 'Assembling slides…' })
-              const slides = assembleSlides(generated)
+              const slides = assembleSlides(generated, canvasWidth, canvasHeight)
 
               send({
                 stage: 'done',

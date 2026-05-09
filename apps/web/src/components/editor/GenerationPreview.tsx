@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { Slide } from '@motionslides/shared'
-import { Send } from 'lucide-react'
+import { Send, Check, X, RefreshCw } from 'lucide-react'
+
+import { StaticSlidePreview } from './ai/StaticSlidePreview'
 
 interface Props {
   slides: Slide[]
@@ -21,62 +23,57 @@ export function GenerationPreview({ slides, title, onAccept, onReject, onRefine 
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-(--ms-border)">
-        <h3 className="text-sm font-semibold text-(--ms-text-primary) mb-1">{title}</h3>
-        <p className="text-xs text-(--ms-text-muted)">{slides.length} slides ready to import.</p>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+    <div className="flex flex-col h-full bg-black/40">
+      {/* Scrollable Slides Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {slides.map((s, i) => (
           <div key={s.id} className="group relative">
-            <div className="absolute -left-2 top-2 w-5 h-5 rounded-full bg-(--ms-bg-elevated) border border-(--ms-border) flex items-center justify-center text-[10px] text-(--ms-text-muted) z-10 transition-colors">
-            {i + 1}
-          </div>
-            <div className="aspect-video bg-(--ms-bg-base) border border-(--ms-border) rounded-lg overflow-hidden shadow-lg transition-all group-hover:scale-[1.02]">
-              {/* Mini preview logic could go here, but for now just showing names */}
-              <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center">
-                <span className="text-[10px] font-medium text-(--ms-text-secondary) mb-1 transition-colors">{s.name}</span>
-                <span className="text-[8px] text-(--ms-text-muted) transition-colors">{s.elements.length} elements</span>
-              </div>
+            <div className="absolute -left-1 top-2 w-4 h-4 rounded-full bg-(--ms-bg-elevated) border border-(--ms-border) flex items-center justify-center text-[8px] text-(--ms-text-muted) z-10 font-bold">
+              {i + 1}
+            </div>
+            <div className="aspect-video bg-(--ms-bg-base) border border-blue-500/30 rounded-lg overflow-hidden shadow-2xl transition-all group-hover:border-blue-500/60 group-hover:scale-[1.01]">
+              <StaticSlidePreview slide={s} />
             </div>
           </div>
         ))}
       </div>
 
-      <div className="p-4 bg-(--ms-bg-elevated) border-t border-(--ms-border) space-y-2 transition-colors">
+      {/* Floating Action Bar */}
+      <div className="p-3 bg-(--ms-bg-elevated)/90 backdrop-blur-md border-t border-(--ms-border) space-y-3">
         {onRefine && (
-          <div className="relative mb-2">
+          <div className="relative">
             <input
               type="text"
               value={refinePrompt}
               onChange={(e) => setRefinePrompt(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleRefine()}
-              placeholder="Refine (e.g., 'Make titles bigger')"
-              className="w-full bg-black/20 border border-(--ms-border) rounded-xl py-2 pl-3 pr-10 text-xs text-(--ms-text-primary) placeholder:text-(--ms-text-muted) focus:outline-none focus:border-blue-500/50 transition-colors"
+              placeholder="Quick tweak..."
+              className="w-full bg-black/40 border border-(--ms-border) rounded-lg py-1.5 pl-3 pr-8 text-[11px] text-(--ms-text-primary) placeholder:text-(--ms-text-muted) focus:outline-none focus:border-blue-500/50"
             />
             <button
               onClick={handleRefine}
               disabled={!refinePrompt.trim()}
-              className="absolute right-1 top-1 bottom-1 px-2 text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-center"
+              className="absolute right-1 top-1 bottom-1 px-1.5 text-blue-400 hover:text-blue-300 disabled:opacity-30 bg-transparent border-none cursor-pointer"
             >
-              <Send size={14} />
+              <RefreshCw size={12} />
             </button>
           </div>
         )}
 
-        <button
-          onClick={onAccept}
-          className="w-full py-2.5 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer border-none"
-        >
-          Import into Project
-        </button>
-        <button
-          onClick={onReject}
-          className="w-full py-2 text-(--ms-text-muted) hover:text-(--ms-text-primary) text-xs transition-colors cursor-pointer border-none bg-transparent"
-        >
-          Discard and go back
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={onReject}
+            className="flex-1 py-1.5 bg-(--ms-bg-base) hover:bg-(--ms-border) text-(--ms-text-secondary) text-[11px] font-medium rounded-lg transition-all cursor-pointer border border-(--ms-border) flex items-center justify-center gap-1.5"
+          >
+            <X size={12} /> Discard
+          </button>
+          <button
+            onClick={onAccept}
+            className="flex-[2] py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-lg transition-all cursor-pointer border-none shadow-lg flex items-center justify-center gap-1.5"
+          >
+            <Check size={12} /> Import {slides.length} Slides
+          </button>
+        </div>
       </div>
     </div>
   )

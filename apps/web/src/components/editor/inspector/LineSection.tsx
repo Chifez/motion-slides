@@ -98,7 +98,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
           <div className="flex items-center gap-2 bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1">
             <input
               type="color"
-              value={content.color.startsWith('rgba') ? '#808080' : content.color}
+              value={content.color?.startsWith('rgba') ? '#808080' : (content.color || '#3b82f6')}
               onChange={(e) => onUpdate({ ...content, color: e.target.value })}
               className="w-5 h-5 rounded cursor-pointer border-none bg-transparent"
             />

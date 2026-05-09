@@ -31,7 +31,7 @@ export const SectionSection = memo(function SectionSection({ content, onUpdate }
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={content.backgroundColor.startsWith('#') ? content.backgroundColor : '#3b82f6'}
+              value={content.backgroundColor?.startsWith('#') ? content.backgroundColor : '#3b82f6'}
               onChange={(e) => onUpdate({ backgroundColor: e.target.value })}
               className="w-8 h-8 rounded cursor-pointer border border-(--ms-border) bg-transparent"
             />
@@ -43,7 +43,7 @@ export const SectionSection = memo(function SectionSection({ content, onUpdate }
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={content.borderColor.startsWith('#') ? content.borderColor : '#3b82f6'}
+              value={content.borderColor?.startsWith('#') ? content.borderColor : '#3b82f6'}
               onChange={(e) => onUpdate({ borderColor: e.target.value })}
               className="w-8 h-8 rounded cursor-pointer border border-(--ms-border) bg-transparent"
             />

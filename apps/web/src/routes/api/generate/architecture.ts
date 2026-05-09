@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/generate/architecture")({
 
         const body = await request.json()
         const { description, options = {} } = body
-        const { slideCount = 6, diagramStyle = 'generic', theme = 'dark', canvasWidth = 1280, canvasHeight = 720 } = options
+        const { slideCount = 6, diagramStyle = 'generic', theme = 'dark', canvasWidth = 1280, canvasHeight = 720, model = 'gpt-4o' } = options
 
         if (!description || typeof description !== 'string') {
           return new Response(JSON.stringify({ error: 'description is required' }), {
@@ -58,6 +58,7 @@ export const Route = createFileRoute("/api/generate/architecture")({
                 generated = await refinePresentation({
                   instruction: cleanPrompt,
                   previousPresentation: body.previousPresentation,
+                  model,
                 })
               } else {
                 // Sanitize base input
@@ -67,11 +68,12 @@ export const Route = createFileRoute("/api/generate/architecture")({
 
                 send({ stage: 'capturing', percent: 20, message: 'Generating diagram slides…' })
                 generated = await generateFromArchitecture({
-                  briefing,
+                  description,
                   rawInput: description,
                   diagramStyle,
                   slideCount,
                   theme,
+                  model,
                   canvas: {
                     canvasWidth,
                     canvasHeight,
@@ -81,7 +83,7 @@ export const Route = createFileRoute("/api/generate/architecture")({
               }
 
               send({ stage: 'encoding', percent: 80, message: 'Assembling slides…' })
-              const slides = assembleSlides(generated)
+              const slides = assembleSlides(generated, canvasWidth, canvasHeight)
 
               send({
                 stage: 'done',

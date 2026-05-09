@@ -40,6 +40,8 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
   const x2 = toSafeNum(content.x2) * w
   const y2 = toSafeNum(content.y2) * h
 
+  if (content.customPath) return content.customPath
+
   switch (content.lineType) {
     case 'straight':
       return `M ${x1} ${y1} L ${x2} ${y2}`
@@ -96,7 +98,7 @@ export function LineElement({ element, isSelected }: Props) {
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
 
   // CRITICAL: Early return if coordinates are not yet computed
-  if (!hasValidCoordinates(content)) {
+  if (!hasValidCoordinates(content) && !content.customPath) {
     return (
       <div className="absolute inset-0 flex items-center justify-center opacity-0">
         {/* Placeholder to prevent layout shift */}
@@ -122,7 +124,7 @@ export function LineElement({ element, isSelected }: Props) {
 
   const sanitizeId = (c: string) => c.replace(/[^a-zA-Z0-9]/g, '')
   const isFork = content.lineType === 'branching'
-  const mainD = buildLinePath(w, h, { ...content, branches: undefined })
+  const mainD = content.customPath || buildLinePath(w, h, { ...content, branches: undefined })
   
   return (
     <svg

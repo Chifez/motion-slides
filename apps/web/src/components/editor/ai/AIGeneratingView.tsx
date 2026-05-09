@@ -11,16 +11,16 @@ interface Props {
 
 export const AIGeneratingView = memo(function AIGeneratingView({ progress }: Props) {
   return (
-    <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
+    <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-4 bg-black/20">
       <div className="relative">
-        <Loader2 className="animate-spin text-blue-500" size={48} />
+        <Loader2 className="animate-spin text-blue-500" size={32} />
         <div className="absolute inset-0 flex items-center justify-center">
-          <Sparkles size={16} className="text-purple-400 animate-pulse" />
+          <Sparkles size={12} className="text-purple-400 animate-pulse" />
         </div>
       </div>
-      <div className="space-y-2">
-        <h3 className="text-lg font-bold text-(--ms-text-primary)">Generating Slides</h3>
-        <p className="text-xs text-(--ms-text-muted) max-w-[200px] leading-relaxed">
+      <div className="space-y-1">
+        <h3 className="text-sm font-bold text-(--ms-text-primary)">Designing Slides</h3>
+        <p className="text-[10px] text-(--ms-text-muted) max-w-[180px] leading-relaxed truncate">
           {progress.message}
         </p>
       </div>

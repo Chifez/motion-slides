@@ -80,9 +80,9 @@ export const SectionElement = memo(function SectionElement({ element, content }:
         <div
           className="absolute top-0 left-0 px-2.5 py-1 pointer-events-auto cursor-text border-r border-b"
           style={{
-            color:        borderColor.includes('var') ? 'var(--ms-text-primary)' : borderColor,
+            color:        (borderColor?.includes('var')) ? 'var(--ms-text-primary)' : (borderColor || 'var(--ms-text-muted)'),
             backgroundColor: 'var(--ms-bg-elevated)',
-            borderColor:  borderColor,
+            borderColor:  borderColor || 'transparent',
             borderRadius: `0 0 ${Math.round(cornerRadius * 0.5)}px 0`,
             backdropFilter: 'blur(8px)',
           }}

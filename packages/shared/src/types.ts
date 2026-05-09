@@ -4,17 +4,22 @@
 
 export type ShapeType =
   | 'rectangle'
+  | 'rounded-rectangle'
+  | 'circle'
+  | 'cylinder'
+  | 'diamond'
+  | 'hexagon'
   | 'database'
   | 'server'
   | 'cloud'
   | 'client'
-  | 'diamond'
   | 'user'
   | 'bucket'
   | 'queue'
   | 'document'
   | 'aws-icon'
   | 'gcp-icon'
+  | 'icon'
 
 export type LineType = 'straight' | 'elbow' | 'curved' | 'step-after' | 'step-before' | 'branching'
 
@@ -81,6 +86,10 @@ export interface ShapeContent {
   iconLabel?:    string
   strokeWidth?: number
   sublabel?: string
+  // Cluster support
+  isCluster?: boolean
+  clusterCount?: number
+  stackDirection?: 'right' | 'down' | 'behind'
 }
 
 /**
@@ -89,6 +98,7 @@ export interface ShapeContent {
  */
 export interface SectionContent {
   label?: string
+  sectionRole?: 'layer-bg' | 'cluster-bg' | 'security-perimeter' | 'vpc-boundary'
   backgroundColor: string
   borderColor: string
   borderStyle: 'solid' | 'dashed' | 'dotted' | 'none'
@@ -128,6 +138,8 @@ export interface LineContent {
   strokeWidth: number
   label?: string
   labelFontSize?: number
+  /** For AI-generated semantic routing paths */
+  customPath?: string
 }
 
 export type AnimationType = 'fade-in' | 'slide-up' | 'slide-left' | 'zoom-in' | 'pop' | 'draw' | 'none'
@@ -142,6 +154,7 @@ export interface SceneElement {
   zIndex: number
   locked?: boolean
   groupId?: string
+  layer?: string // For architectural diagrams auto-grouping
   animation?: AnimationType
   animationDelay?: number
   autoWidth?: boolean
