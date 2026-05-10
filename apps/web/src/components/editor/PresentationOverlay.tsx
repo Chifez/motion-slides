@@ -17,7 +17,7 @@ export function PresentationOverlay() {
   const previousSlideIndex = useEditorStore(s => s.previousSlideIndex)
   const playbackSettings = useEditorStore(s => s.playbackSettings)
   const activeProjectId = useEditorStore(s => s.activeProjectId)
-  
+
   const stopPresentation = useEditorStore(s => s.stopPresentation)
   const setActiveSlide = useEditorStore(s => s.setActiveSlide)
 
@@ -111,7 +111,7 @@ export function PresentationOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-[var(--z-overlay)] bg-black flex items-center justify-center"
+      className="fixed inset-0 z-(--z-overlay) bg-black flex items-center justify-center"
       onMouseMove={showControls}
       onClick={handleNext}
       style={{ cursor: controlsVisible ? 'default' : 'none' }}
@@ -124,7 +124,11 @@ export function PresentationOverlay() {
           height: canvasH,
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
-          background: slide.background || '#0a0a0a',
+          backgroundColor: (slide.background || '#0a0a0a').startsWith('url') ? 'transparent' : (slide.background || '#0a0a0a'),
+          backgroundImage: (slide.background || '#0a0a0a').startsWith('url') ? slide.background : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
         }}
       >
         <MotionStage
@@ -161,8 +165,8 @@ export function PresentationOverlay() {
       </div>
 
       {/* Progress Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/5 overflow-hidden z-[var(--z-toast)]">
-        <div 
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/5 overflow-hidden z-(--z-toast)">
+        <div
           className="h-full bg-blue-500 transition-all duration-300 ease-out"
           style={{ width: `${((activeSlideIndex + 1) / totalSlides) * 100}%` }}
         />

@@ -13,6 +13,7 @@ export interface ProjectSlice {
   updateProjectName: (id: string, name: string) => void
   updateProjectVisibility: (id: string, visibility: Project['visibility']) => void
   updateProject: (id: string, updates: Partial<Project>) => void
+  updateAllSlidesBackground: (projectId: string, background: string) => void
   addSlidesToProject: (projectId: string, slides: Slide[]) => void
   importProject: (project: Project) => void
 
@@ -122,25 +123,42 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
 
   updateProjectName: (id, name) => {
     set((s) => ({
-      projects: s.projects.map((p) =>
-        p.id === id ? { ...p, name, updatedAt: Date.now(), synced: false } : p,
-      ),
+      projects: s.projects.map((p) => {
+        if (p.id !== id) return p
+        return { ...p, name, updatedAt: Math.max(Date.now(), (p.updatedAt || 0) + 1), synced: false }
+      }),
     }))
   },
   
   updateProjectVisibility: (id, visibility) => {
     set((s) => ({
-      projects: s.projects.map((p) =>
-        p.id === id ? { ...p, visibility, updatedAt: Date.now(), synced: false } : p,
-      ),
+      projects: s.projects.map((p) => {
+        if (p.id !== id) return p
+        return { ...p, visibility, updatedAt: Math.max(Date.now(), (p.updatedAt || 0) + 1), synced: false }
+      }),
     }))
   },
 
   updateProject: (id, updates) => {
     set((s) => ({
-      projects: s.projects.map((p) =>
-        p.id === id ? { ...p, ...updates, updatedAt: Date.now(), synced: false } : p,
-      ),
+      projects: s.projects.map((p) => {
+        if (p.id !== id) return p
+        return { ...p, ...updates, updatedAt: Math.max(Date.now(), (p.updatedAt || 0) + 1), synced: false }
+      }),
+    }))
+  },
+
+  updateAllSlidesBackground: (projectId, background) => {
+    set((s) => ({
+      projects: s.projects.map((p) => {
+        if (p.id !== projectId) return p
+        return {
+          ...p,
+          slides: p.slides.map(sl => ({ ...sl, background })),
+          updatedAt: Math.max(Date.now(), (p.updatedAt || 0) + 1),
+          synced: false
+        }
+      })
     }))
   },
 })

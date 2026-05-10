@@ -103,8 +103,6 @@ export const createAuthSlice: StateCreator<
           localChanged = true
         } else {
           console.error('Server sync failed:', result.error)
-          // If the server rejected it, we might want to flag this project as "stale" or "denied"
-          // For now, we'll just log it.
         }
       }
 
@@ -114,7 +112,6 @@ export const createAuthSlice: StateCreator<
     } catch (error: any) {
       console.error('Failed to sync projects:', error?.message || error)
       set({ syncError: error?.message || 'Sync failed' })
-      if (error?.data) console.error('Sync error details:', error.data)
     } finally {
       setSyncing(false)
     }

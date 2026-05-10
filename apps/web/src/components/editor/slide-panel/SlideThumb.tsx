@@ -86,10 +86,12 @@ export const SlideThumb = memo(function SlideThumb({
         <GripVertical size={12} />
       </div>
 
-      {/* Thumbnail body */}
       <div
-        className="aspect-video shrink-0 flex items-center justify-center relative bg-[#0a0a0a]"
-        style={{ background }}
+        className="aspect-video shrink-0 flex items-center justify-center relative bg-[#0a0a0a] bg-cover bg-center bg-no-repeat"
+        style={{ 
+          backgroundColor: background.startsWith('url') ? 'transparent' : background,
+          backgroundImage: background.startsWith('url') ? background : 'none'
+        }}
       >
         <span className="text-[10px] text-(--ms-text-muted) font-medium opacity-40 group-hover:opacity-100 transition-opacity">
           {elements.length > 0 ? `${elements.length} layer${elements.length > 1 ? 's' : ''}` : 'Empty'}

@@ -14,7 +14,7 @@ import { SyncStatusButton } from './SyncStatusButton'
 
 export const CanvasStage = memo(function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
-  const { isReadOnly, isAuthenticated } = useAccessControl()
+  const { isReadOnly, isAuthenticated, mode } = useAccessControl()
 
   useCanvasCamera(stageRef)
 
@@ -138,7 +138,11 @@ export const CanvasStage = memo(function CanvasStage() {
         style={{
           width: canvasW,
           height: canvasH,
-          background: slideBackground,
+          backgroundColor: slideBackground.startsWith('url') ? 'transparent' : slideBackground,
+          backgroundImage: slideBackground.startsWith('url') ? slideBackground : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           transform: `translate(${camera.x}px, ${camera.y}px) scale(${scale * camera.zoom})`,
           transformOrigin: 'center center',
         }}
@@ -166,7 +170,7 @@ export const CanvasStage = memo(function CanvasStage() {
         )}
       </div>
 
-      {!isReadOnly && (
+      {mode === 'edit' && (
         <div className="absolute top-3 left-3 flex items-center gap-2">
           <span className="text-[10px] text-(--ms-text-muted) font-medium bg-(--ms-bg-surface)/80 backdrop-blur-sm border border-(--ms-border) rounded-md px-2 py-1">
             {slideName}
@@ -177,7 +181,7 @@ export const CanvasStage = memo(function CanvasStage() {
         </div>
       )}
 
-      {!isReadOnly && <SlideNavigation />}
+      {mode === 'edit' && <SlideNavigation />}
     </main>
   )
 })
