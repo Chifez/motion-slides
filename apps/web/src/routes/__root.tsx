@@ -34,10 +34,33 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'MotionSlides' },
       { name: 'description', content: 'Cinematic, motion-first presentations for developers and designers.' },
+
+      // Open Graph / Facebook
+      { property: 'og:type', content: 'website' },
+      { property: 'og:url', content: 'https://motionslides.app' },
+      { property: 'og:title', content: 'MotionSlides' },
+      { property: 'og:description', content: 'Cinematic, motion-first presentations for developers and designers.' },
+      { property: 'og:image', content: '/og-image.png' },
+
+      // PWA & iOS
+      { name: 'mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+      { name: 'apple-mobile-web-app-title', content: 'MotionSlides' },
+
+      // Twitter
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:url', content: 'https://motionslides.app' },
+      { name: 'twitter:title', content: 'MotionSlides' },
+      { name: 'twitter:description', content: 'Cinematic, motion-first presentations for developers and designers.' },
+      { name: 'twitter:image', content: '/og-image.png' },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
-      { rel: 'icon', type: 'image/png', href: '/favicon.png' },
+      { rel: 'manifest', href: '/manifest.json' },
+      { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
+      { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
+      { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
     ],
   }),
   shellComponent: RootDocument,
@@ -57,7 +80,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     document.body.classList.add('transitions-enabled')
   }, [checkSession, initializeIdentity])
 
-
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
@@ -69,10 +91,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="bg-(--ms-bg-base) text-(--ms-text-primary)">
-        <QueryClientProvider client={queryClient}>
-          {children}
-          <SyncFooter />
-        </QueryClientProvider>
+
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <SyncFooter />
+    </QueryClientProvider>
         <Scripts />
       </body>
     </html>
