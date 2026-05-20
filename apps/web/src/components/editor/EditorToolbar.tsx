@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Play, PenSquare, GitBranch, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users, WifiOff } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@motionslides/shared'
@@ -12,6 +12,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { ShareMenu } from './toolbar/ShareMenu'
 import { useAccessControl } from '@/hooks/useAccessControl'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 interface Props { projectId: string }
 
@@ -35,12 +36,20 @@ export function EditorToolbar({ projectId }: Props) {
   const { isAuthenticated } = useAccessControl()
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const isMobile = useIsMobile();
+  const isOnline = useOnlineStatus()
 
   if (!project) return null
 
   return (
-    <header className="h-14 shrink-0 flex items-center gap-1 md:gap-2 px-2 md:px-3 bg-(--ms-bg-surface) border-b border-(--ms-border) z-50 transition-colors">
-      <Link
+    <>
+      {!isOnline && (
+        <div className="w-full shrink-0 bg-amber-500/90 text-white flex items-center justify-center gap-2 py-1 px-4 text-[11px] md:text-xs font-medium z-[60] shadow-sm">
+          <WifiOff size={12} className="shrink-0" />
+          <span className="truncate">You are offline. Changes are saved locally and will sync when you reconnect.</span>
+        </div>
+      )}
+      <header className="h-14 shrink-0 flex items-center gap-1 md:gap-2 px-2 md:px-3 bg-(--ms-bg-surface) border-b border-(--ms-border) z-50 transition-colors">
+        <Link
         to="/dashboard"
         onClick={() => syncProjects()}
         className="p-1 md:p-1.5 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors"
@@ -187,6 +196,7 @@ export function EditorToolbar({ projectId }: Props) {
           </button>
         </>
       )}
-    </header>
+      </header>
+    </>
   )
 }

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, LogOut, Cloud, ChevronDown } from 'lucide-react'
+import { User, LogOut, Cloud, ChevronDown, Download } from 'lucide-react'
 import { AuthModal } from './AuthModal'
+import { usePWAInstall } from '@/hooks/usePWAInstall'
 
 /**
  * User account menu with theme-flexible styling.
@@ -13,6 +14,7 @@ export function UserMenu() {
   const logout = useEditorStore((s) => s.logout)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const { canInstall, promptInstall } = usePWAInstall()
 
   if (!user) {
     return (
@@ -70,6 +72,19 @@ export function UserMenu() {
                 <Cloud size={14} />
                 <span>Sync Preferences</span>
               </button>
+
+              {canInstall && (
+                <button 
+                  onClick={() => {
+                    promptInstall()
+                    setIsDropdownOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-(--ms-text-muted) hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all cursor-pointer border-none bg-transparent"
+                >
+                  <Download size={14} />
+                  <span>Install App</span>
+                </button>
+              )}
 
               <button
                 onClick={() => {

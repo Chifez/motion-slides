@@ -2,7 +2,6 @@ import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { useMotionContext } from '@/context/MotionContext'
 import { SELECTED_Z_INDEX } from '@/constants/export'
-import { PHASE_2_DELAY } from '@/lib/motionEngine'
 import type { SceneElement } from '@motionslides/shared'
 
 interface Props {
@@ -18,22 +17,68 @@ interface Props {
 
 const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
 
-const DIRECTION_MAP: Record<string, { x: number; y: number; scale: number }> = {
-  'slide-left': { x: 80, y: 0, scale: 1 },
-  'slide-right': { x: -80, y: 0, scale: 1 },
-  'slide-up': { x: 0, y: 80, scale: 1 },
-  'slide-down': { x: 0, y: -80, scale: 1 },
-  'zoom': { x: 0, y: 0, scale: 0.85 },
-  'flip': { x: 0, y: 0, scale: 0.9 },
-  'fade': { x: 0, y: 12, scale: 0.97 },
+const getTransitionStates = (
+  animationType: string,
+  elementOpacity: number
+): {
+  initial: Record<string, any>
+  animate: Record<string, any>
+  exit: Record<string, any>
+  style?: React.CSSProperties
+} => {
+  switch (animationType) {
+    case 'slide-left':
+      return {
+        initial: { opacity: 0, x: 600, y: 0, scale: 1 },
+        animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
+        exit: { opacity: 0, x: -600, y: 0, scale: 1 },
+      }
+    case 'slide-right':
+      return {
+        initial: { opacity: 0, x: -600, y: 0, scale: 1 },
+        animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
+        exit: { opacity: 0, x: 600, y: 0, scale: 1 },
+      }
+    case 'slide-up':
+      return {
+        initial: { opacity: 0, x: 0, y: 400, scale: 1 },
+        animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
+        exit: { opacity: 0, x: 0, y: -400, scale: 1 },
+      }
+    case 'slide-down':
+      return {
+        initial: { opacity: 0, x: 0, y: -400, scale: 1 },
+        animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
+        exit: { opacity: 0, x: 0, y: 400, scale: 1 },
+      }
+    case 'zoom':
+      return {
+        initial: { opacity: 0, x: 0, y: 0, scale: 0.3 },
+        animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
+        exit: { opacity: 0, x: 0, y: 0, scale: 1.5 },
+      }
+    case 'flip':
+      return {
+        initial: { opacity: 0, rotateY: 90, scale: 1 },
+        animate: { opacity: elementOpacity, rotateY: 0, scale: 1 },
+        exit: { opacity: 0, rotateY: -90, scale: 1 },
+        style: { perspective: '1000px', transformStyle: 'preserve-3d' },
+      }
+    case 'fade':
+    default:
+      return {
+        initial: { opacity: 0, x: 0, y: 0, scale: 1 },
+        animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
+        exit: { opacity: 0, x: 0, y: 0, scale: 1 },
+      }
+  }
 }
-
 
 export const MotionWrapper = memo(function MotionWrapper({
   element, isSelected, isReadOnly, isContinuing, children,
   onPointerDown, onDoubleClick, onClick
 }: Props) {
-  const { isTransitioning, durationSec, ease, transitionAnimation } = useMotionContext()
+  const { isTransitioning, durationSec, ease, transitionAnimation, newElementIds } = useMotionContext()
 
   const commonStyle = {
     position: 'absolute' as const,
@@ -47,7 +92,6 @@ export const MotionWrapper = memo(function MotionWrapper({
     cursor: isReadOnly ? 'default' : 'grab',
     overflow: element.type === 'line' ? 'visible' : undefined,
   }
-
 
   if (!isTransitioning) {
     return (
@@ -65,7 +109,6 @@ export const MotionWrapper = memo(function MotionWrapper({
       </motion.div>
     )
   }
-
 
   if (isContinuing) {
     return (
@@ -86,29 +129,28 @@ export const MotionWrapper = memo(function MotionWrapper({
     )
   }
 
-
-  const dir = DIRECTION_MAP[transitionAnimation] ?? DIRECTION_MAP['fade']
+  const staggerIndex = Array.from(newElementIds).indexOf(element.id)
+  const delay = staggerIndex >= 0 ? staggerIndex * 0.03 : 0
+  const states = getTransitionStates(transitionAnimation, element.opacity)
 
   return (
     <motion.div
-      layoutId={element.id}
-      layout
       className="canvas-element"
-      style={{ ...commonStyle, opacity: undefined }}
-      initial={{ opacity: 0, x: dir.x, y: dir.y, scale: dir.scale }}
-      animate={{ opacity: element.opacity, x: 0, y: 0, scale: 1 }}
+      style={{
+        ...commonStyle,
+        ...states.style,
+        opacity: undefined, // Let animate handle opacity
+      }}
+      initial={states.initial}
+      animate={states.animate}
       exit={{
-        opacity: 0,
-        x: -dir.x,
-        y: -dir.y,
-        scale: dir.scale,
+        ...states.exit,
         transition: { duration: durationSec * 0.3, ease: EASE_IN_OUT },
       }}
       transition={{
         duration: durationSec * 0.5,
         ease: EASE_IN_OUT,
-        delay: PHASE_2_DELAY,
-        layout: { duration: durationSec, ease: EASE_IN_OUT },
+        delay,
       }}
     >
       {children}

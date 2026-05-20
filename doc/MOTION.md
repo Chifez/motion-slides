@@ -1,10 +1,3 @@
-Here’s a **deep technical Markdown doc** tailored to your current scope (architectural diagrams + shapes + code + text), focused on achieving **Keynote-level motion** in your app.
-
-You can drop this directly into your repo as something like
-`docs/animation-engine.md`
-
----
-
 ```markdown
 # 🎬 Motion Engine Architecture (Keynote-Level Transitions)
 

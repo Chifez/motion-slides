@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -39,61 +39,82 @@ export function PrototypeCanvas() {
   const { slides, transitions, prototypeLayout } = project
 
   // ── Nodes: built from slides, re-derived on every render ──
-  const initialNodes: Node[] = useMemo(() =>
-    slides.map((slide, i) => ({
-      id: slide.id,
-      type: 'slideNode',
-      position: prototypeLayout[slide.id] || { x: i * 320, y: 100 },
-      data: { slide, index: i, isActive: i === activeSlideIndex },
-    })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  )
+  const initialNodes: Node[] = slides.map((slide, i) => ({
+    id: slide.id,
+    type: 'slideNode',
+    position: prototypeLayout[slide.id] || { x: i * 320, y: 100 },
+    data: { slide, index: i, isActive: i === activeSlideIndex },
+  }))
 
-  const [nodes, , onNodesChange] = useNodesState(initialNodes)
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
+  const [prevData, setPrevData] = useState({ slides, activeSlideIndex, prototypeLayout })
+
+  if (
+    slides !== prevData.slides ||
+    activeSlideIndex !== prevData.activeSlideIndex ||
+    prototypeLayout !== prevData.prototypeLayout
+  ) {
+    setPrevData({ slides, activeSlideIndex, prototypeLayout })
+    const nodePosMap = new Map<string, { x: number; y: number }>()
+    for (const node of nodes) {
+      nodePosMap.set(node.id, node.position)
+    }
+
+    setNodes(
+      slides.map((slide, i) => {
+        const currentPos = nodePosMap.get(slide.id)
+        const storePos = prototypeLayout[slide.id]
+        const position = currentPos || storePos || { x: i * 320, y: 100 }
+
+        return {
+          id: slide.id,
+          type: 'slideNode',
+          position,
+          data: { slide, index: i, isActive: i === activeSlideIndex },
+        }
+      })
+    )
+  }
 
   // ── Edges: derived DIRECTLY from store transitions every render ──
   // This is the source of truth — no parallel local edge state needed.
-  const edges: Edge[] = useMemo(() =>
-    transitions.map((t) => ({
-      id: t.id,          // edge.id === transition.id, always in sync
-      source: t.fromSlideId,
-      target: t.toSlideId,
-      type: 'transitionEdge',
-      animated: true,
-      selected: t.id === selectedTransitionId,
-      data: {
-        animation: t.animation,
-        duration: t.duration,
-        ease: t.ease,
-        trigger: t.trigger,
-        transitionId: t.id,
-      },
-    })),
-    [transitions, selectedTransitionId],
-  )
+  const edges: Edge[] = transitions.map((t) => ({
+    id: t.id,          // edge.id === transition.id, always in sync
+    source: t.fromSlideId,
+    target: t.toSlideId,
+    type: 'transitionEdge',
+    animated: true,
+    selected: t.id === selectedTransitionId,
+    data: {
+      animation: t.animation,
+      duration: t.duration,
+      ease: t.ease,
+      trigger: t.trigger,
+      transitionId: t.id,
+    },
+  }))
 
   // ── Node position changes → persist to store ──
-  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+  function handleNodesChange(changes: NodeChange[]) {
     onNodesChange(changes)
     for (const change of changes) {
       if (change.type === 'position' && change.position && !change.dragging) {
         updateSlidePosition(change.id, change.position)
       }
     }
-  }, [onNodesChange, updateSlidePosition])
+  }
 
   // ── Edge changes: only handle deletion (no local state needed) ──
-  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+  function handleEdgesChange(changes: EdgeChange[]) {
     for (const change of changes) {
       if (change.type === 'remove') {
         deleteTransition(change.id)
       }
     }
-  }, [deleteTransition])
+  }
 
   // ── Connect: generate ID upfront so edge.id === transition.id ──
-  const handleConnect = useCallback((connection: RFConnection) => {
+  function handleConnect(connection: RFConnection) {
     if (!connection.source || !connection.target) return
 
     // Prevent duplicate transitions between same pair
@@ -115,15 +136,15 @@ export function PrototypeCanvas() {
     }
     addTransition(transition)
     // Edges are derived from store, so ReactFlow will auto-reflect the new one
-  }, [transitions, addTransition])
+  }
 
-  const handleEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
+  function handleEdgeClick(_: React.MouseEvent, edge: Edge) {
     setSelectedTransition(edge.id) // edge.id === transition.id now
-  }, [setSelectedTransition])
+  }
 
-  const handlePaneClick = useCallback(() => {
+  function handlePaneClick() {
     setSelectedTransition(null)
-  }, [setSelectedTransition])
+  }
 
   const selectedTransition = transitions.find((t) => t.id === selectedTransitionId)
 

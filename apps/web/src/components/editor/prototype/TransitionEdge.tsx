@@ -31,6 +31,15 @@ function TransitionEdgeComponent({
   data,
   selected,
 }: EdgeProps<TransitionEdgeType>) {
+  if (
+    sourceX === undefined || sourceY === undefined ||
+    targetX === undefined || targetY === undefined ||
+    isNaN(sourceX) || isNaN(sourceY) ||
+    isNaN(targetX) || isNaN(targetY)
+  ) {
+    return null
+  }
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX, sourceY,
     targetX, targetY,
