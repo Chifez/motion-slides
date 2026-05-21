@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand'
 import type { Project, Slide } from '@motionslides/shared'
 import { createDefaultProject } from '@/store/defaults'
 import type { EditorState } from '@/store/editorStore'
+import { deleteRemoteProjectAction } from '@/lib/actions/project'
 
 export interface ProjectSlice {
   projects: Project[]
@@ -9,6 +10,7 @@ export interface ProjectSlice {
 
   createProject: (name?: string) => Project
   deleteProject: (id: string) => void
+  removeLocalProject: (id: string) => void
   loadProject: (id: string) => void
   updateProjectName: (id: string, name: string) => void
   updateProjectVisibility: (id: string, visibility: Project['visibility']) => void
@@ -65,10 +67,8 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
       // If the project was synced/remote, we must explicitly delete it from the server
       // because our bulk-sync only handles upserts, not deletions.
       if (project?.synced) {
-        import('@/lib/actions/project').then(({ deleteRemoteProjectAction }) => {
-          deleteRemoteProjectAction({ data: { projectId: id } })
-            .catch(err => console.error('Failed to delete remote project:', err))
-        })
+        deleteRemoteProjectAction({ data: { projectId: id } })
+          .catch(err => console.error('Failed to delete remote project:', err))
       }
 
       return {
@@ -76,6 +76,13 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
         activeProjectId: s.activeProjectId === id ? null : s.activeProjectId,
       }
     })
+  },
+
+  removeLocalProject: (id) => {
+    set((s) => ({
+      projects: s.projects.filter((p) => p.id !== id),
+      activeProjectId: s.activeProjectId === id ? null : s.activeProjectId,
+    }))
   },
 
   importProject: (remoteProject) => {

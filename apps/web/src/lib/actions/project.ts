@@ -122,6 +122,40 @@ export const rotateShareKeyAction = createServerFn({ method: 'POST' })
   })
 
 /**
+ * Server Action to update a project's visibility and optional share key.
+ */
+export const updateProjectVisibilityAction = createServerFn({ method: 'POST' })
+  .inputValidator(z.object({
+    projectId: z.string(),
+    visibility: z.enum(['private', 'link-shared', 'collaborative', 'public']),
+    rotateKey: z.boolean().optional(),
+  }))
+  .handler(async ({ data: { projectId, visibility, rotateKey } }) => {
+    const request = getRequest()
+    const session = await auth.api.getSession({ headers: request.headers })
+    if (!session) throw new Error('Unauthorized')
+
+    const newKey = rotateKey ? uuid() : undefined
+    const updates: Record<string, any> = {
+      visibility,
+      updatedAt: Date.now()
+    }
+
+    if (newKey) {
+      updates.shareKey = newKey
+    }
+
+    await db.update(projects)
+      .set(updates)
+      .where(and(
+        eq(projects.id, projectId),
+        eq(projects.ownerId, session.user.id)
+      ))
+
+    return { success: true, shareKey: newKey }
+  })
+
+/**
  * Server Action to fetch all projects belonging to the current user.
  */
 export const listRemoteProjectsAction = createServerFn({ method: 'GET' })
@@ -156,6 +190,13 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
     }
 
     console.log(`[getRemoteProjectAction] Found: ${result.name} | Visibility: ${result.visibility}`)
+    console.log(`[getRemoteProjectAction] Details:`, {
+      projectId: result.id,
+      visibility: result.visibility,
+      dbShareKey: result.shareKey,
+      providedShareKey: shareKey,
+      ownerId: result.ownerId
+    })
 
     // Access Control Logic
     if (result.visibility === 'public') return result as any
@@ -163,13 +204,14 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
     // Check if user is the owner
     const session = await auth.api.getSession({ headers: request.headers })
     const isOwner = session && session.user.id === result.ownerId
+    console.log(`[getRemoteProjectAction] Owner check:`, { isOwner, userId: session?.user?.id })
     if (isOwner) return result as any
 
     // Check share key
     const isShared = result.visibility === 'link-shared' || result.visibility === 'collaborative'
     if (isShared) {
       const keysMatch = shareKey === result.shareKey
-      console.log(`[getRemoteProjectAction] Shared access check. Key Match: ${keysMatch}`)
+      console.log(`[getRemoteProjectAction] Shared check:`, { isShared, keysMatch })
       if (shareKey && keysMatch) {
         return result as any
       }
@@ -177,8 +219,10 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
 
     // Access Denied
     if (!isShared) {
+      console.log(`[getRemoteProjectAction] DENIED: Project is private.`)
       throw new Error('Access Denied: This project is private.')
     }
+    console.log(`[getRemoteProjectAction] DENIED: Invalid key.`)
     throw new Error('Access Denied: Invalid or expired share key.')
   })
 

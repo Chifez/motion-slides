@@ -106,9 +106,9 @@ export function ShareMenu({ project, isMobile }: Props) {
             </div>
 
             {/* Edit Link */}
-            <div className={`space-y-1.5 transition-opacity duration-300 ${isCollaborative ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-(--ms-text-secondary) flex items-center gap-1">
+                <span className={`text-[11px] font-medium text-(--ms-text-secondary) flex items-center gap-1 transition-opacity duration-300 ${isShared ? 'opacity-100' : 'opacity-40'}`}>
                   <Unlock size={10} className={isCollaborative ? 'text-orange-400' : ''} /> Collaborative Edit
                 </span>
                 <button
@@ -123,21 +123,23 @@ export function ShareMenu({ project, isMobile }: Props) {
                   />
                 </button>
               </div>
-              <button
-                onClick={() => handleCopy('edit')}
-                disabled={!isCollaborative}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition-all cursor-pointer text-left group disabled:cursor-not-allowed"
-              >
-                <div className="flex items-center gap-2 overflow-hidden">
-                  <LinkIcon size={12} className="text-orange-400 shrink-0" />
-                  <span className="text-xs text-(--ms-text-muted) truncate">/p/{project.id.slice(0, 8)}...</span>
-                </div>
-                {copiedType === 'edit' ? (
-                  <Check size={12} className="text-emerald-400 shrink-0" />
-                ) : (
-                  <Copy size={12} className="text-(--ms-text-muted) group-hover:text-blue-400 transition-colors shrink-0" />
-                )}
-              </button>
+              <div className={`transition-opacity duration-300 ${isCollaborative ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                <button
+                  onClick={() => handleCopy('edit')}
+                  disabled={!isCollaborative}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition-all cursor-pointer text-left group disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <LinkIcon size={12} className="text-orange-400 shrink-0" />
+                    <span className="text-xs text-(--ms-text-muted) truncate">/p/{project.id.slice(0, 8)}...</span>
+                  </div>
+                  {copiedType === 'edit' ? (
+                    <Check size={12} className="text-emerald-400 shrink-0" />
+                  ) : (
+                    <Copy size={12} className="text-(--ms-text-muted) group-hover:text-blue-400 transition-colors shrink-0" />
+                  )}
+                </button>
+              </div>
               <div className="text-[9px] text-(--ms-text-muted) pl-1">
                 {isCollaborative
                   ? "⚠️ Anyone with the link can edit the original."

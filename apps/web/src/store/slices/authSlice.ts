@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type { EditorState } from '../editorStore'
 import { authClient } from '@/lib/auth-client'
+import { syncProjectsAction, listRemoteProjectsAction } from '@/lib/actions/project'
 
 export type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated'
 
@@ -55,8 +56,6 @@ export const createAuthSlice: StateCreator<
     setSyncing(true)
     set({ syncError: null })
     try {
-      const { syncProjectsAction, listRemoteProjectsAction } = await import('@/lib/actions/project')
-      
       // 1. Fetch remote state
       const remoteProjects = await listRemoteProjectsAction()
       

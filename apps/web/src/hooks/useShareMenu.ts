@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@motionslides/shared'
+import { updateProjectVisibilityAction, rotateShareKeyAction } from '@/lib/actions/project'
 
 export type ShareState = 
   | { status: 'unsynced' } 
@@ -13,22 +14,13 @@ export type ShareState =
 export function useShareMenu(project: Project) {
   const isSyncing = useEditorStore(s => s.isSyncing)
   const updateProject = useEditorStore(s => s.updateProject)
-  const syncProjects = useEditorStore(s => s.syncProjects)
   
-  const [shareState, setShareState] = useState<ShareState>({ status: 'private' })
-  const [baseUrl, setBaseUrl] = useState('')
+  const [isMutating, setIsMutating] = useState(false)
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 
-  useEffect(() => {
-    setBaseUrl(window.location.origin)
-  }, [])
-
-  useEffect(() => {
-    if (isSyncing) {
-      setShareState({ status: 'syncing' })
-    } else {
-      setShareState({ status: project.visibility as any })
-    }
-  }, [project.visibility, isSyncing])
+  const shareState: ShareState = (isSyncing || isMutating)
+    ? { status: 'syncing' }
+    : { status: project.visibility as any }
 
   const copyLink = async (type: 'edit' | 'view') => {
     const params = new URLSearchParams()
@@ -44,40 +36,77 @@ export function useShareMenu(project: Project) {
   const toggleSharing = async () => {
     const isCurrentlyShared = project.visibility !== 'private'
     const newVisibility = isCurrentlyShared ? 'private' : 'link-shared'
+    const shouldRotate = !isCurrentlyShared // Always rotate key when enabling sharing to ensure a fresh valid link
     
-    const updates: Partial<Project> = { 
-      visibility: newVisibility,
-      synced: false 
+    setIsMutating(true)
+    try {
+      const result = await updateProjectVisibilityAction({
+        data: {
+          projectId: project.id,
+          visibility: newVisibility,
+          rotateKey: shouldRotate
+        }
+      })
+      if (result.success) {
+        const updates: Partial<Project> = { 
+          visibility: newVisibility,
+          synced: true 
+        }
+        if (result.shareKey) {
+          updates.shareKey = result.shareKey
+        }
+        updateProject(project.id, updates)
+      }
+    } catch (err) {
+      console.error('Failed to toggle sharing:', err)
+    } finally {
+      setIsMutating(false)
     }
-
-    // Always rotate key when enabling sharing to ensure a fresh valid link
-    if (!isCurrentlyShared) {
-      updates.shareKey = crypto.randomUUID()
-    }
-    
-    updateProject(project.id, updates)
-    
-    // Immediate sync to resolve race conditions
-    await syncProjects()
   }
 
   const toggleCollaborative = async () => {
     const isCurrentlyCollab = project.visibility === 'collaborative'
     const newVisibility = isCurrentlyCollab ? 'link-shared' : 'collaborative'
     
-    updateProject(project.id, { 
-      visibility: newVisibility,
-      synced: false
-    })
-    await syncProjects()
+    setIsMutating(true)
+    try {
+      const result = await updateProjectVisibilityAction({
+        data: {
+          projectId: project.id,
+          visibility: newVisibility,
+          rotateKey: false
+        }
+      })
+      if (result.success) {
+        updateProject(project.id, { 
+          visibility: newVisibility,
+          synced: true
+        })
+      }
+    } catch (err) {
+      console.error('Failed to toggle collaborative mode:', err)
+    } finally {
+      setIsMutating(false)
+    }
   }
 
   const rotateKey = async () => {
-    updateProject(project.id, { 
-      shareKey: crypto.randomUUID(),
-      synced: false
-    })
-    await syncProjects()
+    setIsMutating(true)
+    try {
+      const result = await rotateShareKeyAction({
+        data: { projectId: project.id }
+      })
+      if (result.success && result.newKey) {
+        updateProject(project.id, { 
+          shareKey: result.newKey,
+          synced: true
+        })
+      }
+    } catch (err) {
+      console.error('Failed to rotate key:', err)
+    } finally {
+      setIsMutating(false)
+    }
   }
 
   return {
@@ -89,3 +118,4 @@ export function useShareMenu(project: Project) {
     rotateKey
   }
 }
+
