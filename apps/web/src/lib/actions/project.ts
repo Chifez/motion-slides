@@ -178,25 +178,14 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
   .inputValidator(z.object({ projectId: z.string(), shareKey: z.string().optional() }))
   .handler(async ({ data: { projectId, shareKey } }) => {
     const request = getRequest()
-    console.log(`[getRemoteProjectAction] Fetching: ${projectId} | Key: ${shareKey ? 'provided' : 'missing'}`)
 
     const result = await db.query.projects.findFirst({
       where: eq(projects.id, projectId)
     })
 
     if (!result) {
-      console.log(`[getRemoteProjectAction] Project NOT FOUND in DB: ${projectId}`)
       return null
     }
-
-    console.log(`[getRemoteProjectAction] Found: ${result.name} | Visibility: ${result.visibility}`)
-    console.log(`[getRemoteProjectAction] Details:`, {
-      projectId: result.id,
-      visibility: result.visibility,
-      dbShareKey: result.shareKey,
-      providedShareKey: shareKey,
-      ownerId: result.ownerId
-    })
 
     // Access Control Logic
     if (result.visibility === 'public') return result as any
@@ -204,14 +193,12 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
     // Check if user is the owner
     const session = await auth.api.getSession({ headers: request.headers })
     const isOwner = session && session.user.id === result.ownerId
-    console.log(`[getRemoteProjectAction] Owner check:`, { isOwner, userId: session?.user?.id })
     if (isOwner) return result as any
 
     // Check share key
     const isShared = result.visibility === 'link-shared' || result.visibility === 'collaborative'
     if (isShared) {
       const keysMatch = shareKey === result.shareKey
-      console.log(`[getRemoteProjectAction] Shared check:`, { isShared, keysMatch })
       if (shareKey && keysMatch) {
         return result as any
       }
@@ -219,10 +206,8 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
 
     // Access Denied
     if (!isShared) {
-      console.log(`[getRemoteProjectAction] DENIED: Project is private.`)
       throw new Error('Access Denied: This project is private.')
     }
-    console.log(`[getRemoteProjectAction] DENIED: Invalid key.`)
     throw new Error('Access Denied: Invalid or expired share key.')
   })
 

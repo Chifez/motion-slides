@@ -109,18 +109,6 @@ export function useAccessControl(): AccessControl {
     }
   }
 
-
-  console.log(`[useAccessControl] Evaluation:`, {
-    projectId,
-    loaderAccessDenied,
-    isPending,
-    hasProject: !!project,
-    projectVisibility: project?.visibility,
-    projectShareKey: project?.shareKey,
-    requestedKey,
-    access
-  })
-
   useEffect(() => {
     if (project && !access.isPending && access.mode !== search.mode) {
       navigate({ search: (s: any) => ({ ...s, mode: access.mode }), replace: true })
