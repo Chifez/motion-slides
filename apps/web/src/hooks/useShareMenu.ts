@@ -12,15 +12,15 @@ export type ShareState =
   | { status: 'private' }
 
 export function useShareMenu(project: Project) {
-  const isSyncing = useEditorStore(s => s.isSyncing)
-  const updateProject = useEditorStore(s => s.updateProject)
+  const isSyncing = useEditorStore(state => state.isSyncing)
+  const updateProject = useEditorStore(state => state.updateProject)
   
   const [isMutating, setIsMutating] = useState(false)
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 
   const shareState: ShareState = (isSyncing || isMutating)
     ? { status: 'syncing' }
-    : { status: project.visibility as any }
+    : { status: project.visibility as ShareState['status'] }
 
   const copyLink = async (type: 'edit' | 'view') => {
     const params = new URLSearchParams()
@@ -57,8 +57,8 @@ export function useShareMenu(project: Project) {
         }
         updateProject(project.id, updates)
       }
-    } catch (err) {
-      console.error('Failed to toggle sharing:', err)
+    } catch (error) {
+      console.error('Failed to toggle sharing:', error)
     } finally {
       setIsMutating(false)
     }
@@ -83,8 +83,8 @@ export function useShareMenu(project: Project) {
           synced: true
         })
       }
-    } catch (err) {
-      console.error('Failed to toggle collaborative mode:', err)
+    } catch (error) {
+      console.error('Failed to toggle collaborative mode:', error)
     } finally {
       setIsMutating(false)
     }
@@ -102,8 +102,8 @@ export function useShareMenu(project: Project) {
           synced: true
         })
       }
-    } catch (err) {
-      console.error('Failed to rotate key:', err)
+    } catch (error) {
+      console.error('Failed to rotate key:', error)
     } finally {
       setIsMutating(false)
     }

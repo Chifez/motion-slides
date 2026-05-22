@@ -252,6 +252,7 @@ export interface Project {
   ownerId?: string
   localAuthorId?: string
   visibility: 'private' | 'link-shared' | 'collaborative' | 'public'
+  parentUpdatedAt?: number
 }
 
 // ─── Serialized Scene Graph ───────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react'
+import type React from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { useMotionContext } from '@/context/MotionContext'
 import { useIsMobile } from '@/hooks/useMediaQuery'
@@ -7,21 +7,22 @@ import { useElementDrag } from '@/hooks/useElementDrag'
 import { MotionWrapper } from './MotionWrapper'
 import { BoundingBox } from './BoundingBox'
 import { ElementRenderer } from './ElementRenderer'
+import type { SceneElement } from '@motionslides/shared'
 
 interface Props {
   elementId: string
   staggerIndex?: number
 }
 
-export const CanvasElement = memo(function CanvasElement({ elementId }: Props) {
-  const element = useEditorStore(s => s.activeSlide()?.elements.find(e => e.id === elementId))
-  const selectedElementIds = useEditorStore(s => s.selectedElementIds)
-  const isEditingId = useEditorStore(s => s.isEditingId)
-  const isMultiSelectMode = useEditorStore(s => s.isMultiSelectMode)
+export function CanvasElement({ elementId }: Props) {
+  const element = useEditorStore(state => state.activeSlide()?.elements.find(slideElement => slideElement.id === elementId))
+  const selectedElementIds = useEditorStore(state => state.selectedElementIds)
+  const isEditingId = useEditorStore(state => state.isEditingId)
+  const isMultiSelectMode = useEditorStore(state => state.isMultiSelectMode)
 
-  const setSelectedElement = useEditorStore(s => s.setSelectedElement)
-  const setMobileInspectorOpen = useEditorStore(s => s.setMobileInspectorOpen)
-  const setEditingId = useEditorStore(s => s.setEditingId)
+  const setSelectedElement = useEditorStore(state => state.setSelectedElement)
+  const setMobileInspectorOpen = useEditorStore(state => state.setMobileInspectorOpen)
+  const setEditingId = useEditorStore(state => state.setEditingId)
 
   const { isReadOnly } = usePermissions()
   const isMobile = useIsMobile()
@@ -34,25 +35,53 @@ export const CanvasElement = memo(function CanvasElement({ elementId }: Props) {
     isMultiSelectMode
   })
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
+  const handleClick = (event: React.MouseEvent) => {
     if (isReadOnly) return
-    e.stopPropagation()
-  }, [isReadOnly])
+    event.stopPropagation()
+  }
 
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+  const handleDoubleClick = (event: React.MouseEvent) => {
     if (!element || isReadOnly) return
-    e.stopPropagation()
+    event.stopPropagation()
     if (!element.locked) {
       setSelectedElement(element.id, false)
       if (element.type === 'text') setEditingId(element.id)
       if (isMobile) setMobileInspectorOpen(true)
     }
-  }, [element, isReadOnly, isMobile, setSelectedElement, setEditingId, setMobileInspectorOpen])
+  }
+
+  const reviewingSuggestionId = useEditorStore(state => state.reviewingSuggestionId)
+  const reviewMode = useEditorStore(state => state.reviewMode)
+  const activeSlideIndex = useEditorStore(state => state.activeSlideIndex)
+  const originalProjectBackup = useEditorStore(state => state.originalProjectBackup)
 
   if (!element) return null
 
   const isSelected = selectedElementIds.includes(element.id)
   const isContinuing = continuingIds.has(elementId)
+
+  let diffStatus: 'added' | 'modified' | null = null
+  if (reviewingSuggestionId && reviewMode === 'suggested' && originalProjectBackup) {
+    const originalSlide = originalProjectBackup.slides[activeSlideIndex]
+    const originalElement = originalSlide?.elements.find((originalElementItem: SceneElement) => originalElementItem.id === elementId)
+    if (!originalElement) {
+      diffStatus = 'added'
+    } else {
+      const isChanged = 
+        element.position.x !== originalElement.position.x ||
+        element.position.y !== originalElement.position.y ||
+        element.size.width !== originalElement.size.width ||
+        element.size.height !== originalElement.size.height ||
+        element.rotation !== originalElement.rotation ||
+        JSON.stringify(element.content) !== JSON.stringify(originalElement.content) ||
+        element.opacity !== originalElement.opacity ||
+        element.zIndex !== originalElement.zIndex
+      
+      if (isChanged) {
+        diffStatus = 'modified'
+      }
+    }
+  }
 
   return (
     <>
@@ -66,6 +95,22 @@ export const CanvasElement = memo(function CanvasElement({ elementId }: Props) {
         onClick={handleClick}
       >
         <ElementRenderer element={element} isSelected={isSelected} />
+
+        {diffStatus === 'added' && (
+          <div className="absolute inset-0 border-2 border-emerald-500 rounded-sm pointer-events-none z-[10] select-none">
+            <span className="absolute -top-5 left-0 bg-emerald-500 text-white text-[9px] font-semibold px-1 py-0.5 rounded shadow whitespace-nowrap">
+              Added
+            </span>
+          </div>
+        )}
+        
+        {diffStatus === 'modified' && (
+          <div className="absolute inset-0 border-2 border-dashed border-blue-500 rounded-sm pointer-events-none z-[10] select-none">
+            <span className="absolute -top-5 left-0 bg-blue-500 text-white text-[9px] font-semibold px-1 py-0.5 rounded shadow whitespace-nowrap">
+              Modified
+            </span>
+          </div>
+        )}
       </MotionWrapper>
 
       {isSelected && selectedElementIds.length === 1 && !element.groupId && (
@@ -73,7 +118,7 @@ export const CanvasElement = memo(function CanvasElement({ elementId }: Props) {
       )}
     </>
   )
-})
+}
 
 
 

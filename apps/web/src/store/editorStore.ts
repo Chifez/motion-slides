@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware'
 import { get, set, del } from 'idb-keyval'
 import { createProjectSlice, type ProjectSlice } from './slices/projectSlice'
 import { createSlideSlice, type SlideSlice } from './slices/slideSlice'
@@ -28,6 +28,11 @@ export type EditorState =
   & AuthSlice
   & IdentitySlice
 
+type PersistedState = Pick<
+  EditorState,
+  'projects' | 'activeProjectId' | 'activeSlideIndex' | 'playbackSettings' | 'localAuthorId'
+>
+
 // ─────────────────────────────────────────────
 // Zustand Store with Optimized IndexedDB persistence
 // ─────────────────────────────────────────────
@@ -42,14 +47,14 @@ export type EditorState =
  */
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-const optimizedStorage = {
-  getItem: async (name: string): Promise<any | null> => {
+const optimizedStorage: PersistStorage<PersistedState> = {
+  getItem: async (name: string): Promise<StorageValue<PersistedState> | null> => {
     const raw = await get(name)
     if (!raw) return null
     // We store the data as a string in IDB for compatibility
-    return JSON.parse(raw)
+    return JSON.parse(raw) as StorageValue<PersistedState>
   },
-  setItem: async (name: string, value: any): Promise<void> => {
+  setItem: async (name: string, value: StorageValue<PersistedState>): Promise<void> => {
     // 1. Skip all work if we are actively dragging
     if (useEditorStore.getState()?.isDragging) return
 
@@ -62,8 +67,8 @@ const optimizedStorage = {
         // Serialization happens here, outside the high-frequency loop
         const serialized = JSON.stringify(value)
         await set(name, serialized)
-      } catch (e) {
-        console.error('[Storage] Failed to persist state:', e)
+      } catch (error) {
+        console.error('[Storage] Failed to persist state:', error)
       } finally {
         debounceTimer = null
       }
@@ -75,18 +80,18 @@ const optimizedStorage = {
 }
 
 export const useEditorStore = create<EditorState>()(
-  persist(
-    (...a) => ({
-      ...createProjectSlice(...a),
-      ...createSlideSlice(...a),
-      ...createElementSlice(...a),
-      ...createPresentationSlice(...a),
-      ...createPrototypeSlice(...a),
-      ...createCanvasSlice(...a),
-      ...createAISlice(...a),
-      ...createUISlice(...a),
-      ...createAuthSlice(...a),
-      ...createIdentitySlice(...a),
+  persist<EditorState, [], [], PersistedState>(
+    (...args) => ({
+      ...createProjectSlice(...args),
+      ...createSlideSlice(...args),
+      ...createElementSlice(...args),
+      ...createPresentationSlice(...args),
+      ...createPrototypeSlice(...args),
+      ...createCanvasSlice(...args),
+      ...createAISlice(...args),
+      ...createUISlice(...args),
+      ...createAuthSlice(...args),
+      ...createIdentitySlice(...args),
     }),
     {
       name: 'motionslides-session',
@@ -106,7 +111,7 @@ export const useEditorStore = create<EditorState>()(
 
 // Expose store for headless renderer injection (export pipeline only)
 if (typeof window !== 'undefined') {
-  (window as any).__motionslides_store__ = useEditorStore
+  (window as unknown as { __motionslides_store__: typeof useEditorStore }).__motionslides_store__ = useEditorStore
 }
 
 // ─────────────────────────────────────────────
@@ -121,9 +126,9 @@ export const storeHydrationPromise = new Promise<void>((resolve) => {
   if (useEditorStore.persist.hasHydrated()) {
     resolve()
   } else {
-    const unsub = useEditorStore.persist.onFinishHydration(() => {
+    const unsubscribe = useEditorStore.persist.onFinishHydration(() => {
       resolve()
-      if (unsub) unsub()
+      if (unsubscribe) unsubscribe()
     })
   }
 })

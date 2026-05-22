@@ -62,8 +62,23 @@ export const projects = pgTable('projects', {
   slides:          jsonb('slides').notNull().default([]),
   transitions:     jsonb('transitions').notNull().default([]),
   prototypeLayout: jsonb('prototypeLayout').notNull().default({}),
+  playbackSettings: jsonb('playbackSettings').notNull().default({}),
   shareKey:        text('shareKey').notNull(),
   visibility:      text('visibility').notNull().default('private'), // 'private' | 'link-shared' | 'collaborative' | 'public'
   createdAt:       bigint('createdAt', { mode: 'number' }).notNull(), // Epoch ms
   updatedAt:       bigint('updatedAt', { mode: 'number' }).notNull(), // Epoch ms
+})
+
+export const projectSuggestions = pgTable('project_suggestions', {
+  id:              text('id').primaryKey(), // UUID
+  projectId:       text('projectId').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  authorId:        text('authorId'), // Nullable for guest/incognito collaborators
+  authorName:      text('authorName').notNull().default('Collaborator'),
+  slides:          jsonb('slides').notNull().default([]),
+  transitions:     jsonb('transitions').notNull().default([]),
+  prototypeLayout: jsonb('prototypeLayout').notNull().default({}),
+  parentUpdatedAt: bigint('parentUpdatedAt', { mode: 'number' }).notNull(), // Master project updatedAt at start of edit
+  status:          text('status').notNull().default('pending'), // 'pending' | 'merged' | 'rejected'
+  createdAt:       bigint('createdAt', { mode: 'number' }).notNull(),
+  updatedAt:       bigint('updatedAt', { mode: 'number' }).notNull(),
 })

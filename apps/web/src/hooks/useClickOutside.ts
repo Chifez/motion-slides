@@ -12,8 +12,8 @@ export function useClickOutside(
   callbackRef.current = onClickOutside
 
   useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+    function handler(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
         callbackRef.current()
       }
     }

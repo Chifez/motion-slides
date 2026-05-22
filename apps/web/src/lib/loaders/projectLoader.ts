@@ -1,5 +1,6 @@
 import { useEditorStore } from '@/store/editorStore'
 import { getRemoteProjectAction } from '@/lib/actions/project'
+import type { Project } from '@motionslides/shared'
 
 const MAX_ATTEMPTS = 3
 
@@ -7,7 +8,7 @@ export async function loadProjectForRoute(projectId: string, shareKey?: string) 
   const store = useEditorStore.getState()
   const isServer = typeof window === 'undefined'
   
-  const localProject = !isServer && store.projects.find(p => p.id === projectId)
+  const localProject = !isServer && store.projects.find(projectItem => projectItem.id === projectId)
   const isOwner = localProject && store.user && localProject.ownerId === store.user.id
   const isLocalAuthor = localProject && store.localAuthorId && localProject.localAuthorId === store.localAuthorId
 
@@ -30,18 +31,18 @@ export async function loadProjectForRoute(projectId: string, shareKey?: string) 
       })
       
       if (remoteProject) {
-        const projectWithKey = {
+        const projectWithKey: Project = {
           ...remoteProject,
-          shareKey: shareKey || (remoteProject as any).shareKey
+          shareKey: shareKey ?? remoteProject.shareKey
         }
 
-        store.importProject(projectWithKey as any)
+        store.importProject(projectWithKey)
         store.loadProject(projectId)
-        return { project: projectWithKey as any }
+        return { project: projectWithKey }
       }
-    } catch (err: any) {
+    } catch (error: unknown) {
       // If it's an explicit access denial, don't bother retrying
-      const isAccessDenied = err.message?.includes('Access Denied')
+      const isAccessDenied = (error instanceof Error ? error.message : String(error)).includes('Access Denied')
       
       if (isAccessDenied && !isServer) {
         // Clean up the local project cache if we are now denied access
@@ -54,11 +55,11 @@ export async function loadProjectForRoute(projectId: string, shareKey?: string) 
         return { project: null, accessDenied: isAccessDenied }
       }
 
-      if (attempt === MAX_ATTEMPTS) throw err 
+      if (attempt === MAX_ATTEMPTS) throw error 
     }
 
     if (attempt < MAX_ATTEMPTS) {
-      await new Promise(r => setTimeout(r, 1000 * attempt))
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
     }
   }
 

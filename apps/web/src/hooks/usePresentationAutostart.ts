@@ -8,7 +8,7 @@ interface Options {
 }
 
 export function usePresentationAutostart({ mode, autoplay, isPending }: Options) {
-  const startPresentation = useEditorStore(s => s.startPresentation)
+  const startPresentation = useEditorStore(state => state.startPresentation)
   const hasStarted = useRef(false)
 
   useEffect(() => {

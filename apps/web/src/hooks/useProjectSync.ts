@@ -10,8 +10,8 @@ interface Options {
  * Blocks in-app navigation when there are unsynced changes.
  */
 export function useProjectSync({ isPending, isSynced }: Options) {
-  const user = useEditorStore(s => s.user)
-  const syncProjects = useEditorStore(s => s.syncProjects)
+  const user = useEditorStore(state => state.user)
+  const syncProjects = useEditorStore(state => state.syncProjects)
 
   const { proceed, reset, status } = useBlocker({
     condition: !isPending && !!user && !isSynced,

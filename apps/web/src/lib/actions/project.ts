@@ -6,14 +6,15 @@ import { auth } from '../auth'
 import { z } from 'zod'
 import { getRequest } from '@tanstack/react-start/server'
 import { uuid } from '../uuid'
+import type { Project } from '@motionslides/shared'
 
 
 const projectSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().default(''),
-  slides: z.array(z.any()).default([]),
-  transitions: z.array(z.any()).default([]),
+  slides: z.array(z.unknown()).default([]),
+  transitions: z.array(z.unknown()).default([]),
   prototypeLayout: z.record(z.string(), z.object({ x: z.number(), y: z.number() })).default({}),
   shareKey: z.string(),
   visibility: z.enum(['private', 'link-shared', 'collaborative', 'public']).default('private'),
@@ -42,20 +43,20 @@ export const syncProjectsAction = createServerFn({ method: 'POST' })
 
     try {
       // Use a transaction to ensure atomic updates
-      await db.transaction(async (tx) => {
+      await db.transaction(async (transaction) => {
         for (const project of projectsToSync) {
           // Perform an "Upsert" (Update or Insert)
-          await tx.insert(projects)
+          await transaction.insert(projects)
             .values({
               id: project.id,
               ownerId: userId,
               name: project.name,
-              description: project.description || '',
-              slides: project.slides || [],
-              transitions: project.transitions || [],
-              prototypeLayout: project.prototypeLayout || {},
+              description: project.description ?? '',
+              slides: project.slides ?? [],
+              transitions: project.transitions ?? [],
+              prototypeLayout: project.prototypeLayout ?? {},
               shareKey: project.shareKey,
-              visibility: project.visibility || 'private',
+              visibility: project.visibility ?? 'private',
               createdAt: project.createdAt,
               updatedAt: project.updatedAt,
             })
@@ -90,12 +91,13 @@ export const syncProjectsAction = createServerFn({ method: 'POST' })
       })
 
       return { success: true, count: projectsToSync.length }
-    } catch (error: any) {
-      console.error('Sync error:', error.message)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('Sync error:', errorMessage)
       // Check if this was a security failure (e.g. tried to update a project they don't own/have key for)
       // Note: onConflictDoUpdate silently fails to update if WHERE isn't met.
       // We'd need to check rows affected to be 100% sure, but for now we'll return success.
-      return { success: false, error: error.message, code: 'SYNC_ERROR' }
+      return { success: false, error: errorMessage, code: 'SYNC_ERROR' }
     }
   })
 
@@ -136,9 +138,13 @@ export const updateProjectVisibilityAction = createServerFn({ method: 'POST' })
     if (!session) throw new Error('Unauthorized')
 
     const newKey = rotateKey ? uuid() : undefined
-    const updates: Record<string, any> = {
+    const updates: {
+      visibility: typeof visibility
+      updatedAt: number
+      shareKey?: string
+    } = {
       visibility,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     }
 
     if (newKey) {
@@ -167,7 +173,7 @@ export const listRemoteProjectsAction = createServerFn({ method: 'GET' })
     const results = await db.query.projects.findMany({
       where: eq(projects.ownerId, session.user.id)
     })
-    return results as any[]
+    return results as unknown as Project[]
   })
 
 /**
@@ -188,19 +194,19 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
     }
 
     // Access Control Logic
-    if (result.visibility === 'public') return result as any
+    if (result.visibility === 'public') return result as unknown as Project
 
     // Check if user is the owner
     const session = await auth.api.getSession({ headers: request.headers })
     const isOwner = session && session.user.id === result.ownerId
-    if (isOwner) return result as any
+    if (isOwner) return result as unknown as Project
 
     // Check share key
     const isShared = result.visibility === 'link-shared' || result.visibility === 'collaborative'
     if (isShared) {
       const keysMatch = shareKey === result.shareKey
       if (shareKey && keysMatch) {
-        return result as any
+        return result as unknown as Project
       }
     }
 

@@ -6,10 +6,15 @@ import { LoadingPage } from '@/components/ui/LoadingPage'
 import { useProjectHydration } from '@/hooks/useProjectHydration'
 import { usePresentationAutostart } from '@/hooks/usePresentationAutostart'
 import { useProjectSync } from '@/hooks/useProjectSync'
-import { useMemo } from 'react'
+import type { Project } from '@motionslides/shared'
+
+interface LoaderData {
+  project: Project | null
+  accessDenied?: boolean
+}
 
 export function ProjectContainer() {
-  const loaderData = useLoaderData({ from: '/p/$projectId' }) as any
+  const loaderData = useLoaderData({ from: '/p/$projectId' }) as unknown as LoaderData
   const loaderProject = loaderData?.project
   const { projectId } = useParams({ from: '/p/$projectId' })
   
@@ -31,13 +36,13 @@ export function ProjectContainer() {
   // 5. Global keyboard shortcuts
   useEditorShortcuts()
 
-  // 6. Memoize blocker handlers to prevent EditorShell re-renders during drags
-  const blocker = useMemo(() => ({
+  // 6. Blocker handlers passed to EditorShell
+  const blocker = {
     proceed,
     reset,
     status,
     syncProjects
-  }), [proceed, reset, status, syncProjects])
+  }
 
   // ✅ Safe to early-return here — all hooks are already above this line
   if (isPending || (loaderProject && !project)) return <LoadingPage />

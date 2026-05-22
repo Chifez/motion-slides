@@ -28,7 +28,7 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
 
   activeProject: () => {
     const { projects, activeProjectId } = get()
-    return projects.find((p) => p.id === activeProjectId) ?? null
+    return projects.find((projectItem) => projectItem.id === activeProjectId) ?? null
   },
 
   createProject: (name) => {
@@ -36,8 +36,8 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
     const user = get().user
     const localAuthorId = get().localAuthorId
     const project = createDefaultProject(name, isFirst, user?.id, localAuthorId)
-    set((s) => ({
-      projects: [...s.projects, project],
+    set((state) => ({
+      projects: [...state.projects, project],
       activeProjectId: project.id,
       activeSlideIndex: 0,
       selectedElementIds: [],
@@ -46,14 +46,14 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   },
 
   addSlidesToProject: (projectId, newSlides) => {
-    set((s) => {
-      const project = s.projects.find(p => p.id === projectId)
-      if (!project) return s
+    set((state) => {
+      const project = state.projects.find(projectItem => projectItem.id === projectId)
+      if (!project) return state
       
       const startIndex = project.slides.length
       return {
-        projects: s.projects.map((p) =>
-          p.id === projectId ? { ...p, slides: [...p.slides, ...newSlides], updatedAt: Date.now() } : p,
+        projects: state.projects.map((projectItem) =>
+          projectItem.id === projectId ? { ...projectItem, slides: [...projectItem.slides, ...newSlides], updatedAt: Date.now() } : projectItem,
         ),
         activeSlideIndex: startIndex,
       }
@@ -61,33 +61,33 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   },
 
   deleteProject: (id) => {
-    set((s) => {
-      const project = s.projects.find(p => p.id === id)
+    set((state) => {
+      const project = state.projects.find(projectItem => projectItem.id === id)
       
       // If the project was synced/remote, we must explicitly delete it from the server
       // because our bulk-sync only handles upserts, not deletions.
       if (project?.synced) {
         deleteRemoteProjectAction({ data: { projectId: id } })
-          .catch(err => console.error('Failed to delete remote project:', err))
+          .catch(error => console.error('Failed to delete remote project:', error))
       }
 
       return {
-        projects: s.projects.filter((p) => p.id !== id),
-        activeProjectId: s.activeProjectId === id ? null : s.activeProjectId,
+        projects: state.projects.filter((projectItem) => projectItem.id !== id),
+        activeProjectId: state.activeProjectId === id ? null : state.activeProjectId,
       }
     })
   },
 
   removeLocalProject: (id) => {
-    set((s) => ({
-      projects: s.projects.filter((p) => p.id !== id),
-      activeProjectId: s.activeProjectId === id ? null : s.activeProjectId,
+    set((state) => ({
+      projects: state.projects.filter((projectItem) => projectItem.id !== id),
+      activeProjectId: state.activeProjectId === id ? null : state.activeProjectId,
     }))
   },
 
   importProject: (remoteProject) => {
-    set((s) => {
-      const local = s.projects.find((p) => p.id === remoteProject.id)
+    set((state) => {
+      const local = state.projects.find((projectItem) => projectItem.id === remoteProject.id)
       
       // Merge Strategy:
       // 1. Remote data is the source of truth for content (slides, transitions, etc.)
@@ -96,32 +96,33 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
       const reconciled: Project = {
         ...remoteProject,
         localAuthorId: local?.localAuthorId ?? remoteProject.localAuthorId,
+        parentUpdatedAt: local?.parentUpdatedAt ?? remoteProject.updatedAt,
         synced: true,
       }
 
       if (local) {
         return {
-          projects: s.projects.map((p) => (p.id === remoteProject.id ? reconciled : p)),
+          projects: state.projects.map((projectItem) => (projectItem.id === remoteProject.id ? reconciled : projectItem)),
         }
       }
-      return { projects: [...s.projects, reconciled] }
+      return { projects: [...state.projects, reconciled] }
     })
   },
 
   loadProject: (id) => {
-    set((s) => ({
+    set((state) => ({
       activeProjectId: id,
       activeSlideIndex: 0,
       selectedElementIds: [],
-      projects: s.projects.map((p) => {
-        if (p.id !== id) return p
+      projects: state.projects.map((projectItem) => {
+        if (projectItem.id !== id) return projectItem
         return {
-          ...p,
-          transitions: p.transitions ?? [],
-          prototypeLayout: p.prototypeLayout ?? {},
-          slides: p.slides.map((sl) => ({
-            ...sl,
-            name: sl.name ?? '',
+          ...projectItem,
+          transitions: projectItem.transitions ?? [],
+          prototypeLayout: projectItem.prototypeLayout ?? {},
+          slides: projectItem.slides.map((slideItem) => ({
+            ...slideItem,
+            name: slideItem.name ?? '',
           })),
         }
       }),
@@ -129,40 +130,40 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   },
 
   updateProjectName: (id, name) => {
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== id) return p
-        return { ...p, name, updatedAt: Math.max(Date.now(), (p.updatedAt || 0) + 1), synced: false }
+    set((state) => ({
+      projects: state.projects.map((projectItem) => {
+        if (projectItem.id !== id) return projectItem
+        return { ...projectItem, name, updatedAt: Math.max(Date.now(), (projectItem.updatedAt ?? 0) + 1), synced: false }
       }),
     }))
   },
   
   updateProjectVisibility: (id, visibility) => {
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== id) return p
-        return { ...p, visibility, updatedAt: Math.max(Date.now(), (p.updatedAt || 0) + 1), synced: false }
+    set((state) => ({
+      projects: state.projects.map((projectItem) => {
+        if (projectItem.id !== id) return projectItem
+        return { ...projectItem, visibility, updatedAt: Math.max(Date.now(), (projectItem.updatedAt ?? 0) + 1), synced: false }
       }),
     }))
   },
 
   updateProject: (id, updates) => {
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== id) return p
-        return { ...p, ...updates, updatedAt: Math.max(Date.now(), (p.updatedAt || 0) + 1), synced: false }
+    set((state) => ({
+      projects: state.projects.map((projectItem) => {
+        if (projectItem.id !== id) return projectItem
+        return { ...projectItem, ...updates, updatedAt: Math.max(Date.now(), (projectItem.updatedAt ?? 0) + 1), synced: false }
       }),
     }))
   },
 
   updateAllSlidesBackground: (projectId, background) => {
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== projectId) return p
+    set((state) => ({
+      projects: state.projects.map((projectItem) => {
+        if (projectItem.id !== projectId) return projectItem
         return {
-          ...p,
-          slides: p.slides.map(sl => ({ ...sl, background })),
-          updatedAt: Math.max(Date.now(), (p.updatedAt || 0) + 1),
+          ...projectItem,
+          slides: projectItem.slides.map(slideItem => ({ ...slideItem, background })),
+          updatedAt: Math.max(Date.now(), (projectItem.updatedAt ?? 0) + 1),
           synced: false
         }
       })

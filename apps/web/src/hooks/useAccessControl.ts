@@ -3,6 +3,7 @@ import { useEditorStore } from '@/store/editorStore'
 import { useShallow } from 'zustand/react/shallow'
 import { useSearch, useNavigate, useParams, useLoaderData } from '@tanstack/react-router'
 import { evaluateProjectAccess } from '@/lib/permissions'
+import type { Project } from '@motionslides/shared'
 
 export type AccessMode = 'edit' | 'view' | 'present'
 
@@ -14,6 +15,17 @@ export interface AccessControl {
   isAuthenticated: boolean
   isDenied: boolean
   isPending: boolean
+}
+
+interface ProjectSearchParams {
+  mode?: AccessMode
+  key?: string
+  autoplay?: string
+}
+
+interface LoaderData {
+  project: Project | null
+  accessDenied?: boolean
 }
 
 /**
@@ -28,25 +40,25 @@ export interface AccessControl {
  * It does NOT contain any business logic. All decisions are in permissions.ts.
  */
 export function useAccessControl(): AccessControl {
-  const search = useSearch({ from: '/p/$projectId' }) as any
+  const search = useSearch({ from: '/p/$projectId' }) as unknown as ProjectSearchParams
   const { projectId } = useParams({ from: '/p/$projectId' })
   const navigate = useNavigate({ from: '/p/$projectId' })
-  const loaderData = useLoaderData({ from: '/p/$projectId' }) as any
+  const loaderData = useLoaderData({ from: '/p/$projectId' }) as unknown as LoaderData
   const loaderProject = loaderData?.project
   const loaderAccessDenied = loaderData?.accessDenied
 
   const { userId, project, localAuthorId, sessionStatus } = useEditorStore(
-    useShallow((s) => ({
-      userId: s.user?.id ?? null,
-      project: s.projects.find((p) => p.id === projectId) ?? null,
-      localAuthorId: s.localAuthorId,
-      sessionStatus: s.sessionStatus,
+    useShallow((state) => ({
+      userId: state.user?.id ?? null,
+      project: state.projects.find((projectItem) => projectItem.id === projectId) ?? null,
+      localAuthorId: state.localAuthorId,
+      sessionStatus: state.sessionStatus,
     }))
   )
 
   const isPending = sessionStatus === 'loading'
-  const requestedMode = (search.mode as AccessMode) || 'edit'
-  const requestedKey = (search.key as string) ?? null
+  const requestedMode = search.mode ?? 'edit'
+  const requestedKey = search.key ?? null
   const autoplayParam = search.autoplay
   const autoplay = autoplayParam === 'true' ? true : autoplayParam === 'false' ? false : null
 
@@ -111,7 +123,7 @@ export function useAccessControl(): AccessControl {
 
   useEffect(() => {
     if (project && !access.isPending && access.mode !== search.mode) {
-      navigate({ search: (s: any) => ({ ...s, mode: access.mode }), replace: true })
+      navigate({ search: (prevSearch: Record<string, unknown>) => ({ ...prevSearch, mode: access.mode }), replace: true })
     }
   }, [project, access.mode, access.isPending, search.mode, navigate])
 
