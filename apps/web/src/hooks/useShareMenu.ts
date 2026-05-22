@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@motionslides/shared'
 import { updateProjectVisibilityAction, rotateShareKeyAction } from '@/lib/actions/project'
+import { getWindowOrigin } from '@/lib/safeStorage'
 
 export type ShareState = 
   | { status: 'unsynced' } 
@@ -16,7 +17,7 @@ export function useShareMenu(project: Project) {
   const updateProject = useEditorStore(state => state.updateProject)
   
   const [isMutating, setIsMutating] = useState(false)
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+  const baseUrl = getWindowOrigin()
 
   const shareState: ShareState = (isSyncing || isMutating)
     ? { status: 'syncing' }

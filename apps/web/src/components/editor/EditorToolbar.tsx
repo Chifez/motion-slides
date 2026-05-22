@@ -41,7 +41,6 @@ export function EditorToolbar({ projectId }: Props) {
   const isMobile = useIsMobile();
   const isOnline = useOnlineStatus()
 
-  // Fetch pending suggestions for owner
   useEffect(() => {
     let ignore = false
     const userId = user?.id ?? null

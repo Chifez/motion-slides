@@ -7,7 +7,8 @@ import { useElementDrag } from '@/hooks/useElementDrag'
 import { MotionWrapper } from './MotionWrapper'
 import { BoundingBox } from './BoundingBox'
 import { ElementRenderer } from './ElementRenderer'
-import type { SceneElement } from '@motionslides/shared'
+import { useElementDiffStatus } from '@/hooks/useElementDiffStatus'
+import { DiffBadge } from './DiffBadge'
 
 interface Props {
   elementId: string
@@ -50,38 +51,12 @@ export function CanvasElement({ elementId }: Props) {
     }
   }
 
-  const reviewingSuggestionId = useEditorStore(state => state.reviewingSuggestionId)
-  const reviewMode = useEditorStore(state => state.reviewMode)
-  const activeSlideIndex = useEditorStore(state => state.activeSlideIndex)
-  const originalProjectBackup = useEditorStore(state => state.originalProjectBackup)
+  const diffStatus = useElementDiffStatus(elementId, element)
 
   if (!element) return null
 
   const isSelected = selectedElementIds.includes(element.id)
   const isContinuing = continuingIds.has(elementId)
-
-  let diffStatus: 'added' | 'modified' | null = null
-  if (reviewingSuggestionId && reviewMode === 'suggested' && originalProjectBackup) {
-    const originalSlide = originalProjectBackup.slides[activeSlideIndex]
-    const originalElement = originalSlide?.elements.find((originalElementItem: SceneElement) => originalElementItem.id === elementId)
-    if (!originalElement) {
-      diffStatus = 'added'
-    } else {
-      const isChanged = 
-        element.position.x !== originalElement.position.x ||
-        element.position.y !== originalElement.position.y ||
-        element.size.width !== originalElement.size.width ||
-        element.size.height !== originalElement.size.height ||
-        element.rotation !== originalElement.rotation ||
-        JSON.stringify(element.content) !== JSON.stringify(originalElement.content) ||
-        element.opacity !== originalElement.opacity ||
-        element.zIndex !== originalElement.zIndex
-      
-      if (isChanged) {
-        diffStatus = 'modified'
-      }
-    }
-  }
 
   return (
     <>
@@ -95,22 +70,7 @@ export function CanvasElement({ elementId }: Props) {
         onClick={handleClick}
       >
         <ElementRenderer element={element} isSelected={isSelected} />
-
-        {diffStatus === 'added' && (
-          <div className="absolute inset-0 border-2 border-emerald-500 rounded-sm pointer-events-none z-[10] select-none">
-            <span className="absolute -top-5 left-0 bg-emerald-500 text-white text-[9px] font-semibold px-1 py-0.5 rounded shadow whitespace-nowrap">
-              Added
-            </span>
-          </div>
-        )}
-        
-        {diffStatus === 'modified' && (
-          <div className="absolute inset-0 border-2 border-dashed border-blue-500 rounded-sm pointer-events-none z-[10] select-none">
-            <span className="absolute -top-5 left-0 bg-blue-500 text-white text-[9px] font-semibold px-1 py-0.5 rounded shadow whitespace-nowrap">
-              Modified
-            </span>
-          </div>
-        )}
+        <DiffBadge status={diffStatus} />
       </MotionWrapper>
 
       {isSelected && selectedElementIds.length === 1 && !element.groupId && (

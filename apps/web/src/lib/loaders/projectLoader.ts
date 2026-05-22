@@ -45,7 +45,6 @@ export async function loadProjectForRoute(projectId: string, shareKey?: string) 
       const isAccessDenied = (error instanceof Error ? error.message : String(error)).includes('Access Denied')
       
       if (isAccessDenied && !isServer) {
-        // Clean up the local project cache if we are now denied access
         store.removeLocalProject(projectId)
       }
 

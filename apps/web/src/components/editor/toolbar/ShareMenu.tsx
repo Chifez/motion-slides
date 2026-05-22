@@ -74,7 +74,7 @@ export function ShareMenu({ project, isMobile }: Props) {
           </div>
 
           <div className="space-y-4">
-            {/* View Link */}
+
             <div className={`space-y-1.5 transition-opacity duration-300 ${isShared ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium text-(--ms-text-secondary) flex items-center gap-1">
@@ -105,7 +105,7 @@ export function ShareMenu({ project, isMobile }: Props) {
               </button>
             </div>
 
-            {/* Edit Link */}
+
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className={`text-[11px] font-medium text-(--ms-text-secondary) flex items-center gap-1 transition-opacity duration-300 ${isShared ? 'opacity-100' : 'opacity-40'}`}>

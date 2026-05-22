@@ -25,10 +25,6 @@ const projectSchema = z.object({
 })
 
 
-/**
- * Server Action to sync multiple projects from local storage to the database.
- * Implements atomic transactions and upsert logic.
- */
 export const syncProjectsAction = createServerFn({ method: 'POST' })
   .inputValidator(z.array(projectSchema))
   .handler(async ({ data: projectsToSync }) => {
@@ -42,10 +38,8 @@ export const syncProjectsAction = createServerFn({ method: 'POST' })
     const userId = session.user.id
 
     try {
-      // Use a transaction to ensure atomic updates
       await db.transaction(async (transaction) => {
         for (const project of projectsToSync) {
-          // Perform an "Upsert" (Update or Insert)
           await transaction.insert(projects)
             .values({
               id: project.id,
@@ -123,9 +117,6 @@ export const rotateShareKeyAction = createServerFn({ method: 'POST' })
     return { success: true, newKey }
   })
 
-/**
- * Server Action to update a project's visibility and optional share key.
- */
 export const updateProjectVisibilityAction = createServerFn({ method: 'POST' })
   .inputValidator(z.object({
     projectId: z.string(),
@@ -161,9 +152,6 @@ export const updateProjectVisibilityAction = createServerFn({ method: 'POST' })
     return { success: true, shareKey: newKey }
   })
 
-/**
- * Server Action to fetch all projects belonging to the current user.
- */
 export const listRemoteProjectsAction = createServerFn({ method: 'GET' })
   .handler(async () => {
     const request = getRequest()
@@ -176,10 +164,6 @@ export const listRemoteProjectsAction = createServerFn({ method: 'GET' })
     return results as unknown as Project[]
   })
 
-/**
- * Server Action to fetch a single project (used for shareable links).
- * Implements strict access control based on visibility.
- */
 export const getRemoteProjectAction = createServerFn({ method: 'GET' })
   .inputValidator(z.object({ projectId: z.string(), shareKey: z.string().optional() }))
   .handler(async ({ data: { projectId, shareKey } }) => {
@@ -193,15 +177,12 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
       return null
     }
 
-    // Access Control Logic
     if (result.visibility === 'public') return result as unknown as Project
 
-    // Check if user is the owner
     const session = await auth.api.getSession({ headers: request.headers })
     const isOwner = session && session.user.id === result.ownerId
     if (isOwner) return result as unknown as Project
 
-    // Check share key
     const isShared = result.visibility === 'link-shared' || result.visibility === 'collaborative'
     if (isShared) {
       const keysMatch = shareKey === result.shareKey
@@ -210,16 +191,12 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
       }
     }
 
-    // Access Denied
     if (!isShared) {
       throw new Error('Access Denied: This project is private.')
     }
     throw new Error('Access Denied: Invalid or expired share key.')
   })
 
-/**
- * Server Action to delete a project from the remote database.
- */
 export const deleteRemoteProjectAction = createServerFn({ method: 'POST' })
   .inputValidator(z.object({ projectId: z.string() }))
   .handler(async ({ data: { projectId } }) => {
@@ -227,7 +204,6 @@ export const deleteRemoteProjectAction = createServerFn({ method: 'POST' })
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) throw new Error('Unauthorized')
 
-    // Ensure only the owner can delete
     await db.delete(projects)
       .where(
         and(

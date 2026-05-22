@@ -18,25 +18,25 @@ export function ProjectContainer() {
   const loaderProject = loaderData?.project
   const { projectId } = useParams({ from: '/p/$projectId' })
   
-  // 1. Hydrate store from loader data (guest/incognito path)
+
   const project = useProjectHydration({ projectId, loaderProject })
 
-  // 2. Permission orchestration
+
   const { mode, autoplay, isDenied, isPending } = usePermissions()
 
-  // 3. Auto-start presentation if URL requests it
+
   usePresentationAutostart({ mode, autoplay: !!autoplay, isPending })
 
-  // 4. Navigation blocker for unsaved changes
+
   const { proceed, reset, status, syncProjects } = useProjectSync({
     isPending,
     isSynced: project?.synced ?? true
   })
 
-  // 5. Global keyboard shortcuts
+
   useEditorShortcuts()
 
-  // 6. Blocker handlers passed to EditorShell
+
   const blocker = {
     proceed,
     reset,

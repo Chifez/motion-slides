@@ -39,7 +39,7 @@ export const submitSuggestionAction = createServerFn({ method: 'POST' })
     const session = await auth.api.getSession({ headers: request.headers })
     const authorId = session?.user?.id ?? null
 
-    // Check project exists and is collaborative
+
     const project = await db.query.projects.findFirst({
       where: eq(projects.id, suggestionInput.projectId)
     })
@@ -119,7 +119,7 @@ export const resolveSuggestionAction = createServerFn({ method: 'POST' })
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) throw new Error('Unauthorized: Log in required')
 
-    // Find the suggestion
+
     const suggestion = await db.query.projectSuggestions.findFirst({
       where: eq(projectSuggestions.id, suggestionId)
     })
@@ -127,7 +127,7 @@ export const resolveSuggestionAction = createServerFn({ method: 'POST' })
     if (!suggestion) throw new Error('Suggestion not found')
     if (suggestion.status !== 'pending') throw new Error(`Suggestion is already resolved as ${suggestion.status}`)
 
-    // Check project ownership
+
     const project = await db.query.projects.findFirst({
       where: eq(projects.id, suggestion.projectId)
     })
@@ -137,12 +137,12 @@ export const resolveSuggestionAction = createServerFn({ method: 'POST' })
 
     const now = Date.now()
     await db.transaction(async (transaction) => {
-      // Update suggestion status
+
       await transaction.update(projectSuggestions)
         .set({ status, updatedAt: now })
         .where(eq(projectSuggestions.id, suggestionId))
 
-      // If status is merged, update project data
+
       if (status === 'merged') {
         await transaction.update(projects)
           .set({

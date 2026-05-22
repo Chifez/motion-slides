@@ -51,20 +51,20 @@ const optimizedStorage: PersistStorage<PersistedState> = {
   getItem: async (name: string): Promise<StorageValue<PersistedState> | null> => {
     const raw = await get(name)
     if (!raw) return null
-    // We store the data as a string in IDB for compatibility
+
     return JSON.parse(raw) as StorageValue<PersistedState>
   },
   setItem: async (name: string, value: StorageValue<PersistedState>): Promise<void> => {
-    // 1. Skip all work if we are actively dragging
+
     if (useEditorStore.getState()?.isDragging) return
 
-    // 2. Clear any pending save
+
     if (debounceTimer) clearTimeout(debounceTimer)
 
-    // 3. Debounce the serialization AND the write
+
     debounceTimer = setTimeout(async () => {
       try {
-        // Serialization happens here, outside the high-frequency loop
+
         const serialized = JSON.stringify(value)
         await set(name, serialized)
       } catch (error) {

@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand'
 import type { EditorState } from '@/store/editorStore'
 import type { Slide, SlideTransition } from '@motionslides/shared'
 import type { ProjectSuggestion } from '@/lib/actions/suggestions'
+import { getStorageItem, setStorageItem } from '@/lib/safeStorage'
 
 export interface UISlice {
   theme: 'dark' | 'light'
@@ -24,9 +25,9 @@ export interface UISlice {
 }
 
 const getInitialTheme = (): 'dark' | 'light' => {
-  if (typeof window === 'undefined') return 'dark'
-  const saved = localStorage.getItem('ms-theme') as 'dark' | 'light' | null
+  const saved = getStorageItem('ms-theme') as 'dark' | 'light' | null
   if (saved) return saved
+  if (typeof window === 'undefined') return 'dark'
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
@@ -41,8 +42,8 @@ export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set, g
 
   setTheme: (theme) => {
     set({ theme })
+    setStorageItem('ms-theme', theme)
     if (typeof window !== 'undefined') {
-      localStorage.setItem('ms-theme', theme)
       if (theme === 'dark') document.documentElement.classList.add('dark')
       else document.documentElement.classList.remove('dark')
     }
@@ -51,8 +52,8 @@ export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set, g
   toggleTheme: () => {
     set((state) => {
       const newTheme = state.theme === 'dark' ? 'light' : 'dark'
+      setStorageItem('ms-theme', newTheme)
       if (typeof window !== 'undefined') {
-        localStorage.setItem('ms-theme', newTheme)
         if (newTheme === 'dark') document.documentElement.classList.add('dark')
         else document.documentElement.classList.remove('dark')
       }
@@ -86,7 +87,6 @@ export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set, g
       }
     })
 
-    // Load suggestion content into the active project in the store
     get().updateProject(project.id, {
       slides: suggestion.slides,
       transitions: suggestion.transitions ?? [],

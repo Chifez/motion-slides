@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { useCanvasScale } from '@/hooks/useCanvasScale'
 import { useCanvasCamera } from '@/hooks/useCanvasCamera'
 import { useAccessControl } from '@/hooks/useAccessControl'
-import { getCanvasDimensions, type SceneElement } from '@motionslides/shared'
+import { getCanvasDimensions } from '@motionslides/shared'
+import { useSectionLasso } from '@/hooks/useSectionLasso'
 
 import { MotionStage } from './MotionStage'
 import { GroupBoundingBox } from './GroupBoundingBox'
@@ -38,75 +39,14 @@ export function CanvasStage() {
   const setSelectedElement = useEditorStore(state => state.setSelectedElement)
   const setMobileInspectorOpen = useEditorStore(state => state.setMobileInspectorOpen)
   const setEditingId = useEditorStore(state => state.setEditingId)
-  const addElement = useEditorStore(state => state.addElement)
-  const setActiveTool = useEditorStore(state => state.setActiveTool)
 
-  // ─── Lasso Draw Logic ───────────────────────────────────────────────────────
-  const [lasso, setLasso] = useState<{ x1: number, y1: number, x2: number, y2: number } | null>(null)
-
-  const handlePointerDown = (event: React.PointerEvent) => {
-    if (isReadOnly || activeTool !== 'section') return
-    if (event.button !== 0) return // Only left click
-
-    const rect = stageRef.current?.getBoundingClientRect()
-    if (!rect) return
-
-    // Convert screen -> canvas coordinates
-    const x = (event.clientX - rect.left - (rect.width / 2) - camera.x) / (scale * camera.zoom) + (canvasW / 2)
-    const y = (event.clientY - rect.top - (rect.height / 2) - camera.y) / (scale * camera.zoom) + (canvasH / 2)
-
-    setLasso({ x1: x, y1: y, x2: x, y2: y })
-    event.currentTarget.setPointerCapture(event.pointerId)
-  }
-
-  const handlePointerMove = (event: React.PointerEvent) => {
-    if (!lasso) return
-    const rect = stageRef.current?.getBoundingClientRect()
-    if (!rect) return
-
-    const x = (event.clientX - rect.left - (rect.width / 2) - camera.x) / (scale * camera.zoom) + (canvasW / 2)
-    const y = (event.clientY - rect.top - (rect.height / 2) - camera.y) / (scale * camera.zoom) + (canvasH / 2)
-
-    setLasso(prev => prev ? { ...prev, x2: x, y2: y } : null)
-  }
-
-  const handlePointerUp = (event: React.PointerEvent) => {
-    if (!lasso) return
-    setLasso(null)
-    event.currentTarget.releasePointerCapture(event.pointerId)
-
-    const x = Math.min(lasso.x1, lasso.x2)
-    const y = Math.min(lasso.y1, lasso.y2)
-    const width = Math.abs(lasso.x2 - lasso.x1)
-    const height = Math.abs(lasso.y2 - lasso.y1)
-
-    // Only create if it's larger than a simple click
-    if (width > 10 && height > 10) {
-      const newSection: SceneElement = {
-        id: `section-${Math.random().toString(36).substr(2, 9)}`,
-        type: 'section',
-        position: { x, y },
-        size: { width, height },
-        rotation: 0,
-        opacity: 1,
-        zIndex: 1,
-        animation: 'fade-in',
-        animationDelay: 0,
-        content: {
-          label: 'Section',
-          backgroundColor: 'rgba(59, 130, 246, 0.05)',
-          borderColor: 'rgba(59, 130, 246, 0.3)',
-          borderStyle: 'dashed',
-          borderWidth: 2,
-          cornerRadius: 12,
-        }
-      }
-      addElement(newSection)
-      setSelectedElement(newSection.id)
-      setEditingId(newSection.id)
-      setActiveTool('select')
-    }
-  }
+  const { lasso, pointerHandlers } = useSectionLasso({
+    stageRef,
+    scale,
+    canvasW,
+    canvasH,
+    isReadOnly,
+  })
 
   const handleStageClick = () => {
     if (activeTool !== 'select') return
@@ -123,9 +63,7 @@ export function CanvasStage() {
       className={`flex-1 bg-(--ms-bg-base) flex items-center justify-center overflow-hidden relative p-2 md:p-0 transition-colors ${activeTool === 'section' ? 'cursor-crosshair' : ''
         }`}
       onClick={handleStageClick}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
+      {...pointerHandlers}
     >
 
       <div
@@ -154,7 +92,6 @@ export function CanvasStage() {
         <ConnectionAnchors />
         {isGroupSelection && <GroupBoundingBox elements={selectedElements} />}
 
-        {/* Lasso Preview */}
         {lasso && (
           <div
             className="absolute border-2 border-blue-500 bg-blue-500/10 pointer-events-none z-1000"

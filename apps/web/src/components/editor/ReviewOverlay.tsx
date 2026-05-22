@@ -1,91 +1,25 @@
-import { useState } from 'react'
-import { useEditorStore } from '@/store/editorStore'
-import { resolveSuggestionAction, listSuggestionsAction } from '@/lib/actions/suggestions'
-import type { ProjectSuggestion } from '@/lib/actions/suggestions'
+import { useReviewResolver } from '@/hooks/useReviewResolver'
 import { Check, X, AlertTriangle, RotateCcw } from 'lucide-react'
 
 export function ReviewOverlay() {
-  const activeProjectId = useEditorStore(state => state.activeProjectId)
-  const project = useEditorStore(state => state.projects.find(projectItem => projectItem.id === activeProjectId))
-  const suggestions = useEditorStore(state => state.suggestions)
-  const reviewingSuggestionId = useEditorStore(state => state.reviewingSuggestionId)
-  const reviewMode = useEditorStore(state => state.reviewMode)
-  
-  const toggleReviewMode = useEditorStore(state => state.toggleReviewMode)
-  const cancelReview = useEditorStore(state => state.cancelReview)
-  const finishReview = useEditorStore(state => state.finishReview)
-  const updateProject = useEditorStore(state => state.updateProject)
-  const setSuggestions = useEditorStore(state => state.setSuggestions)
+  const {
+    project,
+    suggestion,
+    reviewMode,
+    isPending,
+    error,
+    isStale,
+    toggleReviewMode,
+    cancelReview,
+    handleResolve,
+  } = useReviewResolver()
 
-  const [isPending, setIsPending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  if (!reviewingSuggestionId || !project) return null
-
-  const suggestion = suggestions.find(suggestionItem => suggestionItem.id === reviewingSuggestionId)
-  if (!suggestion) return null
-
-  const isStale = project.updatedAt > suggestion.parentUpdatedAt
-
-  const handleResolve = async (status: 'merged' | 'rejected') => {
-    setIsPending(true)
-    setError(null)
-    try {
-      if (status === 'merged') {
-        const response = await resolveSuggestionAction({
-          data: {
-            suggestionId: reviewingSuggestionId,
-            status: 'merged',
-            slides: project.slides,
-            transitions: project.transitions ?? [],
-            prototypeLayout: project.prototypeLayout ?? {},
-          }
-        })
-        if (response.success) {
-          // Update the project locally to match the server-generated updatedAt and mark synced
-          updateProject(project.id, {
-            slides: project.slides,
-            transitions: project.transitions ?? [],
-            prototypeLayout: project.prototypeLayout ?? {},
-            updatedAt: response.updatedAt,
-            synced: true,
-          })
-          finishReview()
-          
-          // Refetch suggestions list
-          const suggestionsList = await listSuggestionsAction({ data: { projectId: project.id } })
-          setSuggestions(suggestionsList as ProjectSuggestion[])
-        }
-      } else {
-        const response = await resolveSuggestionAction({
-          data: {
-            suggestionId: reviewingSuggestionId,
-            status: 'rejected',
-          }
-        })
-        if (response.success) {
-          cancelReview()
-          
-          // Refetch suggestions list
-          const suggestionsList = await listSuggestionsAction({ data: { projectId: project.id } })
-          setSuggestions(suggestionsList as ProjectSuggestion[])
-        }
-      }
-    } catch (error) {
-      console.error(error)
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      setError(errorMessage ?? `Failed to ${status} suggestion`)
-    } finally {
-      setIsPending(false)
-    }
-  }
+  if (!project || !suggestion) return null
 
   return (
     <>
-      {/* Top Review Control Bar */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[60] w-full max-w-2xl px-4 pointer-events-none">
         <div className="w-full bg-(--ms-bg-surface)/95 backdrop-blur-md border border-(--ms-border) shadow-xl rounded-full p-1.5 flex items-center justify-between pointer-events-auto">
-          {/* Left: Author Info */}
           <div className="flex items-center gap-3 pl-3.5 min-w-0">
             <div className="flex flex-col min-w-0">
               <span className="text-[10px] text-(--ms-text-muted) leading-none mb-0.5 uppercase tracking-wider font-semibold">Reviewing Suggestion</span>
@@ -104,7 +38,6 @@ export function ReviewOverlay() {
             )}
           </div>
 
-          {/* Right: View Toggles */}
           <div className="flex items-center gap-1 bg-(--ms-bg-base) border border-(--ms-border) rounded-full p-0.5">
             <button
               onClick={() => toggleReviewMode('original')}
@@ -130,7 +63,6 @@ export function ReviewOverlay() {
         </div>
       </div>
 
-      {/* Bottom Action Bar */}
       <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-[60] w-full max-w-2xl px-4 pointer-events-none">
         <div className="w-full bg-(--ms-bg-surface)/95 backdrop-blur-md border border-(--ms-border) shadow-xl rounded-2xl p-4 flex flex-col gap-3 pointer-events-auto">
           {error && (
