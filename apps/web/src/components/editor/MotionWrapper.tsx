@@ -29,27 +29,27 @@ const getTransitionStates = (
   switch (animationType) {
     case 'slide-left':
       return {
-        initial: { opacity: 0, x: 600, y: 0, scale: 1 },
+        initial: { opacity: 0, x: 40, y: 0, scale: 1 },
         animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
-        exit: { opacity: 0, x: -600, y: 0, scale: 1 },
+        exit: { opacity: 0, x: -40, y: 0, scale: 1 },
       }
     case 'slide-right':
       return {
-        initial: { opacity: 0, x: -600, y: 0, scale: 1 },
+        initial: { opacity: 0, x: -40, y: 0, scale: 1 },
         animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
-        exit: { opacity: 0, x: 600, y: 0, scale: 1 },
+        exit: { opacity: 0, x: 40, y: 0, scale: 1 },
       }
     case 'slide-up':
       return {
-        initial: { opacity: 0, x: 0, y: 400, scale: 1 },
+        initial: { opacity: 0, x: 0, y: 30, scale: 1 },
         animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
-        exit: { opacity: 0, x: 0, y: -400, scale: 1 },
+        exit: { opacity: 0, x: 0, y: -30, scale: 1 },
       }
     case 'slide-down':
       return {
-        initial: { opacity: 0, x: 0, y: -400, scale: 1 },
+        initial: { opacity: 0, x: 0, y: -30, scale: 1 },
         animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
-        exit: { opacity: 0, x: 0, y: 400, scale: 1 },
+        exit: { opacity: 0, x: 0, y: 30, scale: 1 },
       }
     case 'zoom':
       return {
