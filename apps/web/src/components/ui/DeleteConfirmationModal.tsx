@@ -1,15 +1,27 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, X } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
   onConfirm: () => void
   projectName: string
+  title?: string
+  description?: ReactNode
+  confirmText?: string
 }
 
 
-export function DeleteConfirmationModal({ isOpen, onClose, onConfirm, projectName }: Props) {
+export function DeleteConfirmationModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  projectName,
+  title = 'Delete Project',
+  description,
+  confirmText = 'Delete Permanently'
+}: Props) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -34,10 +46,14 @@ export function DeleteConfirmationModal({ isOpen, onClose, onConfirm, projectNam
                   <AlertTriangle size={24} />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-(--ms-text-primary)">Delete Project</h3>
+                  <h3 className="text-lg font-semibold text-(--ms-text-primary)">{title}</h3>
                   <p className="text-sm text-(--ms-text-muted) mt-1 leading-relaxed">
-                    Are you sure you want to delete <span className="text-(--ms-text-primary) font-medium">"{projectName}"</span>?
-                    This action cannot be undone and will permanently remove all slides and prototype data.
+                    {description ?? (
+                      <>
+                        Are you sure you want to delete <span className="text-(--ms-text-primary) font-medium">"{projectName}"</span>?
+                        This action cannot be undone and will permanently remove all slides and prototype data.
+                      </>
+                    )}
                   </p>
                 </div>
                 <button
@@ -62,7 +78,7 @@ export function DeleteConfirmationModal({ isOpen, onClose, onConfirm, projectNam
                   }}
                   className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition-all border-none cursor-pointer shadow-lg shadow-red-600/10 active:scale-95"
                 >
-                  Delete Permanently
+                  {confirmText}
                 </button>
               </div>
             </div>

@@ -12,28 +12,28 @@ export async function loadProjectForRoute(projectId: string, shareKey?: string) 
   const isOwner = localProject && store.user && localProject.ownerId === store.user.id
   const isLocalAuthor = localProject && store.localAuthorId && localProject.localAuthorId === store.localAuthorId
 
-  // Only bypass the remote fetch if:
-  // 1. The project exists locally.
-  // 2. The user is the cloud owner or local creator.
-  // 3. No share key is provided (meaning they aren't testing/accessing via a shareable link).
-  const canLoadLocallyWithoutFetch = localProject && (isOwner || isLocalAuthor) && !shareKey
+  const activeShareKey = shareKey ?? (localProject && localProject.shareKey ? localProject.shareKey : undefined)
 
-  if (canLoadLocallyWithoutFetch) {
+  // Avoid redundant network requests when the current client is the verified owner or local author of the project copy.
+  const canLoadLocallyWithoutFetch = localProject && (isOwner || isLocalAuthor) && !activeShareKey
+  const isOffline = !isServer && !window.navigator.onLine
+
+  if (canLoadLocallyWithoutFetch || (isOffline && localProject)) {
     store.loadProject(projectId)
-    if (store.user) store.syncProjects()
+    if (store.user && !isOffline) store.syncProjects()
     return { project: null }
   }
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const remoteProject = await getRemoteProjectAction({
-        data: { projectId, shareKey }
+        data: { projectId, shareKey: activeShareKey }
       })
       
       if (remoteProject) {
         const projectWithKey: Project = {
           ...remoteProject,
-          shareKey: shareKey ?? remoteProject.shareKey
+          shareKey: activeShareKey ?? remoteProject.shareKey
         }
 
         store.importProject(projectWithKey)
@@ -41,7 +41,6 @@ export async function loadProjectForRoute(projectId: string, shareKey?: string) 
         return { project: projectWithKey }
       }
     } catch (error: unknown) {
-      // If it's an explicit access denial, don't bother retrying
       const isAccessDenied = (error instanceof Error ? error.message : String(error)).includes('Access Denied')
       
       if (isAccessDenied && !isServer) {
@@ -49,12 +48,17 @@ export async function loadProjectForRoute(projectId: string, shareKey?: string) 
       }
 
       if (isServer || isAccessDenied) {
-        // On the server, we never throw. We return null and let the client hydrate.
-        // On client access denial, we return accessDenied flag to trigger error UI immediately.
         return { project: null, accessDenied: isAccessDenied }
       }
 
-      if (attempt === MAX_ATTEMPTS) throw error 
+      if (attempt === MAX_ATTEMPTS) {
+        // Prevent connection dropouts from locking users out of their active local work session.
+        if (localProject) {
+          store.loadProject(projectId)
+          return { project: null }
+        }
+        throw error 
+      }
     }
 
     if (attempt < MAX_ATTEMPTS) {
@@ -65,3 +69,4 @@ export async function loadProjectForRoute(projectId: string, shareKey?: string) 
   store.loadProject(projectId) 
   return { project: null }
 }
+

@@ -112,9 +112,7 @@ export function CanvasStage() {
           </span>
 
           <SlideBackgroundPicker />
-          {!reviewingSuggestionId && (
-            <SyncStatusButton isAuthenticated={isAuthenticated} isReadOnly={isReadOnly} />
-          )}
+          <SyncStatusButton isAuthenticated={isAuthenticated} isReadOnly={isReadOnly} />
         </div>
       )}
 

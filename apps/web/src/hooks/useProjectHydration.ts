@@ -17,11 +17,11 @@ export function useProjectHydration({ projectId, loaderProject }: Options) {
   const loadProject = useEditorStore(state => state.loadProject)
 
   useEffect(() => {
-    if (loaderProject && !project) {
+    if (loaderProject) {
       importProject(loaderProject)
-      loadProject(loaderProject.id)
     }
-  }, [loaderProject, project, importProject, loadProject])
+    loadProject(projectId)
+  }, [projectId, loaderProject, importProject, loadProject])
 
   return project
 }

@@ -4,6 +4,12 @@ import type { Slide, SlideTransition } from '@motionslides/shared'
 import type { ProjectSuggestion } from '@/lib/actions/suggestions'
 import { getStorageItem, setStorageItem } from '@/lib/safeStorage'
 
+export interface ToastInfo {
+  id: string
+  message: string
+  type: 'success' | 'error' | 'info'
+}
+
 export interface UISlice {
   theme: 'dark' | 'light'
   isEditingId: string | null
@@ -12,6 +18,7 @@ export interface UISlice {
   suggestions: ProjectSuggestion[]
   originalProjectBackup: { slides: Slide[], transitions: SlideTransition[], prototypeLayout: Record<string, { x: number; y: number }> } | null
   suggestedProjectBackup: { slides: Slide[], transitions: SlideTransition[], prototypeLayout: Record<string, { x: number; y: number }> } | null
+  toasts: ToastInfo[]
   setTheme: (theme: 'dark' | 'light') => void
   toggleTheme: () => void
   setEditingId: (id: string | null) => void
@@ -22,6 +29,8 @@ export interface UISlice {
   toggleReviewMode: (mode: 'original' | 'suggested') => void
   cancelReview: () => void
   finishReview: () => void
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void
+  dismissToast: (id: string) => void
 }
 
 const getInitialTheme = (): 'dark' | 'light' => {
@@ -32,6 +41,18 @@ const getInitialTheme = (): 'dark' | 'light' => {
 }
 
 export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set, get) => ({
+  toasts: [],
+  showToast: (message, type = 'info') => {
+    const id = Math.random().toString(36).substring(2, 9)
+    set((state) => ({
+      toasts: [...state.toasts, { id, message, type }]
+    }))
+  },
+  dismissToast: (id) => {
+    set((state) => ({
+      toasts: state.toasts.filter((toast) => toast.id !== id)
+    }))
+  },
   theme: getInitialTheme(),
   isEditingId: null,
   reviewingSuggestionId: null,

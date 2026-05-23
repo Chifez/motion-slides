@@ -37,7 +37,7 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
       projects: s.projects.map((p) =>
         p.id !== activeProjectId
           ? p
-          : { ...p, slides: [...p.slides, newSlide], updatedAt: Date.now() },
+          : { ...p, slides: [...p.slides, newSlide], updatedAt: Date.now(), synced: false },
       ),
       activeSlideIndex: get().activeProject()!.slides.length,
     }))
@@ -65,7 +65,7 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
 
       return {
         projects: s.projects.map(p =>
-          p.id !== activeProjectId ? p : { ...p, slides, updatedAt: Date.now() }
+          p.id !== activeProjectId ? p : { ...p, slides, updatedAt: Date.now(), synced: false }
         ),
         activeSlideIndex: newActiveIndex,
       }
@@ -80,7 +80,7 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
       const newSlides = project.slides.filter((_, i) => i !== index)
       return {
         projects: s.projects.map((p) =>
-          p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now() },
+          p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now(), synced: false },
         ),
         activeSlideIndex: Math.min(s.activeSlideIndex, newSlides.length - 1),
       }
@@ -111,7 +111,7 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
 
     set((s) => ({
       projects: s.projects.map((p) =>
-        p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now() },
+        p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now(), synced: false },
       ),
       activeSlideIndex: index + 1,
     }))
@@ -136,7 +136,7 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
           if (i !== activeSlideIndex) return sl
           return { ...sl, ...updates }
         })
-        return { ...p, slides, updatedAt: Date.now() }
+        return { ...p, slides, updatedAt: Date.now(), synced: false }
       }),
     }))
   },

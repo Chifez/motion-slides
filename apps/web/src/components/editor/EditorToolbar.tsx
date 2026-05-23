@@ -10,7 +10,6 @@ import { Logo } from '@/components/ui/Logo'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { ShareMenu } from './toolbar/ShareMenu'
-import { SuggestionsDropdown } from './toolbar/SuggestionsDropdown'
 import { listSuggestionsAction } from '@/lib/actions/suggestions'
 import type { ProjectSuggestion } from '@/lib/actions/suggestions'
 import { useAccessControl } from '@/hooks/useAccessControl'
@@ -213,7 +212,6 @@ export function EditorToolbar({ projectId }: Props) {
 
             <ThemeToggle className="hidden md:flex" />
 
-            <SuggestionsDropdown />
             <SettingsDropdown />
             <ExportDropdown />
             {isAuthenticated && <ShareMenu project={project} />}

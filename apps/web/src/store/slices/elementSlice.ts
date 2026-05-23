@@ -213,7 +213,7 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
             ? sl
             : { ...sl, elements: [...sl.elements, element] }
         )
-        return { ...p, slides, updatedAt: Date.now() }
+        return { ...p, slides, updatedAt: Date.now(), synced: false }
       }),
     }))
   },
@@ -233,7 +233,7 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
             ),
           }
         })
-        return { ...p, slides, updatedAt: Date.now() }
+        return { ...p, slides, updatedAt: Date.now(), synced: false }
       }),
     }))
     
@@ -259,7 +259,7 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
             ),
           }
         })
-        return { ...p, slides, updatedAt: Date.now() }
+        return { ...p, slides, updatedAt: Date.now(), synced: false }
       }),
     }))
     get().recalculateLines()
@@ -313,7 +313,7 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
           const cleaned = cleanupConnectionsForDeletedElement(withoutDeleted, id)
           return { ...sl, elements: cleaned }
         })
-        return { ...p, slides, updatedAt: Date.now() }
+        return { ...p, slides, updatedAt: Date.now(), synced: false }
       }),
       selectedElementIds: s.selectedElementIds.filter((x) => x !== id),
     }))
@@ -335,7 +335,7 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
             ),
           }
         })
-        return { ...p, slides, updatedAt: Date.now() }
+        return { ...p, slides, updatedAt: Date.now(), synced: false }
       }),
     }))
   },
@@ -389,7 +389,7 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
             ),
           }
         })
-        return { ...p, slides, updatedAt: Date.now() }
+        return { ...p, slides, updatedAt: Date.now(), synced: false }
       }),
       selectedElementIds: ids,
     }))
@@ -412,7 +412,7 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
             }),
           }
         })
-        return { ...p, slides, updatedAt: Date.now() }
+        return { ...p, slides, updatedAt: Date.now(), synced: false }
       }),
     }))
   },
@@ -478,7 +478,8 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
               ? sl
               : { ...sl, elements: [newSection, ...sl.elements] } // Section inserted at the bottom (index 0)
           ),
-          updatedAt: Date.now()
+          updatedAt: Date.now(),
+          synced: false
         }
       }),
       activeTool: 'select' // Reset tool after use

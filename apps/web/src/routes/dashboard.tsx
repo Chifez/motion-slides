@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { Plus, Layout, Clock, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore, storeHydrationPromise } from '@/store/editorStore'
 import { Logo } from '@/components/ui/Logo'
 import { LoadingPage } from '@/components/ui/LoadingPage'
@@ -28,11 +29,20 @@ function formatDate(ts: number) {
 
 function Dashboard() {
   const navigate = useNavigate()
-  const { projects, createProject, deleteProject } = useEditorStore()
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, projectId: string, projectName: string }>({
+  const { projects, createProject, deleteProject, removeLocalProject, user } = useEditorStore(
+    useShallow((state) => ({
+      projects: state.projects,
+      createProject: state.createProject,
+      deleteProject: state.deleteProject,
+      removeLocalProject: state.removeLocalProject,
+      user: state.user,
+    }))
+  )
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, projectId: string, projectName: string, isGuest: boolean }>({
     isOpen: false,
     projectId: '',
     projectName: '',
+    isGuest: false,
   })
 
   function handleCreate() {
@@ -40,17 +50,34 @@ function Dashboard() {
     navigate({ to: '/p/$projectId', params: { projectId: project.id } })
   }
 
-  function confirmDelete(id: string, name: string) {
-    setDeleteModal({ isOpen: true, projectId: id, projectName: name })
+  function confirmDelete(id: string, name: string, isGuest: boolean) {
+    setDeleteModal({ isOpen: true, projectId: id, projectName: name, isGuest })
   }
+
+  const modalTitle = deleteModal.isGuest ? 'Remove Shared Project' : 'Delete Project'
+  const modalConfirmText = deleteModal.isGuest ? 'Remove Copy' : 'Delete Permanently'
+  const modalDescription = deleteModal.isGuest ? (
+    <>
+      Are you sure you want to remove <span className="text-(--ms-text-primary) font-medium">"{deleteModal.projectName}"</span> from your dashboard? This is a guest project and removing it will not affect the owner's cloud project.
+    </>
+  ) : undefined
 
   return (
     <div className="h-screen flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors">
       <DeleteConfirmationModal
         isOpen={deleteModal.isOpen}
         projectName={deleteModal.projectName}
+        title={modalTitle}
+        confirmText={modalConfirmText}
+        description={modalDescription}
         onClose={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}
-        onConfirm={() => deleteProject(deleteModal.projectId)}
+        onConfirm={() => {
+          if (deleteModal.isGuest) {
+            removeLocalProject(deleteModal.projectId)
+          } else {
+            deleteProject(deleteModal.projectId)
+          }
+        }}
       />
 
       <header className="h-14 shrink-0 flex items-center gap-4 px-6 bg-(--ms-bg-surface) border-b border-(--ms-border)">
@@ -89,37 +116,47 @@ function Dashboard() {
             <span>New Project</span>
           </motion.button>
 
-          {projects.map((project, i) => (
-            <motion.div
-              key={project.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              onClick={() => navigate({ to: '/p/$projectId', params: { projectId: project.id } })}
-              className="group bg-(--ms-bg-surface) border border-(--ms-border) hover:border-(--ms-border-strong) rounded-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5"
-            >
-              <div className="aspect-video bg-(--ms-bg-base) border-b border-(--ms-border) flex items-center justify-center text-(--ms-text-muted) relative">
-                <Layout size={24} className="opacity-40 group-hover:scale-110 group-hover:opacity-100 transition-all duration-500" />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    confirmDelete(project.id, project.name)
-                  }}
-                  className="absolute top-2 right-2 p-1.5 rounded-md bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-red-500 border border-(--ms-border) opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                  title="Delete Project"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-              <div className="px-3.5 py-3">
-                <div className="text-[13px] font-semibold text-(--ms-text-primary) truncate group-hover:text-blue-400 transition-colors">{project.name}</div>
-                <div className="text-[11px] text-(--ms-text-muted) flex items-center gap-1 mt-0.5">
-                  <Clock size={10} />
-                  {project.slides.length} slide{project.slides.length !== 1 ? 's' : ''} · {formatDate(project.updatedAt)}
+          {projects.map((project, i) => {
+            const isGuest = !!project.ownerId && project.ownerId !== user?.id
+            return (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                onClick={() => navigate({ to: '/p/$projectId', params: { projectId: project.id } })}
+                className="group bg-(--ms-bg-surface) border border-(--ms-border) hover:border-(--ms-border-strong) rounded-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5"
+              >
+                <div className="aspect-video bg-(--ms-bg-base) border-b border-(--ms-border) flex items-center justify-center text-(--ms-text-muted) relative">
+                  <Layout size={24} className="opacity-40 group-hover:scale-110 group-hover:opacity-100 transition-all duration-500" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      confirmDelete(project.id, project.name, isGuest)
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded-md bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-red-500 border border-(--ms-border) opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                    title={isGuest ? "Remove from Dashboard" : "Delete Project"}
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+                <div className="px-3.5 py-3">
+                  <div className="flex items-center justify-between gap-2 overflow-hidden">
+                    <div className="text-[13px] font-semibold text-(--ms-text-primary) truncate group-hover:text-blue-400 transition-colors flex-1">{project.name}</div>
+                    {isGuest && (
+                      <span className="shrink-0 text-[9px] font-medium px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 select-none">
+                        Collaborator
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-(--ms-text-muted) flex items-center gap-1 mt-0.5">
+                    <Clock size={10} />
+                    {project.slides.length} slide{project.slides.length !== 1 ? 's' : ''} · {formatDate(project.updatedAt)}
+                  </div>
+                </div>
+              </motion.div>
+            )
+          })}
         </div>
 
         {projects.length === 0 && (

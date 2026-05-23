@@ -58,7 +58,8 @@ export function useAccessControl(): AccessControl {
 
   const isPending = sessionStatus === 'loading'
   const requestedMode = search.mode ?? 'edit'
-  const requestedKey = search.key ?? null
+  const cachedKey = project && project.ownerId !== userId ? project.shareKey : null
+  const requestedKey = search.key ?? cachedKey
   const autoplayParam = search.autoplay
   const autoplay = autoplayParam === 'true' ? true : autoplayParam === 'false' ? false : null
 
@@ -85,9 +86,6 @@ export function useAccessControl(): AccessControl {
       isPending: true,
     }
   } else if (!project) {
-    // If we don't have the project in the store, we are only pending
-    // if there's a loaderProject that is currently being hydrated.
-    // If loaderProject is null (and loaderAccessDenied is false), it's still a 404.
     const isHydrating = !!loaderProject
     access = {
       mode: requestedMode,
@@ -106,7 +104,6 @@ export function useAccessControl(): AccessControl {
       requestedKey,
     })
 
-    // Graceful mode downgrade: never error when view is possible
     const effectiveMode: AccessMode =
       requestedMode === 'edit' && !canEdit ? 'view' : requestedMode
 
@@ -122,10 +119,27 @@ export function useAccessControl(): AccessControl {
   }
 
   useEffect(() => {
-    if (project && !access.isPending && access.mode !== search.mode) {
-      navigate({ search: (prevSearch: Record<string, unknown>) => ({ ...prevSearch, mode: access.mode }), replace: true })
+    if (project && !access.isPending) {
+      const needsKeyRewrite = !search.key && project.ownerId !== userId && project.shareKey
+      const needsModeRewrite = access.mode !== search.mode
+
+      if (needsModeRewrite || needsKeyRewrite) {
+        navigate({
+          search: (prevSearch: Record<string, unknown>) => {
+            const nextSearch = { ...prevSearch }
+            if (needsModeRewrite) {
+              nextSearch.mode = access.mode
+            }
+            if (needsKeyRewrite) {
+              nextSearch.key = project.shareKey
+            }
+            return nextSearch
+          },
+          replace: true,
+        })
+      }
     }
-  }, [project, access.mode, access.isPending, search.mode, navigate])
+  }, [project, access.mode, access.isPending, search.mode, search.key, userId, navigate])
 
   return access
 }

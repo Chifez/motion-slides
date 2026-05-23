@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { submitSuggestionAction } from '@/lib/actions/suggestions'
 import { getStorageItem, setStorageItem } from '@/lib/safeStorage'
+import { toast } from '@/lib/toast'
 import type { Project } from '@motionslides/shared'
 
 export function useSuggestionSubmit(project: Project) {
@@ -35,7 +36,7 @@ export function useSuggestionSubmit(project: Project) {
       if (result.success) {
         updateProject(project.id, { synced: true })
         setIsEnteringName(false)
-        alert('Suggestion submitted successfully! The owner will be notified to review and merge your changes.')
+        toast.success('Suggestion submitted successfully! The owner will be notified to review and merge your changes.')
       } else {
         throw new Error('Submission returned unsuccessful status')
       }

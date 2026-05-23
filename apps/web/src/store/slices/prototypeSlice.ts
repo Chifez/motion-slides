@@ -31,7 +31,7 @@ export const createPrototypeSlice: StateCreator<EditorState, [], [], PrototypeSl
       projects: s.projects.map((p) =>
         p.id !== activeProjectId
           ? p
-          : { ...p, transitions: [...p.transitions, transition], updatedAt: Date.now() },
+          : { ...p, transitions: [...p.transitions, transition], updatedAt: Date.now(), synced: false },
       ),
     }))
   },
@@ -47,6 +47,7 @@ export const createPrototypeSlice: StateCreator<EditorState, [], [], PrototypeSl
               ...p,
               transitions: p.transitions.map((t) => (t.id === id ? { ...t, ...updates } : t)),
               updatedAt: Date.now(),
+              synced: false,
             },
       ),
     }))
@@ -59,7 +60,7 @@ export const createPrototypeSlice: StateCreator<EditorState, [], [], PrototypeSl
       projects: s.projects.map((p) =>
         p.id !== activeProjectId
           ? p
-          : { ...p, transitions: p.transitions.filter((t) => t.id !== id), updatedAt: Date.now() },
+          : { ...p, transitions: p.transitions.filter((t) => t.id !== id), updatedAt: Date.now(), synced: false },
       ),
       selectedTransitionId: s.selectedTransitionId === id ? null : s.selectedTransitionId,
     }))
@@ -80,6 +81,7 @@ export const createPrototypeSlice: StateCreator<EditorState, [], [], PrototypeSl
               ...p,
               prototypeLayout: { ...p.prototypeLayout, [slideId]: pos },
               updatedAt: Date.now(),
+              synced: false,
             },
       ),
     }))

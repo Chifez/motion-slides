@@ -53,7 +53,7 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
       const startIndex = project.slides.length
       return {
         projects: state.projects.map((projectItem) =>
-          projectItem.id === projectId ? { ...projectItem, slides: [...projectItem.slides, ...newSlides], updatedAt: Date.now() } : projectItem,
+          projectItem.id === projectId ? { ...projectItem, slides: [...projectItem.slides, ...newSlides], updatedAt: Date.now(), synced: false } : projectItem,
         ),
         activeSlideIndex: startIndex,
       }
@@ -89,6 +89,19 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
     set((state) => {
       const local = state.projects.find((projectItem) => projectItem.id === remoteProject.id)
       
+      if (local && !local.synced) {
+        // Retain local collaborator edits when merging remote updates to prevent losing unsynced progress.
+        const reconciled: Project = {
+          ...local,
+          ownerId: remoteProject.ownerId,
+          visibility: remoteProject.visibility,
+          shareKey: remoteProject.shareKey ?? local.shareKey,
+        }
+        return {
+          projects: state.projects.map((projectItem) => (projectItem.id === remoteProject.id ? reconciled : projectItem)),
+        }
+      }
+
       // Merge Strategy:
       // 1. Remote data is the source of truth for content (slides, transitions, etc.)
       // 2. Local data is preserved for device-specific metadata (localAuthorId)

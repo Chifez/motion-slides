@@ -29,7 +29,7 @@ export function ReviewOverlay() {
             </div>
             {isStale && (
               <div 
-                className="flex items-center gap-1 bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-medium px-2 py-0.5 rounded-full select-none shrink-0 animate-pulse"
+                className="flex items-center gap-1 bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-medium px-2 py-0.5 rounded-full select-none shrink-0 animate-pulse whitespace-nowrap"
                 title="This suggestion was created before the latest master changes."
               >
                 <AlertTriangle size={10} />
@@ -38,26 +38,26 @@ export function ReviewOverlay() {
             )}
           </div>
 
-          <div className="flex items-center gap-1 bg-(--ms-bg-base) border border-(--ms-border) rounded-full p-0.5">
+          <div className="flex items-center gap-1 bg-(--ms-bg-base) border border-(--ms-border) rounded-full p-0.5 shrink-0">
             <button
               onClick={() => toggleReviewMode('original')}
-              className={`text-xs font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer border-none ${
+              className={`text-xs font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer border-none whitespace-nowrap ${
                 reviewMode === 'original'
                   ? 'bg-blue-600 text-white shadow-sm font-semibold'
                   : 'text-(--ms-text-muted) hover:text-(--ms-text-primary) bg-transparent'
               }`}
             >
-              Original View
+              Original
             </button>
             <button
               onClick={() => toggleReviewMode('suggested')}
-              className={`text-xs font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer border-none ${
+              className={`text-xs font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer border-none whitespace-nowrap ${
                 reviewMode === 'suggested'
                   ? 'bg-blue-600 text-white shadow-sm font-semibold'
                   : 'text-(--ms-text-muted) hover:text-(--ms-text-primary) bg-transparent'
               }`}
             >
-              Suggested View
+              Suggested
             </button>
           </div>
         </div>
@@ -83,7 +83,7 @@ export function ReviewOverlay() {
               <button
                 disabled={isPending}
                 onClick={cancelReview}
-                className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl transition-colors cursor-pointer border border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-primary) hover:bg-(--ms-border) disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl transition-colors cursor-pointer border border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-primary) hover:bg-(--ms-border) disabled:opacity-50 whitespace-nowrap shrink-0"
               >
                 <RotateCcw size={13} />
                 <span>Cancel</span>
@@ -92,7 +92,7 @@ export function ReviewOverlay() {
               <button
                 disabled={isPending}
                 onClick={() => handleResolve('rejected')}
-                className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl transition-colors cursor-pointer border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl transition-colors cursor-pointer border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 whitespace-nowrap shrink-0"
               >
                 <X size={13} />
                 <span>Reject</span>
@@ -101,10 +101,10 @@ export function ReviewOverlay() {
               <button
                 disabled={isPending}
                 onClick={() => handleResolve('merged')}
-                className="flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-xl transition-colors cursor-pointer border-none bg-emerald-600 text-white hover:bg-emerald-500 shadow-md shadow-emerald-600/10 disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-xl transition-colors cursor-pointer border-none bg-emerald-600 text-white hover:bg-emerald-500 shadow-md shadow-emerald-600/10 disabled:opacity-50 whitespace-nowrap shrink-0"
               >
                 <Check size={13} />
-                <span>{reviewMode === 'suggested' ? 'Approve & Merge' : 'Merge Suggested'}</span>
+                <span>Merge</span>
               </button>
             </div>
           </div>

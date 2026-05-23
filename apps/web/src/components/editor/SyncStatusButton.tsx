@@ -1,7 +1,9 @@
-import { Cloud, GitBranch, Send, RefreshCw } from 'lucide-react'
+import { Cloud, GitCommit, Send, RefreshCw } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useSuggestionSubmit } from '@/hooks/useSuggestionSubmit'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import type { Project } from '@motionslides/shared'
+import { SuggestionsDropdown } from './toolbar/SuggestionsDropdown'
 
 interface Props {
   isAuthenticated: boolean
@@ -12,8 +14,9 @@ export function SyncStatusButton({ isAuthenticated, isReadOnly }: Props) {
   const project = useEditorStore(state => state.activeProject())
   const userId = useEditorStore(state => state.user?.id ?? null)
   const localAuthorId = useEditorStore(state => state.localAuthorId)
+  const isOnline = useOnlineStatus()
 
-  if (!project || project.synced) return null
+  if (!isOnline || !project) return null
 
   const isOwner = !!userId && project.ownerId === userId
   const isLocalAuthor = !!localAuthorId && project.localAuthorId === localAuthorId
@@ -22,9 +25,16 @@ export function SyncStatusButton({ isAuthenticated, isReadOnly }: Props) {
   if (isReadOnly && !isCollaborator) return null
 
   if (!isCollaborator) {
-    if (!isAuthenticated && !isLocalAuthor) return null
-    return <OwnerSaveButton />
+    const showSave = !project.synced && (isAuthenticated || isLocalAuthor)
+    return (
+      <div className="flex items-center gap-2">
+        <SuggestionsDropdown />
+        {showSave && <OwnerSaveButton />}
+      </div>
+    )
   }
+
+  if (project.synced) return null
 
   return <CollaboratorSuggestionButton project={project} />
 }
@@ -40,7 +50,7 @@ function OwnerSaveButton() {
         syncProjects()
       }}
       disabled={isSyncing}
-      className="flex items-center gap-1.5 text-[10px] text-orange-400 hover:text-orange-300 bg-orange-500/10 backdrop-blur-sm border border-orange-500/30 rounded-md px-2 py-1 cursor-pointer transition-colors disabled:opacity-50"
+      className="flex items-center gap-1.5 text-[10px] text-orange-400 hover:text-orange-300 bg-orange-500/10 backdrop-blur-sm border border-orange-500/30 rounded-md px-2 py-1 cursor-pointer transition-colors disabled:opacity-50 whitespace-nowrap"
       title="Unsaved changes - click to sync to cloud"
     >
       <Cloud size={11} className={isSyncing ? 'animate-pulse' : ''} />
@@ -118,10 +128,10 @@ function CollaboratorSuggestionButton({ project }: CollaboratorProps) {
         event.stopPropagation()
         setIsEnteringName(true)
       }}
-      className="flex items-center gap-1.5 text-[10px] text-blue-400 hover:text-blue-300 bg-blue-500/10 backdrop-blur-sm border border-blue-500/30 rounded-md px-2 py-1 cursor-pointer transition-colors"
+      className="flex items-center gap-1.5 text-[10px] text-blue-400 hover:text-blue-300 bg-blue-500/10 backdrop-blur-sm border border-blue-500/30 rounded-md px-2 py-1 cursor-pointer transition-colors whitespace-nowrap"
       title="Submit changes as a suggestion for the owner"
     >
-      <GitBranch size={11} />
+      <GitCommit size={11} />
       <span>Submit Suggestion</span>
     </button>
   )

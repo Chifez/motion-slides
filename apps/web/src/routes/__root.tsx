@@ -66,6 +66,8 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 })
 
+import { ToastContainer } from '@/components/ui/ToastContainer'
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   const checkSession = useEditorStore((s) => s.checkSession)
   const initializeIdentity = useEditorStore((s) => s.initializeIdentity)
@@ -95,6 +97,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       {children}
       <SyncFooter />
+      <ToastContainer />
     </QueryClientProvider>
         <Scripts />
       </body>

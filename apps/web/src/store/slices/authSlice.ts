@@ -56,34 +56,38 @@ export const createAuthSlice: StateCreator<
     setSyncing(true)
     set({ syncError: null })
     try {
-      // 1. Fetch remote state
+      // Retrieve the authoritative catalog from the remote repository to synchronize local differences.
       const remoteProjects = await listRemoteProjectsAction()
       
       const toUpload: any[] = []
       const updatedLocal: any[] = [...localProjects]
       let localChanged = false
 
-      // 2. Conflict Resolution (LWW)
+      // Resolve differences using Last-Write-Wins (LWW) to guarantee consistent cross-device synchronization.
       localProjects.forEach((local) => {
+        if (local.ownerId && local.ownerId !== user.id) {
+          return
+        }
+
         const remote = remoteProjects.find((r: any) => r.id === local.id)
         
         if (!remote || local.updatedAt > remote.updatedAt) {
-          // Local is newer or missing on server
+          // Push updates if local changes are newer or not yet published to the remote cloud.
           toUpload.push(local)
         } else if (remote.updatedAt > local.updatedAt) {
-          // Remote is newer - Preserve localAuthorId to maintain offline access
+          // Keep localAuthorId to ensure offline permission checks continue to recognize this client device as the author.
           const idx = updatedLocal.findIndex(p => p.id === local.id)
           updatedLocal[idx] = { ...remote, localAuthorId: local.localAuthorId, synced: true }
           localChanged = true
         } else if (remote.updatedAt === local.updatedAt && !local.synced) {
-          // Exact same version, but local thinks it's not synced
+          // Acknowledge that the server and client are in sync even if the local flag was not updated.
           const idx = updatedLocal.findIndex(p => p.id === local.id)
           updatedLocal[idx] = { ...local, synced: true }
           localChanged = true
         }
       })
 
-      // 3. Handle remote projects that don't exist locally at all
+      // Pull down new remote projects that were created on other client devices.
       remoteProjects.forEach((remote: any) => {
         if (!localProjects.some(p => p.id === remote.id)) {
           updatedLocal.push({ ...remote, synced: true })
@@ -91,7 +95,7 @@ export const createAuthSlice: StateCreator<
         }
       })
 
-      // 4. Batch Upload
+      // Push all pending local updates to the server in a single batch to minimize HTTP request overhead.
       if (toUpload.length > 0) {
         const result = await syncProjectsAction({ data: toUpload })
         if (result.success) {
