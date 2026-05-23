@@ -164,7 +164,12 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
     set((state) => ({
       projects: state.projects.map((projectItem) => {
         if (projectItem.id !== id) return projectItem
-        return { ...projectItem, ...updates, updatedAt: Math.max(Date.now(), (projectItem.updatedAt ?? 0) + 1), synced: false }
+        return {
+          ...projectItem,
+          ...updates,
+          updatedAt: updates.updatedAt !== undefined ? updates.updatedAt : Math.max(Date.now(), (projectItem.updatedAt ?? 0) + 1),
+          synced: updates.synced !== undefined ? updates.synced : false,
+        }
       }),
     }))
   },

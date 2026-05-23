@@ -101,7 +101,9 @@ export const createAuthSlice: StateCreator<
         if (result.success) {
           toUpload.forEach(uploaded => {
             const idx = updatedLocal.findIndex(p => p.id === uploaded.id)
-            if (idx !== -1) updatedLocal[idx].synced = true
+            if (idx !== -1) {
+              updatedLocal[idx] = { ...updatedLocal[idx], synced: true }
+            }
           })
           localChanged = true
         } else {

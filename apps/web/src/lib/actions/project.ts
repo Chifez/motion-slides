@@ -106,15 +106,16 @@ export const rotateShareKeyAction = createServerFn({ method: 'POST' })
     if (!session) throw new Error('Unauthorized')
 
     const newKey = uuid()
+    const updatedAt = Date.now()
     
     await db.update(projects)
-      .set({ shareKey: newKey, updatedAt: Date.now() })
+      .set({ shareKey: newKey, updatedAt })
       .where(and(
         eq(projects.id, projectId),
         eq(projects.ownerId, session.user.id)
       ))
 
-    return { success: true, newKey }
+    return { success: true, newKey, updatedAt }
   })
 
 export const updateProjectVisibilityAction = createServerFn({ method: 'POST' })
@@ -129,13 +130,14 @@ export const updateProjectVisibilityAction = createServerFn({ method: 'POST' })
     if (!session) throw new Error('Unauthorized')
 
     const newKey = rotateKey ? uuid() : undefined
+    const updatedAt = Date.now()
     const updates: {
       visibility: typeof visibility
       updatedAt: number
       shareKey?: string
     } = {
       visibility,
-      updatedAt: Date.now(),
+      updatedAt,
     }
 
     if (newKey) {
@@ -149,7 +151,7 @@ export const updateProjectVisibilityAction = createServerFn({ method: 'POST' })
         eq(projects.ownerId, session.user.id)
       ))
 
-    return { success: true, shareKey: newKey }
+    return { success: true, shareKey: newKey, updatedAt }
   })
 
 export const listRemoteProjectsAction = createServerFn({ method: 'GET' })

@@ -51,7 +51,8 @@ export function useShareMenu(project: Project) {
       if (result.success) {
         const updates: Partial<Project> = { 
           visibility: newVisibility,
-          synced: true 
+          synced: true,
+          updatedAt: result.updatedAt ?? Date.now()
         }
         if (result.shareKey) {
           updates.shareKey = result.shareKey
@@ -81,7 +82,8 @@ export function useShareMenu(project: Project) {
       if (result.success) {
         updateProject(project.id, { 
           visibility: newVisibility,
-          synced: true
+          synced: true,
+          updatedAt: result.updatedAt ?? Date.now()
         })
       }
     } catch (error) {
@@ -100,7 +102,8 @@ export function useShareMenu(project: Project) {
       if (result.success && result.newKey) {
         updateProject(project.id, { 
           shareKey: result.newKey,
-          synced: true
+          synced: true,
+          updatedAt: result.updatedAt ?? Date.now()
         })
       }
     } catch (error) {
