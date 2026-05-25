@@ -7,10 +7,12 @@ import { useEditorStore } from '@/store/editorStore'
  * Uses a non-passive native listener to allow blocking browser zoom (Ctrl+Wheel).
  * Uses getState() to ensure the listener is stable and high-performance.
  */
-export function useCanvasCamera(containerRef: RefObject<HTMLElement | null>) {
+export function useCanvasCamera(containerRef: RefObject<HTMLElement | null>, disabled = false) {
   const setCamera = useEditorStore(s => s.setCamera)
 
   useEffect(() => {
+    if (disabled) return
+
     const el = containerRef.current
     if (!el) return
 
@@ -37,5 +39,5 @@ export function useCanvasCamera(containerRef: RefObject<HTMLElement | null>) {
 
     el.addEventListener('wheel', handleWheel, { passive: false })
     return () => el.removeEventListener('wheel', handleWheel)
-  }, [containerRef, setCamera])
+  }, [containerRef, setCamera, disabled])
 }

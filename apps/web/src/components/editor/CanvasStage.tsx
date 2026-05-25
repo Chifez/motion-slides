@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { useCanvasScale } from '@/hooks/useCanvasScale'
 import { useCanvasCamera } from '@/hooks/useCanvasCamera'
@@ -18,7 +18,15 @@ export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
   const { isReadOnly, isAuthenticated, mode } = useAccessControl()
 
-  useCanvasCamera(stageRef)
+  useCanvasCamera(stageRef, mode === 'view')
+
+  const resetCamera = useEditorStore(state => state.resetCamera)
+
+  useEffect(() => {
+    if (mode === 'view') {
+      resetCamera()
+    }
+  }, [mode, resetCamera])
 
   const playbackSettings = useEditorStore(state => state.playbackSettings)
   const camera = useEditorStore(state => state.camera)

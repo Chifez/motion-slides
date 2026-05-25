@@ -3,6 +3,7 @@ import type { Project, Slide } from '@motionslides/shared'
 import { createDefaultProject } from '@/store/defaults'
 import type { EditorState } from '@/store/editorStore'
 import { deleteRemoteProjectAction } from '@/lib/actions/project'
+import { DEFAULT_PLAYBACK_SETTINGS } from '@/constants/export'
 
 export interface ProjectSlice {
   projects: Project[]
@@ -123,23 +124,29 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   },
 
   loadProject: (id) => {
-    set((state) => ({
-      activeProjectId: id,
-      activeSlideIndex: 0,
-      selectedElementIds: [],
-      projects: state.projects.map((projectItem) => {
-        if (projectItem.id !== id) return projectItem
-        return {
-          ...projectItem,
-          transitions: projectItem.transitions ?? [],
-          prototypeLayout: projectItem.prototypeLayout ?? {},
-          slides: projectItem.slides.map((slideItem) => ({
-            ...slideItem,
-            name: slideItem.name ?? '',
-          })),
-        }
-      }),
-    }))
+    set((state) => {
+      const targetProject = state.projects.find((p) => p.id === id)
+      const loadedSettings = targetProject?.playbackSettings ?? DEFAULT_PLAYBACK_SETTINGS
+      return {
+        activeProjectId: id,
+        activeSlideIndex: 0,
+        selectedElementIds: [],
+        playbackSettings: { ...DEFAULT_PLAYBACK_SETTINGS, ...loadedSettings },
+        projects: state.projects.map((projectItem) => {
+          if (projectItem.id !== id) return projectItem
+          return {
+            ...projectItem,
+            transitions: projectItem.transitions ?? [],
+            prototypeLayout: projectItem.prototypeLayout ?? {},
+            playbackSettings: projectItem.playbackSettings ?? { ...DEFAULT_PLAYBACK_SETTINGS },
+            slides: projectItem.slides.map((slideItem) => ({
+              ...slideItem,
+              name: slideItem.name ?? '',
+            })),
+          }
+        }),
+      }
+    })
   },
 
   updateProjectName: (id, name) => {

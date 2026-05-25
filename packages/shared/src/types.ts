@@ -244,6 +244,7 @@ export interface Project {
   slides: Slide[]
   transitions: SlideTransition[]
   prototypeLayout: Record<string, { x: number; y: number }>
+  playbackSettings?: PlaybackSettings
   createdAt: number
   updatedAt: number
   synced: boolean

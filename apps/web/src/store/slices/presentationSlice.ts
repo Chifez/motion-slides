@@ -38,7 +38,26 @@ export const createPresentationSlice: StateCreator<EditorState, [], [], Presenta
   },
 
   updatePlaybackSettings: (updates) => {
-    set((s) => ({ playbackSettings: { ...s.playbackSettings, ...updates } }))
+    set((s) => {
+      const newSettings = { ...s.playbackSettings, ...updates }
+      const activeId = s.activeProjectId
+      let updatedProjects = s.projects
+      if (activeId) {
+        updatedProjects = s.projects.map((p) => {
+          if (p.id !== activeId) return p
+          return {
+            ...p,
+            playbackSettings: newSettings,
+            synced: false,
+            updatedAt: Math.max(Date.now(), (p.updatedAt ?? 0) + 1),
+          }
+        })
+      }
+      return {
+        playbackSettings: newSettings,
+        projects: updatedProjects,
+      }
+    })
   },
 
   setMobileSlidesOpen: (open) => {

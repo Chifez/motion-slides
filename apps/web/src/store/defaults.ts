@@ -1,6 +1,6 @@
 import { type Slide, type Project } from '@motionslides/shared'
 import { uuid } from '@/lib/uuid'
-import { CANVAS_BG } from '@/constants/export'
+import { CANVAS_BG, DEFAULT_PLAYBACK_SETTINGS } from '@/constants/export'
 
 /** Creates an empty slide with optional overrides */
 export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
@@ -19,6 +19,7 @@ export function createDefaultProject(name = 'Untitled Deck', isFirst = false, ow
     name,
     description: isFirst ? 'A sample project demonstrating Magic Move.' : '',
     prototypeLayout: {},
+    playbackSettings: { ...DEFAULT_PLAYBACK_SETTINGS },
     createdAt: Date.now(),
     updatedAt: Date.now(),
     synced: false,
