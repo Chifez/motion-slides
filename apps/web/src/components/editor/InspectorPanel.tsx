@@ -97,7 +97,7 @@ export const InspectorPanel = memo(function InspectorPanel() {
   }
 
   return (
-    <aside className="w-[280px] shrink-0 bg-(--ms-bg-surface) overflow-hidden">
+    <aside id="tour-inspector-panel" className="w-[280px] shrink-0 bg-(--ms-bg-surface) overflow-hidden">
       {panelContainer}
     </aside>
   )

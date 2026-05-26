@@ -68,6 +68,7 @@ export function CanvasStage() {
   return (
     <main
       ref={stageRef}
+      id="tour-canvas-stage"
       className={`flex-1 bg-(--ms-bg-base) flex items-center justify-center overflow-hidden relative p-2 md:p-0 transition-colors ${activeTool === 'section' ? 'cursor-crosshair' : ''
         }`}
       onClick={handleStageClick}

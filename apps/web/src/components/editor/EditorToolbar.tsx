@@ -217,6 +217,7 @@ export function EditorToolbar({ projectId }: Props) {
             {isAuthenticated && <ShareMenu project={project} />}
 
             <button
+              id="tour-present-button"
               className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
               onClick={() => startPresentation()}
             >

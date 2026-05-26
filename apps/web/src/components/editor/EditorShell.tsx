@@ -12,6 +12,8 @@ import { UnsavedChangesModal } from '@/components/ui/UnsavedChangesModal'
 import { usePermissions } from '@/context/PermissionContext'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { MobileFloatingDock } from '@/components/editor/toolbar/MobileFloatingDock'
+import { Tour } from '@/components/ui/tour/Tour'
+import { useOnboardingTrigger } from '@/hooks/useOnboardingTrigger'
 
 interface Props {
   projectId: string
@@ -33,8 +35,12 @@ export const EditorShell = memo(function EditorShell({ projectId, blocker }: Pro
   const showEditorUI = !isPresenting && mode === 'edit'
   const isViewOnly = mode === 'view' || mode === 'present'
 
+  // Automatically start the editor tour if user is logged in and hasn't done it (configured/bypassed via VITE_FORCE_TOUR)
+  useOnboardingTrigger('editor', showEditorUI)
+
   return (
     <div className="h-screen flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors relative">
+      <Tour.Root />
       {showEditorUI && <EditorToolbar projectId={projectId} />}
 
       <div className="flex flex-1 overflow-hidden relative">

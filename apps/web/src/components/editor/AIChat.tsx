@@ -67,6 +67,7 @@ export function AIChat() {
       animate={{ x: 0 }}
       exit={{ x: 400 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      id="tour-ai-chat"
       className="fixed top-14 right-0 bottom-0 w-[400px] bg-(--ms-bg-base) border-l border-(--ms-border) z-60 shadow-2xl flex flex-col transition-colors"
     >
       <AIChatHeader onClose={() => setChatOpen(false)} />

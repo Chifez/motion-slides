@@ -161,7 +161,7 @@ export function SlidePanel() {
   }
 
   return (
-    <aside className="w-[220px] shrink-0 flex flex-col bg-(--ms-bg-surface) overflow-hidden border-r border-(--ms-border) transition-colors">
+    <aside id="tour-slide-panel" className="w-[220px] shrink-0 flex flex-col bg-(--ms-bg-surface) overflow-hidden border-r border-(--ms-border) transition-colors">
       {panelContent}
     </aside>
   )

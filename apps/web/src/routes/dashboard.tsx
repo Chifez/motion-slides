@@ -9,6 +9,8 @@ import { LoadingPage } from '@/components/ui/LoadingPage'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { DeleteConfirmationModal } from '@/components/ui/DeleteConfirmationModal'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { Tour } from '@/components/ui/tour/Tour'
+import { useOnboardingTrigger } from '@/hooks/useOnboardingTrigger'
 
 export const Route = createFileRoute('/dashboard')({
   loader: async () => {
@@ -45,6 +47,9 @@ function Dashboard() {
     isGuest: false,
   })
 
+  // Auto-trigger tour if user is logged in, has 0 projects, and hasn't done the tour (configured/bypassed via VITE_FORCE_TOUR)
+  useOnboardingTrigger('dashboard')
+
   function handleCreate() {
     const project = createProject('Untitled Deck')
     navigate({ to: '/p/$projectId', params: { projectId: project.id } })
@@ -64,6 +69,7 @@ function Dashboard() {
 
   return (
     <div className="h-screen flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors">
+      <Tour.Root />
       <DeleteConfirmationModal
         isOpen={deleteModal.isOpen}
         projectName={deleteModal.projectName}
@@ -107,6 +113,7 @@ function Dashboard() {
 
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
           <motion.button
+            id="tour-new-project"
             onClick={handleCreate}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
