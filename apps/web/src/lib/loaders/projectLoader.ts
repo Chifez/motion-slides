@@ -18,18 +18,7 @@ export async function loadProjectForRoute(projectId: string, shareKey?: string) 
   const canLoadLocallyWithoutFetch = localProject && (isOwner || isLocalAuthor) && !shareKey
   const isOffline = !isServer && !window.navigator.onLine
 
-  console.log('[loadProjectForRoute] start:', {
-    projectId,
-    hasLocalProject: !!localProject,
-    isOwner,
-    isLocalAuthor,
-    canLoadLocallyWithoutFetch,
-    isOffline,
-    activeShareKey
-  })
-
   if (canLoadLocallyWithoutFetch || (isOffline && localProject)) {
-    console.log('[loadProjectForRoute] loading locally:', { projectId, isOffline })
     store.loadProject(projectId)
     if (store.user && !isOffline) store.syncProjects()
     return { project: null }
@@ -37,11 +26,9 @@ export async function loadProjectForRoute(projectId: string, shareKey?: string) 
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      console.log(`[loadProjectForRoute] attempt ${attempt} fetching remote project:`, { projectId, shareKey: activeShareKey })
       const remoteProject = await getRemoteProjectAction({
         data: { projectId, shareKey: activeShareKey }
       })
-      console.log(`[loadProjectForRoute] attempt ${attempt} response:`, { success: !!remoteProject })
       
       if (remoteProject) {
         const projectWithKey: Project = {

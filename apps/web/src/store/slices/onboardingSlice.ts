@@ -56,7 +56,7 @@ export const EDITOR_STEPS: TourStep[] = [
     content: "Use this panel to customize colors, font sizes, transitions, code blocks, and layout properties for the selected elements."
   },
   {
-    selector: "#tour-ai-chat",
+    selector: "#tour-ai-chat-button",
     title: "AI Chat Assistant",
     content: "Need help structuring content or generating shapes? Ask the AI to build slides, format code, or design flowcharts for you."
   },
@@ -92,11 +92,6 @@ export const createOnboardingSlice: StateCreator<
     if (onboardingStep < maxSteps - 1) {
       const nextStep = onboardingStep + 1
       set({ onboardingStep: nextStep })
-      
-      // Auto-open AI chat on step 4 of editor tour
-      if (onboardingTourType === 'editor' && nextStep === 4) {
-        get().setChatOpen(true)
-      }
     } else {
       get().completeOnboarding()
     }
@@ -107,11 +102,6 @@ export const createOnboardingSlice: StateCreator<
     if (onboardingStep > 0) {
       const prevStep = onboardingStep - 1
       set({ onboardingStep: prevStep })
-      
-      // Auto-open AI chat if moving back into step 4
-      if (onboardingTourType === 'editor' && prevStep === 4) {
-        get().setChatOpen(true)
-      }
     }
   },
 

@@ -203,6 +203,7 @@ export function EditorToolbar({ projectId }: Props) {
         ) : (
           <>
             <button
+              id="tour-ai-chat-button"
               onClick={() => toggleChat()}
               className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-all cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
             >

@@ -78,15 +78,7 @@ function TourRoot({ children }: RootProps) {
       }
     }
 
-    // Run calculation immediately
     updateRect()
-
-    // If the step targets the AI Chat panel (#tour-ai-chat), the panel slides in with a 400ms transition.
-    // We schedule a follow-up recalculation after 500ms once the animation settles.
-    if (activeStepData.selector === '#tour-ai-chat') {
-      const timer = setTimeout(updateRect, 500)
-      return () => clearTimeout(timer)
-    }
   }, [isOnboardingActive, onboardingStep, activeStepData, windowSize])
 
   if (!isOnboardingActive || steps.length === 0) return null
@@ -314,10 +306,11 @@ function TourContent({ context }: SubComponentProps) {
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 15, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 10, scale: 0.97 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
       style={positionStyle}
       className="w-full max-w-xs md:max-w-sm pointer-events-auto rounded-2xl border border-(--ms-border-strong) bg-(--ms-bg-elevated)/80 backdrop-blur-xl shadow-2xl p-5 select-none relative overflow-hidden"
     >
@@ -336,20 +329,31 @@ function TourContent({ context }: SubComponentProps) {
 
       {/* Content */}
       <div className="flex flex-col gap-3 relative z-10">
-        <header className="flex items-center gap-2">
-          {!targetRect && (
-            <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <Sparkles size={13} className="animate-pulse" />
-            </div>
-          )}
-          <h3 className="text-sm font-bold text-(--ms-text-primary) tracking-tight">
-            {activeStepData.title}
-          </h3>
-        </header>
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={activeStep}
+            initial={{ opacity: 0, x: 15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="flex flex-col gap-3"
+          >
+            <header className="flex items-center gap-2">
+              {!targetRect && (
+                <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                  <Sparkles size={13} className="animate-pulse" />
+                </div>
+              )}
+              <h3 className="text-sm font-bold text-(--ms-text-primary) tracking-tight">
+                {activeStepData.title}
+              </h3>
+            </header>
 
-        <p className="text-xs text-(--ms-text-secondary) leading-relaxed">
-          {activeStepData.content}
-        </p>
+            <p className="text-xs text-(--ms-text-secondary) leading-relaxed">
+              {activeStepData.content}
+            </p>
+          </motion.div>
+        </AnimatePresence>
 
         {/* Footer actions */}
         <footer className="flex items-center justify-between mt-4 pt-3 border-t border-(--ms-border)">
