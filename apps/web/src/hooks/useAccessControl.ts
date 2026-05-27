@@ -56,7 +56,22 @@ export function useAccessControl(): AccessControl {
     }))
   )
 
-  const isPending = sessionStatus === 'loading'
+  const isLocalProjectCopy = project && project.localAuthorId === localAuthorId
+  const isCloudProject = !!project?.ownerId && !isLocalProjectCopy
+  const isPending = sessionStatus === 'loading' && isCloudProject && (typeof window === 'undefined' || window.navigator.onLine)
+
+  console.log('[useAccessControl] State:', {
+    projectId,
+    userId,
+    hasProject: !!project,
+    localAuthorId,
+    projectLocalAuthorId: project?.localAuthorId,
+    isLocalProjectCopy,
+    isCloudProject,
+    sessionStatus,
+    isPending,
+    navigatorOnLine: typeof window !== 'undefined' ? window.navigator.onLine : undefined
+  })
   const requestedMode = search.mode ?? 'edit'
   const cachedKey = project && project.ownerId !== userId ? project.shareKey : null
   const requestedKey = search.key ?? cachedKey
@@ -120,8 +135,8 @@ export function useAccessControl(): AccessControl {
 
   useEffect(() => {
     if (project && !access.isPending) {
-      const needsKeyRewrite = !search.key && project.ownerId !== userId && project.shareKey
-      const needsModeRewrite = access.mode !== search.mode
+      const needsKeyRewrite = !search.key && isCloudProject && project.ownerId !== userId && project.shareKey
+      const needsModeRewrite = access.mode !== (search.mode ?? 'edit')
 
       if (needsModeRewrite || needsKeyRewrite) {
         navigate({

@@ -25,7 +25,7 @@ export function SyncStatusButton({ isAuthenticated, isReadOnly }: Props) {
   if (isReadOnly && !isCollaborator) return null
 
   if (!isCollaborator) {
-    const showSave = !project.synced && (isAuthenticated || isLocalAuthor)
+    const showSave = !project.synced && isAuthenticated
     return (
       <div className="flex items-center gap-2">
         <SuggestionsDropdown />

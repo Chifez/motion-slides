@@ -5,6 +5,8 @@ interface Props {
   children: React.ReactNode
 }
 
+let hasHydratedGlobal = false
+
 /**
  * HydrationGuard
  *
@@ -13,9 +15,10 @@ interface Props {
  * hydration mismatches with server-rendered content.
  */
 export function HydrationGuard({ children }: Props) {
-  const [isMounted, setIsMounted] = useState(false)
+  const [isMounted, setIsMounted] = useState(hasHydratedGlobal)
 
   useEffect(() => {
+    hasHydratedGlobal = true
     setIsMounted(true)
   }, [])
 

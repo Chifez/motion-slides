@@ -24,6 +24,16 @@ export function ProjectContainer() {
 
   const { mode, autoplay, isDenied, isPending } = usePermissions()
 
+  console.log('[ProjectContainer] render:', {
+    projectId,
+    hasLoaderProject: !!loaderProject,
+    loaderAccessDenied: loaderData?.accessDenied,
+    hasStoreProject: !!project,
+    isPending,
+    isDenied,
+    mode
+  })
+
 
   usePresentationAutostart({ mode, autoplay: !!autoplay, isPending })
 

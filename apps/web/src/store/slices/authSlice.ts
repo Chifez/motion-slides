@@ -45,8 +45,14 @@ export const createAuthSlice: StateCreator<
   },
 
   logout: async () => {
+    const localAuthorId = get().localAuthorId
     await authClient.signOut()
-    set({ user: null, sessionStatus: 'unauthenticated', syncError: null })
+    set((state) => ({
+      user: null,
+      sessionStatus: 'unauthenticated',
+      syncError: null,
+      projects: state.projects.filter(p => !p.ownerId || p.localAuthorId === localAuthorId)
+    }))
   },
 
   syncProjects: async () => {

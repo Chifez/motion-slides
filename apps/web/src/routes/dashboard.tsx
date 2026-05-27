@@ -17,7 +17,8 @@ export const Route = createFileRoute('/dashboard')({
     await storeHydrationPromise
     const store = useEditorStore.getState()
     if (store.user) {
-      await store.syncProjects()
+      // Trigger sync in the background, don't block navigation
+      store.syncProjects()
     }
   },
   pendingComponent: LoadingPage,
@@ -31,13 +32,15 @@ function formatDate(ts: number) {
 
 function Dashboard() {
   const navigate = useNavigate()
-  const { projects, createProject, deleteProject, removeLocalProject, user } = useEditorStore(
+  const { projects, createProject, deleteProject, removeLocalProject, user, isSyncing, localAuthorId } = useEditorStore(
     useShallow((state) => ({
       projects: state.projects,
       createProject: state.createProject,
       deleteProject: state.deleteProject,
       removeLocalProject: state.removeLocalProject,
       user: state.user,
+      isSyncing: state.isSyncing,
+      localAuthorId: state.localAuthorId,
     }))
   )
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, projectId: string, projectName: string, isGuest: boolean }>({
@@ -123,8 +126,21 @@ function Dashboard() {
             <span>New Project</span>
           </motion.button>
 
+          {isSyncing && projects.length === 0 && [1, 2, 3].map((n) => (
+            <div
+              key={`skeleton-${n}`}
+              className="bg-(--ms-bg-surface) border border-(--ms-border) rounded-xl overflow-hidden min-h-[160px] flex flex-col animate-pulse"
+            >
+              <div className="aspect-video animate-shimmer border-b border-(--ms-border)" />
+              <div className="px-3.5 py-3 flex-1 flex flex-col gap-2 justify-center">
+                <div className="h-3.5 w-3/4 rounded bg-(--ms-bg-base) animate-shimmer" />
+                <div className="h-3 w-1/2 rounded bg-(--ms-bg-base) animate-shimmer" />
+              </div>
+            </div>
+          ))}
+
           {projects.map((project, i) => {
-            const isGuest = !!project.ownerId && project.ownerId !== user?.id
+            const isGuest = !!project.ownerId && project.ownerId !== user?.id && project.localAuthorId !== localAuthorId
             return (
               <motion.div
                 key={project.id}
@@ -166,7 +182,7 @@ function Dashboard() {
           })}
         </div>
 
-        {projects.length === 0 && (
+        {projects.length === 0 && !isSyncing && (
           <div className="flex flex-col items-center gap-3 pt-16 text-(--ms-text-muted)">
             <span className="text-4xl">✦</span>
             <span className="text-sm">No projects yet — create one to get started.</span>

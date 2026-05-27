@@ -67,14 +67,25 @@ function TourRoot({ children }: RootProps) {
       return
     }
 
-    // Attempt to select the target element
-    const element = document.querySelector(activeStepData.selector)
-    if (element) {
-      setTargetRect(element.getBoundingClientRect())
-      // Scroll into view if not visible
-      element.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    } else {
-      setTargetRect(null)
+    const updateRect = () => {
+      const element = document.querySelector(activeStepData.selector!)
+      if (element) {
+        setTargetRect(element.getBoundingClientRect())
+        // Scroll into view if not visible
+        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      } else {
+        setTargetRect(null)
+      }
+    }
+
+    // Run calculation immediately
+    updateRect()
+
+    // If the step targets the AI Chat panel (#tour-ai-chat), the panel slides in with a 400ms transition.
+    // We schedule a follow-up recalculation after 500ms once the animation settles.
+    if (activeStepData.selector === '#tour-ai-chat') {
+      const timer = setTimeout(updateRect, 500)
+      return () => clearTimeout(timer)
     }
   }, [isOnboardingActive, onboardingStep, activeStepData, windowSize])
 
