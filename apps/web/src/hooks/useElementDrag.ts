@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS } from '@/constants/animation'
 import type { SceneElement } from '@motionslides/shared'
@@ -24,6 +24,15 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
   const dragStartPointer = useRef({ x: 0, y: 0 })
   const lastDx = useRef(0)
   const lastDy = useRef(0)
+
+  // Tracks the active drag listener cleanup function. If the component unmounts
+  // mid-drag (e.g., element deleted by collaborator), this ensures the native
+  // DOM listeners are removed and isDragging is reset.
+  const cleanupRef = useRef<(() => void) | null>(null)
+
+  useEffect(() => {
+    return () => cleanupRef.current?.()
+  }, [])
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (!element || isReadOnly || isEditing) return
@@ -89,9 +98,14 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
       updateElementsBatch(updates, { silent: true })
     }
 
-    const onUp = () => {
+    const cleanup = () => {
       el.removeEventListener('pointermove', onMove)
       el.removeEventListener('pointerup', onUp)
+      cleanupRef.current = null
+    }
+
+    const onUp = () => {
+      cleanup()
 
       if (isDragging.current) {
         const dx = lastDx.current
@@ -116,6 +130,7 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
 
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
+    cleanupRef.current = cleanup
   }, [element, isReadOnly, isEditing, isMultiSelectMode, setSelectedElement, setSelectedElements, updateElementsBatch, setIsDragging])
 
   return { onPointerDown, isDragging: isDragging.current }

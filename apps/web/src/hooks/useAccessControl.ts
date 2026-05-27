@@ -141,7 +141,7 @@ export function useAccessControl(): AccessControl {
         })
       }
     }
-  }, [project, access.mode, access.isPending, search.mode, search.key, userId, navigate])
+  }, [project, access.mode, access.isPending, search.mode, search.key, userId, isCloudProject, navigate])
 
   return access
 }

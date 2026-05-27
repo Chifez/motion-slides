@@ -1,12 +1,21 @@
 import type { StateCreator } from 'zustand'
 import type { EditorState } from '../editorStore'
+import type { Project } from '@motionslides/shared'
 import { authClient } from '@/lib/auth-client'
 import { syncProjectsAction, listRemoteProjectsAction } from '@/lib/actions/project'
+
+/** Minimal user shape returned by better-auth session */
+export interface AppUser {
+  id: string
+  name: string
+  email: string
+  image?: string | null
+}
 
 export type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated'
 
 export interface AuthSlice {
-  user: any | null
+  user: AppUser | null
   sessionStatus: SessionStatus
   isSyncing: boolean
   syncError: string | null
@@ -65,8 +74,8 @@ export const createAuthSlice: StateCreator<
       // Retrieve the authoritative catalog from the remote repository to synchronize local differences.
       const remoteProjects = await listRemoteProjectsAction()
       
-      const toUpload: any[] = []
-      const updatedLocal: any[] = [...localProjects]
+      const toUpload: Project[] = []
+      const updatedLocal: Project[] = [...localProjects]
       let localChanged = false
 
       // Resolve differences using Last-Write-Wins (LWW) to guarantee consistent cross-device synchronization.
@@ -75,7 +84,7 @@ export const createAuthSlice: StateCreator<
           return
         }
 
-        const remote = remoteProjects.find((r: any) => r.id === local.id)
+        const remote = remoteProjects.find((r: Project) => r.id === local.id)
         
         if (!remote || local.updatedAt > remote.updatedAt) {
           // Push updates if local changes are newer or not yet published to the remote cloud.
@@ -94,7 +103,7 @@ export const createAuthSlice: StateCreator<
       })
 
       // Pull down new remote projects that were created on other client devices.
-      remoteProjects.forEach((remote: any) => {
+      remoteProjects.forEach((remote: Project) => {
         if (!localProjects.some(p => p.id === remote.id)) {
           updatedLocal.push({ ...remote, synced: true })
           localChanged = true
@@ -102,8 +111,10 @@ export const createAuthSlice: StateCreator<
       })
 
       // Push all pending local updates to the server in a single batch to minimize HTTP request overhead.
+      // The explicit cast handles the type boundary between our strongly-typed local Project
+      // and the Zod schema's Record<string, unknown> for playbackSettings.
       if (toUpload.length > 0) {
-        const result = await syncProjectsAction({ data: toUpload })
+        const result = await syncProjectsAction({ data: toUpload as Parameters<typeof syncProjectsAction>[0]['data'] })
         if (result.success) {
           toUpload.forEach(uploaded => {
             const idx = updatedLocal.findIndex(p => p.id === uploaded.id)
@@ -120,9 +131,10 @@ export const createAuthSlice: StateCreator<
       if (localChanged) {
         set({ projects: updatedLocal })
       }
-    } catch (error: any) {
-      console.error('Failed to sync projects:', error?.message || error)
-      set({ syncError: error?.message || 'Sync failed' })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Sync failed'
+      console.error('Failed to sync projects:', message)
+      set({ syncError: message })
     } finally {
       setSyncing(false)
     }

@@ -3,14 +3,29 @@ import { useAccessControl, type AccessControl } from '@/hooks/useAccessControl'
 
 const PermissionContext = createContext<AccessControl | null>(null)
 
-export function PermissionProvider({ children }: { children: React.ReactNode }) {
+function AccessControlLoader({ children }: { children: React.ReactNode }) {
   const access = useAccessControl()
-
   return (
     <PermissionContext.Provider value={access}>
       {children}
     </PermissionContext.Provider>
   )
+}
+
+interface PermissionProviderProps {
+  children: React.ReactNode
+  value?: AccessControl
+}
+
+export function PermissionProvider({ children, value }: PermissionProviderProps) {
+  if (value) {
+    return (
+      <PermissionContext.Provider value={value}>
+        {children}
+      </PermissionContext.Provider>
+    )
+  }
+  return <AccessControlLoader>{children}</AccessControlLoader>
 }
 
 export function usePermissions() {

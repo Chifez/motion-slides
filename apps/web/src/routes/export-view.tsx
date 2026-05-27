@@ -2,10 +2,22 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEditorStore } from '@/store/editorStore'
 import { MotionStage } from '@/components/editor/MotionStage'
 import { getCanvasDimensions } from '@motionslides/shared'
+import { PermissionProvider } from '@/context/PermissionContext'
+import type { AccessControl } from '@/hooks/useAccessControl'
 
 export const Route = createFileRoute('/export-view')({
   component: ExportView,
 })
+
+const EXPORT_ACCESS: AccessControl = {
+  mode: 'present',
+  canEdit: false,
+  isReadOnly: true,
+  autoplay: false,
+  isAuthenticated: true,
+  isDenied: false,
+  isPending: false,
+}
 
 /**
  * export-view.tsx
@@ -28,35 +40,37 @@ function ExportView() {
   const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
 
   return (
-    <div
-      style={{
-        width:    '100vw',
-        height:   '100vh',
-        overflow: 'hidden',
-        background: activeSlide.background || '#0a0a0a',
-        transform: 'none',
-        zoom:      1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      data-canvas-board
-    >
+    <PermissionProvider value={EXPORT_ACCESS}>
       <div
         style={{
-          width: canvasW,
-          height: canvasH,
-          position: 'relative',
+          width:    '100vw',
+          height:   '100vh',
           overflow: 'hidden',
+          background: activeSlide.background || '#0a0a0a',
+          transform: 'none',
+          zoom:      1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
+        data-canvas-board
       >
-        <MotionStage
-          mode="presentation"
-          slide={activeSlide}
-          previousSlide={null}
-          settings={playbackSettings}
-        />
+        <div
+          style={{
+            width: canvasW,
+            height: canvasH,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <MotionStage
+            mode="presentation"
+            slide={activeSlide}
+            previousSlide={null}
+            settings={playbackSettings}
+          />
+        </div>
       </div>
-    </div>
+    </PermissionProvider>
   )
 }

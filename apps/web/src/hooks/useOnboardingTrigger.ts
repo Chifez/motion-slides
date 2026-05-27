@@ -24,14 +24,25 @@ export function useOnboardingTrigger(type: TourType, showEditorUI: boolean = tru
     }
   }, [isOnboardingActive, type])
 
+  // Trigger the onboarding tour when conditions are met. Uses a ref to prevent
+  // re-triggering: the old approach included isOnboardingActive in the dep array,
+  // but startOnboarding sets isOnboardingActive=true, creating a self-retriggering
+  // cycle that only didn't infinite-loop due to fragile condition guards.
+  const hasTriggered = useRef(false)
+
   useEffect(() => {
-    // Check for environment variable configuration to force the tour (useful for development/testing)
+    if (hasTriggered.current) return
+
     const forceTour = import.meta.env.VITE_FORCE_TOUR === 'true'
     const dismissedThisSession = typeof window !== 'undefined' ? sessionStorage.getItem(`ms-dismissed-${type}`) === 'true' : false
+    // Read isOnboardingActive imperatively — it's not a reactive dependency,
+    // it's a guard against calling startOnboarding while already active.
+    const alreadyActive = useEditorStore.getState().isOnboardingActive
 
     if (forceTour) {
-      if (!isOnboardingActive && !dismissedThisSession) {
+      if (!alreadyActive && !dismissedThisSession) {
         startOnboarding(type)
+        hasTriggered.current = true
       }
       return
     }
@@ -39,16 +50,18 @@ export function useOnboardingTrigger(type: TourType, showEditorUI: boolean = tru
     if (type === 'dashboard') {
       if (user) {
         const completed = isTourCompleted(user.id, 'dashboard')
-        if (!completed && projects.length === 0 && !isOnboardingActive) {
+        if (!completed && projects.length === 0 && !alreadyActive) {
           startOnboarding('dashboard')
+          hasTriggered.current = true
         }
       }
     } else if (type === 'editor' && showEditorUI) {
       const userId = user?.id || ''
       const completed = isTourCompleted(userId, 'editor')
-      if (!completed && !isOnboardingActive) {
+      if (!completed && !alreadyActive) {
         startOnboarding('editor')
+        hasTriggered.current = true
       }
     }
-  }, [user, projects.length, showEditorUI, startOnboarding, isTourCompleted, isOnboardingActive, type])
+  }, [user, projects.length, showEditorUI, startOnboarding, isTourCompleted, type])
 }

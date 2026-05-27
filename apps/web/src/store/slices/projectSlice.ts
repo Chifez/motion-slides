@@ -62,21 +62,20 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   },
 
   deleteProject: (id) => {
-    set((state) => {
-      const project = state.projects.find(projectItem => projectItem.id === id)
-      
-      // If the project was synced/remote, we must explicitly delete it from the server
-      // because our bulk-sync only handles upserts, not deletions.
-      if (project?.synced) {
-        deleteRemoteProjectAction({ data: { projectId: id } })
-          .catch(error => console.error('Failed to delete remote project:', error))
-      }
+    const project = get().projects.find(projectItem => projectItem.id === id)
 
-      return {
-        projects: state.projects.filter((projectItem) => projectItem.id !== id),
-        activeProjectId: state.activeProjectId === id ? null : state.activeProjectId,
-      }
-    })
+    set((state) => ({
+      projects: state.projects.filter((projectItem) => projectItem.id !== id),
+      activeProjectId: state.activeProjectId === id ? null : state.activeProjectId,
+    }))
+
+    // Remote deletion runs after local removal. If it fails, notify the user
+    // rather than silently swallowing the error — the project would persist
+    // on the server while being removed locally.
+    if (project?.synced) {
+      deleteRemoteProjectAction({ data: { projectId: id } })
+        .catch(() => get().showToast('Failed to delete from cloud. Will retry on next sync.', 'error'))
+    }
   },
 
   removeLocalProject: (id) => {

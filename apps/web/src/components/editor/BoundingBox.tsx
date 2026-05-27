@@ -1,11 +1,11 @@
 import { useCallback } from 'react'
 import { RotateCw } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
-import { getConnectionPos } from '@/store/slices/elementSlice'
 import { MIN_ELEMENT_WIDTH, MIN_ELEMENT_HEIGHT } from '@/constants/animation'
 import { RESIZE_HANDLES } from '@/constants/editor'
-import type { SceneElement, Position, LineContent } from '@motionslides/shared'
+import type { SceneElement, LineContent } from '@motionslides/shared'
 import { useAccessControl } from '@/hooks/useAccessControl'
+import { useLineDrag } from '@/hooks/useLineDrag'
 
 interface Props { element: SceneElement }
 
@@ -17,7 +17,8 @@ function getCanvasScale(): number {
 
 export function ConnectionAnchors() {
   const { isReadOnly } = useAccessControl()
-  const { activeSlide, selectedElementIds } = useEditorStore()
+  const activeSlide = useEditorStore(s => s.activeSlide)
+  const selectedElementIds = useEditorStore(s => s.selectedElementIds)
   const slide = activeSlide()
   if (isReadOnly || !slide || selectedElementIds.length !== 1) return null
 
@@ -52,7 +53,7 @@ export function ConnectionAnchors() {
 
 export function BoundingBox({ element }: Props) {
   const { isReadOnly } = useAccessControl()
-  const { updateElement } = useEditorStore()
+  const updateElement = useEditorStore(s => s.updateElement)
 
   if (isReadOnly) return null
 
@@ -120,143 +121,7 @@ export function BoundingBox({ element }: Props) {
     window.addEventListener('mouseup', onUp)
   }, [element, updateElement])
 
-  const startNodeDrag = useCallback((nodeType: 'start' | 'end' | 'branch', branchIndex?: number) => (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const content = element.content as LineContent
-    const scale = getCanvasScale()
-    
-    let absStart = { x: element.position.x + content.x1 * element.size.width, y: element.position.y + content.y1 * element.size.height }
-    let absEnd = { x: element.position.x + content.x2 * element.size.width, y: element.position.y + content.y2 * element.size.height }
-
-    const board = document.querySelector('[data-canvas-board]')
-    if (!board) return
-    const boardRect = board.getBoundingClientRect()
-
-    const onMove = (ev: MouseEvent) => {
-      let currentAbsX = (ev.clientX - boardRect.left) / scale
-      let currentAbsY = (ev.clientY - boardRect.top) / scale
-      
-      const slide = useEditorStore.getState().activeSlide()
-      type SnapTarget = { elementId: string, handleId: 'top' | 'bottom' | 'left' | 'right' | 'center', pos: Position }
-      let snapped: SnapTarget | null = null
-
-      if (slide) {
-        for (const other of slide.elements) {
-          if (other.id === element.id || other.type === 'line') continue
-          const { x: ox, y: oy } = other.position
-          const { width: ow, height: oh } = other.size
-          const anchors: { id: SnapTarget['handleId'], p: Position }[] = [
-            { id: 'top', p: { x: ox + ow / 2, y: oy } },
-            { id: 'bottom', p: { x: ox + ow / 2, y: oy + oh } },
-            { id: 'left', p: { x: ox, y: oy + oh / 2 } },
-            { id: 'right', p: { x: ox + ow, y: oy + oh / 2 } },
-            { id: 'center', p: { x: ox + ow / 2, y: oy + oh / 2 } },
-          ]
-          for (const a of anchors) {
-            const dist = Math.hypot(a.p.x - currentAbsX, a.p.y - currentAbsY)
-            if (dist < 15) {
-              snapped = { elementId: other.id, handleId: a.id, pos: a.p }
-              break
-            }
-          }
-          if (snapped) break
-        }
-      }
-
-      if (snapped) {
-        currentAbsX = snapped.pos.x
-        currentAbsY = snapped.pos.y
-      }
-
-      if (nodeType === 'start') {
-        absStart = { x: currentAbsX, y: currentAbsY }
-      } else if (nodeType === 'end') {
-        absEnd = { x: currentAbsX, y: currentAbsY }
-      }
-
-      // For branching lines, absEnd is not rendered as a node and must not
-      // influence the bounding box — only start + branch endpoints matter.
-      const isBranching = (element.content as LineContent).lineType === 'branching'
-      const bboxPoints = [absStart]
-      if (!isBranching) bboxPoints.push(absEnd)
-
-      const minX = Math.min(...bboxPoints.map((p) => p.x))
-      const minY = Math.min(...bboxPoints.map((p) => p.y))
-      const maxX = Math.max(...bboxPoints.map((p) => p.x))
-      const maxY = Math.max(...bboxPoints.map((p) => p.y))
-      
-      const newWidth = Math.max(1, maxX - minX)
-      const newHeight = Math.max(1, maxY - minY)
-
-      const nx1 = (absStart.x - minX) / newWidth
-      const ny1 = (absStart.y - minY) / newHeight
-      const nx2 = (absEnd.x - minX) / newWidth
-      const ny2 = (absEnd.y - minY) / newHeight
-      
-      const newBranches = content.branches?.map((b, i) => {
-         const isTarget = nodeType === 'branch' && branchIndex === i
-         const conn = isTarget 
-          ? (snapped ? { elementId: snapped.elementId, handleId: snapped.handleId } : undefined)
-          : b.connection
-
-         if (isTarget) {
-           return {
-             ...b,
-             x: (currentAbsX - minX) / newWidth,
-             y: (currentAbsY - minY) / newHeight,
-             connection: conn
-           }
-         }
-
-         const oldAbs = b.connection
-           ? getConnectionPos(b.connection, slide?.elements || [])
-           : null
-         // Fall back to the branch's stored (pre-drag) absolute position if
-         // the connection target no longer exists in the slide.
-         const resolvedOldAbs = oldAbs ?? {
-           x: element.position.x + b.x * element.size.width,
-           y: element.position.y + b.y * element.size.height,
-         }
-         
-         return {
-           ...b,
-           x: (resolvedOldAbs.x - minX) / newWidth,
-           y: (resolvedOldAbs.y - minY) / newHeight,
-           connection: conn
-         }
-      })
-
-      let newStartConn = content.startConnection
-      let newEndConn = content.endConnection
-
-      if (nodeType === 'start') {
-        newStartConn = snapped ? { elementId: snapped.elementId, handleId: snapped.handleId } : undefined
-      } else if (nodeType === 'end') {
-        newEndConn = snapped ? { elementId: snapped.elementId, handleId: snapped.handleId } : undefined
-      }
-
-      updateElement(element.id, { 
-        position: { x: minX, y: minY }, 
-        size: { width: newWidth, height: newHeight },
-        content: { 
-          ...content, 
-          x1: nx1, y1: ny1, 
-          x2: nx2, y2: ny2,
-          branches: content.branches ? newBranches : undefined,
-          startConnection: newStartConn,
-          endConnection: newEndConn
-        } 
-      })
-    }
-
-    const onUp = () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-  }, [element, updateElement])
+  const { startNodeDrag } = useLineDrag(element, updateElement)
 
   if (element.type === 'line') {
     const content = element.content as LineContent

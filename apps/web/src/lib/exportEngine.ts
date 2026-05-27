@@ -23,6 +23,7 @@ type ProgressCallback = (progress: ExportProgress) => void
 
 export async function exportAsVideo(
   onProgress: ProgressCallback,
+  signal?: AbortSignal,
 ): Promise<Blob | null> {
   const store = useEditorStore.getState()
   const project = store.activeProject()
@@ -46,7 +47,11 @@ export async function exportAsVideo(
   const canvas = document.createElement('canvas')
   canvas.width = exportResolution.width
   canvas.height = exportResolution.height
-  const ctx = canvas.getContext('2d', { alpha: false })!
+  const ctx = canvas.getContext('2d', { alpha: false })
+  if (!ctx) {
+    onProgress({ stage: 'error', currentSlide: 0, totalSlides, message: 'Failed to create rendering context' })
+    return null
+  }
 
   const stream = canvas.captureStream(30)
   const mimeType = MediaRecorder.isTypeSupported(EXPORT_MIME_TYPE_VP9)
@@ -67,6 +72,12 @@ export async function exportAsVideo(
   await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
 
   for (let i = 0; i < totalSlides; i++) {
+    if (signal?.aborted) {
+      recorder.stop()
+      onProgress({ stage: 'error', currentSlide: i, totalSlides, message: 'Export cancelled' })
+      return null
+    }
+
     onProgress({ stage: 'recording', currentSlide: i + 1, totalSlides, message: `Processing slide ${i + 1}…` })
 
     if (i > 0) {
@@ -74,10 +85,13 @@ export async function exportAsVideo(
       const startTime = Date.now()
       // Capture more frequently during transition for better frame density
       while (Date.now() - startTime < transitionDuration + 200) {
+        if (signal?.aborted) break
         await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
         await sleep(16) // Aim for ~60fps capture attempts
       }
     }
+
+    if (signal?.aborted) continue
 
     await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
 
@@ -86,6 +100,7 @@ export async function exportAsVideo(
     // During hold, we still need to capture some frames to keep the stream alive
     const holdStart = Date.now()
     while (Date.now() - holdStart < autoplayDelay) {
+      if (signal?.aborted) break
       await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
       await sleep(100)
     }

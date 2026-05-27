@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type { SceneElement, LineContent, Position } from '@motionslides/shared'
 import type { EditorState } from '@/store/editorStore'
+import { updateActiveSlideElements } from '@/store/storeHelpers'
 
 export interface ElementSlice {
   selectedElementIds: string[]
@@ -203,39 +204,15 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
   },
 
   addElement: (element) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId) return
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) =>
-          i !== activeSlideIndex
-            ? sl
-            : { ...sl, elements: [...sl.elements, element] }
-        )
-        return { ...p, slides, updatedAt: Date.now(), synced: false }
-      }),
-    }))
+    if (!get().activeProjectId) return
+    set((s) => updateActiveSlideElements(s, (elements) => [...elements, element]))
   },
 
   updateElement: (id, updates) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId) return
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) =>
-              el.id === id ? ({ ...el, ...updates } as SceneElement) : el
-            ),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now(), synced: false }
-      }),
-    }))
+    if (!get().activeProjectId) return
+    set((s) => updateActiveSlideElements(s, (elements) =>
+      elements.map((el) => el.id === id ? ({ ...el, ...updates } as SceneElement) : el)
+    ))
     
     // Only propagate when a shape moves — line updates already carry their own
     // final geometry, so calling recalculateLines here would cause a redundant render.
@@ -245,55 +222,26 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
   },
 
   updateElements: (ids, updates) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId || ids.length === 0) return
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) =>
-              ids.includes(el.id) ? ({ ...el, ...updates } as SceneElement) : el
-            ),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now(), synced: false }
-      }),
-    }))
+    if (!get().activeProjectId || ids.length === 0) return
+    set((s) => updateActiveSlideElements(s, (elements) =>
+      elements.map((el) => ids.includes(el.id) ? ({ ...el, ...updates } as SceneElement) : el)
+    ))
     get().recalculateLines()
   },
 
   updateElementsBatch: (updates, options = {}) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId || updates.length === 0) return
+    if (!get().activeProjectId || updates.length === 0) return
 
     const updateMap = new Map(updates.map(u => [u.id, u.changes]))
 
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) => {
-              const changes = updateMap.get(el.id)
-              return changes ? ({ ...el, ...changes } as SceneElement) : el
-            }),
-          }
-        })
-
-        // Optimized Sync: Only update project-level metadata if not silent.
-        // This prevents triggering expensive global re-renders during high-frequency drags.
-        return { 
-          ...p, 
-          slides, 
-          ...(options.silent ? { synced: false } : { updatedAt: Date.now(), synced: false })
-        }
+    set((s) => updateActiveSlideElements(
+      s,
+      (elements) => elements.map((el) => {
+        const changes = updateMap.get(el.id)
+        return changes ? ({ ...el, ...changes } as SceneElement) : el
       }),
-    }))
+      { silent: options.silent },
+    ))
 
     // Line recalculation is expensive; only run if not silent or specifically needed
     if (!options.silent) {
@@ -302,18 +250,11 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
   },
 
   deleteElement: (id) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId) return
+    if (!get().activeProjectId) return
     set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          const withoutDeleted = sl.elements.filter((el) => el.id !== id)
-          const cleaned = cleanupConnectionsForDeletedElement(withoutDeleted, id)
-          return { ...sl, elements: cleaned }
-        })
-        return { ...p, slides, updatedAt: Date.now(), synced: false }
+      ...updateActiveSlideElements(s, (elements) => {
+        const withoutDeleted = elements.filter((el) => el.id !== id)
+        return cleanupConnectionsForDeletedElement(withoutDeleted, id)
       }),
       selectedElementIds: s.selectedElementIds.filter((x) => x !== id),
     }))
@@ -321,23 +262,10 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
   },
 
   toggleElementLock: (id) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId) return
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) =>
-              el.id === id ? { ...el, locked: !el.locked } : el
-            ),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now(), synced: false }
-      }),
-    }))
+    if (!get().activeProjectId) return
+    set((s) => updateActiveSlideElements(s, (elements) =>
+      elements.map((el) => el.id === id ? { ...el, locked: !el.locked } : el)
+    ))
   },
 
   duplicateElement: (id) => {
@@ -374,47 +302,25 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
   },
 
   groupElements: (ids) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId || ids.length < 2) return
+    if (!get().activeProjectId || ids.length < 2) return
     const groupId = `group-${Math.random().toString(36).substr(2, 9)}`
     set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) =>
-              ids.includes(el.id) ? { ...el, groupId } : el
-            ),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now(), synced: false }
-      }),
+      ...updateActiveSlideElements(s, (elements) =>
+        elements.map((el) => ids.includes(el.id) ? { ...el, groupId } : el)
+      ),
       selectedElementIds: ids,
     }))
   },
 
   ungroupElements: (groupId) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId) return
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) => {
-              if (el.groupId !== groupId) return el
-              const { groupId: _, ...rest } = el
-              return rest as SceneElement
-            }),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now(), synced: false }
-      }),
-    }))
+    if (!get().activeProjectId) return
+    set((s) => updateActiveSlideElements(s, (elements) =>
+      elements.map((el) => {
+        if (el.groupId !== groupId) return el
+        const { groupId: _, ...rest } = el
+        return rest as SceneElement
+      })
+    ))
   },
 
   addSection: () => {

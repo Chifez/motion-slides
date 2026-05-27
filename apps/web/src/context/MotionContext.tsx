@@ -9,7 +9,7 @@
  *   - The transition animation direction (slide-left, zoom, fade, etc.)
  */
 
-import { createContext, useContext, useMemo } from 'react'
+import { createContext, useContext } from 'react'
 import type { Transition } from 'framer-motion'
 import type { PlaybackSettings, Slide, SlideTransition, TransitionAnimation } from '@motionslides/shared'
 import {
@@ -94,41 +94,33 @@ interface ProviderProps {
 }
 
 export function MotionProvider({ settings, previousSlide, currentSlide, activeTransition, children }: ProviderProps) {
-  const value = useMemo<MotionContextValue>(() => {
-    // Per-transition settings override global playback settings when defined
-    const durationMs = activeTransition?.duration ?? settings.transitionDuration
-    const easeBezier = activeTransition?.ease ?? settings.transitionEase
+  // Per-transition settings override global playback settings when defined
+  const durationMs = activeTransition?.duration ?? settings.transitionDuration
+  const easeBezier = activeTransition?.ease ?? settings.transitionEase
 
-    const transition = buildTransition({ ...settings, transitionDuration: durationMs, transitionEase: easeBezier })
-    const durationSec = msToSec(durationMs)
-    const ease = cubicBezierToArray(easeBezier)
-    const continuing = getContinuingIds(previousSlide, currentSlide)
-    const newIds = getNewElementIds(previousSlide, currentSlide)
+  const transition = buildTransition({ ...settings, transitionDuration: durationMs, transitionEase: easeBezier })
+  const durationSec = msToSec(durationMs)
+  const ease = cubicBezierToArray(easeBezier)
+  const continuing = getContinuingIds(previousSlide, currentSlide)
+  const newIds = getNewElementIds(previousSlide, currentSlide)
 
-    return {
-      isTransitioning: !!previousSlide,
-      transition,
-      durationSec,
-      ease,
-      magicSpring: MAGIC_SPRING,
-      buildInSpring: BUILD_IN_SPRING,
-      continuingIds: continuing,
-      newElementIds: newIds,
-      newElementCount: newIds.size,
-      getStaggerDelay: (staggerIndex: number) =>
-        staggerDelay(staggerIndex, newIds.size, durationSec),
-      transitionAnimation: activeTransition?.animation ?? 'fade',
-    }
-  }, [
-    settings.transitionDuration,
-    settings.transitionEase.x1, settings.transitionEase.y1,
-    settings.transitionEase.x2, settings.transitionEase.y2,
-    activeTransition,
-    previousSlide?.id, 
-    currentSlide?.id,
-    previousSlide?.elements.length,
-    currentSlide?.elements.length
-  ])
+  // React Compiler handles memoization of this value automatically.
+  // The previous manual useMemo had a fragile 10-item dependency array that
+  // required updating whenever PlaybackSettings changed.
+  const value: MotionContextValue = {
+    isTransitioning: !!previousSlide,
+    transition,
+    durationSec,
+    ease,
+    magicSpring: MAGIC_SPRING,
+    buildInSpring: BUILD_IN_SPRING,
+    continuingIds: continuing,
+    newElementIds: newIds,
+    newElementCount: newIds.size,
+    getStaggerDelay: (staggerIndex: number) =>
+      staggerDelay(staggerIndex, newIds.size, durationSec),
+    transitionAnimation: activeTransition?.animation ?? 'fade',
+  }
 
   return <MotionCtx value={value}>{children}</MotionCtx>
 }

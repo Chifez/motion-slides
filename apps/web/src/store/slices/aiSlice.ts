@@ -3,6 +3,9 @@ import type { EditorState } from '@/store/editorStore'
 import type { AIChatMessage, Slide } from '@motionslides/shared'
 import { uuid } from '@/lib/uuid'
 
+/** Raw AI-generated presentation data before it's parsed into Slide[] */
+export type RawPresentation = Record<string, unknown>
+
 export interface AISlice {
   // Chat history
   chatMessages:      AIChatMessage[]
@@ -22,8 +25,8 @@ export interface AISlice {
   // Pending preview — slides waiting for user to accept/reject
   pendingSlides:          Slide[] | null
   pendingTitle:           string
-  pendingRawPresentation: any | null
-  setPendingSlides:       (slides: Slide[] | null, title?: string, raw?: any) => void
+  pendingRawPresentation: RawPresentation | null
+  setPendingSlides:       (slides: Slide[] | null, title?: string, raw?: RawPresentation | null) => void
   clearPending:     () => void
 }
 

@@ -1,4 +1,3 @@
-import { memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
 import { useIsMobile } from '@/hooks/useMediaQuery'
@@ -7,7 +6,7 @@ import { EmptyInspector } from './inspector/EmptyInspector'
 import { MultiInspector } from './inspector/MultiInspector'
 import { SingleInspector } from './inspector/SingleInspector'
 
-export const InspectorPanel = memo(function InspectorPanel() {
+export function InspectorPanel() {
   const selectedElementIds = useEditorStore(s => s.selectedElementIds)
   const mobileInspectorOpen = useEditorStore(s => s.mobileInspectorOpen)
   
@@ -101,4 +100,4 @@ export const InspectorPanel = memo(function InspectorPanel() {
       {panelContainer}
     </aside>
   )
-})
+}
