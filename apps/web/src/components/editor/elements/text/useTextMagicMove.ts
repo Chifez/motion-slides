@@ -1,40 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useEffect, useRef, useState, useCallback } from 'react';
 import type { RefObject } from 'react';
 import { useMotionContext } from '@/context/MotionContext';
-import {
-  diffTokens,
-  tokenizeText,
-} from './charTokenizer';
-import type {
-  AnimToken,
-  CharLayout,
-  SteadyStateRecord,
-} from './charTokenizer';
+import { useEditorStore } from '@/store/editorStore';
+import { usePermissions } from '@/context/PermissionContext';
+import { lcsDiffTokens, tokenizeText } from './charTokenizer';
+import type { AnimToken, CharLayout, CharToken, SteadyStateRecord } from './charTokenizer';
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export interface TextMagicMoveOptions {
   elementId: string;
-  /** Current slide's text */
+  /** Current slide's text content. */
   text: string;
   fontSize: number;
   color: string;
   isEditing: boolean;
   listStyle?: string;
-  /**
-   * Content extracted from previousSlide for this element.
-   * Pass `undefined` when the element didn't exist on the previous slide.
-   */
-  prevText?: string;
-  prevFontSize?: number;
-  prevColor?: string;
 }
 
 export interface TextMagicMoveResult {
-  /** Whether the character-level animation is currently running */
-  isAnimatingText: boolean;
+  /** Always-current set of animation tokens. Empty when no transition is active. */
   animTokens: AnimToken[];
-  /** Attach to the `position: relative` layout container div */
+  /** Attach to the `position: relative` layout container div. */
   layoutContainerRef: RefObject<HTMLDivElement | null>;
   /**
    * Pass this as the `ref` callback on every non-whitespace layout span:
@@ -45,50 +32,84 @@ export interface TextMagicMoveResult {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Mirrors the architecture of CodeElement:
+ *
+ *   Step 1 (useEffect):        text changes → tokenize → setGhostTokens
+ *   Step 2 (useLayoutEffect):  ghostTokens change → measure DOM → build FLIP animTokens
+ *
+ * The ghost layer (rendered in TextElement) is always `opacity: 0`. The stage
+ * layer (TextAnimationLayer) is always mounted and shows animTokens, which hold
+ * characters at their settled positions between transitions. The ghost provides
+ * the correct container height and measurement points.
+ *
+ * KEY FIXES vs. the previous implementation:
+ *   1. Capture gate: previously required `continuingIds.has(elementId)`, which
+ *      meant Slide 1 positions were NEVER recorded, so the animation never fired.
+ *      Now the capture is gated only on not-editing / not-list — it always runs.
+ *   2. transitionId in React keys: forces Framer Motion to remount animated spans
+ *      on every transition, ensuring `initial` fires (it only fires on mount).
+ *   3. LCS matching: `lcsDiffTokens` pairs characters in reading order, preventing
+ *      paths from crossing (e.g. "Apple" → "Pineapple").
+ *   4. useLayoutEffect for measurement: fires synchronously before paint, preventing
+ *      a 1-frame flash of the unmorphed text.
+ */
 export function useTextMagicMove({
-  elementId,
   text,
   fontSize,
   color,
   isEditing,
   listStyle,
-  prevText,
-  prevFontSize,
-  prevColor,
 }: TextMagicMoveOptions): TextMagicMoveResult {
-  const { previousSlide, durationSec, ease, continuingIds } = useMotionContext();
+  const { durationSec, ease } = useMotionContext();
+  const isPresenting = useEditorStore(s => s.isPresenting);
+  const { isReadOnly } = usePermissions();
 
-  const [isAnimatingText, setIsAnimatingText] = useState(false);
-  const [animTokens, setAnimTokens]           = useState<AnimToken[]>([]);
+  // Ghost tokens: tokenized representation of the current text.
+  const [ghostTokens, setGhostTokens] = useState(() => tokenizeText(text));
+  // AnimTokens: absolutely-positioned token descriptors for the stage layer.
+  const [animTokens, setAnimTokens] = useState<AnimToken[]>([]);
 
-  /**
-   * The `position: relative` container. All offsetLeft/offsetTop values
-   * are relative to this element — completely immune to canvas CSS scale().
-   */
   const layoutContainerRef = useRef<HTMLDivElement>(null);
 
   /**
    * Map of span DOM nodes keyed by CharToken.key.
-   * Populated via the spanRefCallback below.
+   * Populated via spanRefCallback below.
    */
   const spanRefsMap = useRef<Map<string, HTMLSpanElement>>(new Map());
 
   /**
-   * Last confirmed steady-state layout, i.e. positions captured when no
-   * animation is running. This represents the PREVIOUS slide's positions
-   * at the moment a transition is triggered.
+   * Positions captured at the end of each settled frame (same role as
+   * prevPositionsRef in CodeElement).
    */
-  const steadyStateRef = useRef<Map<string, SteadyStateRecord>>(new Map());
+  const prevPositionsRef = useRef<Map<string, SteadyStateRecord>>(new Map());
 
-  // ── Eligibility check ───────────────────────────────────────────────────────
+  /**
+   * The ghost tokens from the PREVIOUS render cycle — used as the "before"
+   * sequence for LCS diff.
+   */
+  const prevTokensRef = useRef<CharToken[]>([]);
 
-  const isEligible =
+  /**
+   * Incremented before every setGhostTokens call. Baked into each AnimToken
+   * and used as a suffix in React keys to force remount on every transition.
+   */
+  const transitionIdRef = useRef(0);
+
+  // ── Element-level eligibility ─────────────────────────────────────────────
+  // We activate the ghost/stage pipeline whenever the element is inside a
+  // presentation context (editor play mode or export view) and is not being
+  // edited / is not a list.
+  //
+  // Do NOT gate on continuingIds — that was the P0 bug that blocked Slide 1
+  // position capture, meaning the first transition never had stored positions.
+  const isAnimationMode =
+    (isPresenting || isReadOnly) &&
     !isEditing &&
     listStyle !== 'bullet' &&
-    listStyle !== 'numbered' &&
-    continuingIds.has(elementId);
+    listStyle !== 'numbered';
 
-  // ── Ref callback ────────────────────────────────────────────────────────────
+  // ── Ref callback ──────────────────────────────────────────────────────────
 
   const spanRefCallback = useCallback(
     (key: string, el: HTMLSpanElement | null) => {
@@ -98,144 +119,176 @@ export function useTextMagicMove({
     [],
   );
 
-  // ── Steady-state capture ────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // Step 1 — content changes → tokenize → update ghost tokens
+  // (useEffect: async-friendly, low priority — just re-tokenizes the text)
+  // ─────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isAnimationMode) {
+      // Clear everything when leaving animation mode (e.g. user starts editing).
+      setGhostTokens([]);
+      setAnimTokens([]);
+      prevPositionsRef.current = new Map();
+      prevTokensRef.current = [];
+      return;
+    }
 
-  /**
-   * Walk the current spanRefsMap and write native offset measurements into
-   * steadyStateRef. Must only be called when the layout spans are visible
-   * (opacity: 1) and isAnimatingText === false.
-   */
-  const captureSteadyState = useCallback(() => {
-    const map = new Map<string, SteadyStateRecord>();
+    // Advance BEFORE setGhostTokens so useLayoutEffect reads the new id.
+    transitionIdRef.current += 1;
+    setGhostTokens(tokenizeText(text));
+  // fontSize / color are intentionally excluded: we re-tokenize only when text
+  // changes. Font/color changes are picked up via the SteadyStateRecord update
+  // inside the useLayoutEffect, which always runs with fresh closure values.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, isAnimationMode]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Step 2 — ghost renders → measure DOM → build FLIP animTokens
+  //
+  // useLayoutEffect fires synchronously after DOM mutations, before paint.
+  // The ghost already shows the new tokens when we measure — no flash.
+  // ─────────────────────────────────────────────────────────────────────────
+  useLayoutEffect(() => {
+    if (!isAnimationMode || ghostTokens.length === 0) return;
+
+    // Measure current (next-slide) positions from the ghost spans.
+    const nextPositions = new Map<string, CharLayout>();
     spanRefsMap.current.forEach((span, key) => {
       if (!span) return;
-      map.set(key, {
+      nextPositions.set(key, {
         x:      span.offsetLeft,
         y:      span.offsetTop,
         width:  span.offsetWidth,
         height: span.offsetHeight,
-        fontSize,
-        color,
       });
     });
-    steadyStateRef.current = map;
+
+    const tid     = transitionIdRef.current;
+    const isFirst = prevTokensRef.current.length === 0;
+    const prevPos = prevPositionsRef.current;
+
+    const newAnimTokens: AnimToken[] = [];
+
+    if (isFirst) {
+      // First render: snap every character into place with no animation.
+      // dx === 0 / dy === 0 → the `initial={false}` path in TextAnimationLayer.
+      for (const tok of ghostTokens) {
+        if (tok.isWhitespace) continue;
+        const next = nextPositions.get(tok.key);
+        if (!next) continue;
+        newAnimTokens.push({
+          type:         'continuing',
+          key:          tok.key,
+          prevKey:      tok.key,
+          nextKey:      tok.key,
+          char:         tok.char,
+          toX:          next.x,
+          toY:          next.y,
+          dx:           0,
+          dy:           0,
+          fromFontSize: fontSize,
+          toFontSize:   fontSize,
+          fromColor:    color,
+          toColor:      color,
+          transitionId: tid,
+        });
+      }
+    } else {
+      // LCS diff: match as many characters as possible without crossing paths.
+      const { continuing, entering, leaving } = lcsDiffTokens(
+        prevTokensRef.current,
+        ghostTokens,
+      );
+
+      // Continuing: FLIP from old position to new position.
+      for (const { prevKey, nextKey, char } of continuing) {
+        const prev = prevPos.get(prevKey);
+        const next = nextPositions.get(nextKey);
+        if (!prev || !next) continue;
+        newAnimTokens.push({
+          type:         'continuing',
+          key:          `${prevKey}__cont__${nextKey}`,
+          prevKey,
+          nextKey,
+          char,
+          toX:          next.x,
+          toY:          next.y,
+          dx:           prev.x - next.x,
+          dy:           prev.y - next.y,
+          fromFontSize: prev.fontSize,
+          toFontSize:   fontSize,
+          fromColor:    prev.color,
+          toColor:      color,
+          transitionId: tid,
+        });
+      }
+
+      // Entering: new characters — fade in.
+      let staggerIndex = 0;
+      for (const { key, char } of entering) {
+        const next = nextPositions.get(key);
+        if (!next) continue;
+        newAnimTokens.push({
+          type:         'entering',
+          key,
+          char,
+          x:            next.x,
+          y:            next.y,
+          fontSize,
+          color,
+          staggerIndex: staggerIndex++,
+          transitionId: tid,
+        });
+      }
+
+      // Leaving: characters that don't exist on the next slide — fade out.
+      for (const { key, char } of leaving) {
+        const prev = prevPos.get(key);
+        if (!prev) continue;
+        newAnimTokens.push({
+          type:         'leaving',
+          key,
+          char,
+          x:            prev.x,
+          y:            prev.y,
+          fontSize:     prev.fontSize,
+          color:        prev.color,
+          transitionId: tid,
+        });
+      }
+    }
+
+    // Persist positions and tokens for the next transition.
+    const nextSteadyState = new Map<string, SteadyStateRecord>();
+    nextPositions.forEach((layout, key) => {
+      nextSteadyState.set(key, { ...layout, fontSize, color });
+    });
+    prevPositionsRef.current = nextSteadyState;
+    prevTokensRef.current    = ghostTokens;
+
+    setAnimTokens(newAnimTokens);
+  // ghostTokens identity change is the only trigger we need.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ghostTokens]);
+
+  // Re-capture positions after font/color changes (without triggering a text FLIP).
+  // This keeps prevPositionsRef accurate for the next slide transition.
+  useEffect(() => {
+    if (!isAnimationMode || prevTokensRef.current.length === 0) return;
+    const updated = new Map<string, SteadyStateRecord>(prevPositionsRef.current);
+    updated.forEach((record, key) => {
+      updated.set(key, { ...record, fontSize, color });
+    });
+    prevPositionsRef.current = updated;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fontSize, color]);
 
-  /**
-   * Re-capture after any text change that happens outside an animation
-   * (e.g. the user edits text in the editor, or the slide loads fresh).
-   */
-  useEffect(() => {
-    if (isAnimatingText || !isEligible) return;
-    // rAF ensures the browser has finished the layout pass
-    const raf = requestAnimationFrame(captureSteadyState);
-    return () => cancelAnimationFrame(raf);
-  }, [text, fontSize, color, isEligible]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Transition trigger ──────────────────────────────────────────────────────
-
-  useEffect(() => {
-    // Guard: only proceed if eligible, a transition is happening, and
-    // we're not already mid-animation (no stacking).
-    if (!isEligible || !previousSlide || isAnimatingText) return;
-
-    // If the element wasn't on the previous slide, skip magic move —
-    // the standard Framer Motion container animation handles it.
-    if (!prevText) return;
-
-    // ── Step 1: Measure current (next-slide) layout ──────────────────────────
-    // At this point React has rendered the NEW text into the layout spans,
-    // but isAnimatingText is still false so they're visible and measurable.
-    const nextLayoutMap = new Map<string, CharLayout>();
-    spanRefsMap.current.forEach((span, key) => {
-      if (!span) return;
-      nextLayoutMap.set(key, {
-        x:      span.offsetLeft,
-        y:      span.offsetTop,
-        width:  span.offsetWidth,
-        height: span.offsetHeight,
-      });
-    });
-
-    // ── Step 2: Tokenise & diff ──────────────────────────────────────────────
-    const prevTokens = tokenizeText(prevText);
-    const nextTokens = tokenizeText(text);
-    const { continuing, entering, leaving } = diffTokens(prevTokens, nextTokens);
-
-    // ── Step 3: Build animation token list ───────────────────────────────────
-    const tokens: AnimToken[] = [];
-
-    for (const { key, char } of continuing) {
-      const prev = steadyStateRef.current.get(key);
-      const next = nextLayoutMap.get(key);
-      if (!prev || !next) continue;
-
-      tokens.push({
-        type: 'continuing',
-        key,
-        char,
-        toX: next.x,
-        toY: next.y,
-        dx: prev.x - next.x,   // initial translate X offset
-        dy: prev.y - next.y,   // initial translate Y offset
-        fromFontSize: prevFontSize ?? prev.fontSize,
-        toFontSize:   fontSize,
-        fromColor:    prevColor ?? prev.color,
-        toColor:      color,
-      });
-    }
-
-    for (const { key, char } of entering) {
-      const layout = nextLayoutMap.get(key);
-      if (!layout) continue;
-      tokens.push({
-        type: 'entering',
-        key, char,
-        x: layout.x,
-        y: layout.y,
-        fontSize,
-        color,
-      });
-    }
-
-    for (const { key, char } of leaving) {
-      const layout = steadyStateRef.current.get(key);
-      if (!layout) continue;
-      tokens.push({
-        type: 'leaving',
-        key, char,
-        x:        layout.x,
-        y:        layout.y,
-        fontSize: layout.fontSize,
-        color:    layout.color,
-      });
-    }
-
-    // Nothing to animate — bail out and let standard transition run.
-    if (tokens.length === 0) return;
-
-    // ── Step 4: Activate the animation window ────────────────────────────────
-    setAnimTokens(tokens);
-    setIsAnimatingText(true);
-
-    // +80 ms safety margin so the Framer Motion springs fully settle before
-    // we swap back to the layout layer.
-    const timer = window.setTimeout(() => {
-      setIsAnimatingText(false);
-      // Capture the now-current (new slide) steady-state positions so they're
-      // ready as prevPositions for the *next* transition.
-      requestAnimationFrame(captureSteadyState);
-    }, durationSec * 1000 + 80);
-
-    return () => clearTimeout(timer);
-    // previousSlide identity change is the only trigger we care about.
-    // All other deps are intentionally excluded to avoid re-firing.
-  }, [previousSlide]); // eslint-disable-line react-hooks/exhaustive-deps
-
   return {
-    isAnimatingText: isAnimatingText && isEligible,
-    animTokens,
+    animTokens:         isAnimationMode ? animTokens : [],
     layoutContainerRef,
     spanRefCallback,
   };
 }
+
+// Re-export the CharToken type so TextElement can import from one place.
+export type { CharToken } from './charTokenizer';

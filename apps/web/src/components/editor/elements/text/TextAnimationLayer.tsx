@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { AnimToken } from './charTokenizer';
 
 interface Props {
@@ -13,10 +13,22 @@ interface Props {
 
 /**
  * Absolutely-positioned animation stage rendered on top of the (invisible)
- * layout layer. Unmounted as soon as the transition window closes.
+ * ghost layer. Mirrors CodeElement's stage layer exactly.
  *
- * All span positions use native offset coordinates (from useTextMagicMove),
- * so they are 1:1 with the layout layer regardless of canvas CSS scale().
+ * Phase ordering (same as CodeElement):
+ *   Phase 0 (immediate):        leaving tokens fade to opacity 0
+ *   Phase 1 (delay = exitDur):  continuing tokens fly via FLIP (x:dx→0, y:dy→0)
+ *   Phase 2 (delay = enterDelay): entering tokens fade in (with stagger)
+ *
+ * WHY transitionId IS IN THE KEY (see CodeElement line 367–373):
+ *   Framer Motion's `initial` only fires on component MOUNT. Without transitionId
+ *   in the key, a span stays mounted across transitions (stable key), so
+ *   `initial={{ x:dx, y:dy }}` is silently ignored on re-renders — the token
+ *   snaps. transitionId forces a remount on every transition, guaranteeing
+ *   `initial` fires and the FLIP offset is applied correctly.
+ *
+ * All positions are native offset coordinates (from useTextMagicMove),
+ * immune to the canvas CSS scale() transform.
  */
 export function TextAnimationLayer({
   tokens,
@@ -27,19 +39,24 @@ export function TextAnimationLayer({
   fontStyle,
   lineHeight,
 }: Props) {
-  const travelTransition = {
-    duration: durationSec,
-    ease,
-  } as const;
+  // Scale phase durations proportionally to the user's configured duration —
+  // same ratios as CodeElement for consistent feel.
+  const exitDur    = durationSec * 0.20;  // Phase 0: leaving tokens fade out
+  const layoutDur  = durationSec * 0.55;  // Phase 1: continuing tokens fly
+  const enterDur   = durationSec * 0.30;  // Phase 2: entering tokens fade in
+  const enterDelay = exitDur + layoutDur * 0.70;
+
+  const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1];
+  const EASE_OUT: [number, number, number, number]    = [0.25, 0.46, 0.45, 0.94];
 
   // Shared non-animating font styles so characters render identically
-  // to the layout spans.
+  // to the ghost spans.
   const baseStyle: React.CSSProperties = {
-    position: 'absolute',
-    display:  'inline-block',
-    whiteSpace: 'pre',
+    position:      'absolute',
+    display:       'inline-block',
+    whiteSpace:    'pre',
     pointerEvents: 'none',
-    userSelect: 'none',
+    userSelect:    'none',
     fontFamily,
     fontWeight,
     fontStyle,
@@ -47,38 +64,95 @@ export function TextAnimationLayer({
   };
 
   return (
-    // This wrapper is positioned relative to layoutContainerRef which is
-    // already `position: relative`, so (0, 0) matches perfectly.
     <div
       style={{
-        position: 'absolute',
-        inset: 0,
-        overflow: 'visible',
+        position:      'absolute',
+        inset:         0,
+        overflow:      'visible',
         pointerEvents: 'none',
       }}
     >
-      {tokens.map(token => {
-        // ── Continuing: travel from prev position to next position ───────────
-        if (token.type === 'continuing') {
+      <AnimatePresence>
+        {tokens.map(token => {
+          // ── Phase 0: Leaving — fade out immediately ────────────────────
+          if (token.type === 'leaving') {
+            return (
+              <motion.span
+                // __rm suffix prevents key collision with a same-key entrance
+                // in the same render pass.
+                key={`${token.key}__rm${token.transitionId}`}
+                style={{
+                  ...baseStyle,
+                  left:     token.x,
+                  top:      token.y,
+                  fontSize: token.fontSize,
+                  color:    token.color,
+                }}
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: exitDur, ease: EASE_IN_OUT }}
+              >
+                {token.char}
+              </motion.span>
+            );
+          }
+
+          // ── Phase 2: Entering — fade in with stagger ───────────────────
+          if (token.type === 'entering') {
+            return (
+              <motion.span
+                key={`${token.key}__add${token.transitionId}`}
+                style={{
+                  ...baseStyle,
+                  left:     token.x,
+                  top:      token.y,
+                  fontSize: token.fontSize,
+                  color:    token.color,
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  duration: enterDur,
+                  ease:     EASE_OUT,
+                  delay:    enterDelay + token.staggerIndex * 0.012,
+                }}
+              >
+                {token.char}
+              </motion.span>
+            );
+          }
+
+          // ── Phase 1: Continuing — FLIP from old position to new ────────
+          //
+          // We render at the NEW pixel position (style.left = toX, top = toY),
+          // then set `initial={{ x: dx, y: dy }}` to visually place the span at
+          // the OLD position. `animate={{ x: 0, y: 0 }}` flies it forward.
+          //
+          // On the first render (isFirst path in the hook), dx === 0 && dy === 0,
+          // so `initial={false}` skips the entrance — tokens just appear in place.
+          const hasMovement = token.dx !== 0 || token.dy !== 0;
           return (
             <motion.span
-              key={token.key}
+              key={`${token.key}__t${token.transitionId}`}
               style={{
                 ...baseStyle,
                 left:     token.toX,
                 top:      token.toY,
-                // toFontSize / toColor are the steady-state values; Framer
-                // Motion animates FROM the initial prop values below.
                 fontSize: token.toFontSize,
                 color:    token.toColor,
               }}
-              initial={{
-                x:        token.dx,
-                y:        token.dy,
-                fontSize: token.fromFontSize,
-                color:    token.fromColor,
-                opacity:  1,
-              }}
+              initial={
+                hasMovement
+                  ? {
+                      x:        token.dx,
+                      y:        token.dy,
+                      fontSize: token.fromFontSize,
+                      color:    token.fromColor,
+                      opacity:  1,
+                    }
+                  : false
+              }
               animate={{
                 x:        0,
                 y:        0,
@@ -86,64 +160,17 @@ export function TextAnimationLayer({
                 color:    token.toColor,
                 opacity:  1,
               }}
-              transition={travelTransition}
-            >
-              {token.char}
-            </motion.span>
-          );
-        }
-
-        // ── Entering: materialise in place during the latter half ────────────
-        if (token.type === 'entering') {
-          return (
-            <motion.span
-              key={token.key}
-              style={{
-                ...baseStyle,
-                left:     token.x,
-                top:      token.y,
-                fontSize: token.fontSize,
-                color:    token.color,
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
               transition={{
-                duration: durationSec * 0.45,
-                delay:    durationSec * 0.55, // starts just past halfway
-                ease:     'easeIn',
+                duration: layoutDur,
+                ease,
+                delay: exitDur, // wait for Phase 0 to finish
               }}
             >
               {token.char}
             </motion.span>
           );
-        }
-
-        // ── Leaving: dissolve out during the first half ──────────────────────
-        if (token.type === 'leaving') {
-          return (
-            <motion.span
-              key={token.key}
-              style={{
-                ...baseStyle,
-                left:     token.x,
-                top:      token.y,
-                fontSize: token.fontSize,
-                color:    token.color,
-              }}
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 0 }}
-              transition={{
-                duration: durationSec * 0.35,
-                ease:     'easeOut',
-              }}
-            >
-              {token.char}
-            </motion.span>
-          );
-        }
-
-        return null;
-      })}
+        })}
+      </AnimatePresence>
     </div>
   );
 }

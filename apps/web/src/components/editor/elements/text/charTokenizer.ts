@@ -19,27 +19,48 @@ export interface SteadyStateRecord extends CharLayout {
   color: string;
 }
 
-export interface TransitionSets {
-  continuing: Array<{ key: string; char: string }>;
-  entering:   Array<{ key: string; char: string }>;
-  leaving:    Array<{ key: string; char: string }>;
+// ─── LCS Diff result ─────────────────────────────────────────────────────────
+
+export interface LCSDiffResult {
+  /** Characters matched by LCS — travel from old position to new position. */
+  continuing: Array<{ prevKey: string; nextKey: string; char: string }>;
+  /** Characters only in next slide — fade in. */
+  entering: Array<{ key: string; char: string }>;
+  /** Characters only in prev slide — fade out. */
+  leaving: Array<{ key: string; char: string }>;
 }
 
-// Discriminated union for the animation layer
+// ─── AnimToken types ──────────────────────────────────────────────────────────
+
 export type ContinuingToken = {
   type: 'continuing';
+  /**
+   * Composite key: "${prevKey}__cont__${nextKey}".
+   * Unique per matched pair. Combined with transitionId in the React key
+   * to force remount on every transition.
+   */
   key: string;
+  /** Key in prevPositionsRef (previous slide's token). */
+  prevKey: string;
+  /** Key in nextLayoutMap (current slide's token). */
+  nextKey: string;
   char: string;
+  /** Final rendered position (top-left corner, relative to layout container). */
   toX: number;
   toY: number;
-  /** Initial translate offset: prevX - toX */
+  /** FLIP offsets: initial translate that visually places the span at the OLD position. */
   dx: number;
-  /** Initial translate offset: prevY - toY */
   dy: number;
   fromFontSize: number;
   toFontSize: number;
   fromColor: string;
   toColor: string;
+  /**
+   * Incremented on every content change. Used as a suffix in the React key so
+   * Framer Motion's `initial` fires on every transition (it only fires on mount).
+   * Without this the span stays mounted across transitions and snaps instead of flying.
+   */
+  transitionId: number;
 };
 
 export type EnteringToken = {
@@ -50,6 +71,9 @@ export type EnteringToken = {
   y: number;
   fontSize: number;
   color: string;
+  /** Index within the entering set — drives stagger delay. */
+  staggerIndex: number;
+  transitionId: number;
 };
 
 export type LeavingToken = {
@@ -60,24 +84,28 @@ export type LeavingToken = {
   y: number;
   fontSize: number;
   color: string;
+  transitionId: number;
 };
 
 export type AnimToken = ContinuingToken | EnteringToken | LeavingToken;
 
+// ─── Tokeniser ────────────────────────────────────────────────────────────────
+
 /**
  * Split text into CharTokens, giving each non-whitespace character a
  * collision-safe key based on its occurrence count (e.g. the 3rd 'e' → "e_2").
- * Whitespace tokens receive keys too so they can be rendered in the layout
- * layer, but they are flagged `isWhitespace: true` and excluded from
- * measurement and animation.
+ * Whitespace tokens receive keys too so they can be rendered in the ghost
+ * layer for correct layout, but they are flagged `isWhitespace: true` and
+ * excluded from measurement and animation.
  */
 export function tokenizeText(text: string): CharToken[] {
   const counts: Record<string, number> = {};
 
   return [...text].map((char, index) => {
-    const isWhitespace = char === ' ' || char === '\n' || char === '\r' || char === '\t';
+    const isWhitespace =
+      char === ' ' || char === '\n' || char === '\r' || char === '\t';
 
-    // Readable slug so whitespace keys never clash with real character keys
+    // Readable slug so whitespace keys never clash with real character keys.
     const slug =
       char === ' '  ? '__sp' :
       char === '\n' ? '__nl' :
@@ -92,35 +120,76 @@ export function tokenizeText(text: string): CharToken[] {
   });
 }
 
+// ─── LCS Differ ───────────────────────────────────────────────────────────────
+
 /**
- * Compare prev and next token lists and bucket non-whitespace tokens into:
- *   continuing — same key exists on both sides (character travels)
- *   entering   — key only in next (fade in)
- *   leaving    — key only in prev (fade out)
+ * Compute the Longest Common Subsequence of two character token sequences and
+ * use it to assign travel pairs. Characters matched by LCS travel from their
+ * old position to their new position. Unmatched chars in prev fade out;
+ * unmatched chars in next fade in.
+ *
+ * Unlike occurrence-index matching (e.g. always pairing the Nth 'e' with the
+ * Nth 'e'), LCS ensures that the maximum number of characters travel in the
+ * forward reading direction, preventing paths from crossing.
+ *
+ * Example: "Apple" → "Pineapple"
+ *   Occurrence-index: 'e_0' in "Apple" matches 'e_0' in "Pine" → crosses "apple"
+ *   LCS: 'e_0' in "Apple" matches 'e_1' in "Pineapple" → whole "apple" travels together
  */
-export function diffTokens(
+export function lcsDiffTokens(
   prev: CharToken[],
   next: CharToken[],
-): TransitionSets {
-  const prevMap = new Map(
-    prev.filter(t => !t.isWhitespace).map(t => [t.key, t]),
-  );
-  const nextMap = new Map(
-    next.filter(t => !t.isWhitespace).map(t => [t.key, t]),
-  );
+): LCSDiffResult {
+  const prevNws = prev.filter(t => !t.isWhitespace);
+  const nextNws = next.filter(t => !t.isWhitespace);
+  const m = prevNws.length;
+  const n = nextNws.length;
 
-  const continuing: TransitionSets['continuing'] = [];
-  const entering:   TransitionSets['entering']   = [];
-  const leaving:    TransitionSets['leaving']    = [];
-
-  for (const [key, t] of nextMap) {
-    if (prevMap.has(key)) continuing.push({ key, char: t.char });
-    else                  entering.push({ key, char: t.char });
+  // Build DP table: dp[i][j] = length of LCS of prevNws[0..i-1] and nextNws[0..j-1]
+  const dp: number[][] = Array.from({ length: m + 1 }, () =>
+    new Array(n + 1).fill(0),
+  );
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] =
+        prevNws[i - 1].char === nextNws[j - 1].char
+          ? dp[i - 1][j - 1] + 1
+          : Math.max(dp[i - 1][j], dp[i][j - 1]);
+    }
   }
 
-  for (const [key, t] of prevMap) {
-    if (!nextMap.has(key)) leaving.push({ key, char: t.char });
+  // Backtrack to extract matched pairs in forward order.
+  const matchedPrev = new Set<number>();
+  const matchedNext = new Set<number>();
+  const continuing: LCSDiffResult['continuing'] = [];
+
+  let i = m;
+  let j = n;
+  while (i > 0 && j > 0) {
+    if (prevNws[i - 1].char === nextNws[j - 1].char) {
+      continuing.unshift({
+        prevKey: prevNws[i - 1].key,
+        nextKey: nextNws[j - 1].key,
+        char:    prevNws[i - 1].char,
+      });
+      matchedPrev.add(i - 1);
+      matchedNext.add(j - 1);
+      i--;
+      j--;
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+      i--;
+    } else {
+      j--;
+    }
   }
+
+  const leaving = prevNws
+    .filter((_, idx) => !matchedPrev.has(idx))
+    .map(t => ({ key: t.key, char: t.char }));
+
+  const entering = nextNws
+    .filter((_, idx) => !matchedNext.has(idx))
+    .map(t => ({ key: t.key, char: t.char }));
 
   return { continuing, entering, leaving };
 }
