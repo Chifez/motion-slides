@@ -51,6 +51,7 @@ export interface MotionContextValue {
    * Defaults to 'fade' when no prototype transition is defined.
    */
   transitionAnimation: TransitionAnimation
+  previousSlide: Slide | null
 }
 
 /** Default context when no provider is present (editor mode) */
@@ -71,6 +72,7 @@ const defaultValue: MotionContextValue = {
   newElementCount: 0,
   getStaggerDelay: () => 0,
   transitionAnimation: 'fade',
+  previousSlide: null,
 }
 
 const MotionCtx = createContext<MotionContextValue>(defaultValue)
@@ -120,6 +122,7 @@ export function MotionProvider({ settings, previousSlide, currentSlide, activeTr
     getStaggerDelay: (staggerIndex: number) =>
       staggerDelay(staggerIndex, newIds.size, durationSec),
     transitionAnimation: activeTransition?.animation ?? 'fade',
+    previousSlide,
   }
 
   return <MotionCtx value={value}>{children}</MotionCtx>

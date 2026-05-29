@@ -30,6 +30,10 @@ const EXPORT_ACCESS: AccessControl = {
 function ExportView() {
   const activeSlide = useEditorStore(s => s.activeSlide())
   const playbackSettings = useEditorStore(s => s.playbackSettings)
+  const previousSlideIndex = useEditorStore(s => s.previousSlideIndex)
+  const project = useEditorStore(s => s.activeProject())
+  const previousSlide = previousSlideIndex !== null ? (project?.slides[previousSlideIndex] ?? null) : null
+  const { activeTransition } = useEditorStore(s => s.getPlaybackTransitions())
 
   if (!activeSlide) {
     return (
@@ -66,8 +70,9 @@ function ExportView() {
           <MotionStage
             mode="presentation"
             slide={activeSlide}
-            previousSlide={null}
+            previousSlide={previousSlide}
             settings={playbackSettings}
+            activeTransition={activeTransition}
           />
         </div>
       </div>

@@ -83,8 +83,10 @@ export async function startExport(
         onProgress(event)
 
         if (event.stage === 'done' && event.url) {
-          downloadUrl = `${serverUrl}${event.url}`
-          triggerDownload(downloadUrl, `motionslides-export.${format}`)
+          const projectName = sceneGraph.project.name || 'motionslides-export'
+          const safeName = projectName.replace(/[^a-z0-9_-]/gi, '_').toLowerCase()
+          downloadUrl = `${serverUrl}${event.url}?filename=${encodeURIComponent(safeName)}`
+          triggerDownload(downloadUrl, `${safeName}.${format}`)
         }
 
         if (event.stage === 'error') {

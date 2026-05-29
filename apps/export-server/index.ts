@@ -138,7 +138,12 @@ app.get('/api/download/:jobId', (req: Request, res: Response) => {
     pdf:  'application/pdf',
   }
 
-  res.setHeader('Content-Disposition', `attachment; filename="motionslides.${ext}"`)
+  const filenameQuery = req.query.filename as string | undefined
+  const safeFilename = filenameQuery
+    ? filenameQuery.replace(/[^a-z0-9_-]/gi, '_').toLowerCase()
+    : 'motionslides'
+
+  res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}.${ext}"`)
   res.setHeader('Content-Type', mimeTypes[ext] ?? 'application/octet-stream')
   fs.createReadStream(filePath).pipe(res)
 })

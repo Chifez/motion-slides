@@ -1,10 +1,26 @@
 import { useLayoutEffect, useRef, useEffect } from 'react'
-import type { SceneElement, TextContent } from '@motionslides/shared'
+import type { SceneElement, TextContent, Slide } from '@motionslides/shared'
 import { FONT_WEIGHT_MAP } from '@/constants/editor'
 import { useEditorStore } from '@/store/editorStore'
+import { usePermissions } from '@/context/PermissionContext'
+import { useMotionContext } from '@/context/MotionContext'
+import { tokenizeText } from './text/charTokenizer'
+import { useTextMagicMove } from './text/useTextMagicMove'
+import { TextAnimationLayer } from './text/TextAnimationLayer'
 
 interface Props {
   element: SceneElement
+}
+
+function extractPrevContent(previousSlide: Slide | null, elementId: string) {
+  if (!previousSlide) return {}
+  const el = previousSlide.elements.find(e => e.id === elementId)
+  if (!el || el.type !== 'text') return {}
+  return {
+    prevText:     (el.content as TextContent).value    as string | undefined,
+    prevFontSize: (el.content as TextContent).fontSize as number | undefined,
+    prevColor:    (el.content as TextContent).color    as string | undefined,
+  }
 }
 
 export function TextElement({ element }: Props) {
@@ -15,6 +31,28 @@ export function TextElement({ element }: Props) {
   const editableRef = useRef<HTMLDivElement>(null)
 
   const isEditing = isEditingId === element.id
+
+  const { isReadOnly } = usePermissions()
+  const { previousSlide, durationSec, ease } = useMotionContext()
+
+  const { prevText, prevFontSize, prevColor } = extractPrevContent(previousSlide, element.id)
+
+  const {
+    isAnimatingText,
+    animTokens,
+    layoutContainerRef,
+    spanRefCallback,
+  } = useTextMagicMove({
+    elementId: element.id,
+    text: content.value,
+    fontSize: content.fontSize,
+    color: content.color,
+    isEditing,
+    listStyle: content.listStyle,
+    prevText,
+    prevFontSize,
+    prevColor,
+  })
 
   // ── Auto-Height logic ──
   useLayoutEffect(() => {
@@ -136,8 +174,56 @@ export function TextElement({ element }: Props) {
       )
     }
 
-    return <span>{content.value}</span>
+    if (isAnimatingText || (isReadOnly && !content.listStyle)) {
+      const tokens = tokenizeText(content.value)
+      const fontWeight = FONT_WEIGHT_MAP[content.fontWeight]
+      const fontFamily = `"${content.fontFamily || 'Inter'}", sans-serif`
 
+      return (
+        <div
+          ref={layoutContainerRef}
+          style={{
+            position:   'relative',
+            width:      '100%',
+            whiteSpace: 'pre-wrap',
+            wordBreak:  'break-word',
+            lineHeight: 1.3,
+            opacity: isAnimatingText ? 0 : 1,
+          }}
+        >
+          {tokens.map(token =>
+            token.char === '\n' ? (
+              <br key={token.key} />
+            ) : (
+              <span
+                key={token.key}
+                ref={
+                  token.isWhitespace
+                    ? undefined
+                    : el => spanRefCallback(token.key, el)
+                }
+              >
+                {token.char}
+              </span>
+            )
+          )}
+
+          {isAnimatingText && (
+            <TextAnimationLayer
+              tokens={animTokens}
+              durationSec={durationSec}
+              ease={ease}
+              fontFamily={fontFamily}
+              fontWeight={fontWeight}
+              fontStyle={content.fontStyle || 'normal'}
+              lineHeight={1.3}
+            />
+          )}
+        </div>
+      )
+    }
+
+    return <span>{content.value}</span>
   }
 
   return (
@@ -155,3 +241,4 @@ export function TextElement({ element }: Props) {
     </div>
   )
 }
+
