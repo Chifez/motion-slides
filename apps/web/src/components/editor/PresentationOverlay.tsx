@@ -107,25 +107,47 @@ export function PresentationOverlay() {
   }, [])
   useFullscreen(isPresenting, onExitFullscreen)
 
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  const { width: canvasW, height: canvasH } = useMemo(() => {
+    return getCanvasDimensions(playbackSettings.aspectRatio)
+  }, [playbackSettings.aspectRatio])
+
+  // Reset previousSlideIndex to null after slide transition animation duration
+  useLayoutEffect(() => {
+    if (!isPresenting || previousSlideIndex === null) return
+
+    const durationMs = activeTransition?.duration ?? playbackSettings.transitionDuration
+    const timer = setTimeout(() => {
+      useEditorStore.setState({ previousSlideIndex: null })
+    }, durationMs + 50)
+
+    return () => clearTimeout(timer)
+  }, [activeSlideIndex, previousSlideIndex, isPresenting, activeTransition, playbackSettings.transitionDuration])
+
+  // Track screen size dynamically via ResizeObserver
+  useLayoutEffect(() => {
+    if (!isPresenting) return
+    const el = containerRef.current
+    if (!el) return
+
+    const resize = () => {
+      const { clientWidth: w, clientHeight: h } = el
+      setScale(Math.min(w / canvasW, h / canvasH))
+    }
+
+    resize()
+    const ro = new ResizeObserver(resize)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [isPresenting, canvasW, canvasH])
+
   if (!isPresenting || !slide) return null
-
-  const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
-  const scaleX = window.innerWidth / canvasW
-  const scaleY = window.innerHeight / canvasH
-  const scale = Math.min(scaleX, scaleY)
-
-  // CSS scale() doesn't affect layout — the element still occupies its original
-  // (un-scaled) size in the flex-flow, so centering via flexbox shifts by
-  // (canvasW - canvasW*scale)/2 from the true center on wide screens.
-  // Instead we absolute-position the board with explicit pixel offsets so the
-  // visual position matches the mathematical center of the viewport.
-  const scaledW = canvasW * scale
-  const scaledH = canvasH * scale
-  const offsetX = (window.innerWidth  - scaledW) / 2
-  const offsetY = (window.innerHeight - scaledH) / 2
 
   return (
     <div
+      ref={containerRef}
       className="fixed inset-0 z-(--z-overlay) bg-black"
       onMouseMove={showControls}
       onClick={handleNext}
@@ -135,12 +157,12 @@ export function PresentationOverlay() {
         data-canvas-board
         className="absolute overflow-hidden"
         style={{
+          left: '50%',
+          top: '50%',
           width: canvasW,
           height: canvasH,
-          left: offsetX,
-          top: offsetY,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
+          transform: `translate(-50%, -50%) scale(${scale})`,
+          transformOrigin: 'center center',
           backgroundColor: (slide.background || '#0a0a0a').startsWith('url') ? 'transparent' : (slide.background || '#0a0a0a'),
           backgroundImage: (slide.background || '#0a0a0a').startsWith('url') ? slide.background : 'none',
           backgroundSize: 'cover',

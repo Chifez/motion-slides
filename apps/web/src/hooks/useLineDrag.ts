@@ -15,7 +15,7 @@ import type { SceneElement, LineContent, Position } from '@motionslides/shared'
  * - Cleanup of native DOM listeners on unmount
  */
 
-const SNAP_THRESHOLD = 15
+const SNAP_THRESHOLD = 30
 
 type HandleId = 'top' | 'bottom' | 'left' | 'right' | 'center'
 

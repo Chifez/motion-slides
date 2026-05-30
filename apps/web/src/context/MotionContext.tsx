@@ -71,7 +71,7 @@ const defaultValue: MotionContextValue = {
   newElementIds: EMPTY_SET,
   newElementCount: 0,
   getStaggerDelay: () => 0,
-  transitionAnimation: 'fade',
+  transitionAnimation: 'magic-move',
   previousSlide: null,
 }
 
@@ -121,7 +121,7 @@ export function MotionProvider({ settings, previousSlide, currentSlide, activeTr
     newElementCount: newIds.size,
     getStaggerDelay: (staggerIndex: number) =>
       staggerDelay(staggerIndex, newIds.size, durationSec),
-    transitionAnimation: activeTransition?.animation ?? 'fade',
+    transitionAnimation: activeTransition?.animation ?? 'magic-move',
     previousSlide,
   }
 

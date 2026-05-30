@@ -183,7 +183,18 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
               Series Colors
             </span>
             <button 
-              onClick={() => onUpdate({ ...content, branches: [...(content.branches || []), { id: `b-${Math.random().toString(36).slice(2, 8)}`, x: 1, y: 1 }] })}
+              onClick={() => {
+                const currentBranches = content.branches || []
+                let newY = 0.5
+                if (currentBranches.length > 0) {
+                  const lastY = currentBranches[currentBranches.length - 1].y
+                  newY = lastY >= 1 ? lastY - 0.2 : lastY + 0.2
+                }
+                onUpdate({
+                  ...content,
+                  branches: [...currentBranches, { id: `b-${Math.random().toString(36).slice(2, 8)}`, x: 1, y: newY }]
+                })
+              }}
               className="text-[10px] font-semibold text-blue-500 hover:text-blue-400 border-none bg-transparent cursor-pointer"
             >
               + Add Point

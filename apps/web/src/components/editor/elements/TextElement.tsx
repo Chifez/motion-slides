@@ -23,7 +23,7 @@ export function TextElement({ element }: Props) {
   const isEditing = isEditingId === element.id
 
   const { isReadOnly } = usePermissions()
-  const { durationSec, ease } = useMotionContext()
+  const { durationSec, ease, transitionAnimation } = useMotionContext()
 
   const {
     animTokens,
@@ -121,7 +121,8 @@ export function TextElement({ element }: Props) {
   const isAnimationMode =
     (isPresenting || isReadOnly) &&
     !isEditing &&
-    !content.listStyle
+    !content.listStyle &&
+    transitionAnimation === 'magic-move'
 
   const renderInner = () => {
     // ── Editing: contentEditable ──────────────────────────────────────────
