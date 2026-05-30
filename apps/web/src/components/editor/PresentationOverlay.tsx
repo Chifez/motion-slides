@@ -77,7 +77,12 @@ export function PresentationOverlay() {
     ? (autoTransition.autoDelay ?? 0) + entranceDuration
     : playbackSettings.autoplayDelay + entranceDuration
 
-  const shouldAutoplay = (isPresenting && isAutoplayActive) || (isPresenting && !!autoTransition)
+  // Global autoplay must not fire when the current slide uses a prototype
+  // click-trigger transition — the user explicitly chose manual navigation.
+  const shouldAutoplay = isPresenting && (
+    !!autoTransition ||
+    (isAutoplayActive && !clickTransition)
+  )
 
   useAutoplay(
     shouldAutoplay,
@@ -109,21 +114,33 @@ export function PresentationOverlay() {
   const scaleY = window.innerHeight / canvasH
   const scale = Math.min(scaleX, scaleY)
 
+  // CSS scale() doesn't affect layout — the element still occupies its original
+  // (un-scaled) size in the flex-flow, so centering via flexbox shifts by
+  // (canvasW - canvasW*scale)/2 from the true center on wide screens.
+  // Instead we absolute-position the board with explicit pixel offsets so the
+  // visual position matches the mathematical center of the viewport.
+  const scaledW = canvasW * scale
+  const scaledH = canvasH * scale
+  const offsetX = (window.innerWidth  - scaledW) / 2
+  const offsetY = (window.innerHeight - scaledH) / 2
+
   return (
     <div
-      className="fixed inset-0 z-(--z-overlay) bg-black flex items-center justify-center"
+      className="fixed inset-0 z-(--z-overlay) bg-black"
       onMouseMove={showControls}
       onClick={handleNext}
       style={{ cursor: controlsVisible ? 'default' : 'none' }}
     >
       <div
         data-canvas-board
-        className="relative overflow-hidden"
+        className="absolute overflow-hidden"
         style={{
           width: canvasW,
           height: canvasH,
+          left: offsetX,
+          top: offsetY,
           transform: `scale(${scale})`,
-          transformOrigin: 'center center',
+          transformOrigin: 'top left',
           backgroundColor: (slide.background || '#0a0a0a').startsWith('url') ? 'transparent' : (slide.background || '#0a0a0a'),
           backgroundImage: (slide.background || '#0a0a0a').startsWith('url') ? slide.background : 'none',
           backgroundSize: 'cover',
