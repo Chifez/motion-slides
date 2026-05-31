@@ -39,7 +39,7 @@ export async function startExport(
     return null
   }
 
-  // ── POST to backend and read SSE stream ──────────────────────────────────
+  // ── POST to backend to enqueue job (or get cache hit) ────────────────────
   let response: Response
   try {
     response = await fetch(`${serverUrl}/api/export`, {
@@ -57,13 +57,54 @@ export async function startExport(
     return null
   }
 
-  if (!response.body) {
-    onProgress({ stage: 'error', percent: 0, message: 'Server returned no body' })
+  let data: { status: string; jobId: string; cached: boolean; url?: string }
+  try {
+    data = await response.json()
+  } catch {
+    onProgress({ stage: 'error', percent: 0, message: 'Invalid response from server' })
     return null
   }
 
-  // ── Read SSE events from the response body stream ────────────────────────
-  const reader  = response.body.getReader()
+  const projectName = sceneGraph.project.name || 'motionslides-export'
+  const safeName = projectName.replace(/[^a-z0-9_-]/gi, '_').toLowerCase()
+
+  // ── Handle Cache Hit ─────────────────────────────────────────────────────
+  if (data.status === 'done' && data.url) {
+    onProgress({ stage: 'done', percent: 100, message: 'Export complete (cached)!' })
+    const downloadUrl = `${serverUrl}${data.url}?filename=${encodeURIComponent(safeName)}`
+    triggerDownload(downloadUrl, `${safeName}.${format}`)
+    return downloadUrl
+  }
+
+  const jobId = data.jobId
+  if (!jobId) {
+    onProgress({ stage: 'error', percent: 0, message: 'Server did not return a Job ID' })
+    return null
+  }
+
+  // ── Establish SSE connection to stream status ────────────────────────────
+  onProgress({ stage: 'preparing', percent: 5, message: 'Job enqueued. Connecting to progress stream…' })
+
+  let sseResponse: Response
+  try {
+    sseResponse = await fetch(`${serverUrl}/api/export/status/${jobId}/stream`)
+  } catch (err) {
+    onProgress({ stage: 'error', percent: 0, message: 'Failed to connect to export status stream.' })
+    return null
+  }
+
+  if (!sseResponse.ok) {
+    onProgress({ stage: 'error', percent: 0, message: `Status connection error: ${sseResponse.status}` })
+    return null
+  }
+
+  if (!sseResponse.body) {
+    onProgress({ stage: 'error', percent: 0, message: 'Server returned empty status body' })
+    return null
+  }
+
+  // ── Read SSE progress events ─────────────────────────────────────────────
+  const reader  = sseResponse.body.getReader()
   const decoder = new TextDecoder()
   let   buffer  = ''
   let   downloadUrl: string | null = null
@@ -74,7 +115,7 @@ export async function startExport(
 
     buffer += decoder.decode(value, { stream: true })
     const lines = buffer.split('\n')
-    buffer      = lines.pop() ?? ''   // keep incomplete last line in buffer
+    buffer      = lines.pop() ?? ''
 
     for (const line of lines) {
       if (!line.startsWith('data: ')) continue
@@ -83,8 +124,6 @@ export async function startExport(
         onProgress(event)
 
         if (event.stage === 'done' && event.url) {
-          const projectName = sceneGraph.project.name || 'motionslides-export'
-          const safeName = projectName.replace(/[^a-z0-9_-]/gi, '_').toLowerCase()
           downloadUrl = `${serverUrl}${event.url}?filename=${encodeURIComponent(safeName)}`
           triggerDownload(downloadUrl, `${safeName}.${format}`)
         }
@@ -93,7 +132,7 @@ export async function startExport(
           return null
         }
       } catch {
-        // Malformed SSE line — skip
+        // Skip malformed SSE lines
       }
     }
   }
@@ -112,3 +151,4 @@ function triggerDownload(url: string, filename: string): void {
   a.click()
   document.body.removeChild(a)
 }
+

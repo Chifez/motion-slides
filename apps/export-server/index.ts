@@ -17,37 +17,93 @@ import fs      from 'fs'
 import path    from 'path'
 import os      from 'os'
 import { v4 as uuid }  from 'uuid'
-import PQueue  from 'p-queue'
-import { HeadlessRenderer } from './renderer/HeadlessRenderer.js'
-import type { ExportProgressEvent } from '@motionslides/shared'
+import Redis from 'ioredis'
+import {
+  exportQueue,
+  initExportWorker,
+  getExportHash,
+  getCachedExport,
+} from './queue.js'
+import { workbench } from '@getworkbench/express'
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
 const app        = express()
 const PORT       = process.env.PORT ?? 3001
-const OUTPUT_DIR = process.env.OUTPUT_DIR ?? path.join(os.tmpdir(), 'motionslides-exports')
-const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT_EXPORTS ?? '2')
+const OUTPUT_DIR = process.env.OUTPUT_DIR ?? path.join(process.cwd(), 'exports')
 const EXPORT_TIMEOUT = parseInt(process.env.EXPORT_TIMEOUT_MS ?? '300000')
 
 fs.mkdirSync(OUTPUT_DIR, { recursive: true })
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
   methods: ['GET', 'POST'],
 }))
 app.use(express.json({ limit: '100mb' }))  // large limit for base64 images
 
-// ─── Job queue ────────────────────────────────────────────────────────────────
-
-const renderQueue = new PQueue({ concurrency: MAX_CONCURRENT })
+// ─── BullMQ Workbench Dashboard ───────────────────────────────────────────────
+app.use(
+  '/admin/jobs',
+  workbench({
+    queues: [exportQueue],
+  })
+)
 
 // ─── POST /api/export ─────────────────────────────────────────────────────────
 
-app.post('/api/export', (req: Request, res: Response) => {
+app.post('/api/export', async (req: Request, res: Response) => {
   const { sceneGraph, format = 'mp4' } = req.body
 
   if (!sceneGraph?.project) {
     return res.status(400).json({ error: 'sceneGraph.project is required' })
+  }
+
+  const hash = getExportHash(sceneGraph, format)
+
+  try {
+    // 1. Check Redis Cache
+    const cachedJobId = await getCachedExport(hash)
+    if (cachedJobId) {
+      console.log(`[ExportServer] Cache HIT for hash ${hash} -> jobId ${cachedJobId}`)
+      return res.json({
+        status: 'done',
+        jobId: cachedJobId,
+        cached: true,
+        url: `/api/download/${cachedJobId}`
+      })
+    }
+
+    // 2. Add new job to BullMQ
+    const jobId = uuid()
+    const ext = format === 'pdf' ? 'pdf' : format
+    const outPath = path.join(OUTPUT_DIR, `${jobId}.${ext}`)
+
+    await exportQueue.add(
+      'render',
+      { jobId, sceneGraph, format, outPath, hash },
+      { jobId } // Use the same uuid as BullMQ jobId
+    )
+
+    console.log(`[ExportServer] Enqueued new job ${jobId} for hash ${hash}`)
+    return res.json({
+      status: 'queued',
+      jobId,
+      cached: false
+    })
+  } catch (err: any) {
+    console.error('[ExportServer] Export endpoint failed:', err)
+    return res.status(500).json({ error: err.message ?? 'Failed to enqueue export job' })
+  }
+})
+
+// ─── GET /api/export/status/:jobId/stream ─────────────────────────────────────
+
+app.get('/api/export/status/:jobId/stream', async (req: Request, res: Response) => {
+  const { jobId } = req.params
+
+  // Validate — only allow UUID format to prevent path traversal
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(jobId)) {
+    return res.status(400).send('Invalid job ID')
   }
 
   // ── Configure SSE ──────────────────────────────────────────────────────────
@@ -59,55 +115,61 @@ app.post('/api/export', (req: Request, res: Response) => {
   // @ts-ignore
   if (res.flushHeaders) res.flushHeaders()
 
-  const jobId    = uuid()
-  const ext      = format === 'pdf' ? 'pdf' : format
-  const outPath  = path.join(OUTPUT_DIR, `${jobId}.${ext}`)
-  let   finished = false
-
-  const send = (event: ExportProgressEvent) => {
-    if (!finished) res.write(`data: ${JSON.stringify(event)}\n\n`)
+  const send = (event: any) => {
+    res.write(`data: ${JSON.stringify(event)}\n\n`)
   }
 
-  // ── Timeout guard ──────────────────────────────────────────────────────────
-  const timer = setTimeout(() => {
-    if (!finished) {
-      finished = true
-      send({ stage: 'error', percent: 0, message: 'Export timed out.' })
-      res.end()
+  const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379'
+  const subscriber = new Redis(REDIS_URL, {
+    enableReadyCheck: false,
+    maxRetriesPerRequest: null,
+  })
+  subscriber.on('error', (err) => {
+    console.error(`[Redis Subscriber Error for ${jobId}]:`, err)
+  })
+  const channel = `job:progress:${jobId}`
+
+  // Check if job is already completed or failed in Queue
+  try {
+    const job = await exportQueue.getJob(jobId)
+    if (job) {
+      const state = await job.getState()
+      if (state === 'completed') {
+        send({ stage: 'done', percent: 100, message: 'Export complete!', url: `/api/download/${jobId}` })
+        res.end()
+        await subscriber.disconnect()
+        return
+      } else if (state === 'failed') {
+        send({ stage: 'error', percent: 0, message: job.failedReason ?? 'Render failed.' })
+        res.end()
+        await subscriber.disconnect()
+        return
+      }
     }
-  }, EXPORT_TIMEOUT)
+  } catch (err) {
+    console.error(`Error querying status for job ${jobId}:`, err)
+  }
 
-  // ── Queue the render job ───────────────────────────────────────────────────
-  renderQueue.add(async () => {
-    const renderer = new HeadlessRenderer({
-      frontendUrl:      process.env.FRONTEND_URL ?? 'http://localhost:5173',
-      chromeExecutable: process.env.CHROME_EXECUTABLE,
-      outputPath:       outPath,
-      format,
-      onProgress:       send,
-    })
+  // Subscribe to Redis updates
+  await subscriber.subscribe(channel)
 
+  subscriber.on('message', (chan, message) => {
     try {
-      await renderer.render(sceneGraph)
-
-      if (!finished) {
-        scheduleCleanup(outPath, 10 * 60 * 1000)
-        send({
-          stage:   'done',
-          percent: 100,
-          message: 'Export complete!',
-          url:     `/api/download/${jobId}`,
-        })
+      const event = JSON.parse(message)
+      send(event)
+      if (event.stage === 'done' || event.stage === 'error') {
+        res.end()
+        subscriber.unsubscribe(channel).then(() => subscriber.disconnect())
       }
-    } catch (err: any) {
-      if (!finished) {
-        send({ stage: 'error', percent: 0, message: err?.message ?? 'Render failed.' })
-      }
-    } finally {
-      finished = true
-      clearTimeout(timer)
-      res.end()
+    } catch (e) {
+      console.error('Error parsing SSE event:', e)
     }
+  })
+
+  // Handle client disconnect
+  req.on('close', async () => {
+    await subscriber.unsubscribe(channel)
+    await subscriber.disconnect()
   })
 })
 
@@ -150,23 +212,28 @@ app.get('/api/download/:jobId', (req: Request, res: Response) => {
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 
-app.get('/health', (_req, res) => res.json({
-  ok:      true,
-  queue:   renderQueue.size,
-  pending: renderQueue.pending,
-}))
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function scheduleCleanup(filePath: string, delayMs: number): void {
-  setTimeout(() => fs.unlink(filePath, () => {}), delayMs)
-}
+app.get('/health', async (_req, res) => {
+  try {
+    const activeCount = await exportQueue.getActiveCount()
+    const waitingCount = await exportQueue.getWaitingCount()
+    res.json({
+      ok:      true,
+      queue:   waitingCount,
+      pending: activeCount,
+    })
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
+// Initialize BullMQ worker
+initExportWorker()
+
 app.listen(PORT, () => {
   console.log(`[ExportServer] http://localhost:${PORT}`)
-  console.log(`[ExportServer] Frontend: ${process.env.FRONTEND_URL}`)
+  console.log(`[ExportServer] Frontend: ${process.env.FRONTEND_URL ?? 'http://localhost:3000'}`)
   console.log(`[ExportServer] Chrome:   ${process.env.CHROME_EXECUTABLE ?? 'default puppeteer'}`)
-  console.log(`[ExportServer] Max jobs: ${MAX_CONCURRENT}`)
 })
+

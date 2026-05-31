@@ -28,12 +28,20 @@ const EXPORT_ACCESS: AccessControl = {
  * this page is captured.
  */
 function ExportView() {
-  const activeSlide = useEditorStore(s => s.activeSlide())
-  const playbackSettings = useEditorStore(s => s.playbackSettings)
+  const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
   const previousSlideIndex = useEditorStore(s => s.previousSlideIndex)
   const project = useEditorStore(s => s.activeProject())
+  const playbackSettings = useEditorStore(s => s.playbackSettings)
+
+  // Derived state during render (referentially stable)
+  const activeSlide = project?.slides[activeSlideIndex] ?? null
   const previousSlide = previousSlideIndex !== null ? (project?.slides[previousSlideIndex] ?? null) : null
-  const { activeTransition } = useEditorStore(s => s.getPlaybackTransitions())
+
+  const activeTransition = (() => {
+    if (!project || !activeSlide || !previousSlide) return null
+    const transitions = project.transitions ?? []
+    return transitions.find(t => t.fromSlideId === previousSlide.id && t.toSlideId === activeSlide.id) ?? null
+  })()
 
   if (!activeSlide) {
     return (
