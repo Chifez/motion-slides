@@ -23,6 +23,7 @@ import {
   initExportWorker,
   getExportHash,
   getCachedExport,
+  startDiskCleanupTimer,
 } from './queue.js'
 import { workbench } from '@getworkbench/express'
 
@@ -39,7 +40,7 @@ app.use(cors({
   origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
   methods: ['GET', 'POST'],
 }))
-app.use(express.json({ limit: '100mb' }))  // large limit for base64 images
+app.use(express.json({ limit: '50mb' }))  // Safe limit for large base64 images
 
 // ─── BullMQ Workbench Dashboard ───────────────────────────────────────────────
 app.use(
@@ -54,8 +55,20 @@ app.use(
 app.post('/api/export', async (req: Request, res: Response) => {
   const { sceneGraph, format = 'mp4' } = req.body
 
-  if (!sceneGraph?.project) {
-    return res.status(400).json({ error: 'sceneGraph.project is required' })
+  // 1. Format validation
+  if (!['mp4', 'webm', 'gif', 'pdf'].includes(format)) {
+    return res.status(400).json({ error: 'Invalid export format. Allowed formats: mp4, webm, gif, pdf.' })
+  }
+
+  // 2. sceneGraph structural schema validation
+  if (!sceneGraph || typeof sceneGraph !== 'object') {
+    return res.status(400).json({ error: 'Invalid sceneGraph payload structure.' })
+  }
+  if (!sceneGraph.project || typeof sceneGraph.project !== 'object' || !sceneGraph.project.id || !Array.isArray(sceneGraph.project.slides)) {
+    return res.status(400).json({ error: 'sceneGraph.project is required and must contain valid slides.' })
+  }
+  if (!sceneGraph.playbackSettings || typeof sceneGraph.playbackSettings !== 'object' || !sceneGraph.playbackSettings.exportResolution) {
+    return res.status(400).json({ error: 'sceneGraph.playbackSettings is required and must contain exportResolution.' })
   }
 
   const hash = getExportHash(sceneGraph, format)
@@ -81,7 +94,16 @@ app.post('/api/export', async (req: Request, res: Response) => {
     await exportQueue.add(
       'render',
       { jobId, sceneGraph, format, outPath, hash },
-      { jobId } // Use the same uuid as BullMQ jobId
+      {
+        jobId,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: { age: 86400, count: 100 }, // Keep max 100 completed jobs or 24 hours
+        removeOnFail: { age: 604800, count: 500 },    // Keep failed jobs for 7 days
+      }
     )
 
     console.log(`[ExportServer] Enqueued new job ${jobId} for hash ${hash}`)
@@ -120,9 +142,12 @@ app.get('/api/export/status/:jobId/stream', async (req: Request, res: Response) 
   }
 
   const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379'
+  const isSecure = REDIS_URL.startsWith('rediss://')
+  const rejectUnauthorized = process.env.REDIS_REJECT_UNAUTHORIZED === 'false' ? false : true
   const subscriber = new Redis(REDIS_URL, {
     enableReadyCheck: false,
     maxRetriesPerRequest: null,
+    tls: isSecure ? { rejectUnauthorized } : undefined,
   })
   subscriber.on('error', (err) => {
     console.error(`[Redis Subscriber Error for ${jobId}]:`, err)
@@ -228,8 +253,14 @@ app.get('/health', async (_req, res) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
-// Initialize BullMQ worker
+// Initialize BullMQ worker and background disk cleanup scan
 initExportWorker()
+startDiskCleanupTimer()
+
+// ─── Environment Variables Validation ─────────────────────────────────────────
+if (!process.env.FRONTEND_URL) {
+  console.warn('[Warning] Environment variable FRONTEND_URL is not set. Defaulting to http://localhost:3000')
+}
 
 app.listen(PORT, () => {
   console.log(`[ExportServer] http://localhost:${PORT}`)

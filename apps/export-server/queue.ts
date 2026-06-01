@@ -23,19 +23,69 @@ const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT_EXPORTS ?? '2')
 fs.mkdirSync(OUTPUT_DIR, { recursive: true })
 
 // ─── Redis Connections ────────────────────────────────────────────────────────
-// BullMQ requires maxRetriesPerRequest: null
-export const redisConnection = new Redis(REDIS_URL, {
+const isSecure = REDIS_URL.startsWith('rediss://')
+const rejectUnauthorized = process.env.REDIS_REJECT_UNAUTHORIZED === 'false' ? false : true
+const redisOptions = {
   maxRetriesPerRequest: null,
-})
+  tls: isSecure ? { rejectUnauthorized } : undefined,
+}
+
+// BullMQ requires maxRetriesPerRequest: null
+export const redisConnection = new Redis(REDIS_URL, redisOptions)
 redisConnection.on('error', (err) => {
   console.error('[Redis Connection Error]:', err)
 })
 
 // Redis Pub/Sub publisher client
-export const redisPubClient = new Redis(REDIS_URL)
+const pubOptions = isSecure ? { tls: { rejectUnauthorized } } : {}
+export const redisPubClient = new Redis(REDIS_URL, pubOptions)
 redisPubClient.on('error', (err) => {
   console.error('[Redis Pub Client Error]:', err)
 })
+
+// ─── Disk Garbage Collection ──────────────────────────────────────────────────
+/**
+ * Periodically deletes exported files older than maxAgeMs from disk.
+ * Default: Scans every 1 hour, deletes files older than 24 hours.
+ */
+export function startDiskCleanupTimer(intervalMs = 3600000, maxAgeMs = 86400000): void {
+  console.log(`[DiskCleanup] Initialized. Scanning folder: ${OUTPUT_DIR}`)
+  
+  // Run an initial cleanup run 5 seconds after startup
+  setTimeout(runGC, 5000)
+
+  // Schedule recurring scans
+  setInterval(runGC, intervalMs)
+
+  function runGC() {
+    fs.readdir(OUTPUT_DIR, (err, files) => {
+      if (err) {
+        console.error('[DiskCleanup] Failed to read exports directory:', err)
+        return
+      }
+
+      const now = Date.now()
+      let deletedCount = 0
+
+      files.forEach(file => {
+        if (file.startsWith('.')) return // Skip dotfiles
+
+        const filePath = path.join(OUTPUT_DIR, file)
+        fs.stat(filePath, (err, stats) => {
+          if (err) return
+
+          if (stats.isFile() && (now - stats.mtimeMs) > maxAgeMs) {
+            fs.unlink(filePath, (unlinkErr) => {
+              if (!unlinkErr) {
+                deletedCount++
+              }
+            })
+          }
+        })
+      })
+    })
+  }
+}
 
 // ─── BullMQ Queue ─────────────────────────────────────────────────────────────
 export const queueName = 'export-jobs'
@@ -111,6 +161,13 @@ export function initExportWorker(): void {
 
       console.log(`[Worker] Started processing job ${jobId} (${format})`)
 
+      // Path traversal validation (defensive check)
+      const resolvedPath = path.resolve(outPath)
+      const resolvedOutputDir = path.resolve(OUTPUT_DIR)
+      if (!resolvedPath.startsWith(resolvedOutputDir)) {
+        throw new Error('Security Error: Invalid output path traversal detected')
+      }
+
       const sendProgress = (event: ExportProgressEvent) => {
         // Report progress to BullMQ
         job.updateProgress(event.percent)
@@ -141,7 +198,7 @@ export function initExportWorker(): void {
           url: `/api/download/${jobId}`,
         })
       } catch (err: any) {
-        console.error(`[Worker] Failed job ${jobId}:`, err)
+        console.error(`[Worker] Failed job ${jobId}: ${err?.message || err}`)
         sendProgress({
           stage: 'error',
           percent: 0,
