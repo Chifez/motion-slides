@@ -2,7 +2,7 @@ import { memo } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { AudioRecorder } from '../audio/AudioRecorder'
 import { AudioTimelineEditor } from '../audio/AudioTimelineEditor'
-import { Music, Presentation, VolumeX, Sliders, CheckSquare, Square } from 'lucide-react'
+import { Music, Presentation, CheckSquare, Square } from 'lucide-react'
 
 const sectionCls = "px-3 py-3 border-b border-(--ms-border)"
 
@@ -42,7 +42,6 @@ export const EmptyInspector = memo(function EmptyInspector() {
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar">
-      {/* Title Header */}
       <div className={sectionCls}>
         <span className="text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted) mb-1.5 block">
           Presentation Details
@@ -52,7 +51,6 @@ export const EmptyInspector = memo(function EmptyInspector() {
         </h2>
       </div>
 
-      {/* Slide renaming and metadata */}
       {slide && (
         <div className={sectionCls}>
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-2 font-medium">
@@ -68,7 +66,6 @@ export const EmptyInspector = memo(function EmptyInspector() {
         </div>
       )}
 
-      {/* Slide level audio settings */}
       {slide && (
         <div className={sectionCls}>
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-2 font-medium">
@@ -89,7 +86,6 @@ export const EmptyInspector = memo(function EmptyInspector() {
         </div>
       )}
 
-      {/* Project global background music settings */}
       <div className={sectionCls}>
         <div className="flex items-center gap-1.5 mb-2">
           <Music size={13} className="text-(--ms-text-muted)" />
@@ -110,7 +106,6 @@ export const EmptyInspector = memo(function EmptyInspector() {
                 onUpdate={handleBackgroundMusicUpdate}
               />
               
-              {/* Ducking Option */}
               <div className="flex items-center justify-between p-2.5 bg-(--ms-bg-surface) border border-(--ms-border) rounded-lg shadow-sm">
                 <div className="flex flex-col flex-1 pr-3">
                   <span className="text-xs font-semibold text-(--ms-text-primary)">
@@ -136,7 +131,6 @@ export const EmptyInspector = memo(function EmptyInspector() {
         </div>
       </div>
 
-      {/* Playback general settings */}
       <div className={sectionCls}>
         <div className="flex items-center gap-1.5 mb-2.5">
           <Presentation size={13} className="text-(--ms-text-muted)" />
@@ -145,7 +139,6 @@ export const EmptyInspector = memo(function EmptyInspector() {
           </span>
         </div>
         <div className="space-y-3">
-          {/* Autoplay toggle */}
           <div className="flex items-center justify-between">
             <span className="text-xs text-(--ms-text-secondary)">Autoplay presentation</span>
             <button
@@ -162,7 +155,6 @@ export const EmptyInspector = memo(function EmptyInspector() {
             </button>
           </div>
 
-          {/* Autoplay Delay */}
           {playbackSettings.autoplay && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-(--ms-text-secondary)">Slide Duration</span>
@@ -180,7 +172,6 @@ export const EmptyInspector = memo(function EmptyInspector() {
             </div>
           )}
 
-          {/* Loop toggle */}
           <div className="flex items-center justify-between">
             <span className="text-xs text-(--ms-text-secondary)">Loop presentation</span>
             <button

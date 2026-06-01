@@ -43,7 +43,6 @@ export interface PermissionResult {
 export function evaluateProjectAccess(params: PermissionParams): PermissionResult {
   const { project, userId, localAuthorId, requestedKey } = params
 
-  // No project — always denied
   if (!project) {
     return {
       isDenied: true,
@@ -62,14 +61,12 @@ export function evaluateProjectAccess(params: PermissionParams): PermissionResul
   const isLinkShared = project.visibility === 'link-shared'
   const isCollaborative = project.visibility === 'collaborative'
 
-  // Determine view access
   const canView =
     isOwner ||
     isLocalAuthor ||
     isPublic ||
     ((isLinkShared || isCollaborative) && hasValidKey)
 
-  // Determine edit access
   const canEdit = isOwner || isLocalAuthor || (isCollaborative && hasValidKey)
 
   return {

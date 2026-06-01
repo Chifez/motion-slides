@@ -33,7 +33,6 @@ export async function exportAsVideo(
   const { exportResolution, transitionDuration, autoplayDelay, aspectRatio } = playbackSettings
   const totalSlides = project.slides.length
 
-  // Get the logical canvas dimensions for the current aspect ratio
   const canvasDims = getCanvasDimensions(aspectRatio)
 
   onProgress({ stage: 'preparing', currentSlide: 0, totalSlides, message: 'Warming up engine…' })
@@ -87,7 +86,7 @@ export async function exportAsVideo(
       while (Date.now() - startTime < transitionDuration + 200) {
         if (signal?.aborted) break
         await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
-        await sleep(16) // Aim for ~60fps capture attempts
+        await sleep(16)
       }
     }
 

@@ -17,14 +17,12 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
   const audioContextRef = useRef<AudioContext | null>(null)
   const audioBufferRef = useRef<AudioBuffer | null>(null)
   
-  // Audio playback preview state
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null)
   const gainNodeRef = useRef<GainNode | null>(null)
   const startTimeRef = useRef<number>(0)
   const pauseTimeRef = useRef<number>(audio.trimStart)
   const animationFrameRef = useRef<number | null>(null)
 
-  // Fetch and decode audio to generate peaks
   useEffect(() => {
     let active = true
     if (!audio.url) return
@@ -44,9 +42,8 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
         if (!active) return
         audioBufferRef.current = decodedBuffer
 
-        // Calculate peaks for waveform
         const channelData = decodedBuffer.getChannelData(0)
-        const sampleCount = 120 // Number of bars to render
+        const sampleCount = 120
         const blockSize = Math.floor(channelData.length / sampleCount)
         const calculatedPeaks: number[] = []
 
@@ -60,14 +57,12 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
           calculatedPeaks.push(max)
         }
 
-        // Normalize peaks
         const maxPeak = Math.max(...calculatedPeaks, 0.01)
         const normalized = calculatedPeaks.map(p => p / maxPeak)
         
         setPeaks(normalized)
       } catch (err) {
         console.error('[Waveform Generator] Failed to process audio:', err)
-        // Fallback peaks if decode fails
         setPeaks(Array.from({ length: 80 }, () => Math.random() * 0.6 + 0.2))
       } finally {
         if (active) setIsLoading(false)
@@ -82,14 +77,12 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
     }
   }, [audio.url])
 
-  // Stop playback if audio params change (like URL or loop)
   useEffect(() => {
     return () => {
       stopPlayback()
     }
   }, [audio.url])
 
-  // Render the waveform on canvas
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || peaks.length === 0) return
@@ -97,7 +90,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Handle high DPI displays
     const dpr = window.devicePixelRatio || 1
     const rect = canvas.getBoundingClientRect()
     canvas.width = rect.width * dpr
@@ -110,34 +102,30 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
     ctx.clearRect(0, 0, w, h)
 
     const barWidth = w / peaks.length
-    const gap = 1.5 // Space between bars
+    const gap = 1.5
 
-    // Draw background placeholder
     peaks.forEach((peak, i) => {
       const x = i * barWidth
-      const barHeight = peak * (h - 8) // leave some padding
+      const barHeight = peak * (h - 8)
       const y = (h - barHeight) / 2
 
-      // Check if bar is within trim boundaries
       const barTime = (i / peaks.length) * audio.duration
       const isWithinTrim = barTime >= audio.trimStart && barTime <= audio.trimEnd
       const isPlayed = isPlaying && barTime <= playbackTime && barTime >= audio.trimStart
 
       if (isPlayed) {
-        ctx.fillStyle = '#3b82f6' // Active playback color
+        ctx.fillStyle = '#3b82f6'
       } else if (isWithinTrim) {
-        ctx.fillStyle = '#6366f1' // Trimmed active color
+        ctx.fillStyle = '#6366f1'
       } else {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)' // Trimmed out color
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'
       }
 
-      // Draw rounded bar
       ctx.beginPath()
       ctx.roundRect(x, y, barWidth - gap, barHeight, 2)
       ctx.fill()
     })
 
-    // Draw vertical playback line
     if (isPlaying) {
       const playbackX = (playbackTime / audio.duration) * w
       ctx.strokeStyle = '#ffffff'
@@ -148,20 +136,17 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
       ctx.stroke()
     }
 
-    // Draw trim boundaries indicators
     const startX = (audio.trimStart / audio.duration) * w
     const endX = (audio.trimEnd / audio.duration) * w
 
     ctx.strokeStyle = '#6366f1'
     ctx.lineWidth = 2
     
-    // Start trim line
     ctx.beginPath()
     ctx.moveTo(startX, 0)
     ctx.lineTo(startX, h)
     ctx.stroke()
 
-    // End trim line
     ctx.beginPath()
     ctx.moveTo(endX, 0)
     ctx.lineTo(endX, h)
@@ -172,7 +157,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
   const startPlayback = () => {
     if (!audioBufferRef.current) return
 
-    // Initialize audio context
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
     }
@@ -182,7 +166,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
       ctx.resume()
     }
 
-    // Stop existing source if any
     if (audioSourceRef.current) {
       try {
         audioSourceRef.current.stop()
@@ -199,7 +182,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
       source.loopEnd = audio.trimEnd
     }
 
-    // Volume gain node
     const gainNode = ctx.createGain()
     gainNode.gain.value = audio.volume
     
@@ -209,7 +191,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
     audioSourceRef.current = source
     gainNodeRef.current = gainNode
 
-    // Calculate offset
     let offset = pauseTimeRef.current
     if (offset < audio.trimStart || offset > audio.trimEnd) {
       offset = audio.trimStart
@@ -224,7 +205,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
     } else {
       source.start(0, offset, durationToPlay)
       source.onended = () => {
-        // Only set playing to false if it completed playing and wasn't stopped manually
         if (audioSourceRef.current === source) {
           setIsPlaying(false)
           pauseTimeRef.current = audio.trimStart
@@ -235,7 +215,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
 
     setIsPlaying(true)
     
-    // Animation frame to update playback cursor
     const updateCursor = () => {
       if (!ctx || !isPlaying) return
       const elapsed = (ctx.currentTime - startTimeRef.current) * audio.playbackRate
@@ -293,7 +272,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
     const percent = clickX / rect.width
     const clickedTime = percent * audio.duration
 
-    // Clamp within trim boundaries
     const clampedTime = Math.max(audio.trimStart, Math.min(clickedTime, audio.trimEnd))
     setPlaybackTime(clampedTime)
     pauseTimeRef.current = clampedTime
@@ -340,7 +318,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
         </button>
       </div>
 
-      {/* Waveform Section */}
       <div className="relative h-16 bg-(--ms-bg-base)/30 border border-(--ms-border)/50 rounded-md overflow-hidden flex items-center justify-center">
         {isLoading ? (
           <div className="flex items-center gap-2">
@@ -356,7 +333,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
         )}
       </div>
 
-      {/* Trim Slider Controls */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between text-[10px] text-(--ms-text-muted)">
           <span>Trim Start: {audio.trimStart.toFixed(2)}s</span>
@@ -394,9 +370,7 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
 
       <hr className="border-(--ms-border) my-1" />
 
-      {/* Audio Parameters (Volume, Speed, Loop) */}
       <div className="flex flex-col gap-3.5">
-        {/* Volume */}
         <div className="flex items-center gap-2.5">
           <Volume2 size={14} className="text-(--ms-text-muted) shrink-0" />
           <div className="flex-1 flex items-center justify-between gap-3">
@@ -415,7 +389,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
           </div>
         </div>
 
-        {/* Playback Rate / Speed */}
         <div className="flex items-center gap-2.5">
           <Gauge size={14} className="text-(--ms-text-muted) shrink-0" />
           <div className="flex-1 flex items-center justify-between gap-3">
@@ -434,7 +407,6 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
           </div>
         </div>
 
-        {/* Loop Toggle */}
         <div className="flex items-center justify-between pl-0.5">
           <div className="flex items-center gap-2.5">
             <RotateCw size={14} className="text-(--ms-text-muted)" />

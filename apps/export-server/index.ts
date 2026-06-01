@@ -55,12 +55,10 @@ app.use(
 app.post('/api/export', async (req: Request, res: Response) => {
   const { sceneGraph, format = 'mp4' } = req.body
 
-  // 1. Format validation
   if (!['mp4', 'webm', 'gif', 'pdf'].includes(format)) {
     return res.status(400).json({ error: 'Invalid export format. Allowed formats: mp4, webm, gif, pdf.' })
   }
 
-  // 2. sceneGraph structural schema validation
   if (!sceneGraph || typeof sceneGraph !== 'object') {
     return res.status(400).json({ error: 'Invalid sceneGraph payload structure.' })
   }
@@ -74,7 +72,6 @@ app.post('/api/export', async (req: Request, res: Response) => {
   const hash = getExportHash(sceneGraph, format)
 
   try {
-    // 1. Check Redis Cache
     const cachedJobId = await getCachedExport(hash)
     if (cachedJobId) {
       console.log(`[ExportServer] Cache HIT for hash ${hash} -> jobId ${cachedJobId}`)
@@ -86,7 +83,6 @@ app.post('/api/export', async (req: Request, res: Response) => {
       })
     }
 
-    // 2. Add new job to BullMQ
     const jobId = uuid()
     const ext = format === 'pdf' ? 'pdf' : format
     const outPath = path.join(OUTPUT_DIR, `${jobId}.${ext}`)
@@ -101,8 +97,8 @@ app.post('/api/export', async (req: Request, res: Response) => {
           type: 'exponential',
           delay: 5000,
         },
-        removeOnComplete: { age: 86400, count: 100 }, // Keep max 100 completed jobs or 24 hours
-        removeOnFail: { age: 604800, count: 500 },    // Keep failed jobs for 7 days
+        removeOnComplete: { age: 86400, count: 100 },
+        removeOnFail: { age: 604800, count: 500 },
       }
     )
 
@@ -154,7 +150,6 @@ app.get('/api/export/status/:jobId/stream', async (req: Request, res: Response) 
   })
   const channel = `job:progress:${jobId}`
 
-  // Check if job is already completed or failed in Queue
   try {
     const job = await exportQueue.getJob(jobId)
     if (job) {
@@ -175,7 +170,6 @@ app.get('/api/export/status/:jobId/stream', async (req: Request, res: Response) 
     console.error(`Error querying status for job ${jobId}:`, err)
   }
 
-  // Subscribe to Redis updates
   await subscriber.subscribe(channel)
 
   subscriber.on('message', (chan, message) => {
@@ -191,7 +185,6 @@ app.get('/api/export/status/:jobId/stream', async (req: Request, res: Response) 
     }
   })
 
-  // Handle client disconnect
   req.on('close', async () => {
     await subscriber.unsubscribe(channel)
     await subscriber.disconnect()
@@ -253,7 +246,6 @@ app.get('/health', async (_req, res) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
-// Initialize BullMQ worker and background disk cleanup scan
 initExportWorker()
 startDiskCleanupTimer()
 

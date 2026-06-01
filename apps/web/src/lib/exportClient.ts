@@ -132,7 +132,6 @@ export async function startExport(
           return null
         }
       } catch {
-        // Skip malformed SSE lines
       }
     }
   }

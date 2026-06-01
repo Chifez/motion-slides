@@ -62,7 +62,6 @@ export function computeAudioTimeline(sceneGraph: ExportProject, fps: number): {
       : 0
     const autoplayDelay = Math.max(playbackSettings.autoplayDelay ?? 3000, activeAudioDurationMs)
 
-    // Calculate number of frames for transition + entrance + hold
     const transitionFrames = hasTransition ? Math.ceil(transitionDuration / FRAME_MS) : 0
     const entranceFrames = ENTRANCE_FRAMES
     const remainingHoldMs = autoplayDelay - (entranceFrames * FRAME_MS)
@@ -118,9 +117,8 @@ export function computeAudioTimeline(sceneGraph: ExportProject, fps: number): {
 export class FfmpegEncoder {
   private opts:    FfmpegEncoderOptions
   private proc:    ChildProcess | null = null
-  private frames:  Buffer[] = []   // used only for PDF accumulation
+  private frames:  Buffer[] = []
   
-  // Track downloaded audio files for cleanup
   private tempAudioDir: string | null = null
   private localAudioFiles: string[] = []
 
@@ -147,7 +145,6 @@ export class FfmpegEncoder {
     let audioInputs: string[] = []
     let filterComplex: string | undefined = undefined
 
-    // Download audio files and build filter complex if we have audio tracks and are outputting video
     if (this.opts.sceneGraph && (this.opts.format === 'mp4' || this.opts.format === 'webm')) {
       const { slideAudioTracks, bgMusicTrack } = computeAudioTimeline(this.opts.sceneGraph, this.opts.fps)
       
@@ -155,15 +152,13 @@ export class FfmpegEncoder {
       const hasBgMusic = bgMusicTrack !== null
 
       if (hasSlideAudio || hasBgMusic) {
-        // Create unique subfolder
         this.tempAudioDir = path.join(process.cwd(), 'apps', 'export-server', 'temp_audio', crypto.randomUUID())
         fs.mkdirSync(this.tempAudioDir, { recursive: true })
 
         try {
-          let inputIndex = 1 // 0 is image pipe
+          let inputIndex = 1
           const localSlideTracks = []
 
-          // Download slide voiceovers
           for (const track of slideAudioTracks) {
             const ext = path.extname(track.url.split('?')[0]) || '.mp3'
             const localPath = path.join(this.tempAudioDir, `slide-${inputIndex}${ext}`)
@@ -178,7 +173,6 @@ export class FfmpegEncoder {
             inputIndex++
           }
 
-          // Download background music
           let localBgMusicTrack = null
           if (bgMusicTrack) {
             const ext = path.extname(bgMusicTrack.url.split('?')[0]) || '.mp3'
@@ -198,7 +192,6 @@ export class FfmpegEncoder {
             inputIndex++
           }
 
-          // Build filter graph
           const filterParts: string[] = []
 
           // 1. Process Slide Audio voiceovers
@@ -220,7 +213,6 @@ export class FfmpegEncoder {
               filterParts.push(`[trimmed_${track.inputIndex}]adelay=${delayMs}|${delayMs}[delayed_${track.inputIndex}]`)
             }
 
-            // Mix slide voiceovers
             const voiceoverInputs = localSlideTracks.map(t => `[delayed_${t.inputIndex}]`).join('')
             if (localSlideTracks.length > 1) {
               filterParts.push(`${voiceoverInputs}amix=inputs=${localSlideTracks.length}:normalize=0[mixed_voiceover]`)
@@ -251,19 +243,18 @@ export class FfmpegEncoder {
             filterParts.push(filter)
           }
 
-          // 3. Mix voiceover and background music
+          // 3. Mix voiceover and background music (padded infinitely to avoid early video cut-off)
           if (localSlideTracks.length > 0 && localBgMusicTrack) {
-            filterParts.push(`[mixed_voiceover][ducked_bgm]amix=inputs=2:normalize=0[out_audio]`)
+            filterParts.push(`[mixed_voiceover][ducked_bgm]amix=inputs=2:normalize=0,apad[out_audio]`)
           } else if (localSlideTracks.length > 0) {
-            filterParts.push(`[mixed_voiceover]anull[out_audio]`)
+            filterParts.push(`[mixed_voiceover]apad[out_audio]`)
           } else if (localBgMusicTrack) {
-            filterParts.push(`[ducked_bgm]anull[out_audio]`)
+            filterParts.push(`[ducked_bgm]apad[out_audio]`)
           }
 
           filterComplex = filterParts.join(';')
         } catch (err) {
           console.error('[FfmpegEncoder] Failed preparing audio tracks:', err)
-          // Fallback to video-only export on error
           audioInputs = []
           filterComplex = undefined
           await this.cleanupTempAudio()
@@ -275,10 +266,8 @@ export class FfmpegEncoder {
 
     this.proc = spawn('ffmpeg', args, { stdio: ['pipe', 'pipe', 'pipe'] })
 
-    this.proc.stdout?.on('data', () => {})   // drain stdout
+    this.proc.stdout?.on('data', () => {})
     this.proc.stderr?.on('data', (d: Buffer) => {
-      // Uncomment for debugging:
-      // process.stderr.write(d)
     })
 
     this.proc.on('error', (err) => {
@@ -288,7 +277,7 @@ export class FfmpegEncoder {
 
   writeFrame(buffer: Buffer): void {
     if (this.opts.format === 'pdf') {
-      this.frames.push(buffer)   // accumulate for PDF
+      this.frames.push(buffer)
       return
     }
     if (!this.proc?.stdin?.writable) return
@@ -353,9 +342,9 @@ export class FfmpegEncoder {
 
   private mp4Args(audioInputs: string[], filterComplex?: string): string[] {
     const args = [
-      '-f',        'image2pipe',    // input is a raw image pipe
+      '-f',        'image2pipe',
       '-framerate', String(this.opts.fps),
-      '-i',        'pipe:0',        // read frames from stdin
+      '-i',        'pipe:0',
     ]
 
     args.push(...audioInputs)
@@ -378,12 +367,12 @@ export class FfmpegEncoder {
       )
     } else {
       args.push(
-        '-c:v',      'libx264',       // H.264 codec
-        '-preset',   'medium',        // encoding speed/quality balance
-        '-crf',      '18',            // near-lossless quality (0=lossless, 51=worst)
+        '-c:v',      'libx264',
+        '-preset',   'medium',
+        '-crf',      '18',
         '-pix_fmt',  'yuv420p',       // REQUIRED for QuickTime and iOS compatibility
         '-movflags', '+faststart',    // moov atom at front for streaming
-        '-y',                         // overwrite output file without asking
+        '-y',
         this.opts.outputPath,
       )
     }
@@ -434,13 +423,13 @@ export class FfmpegEncoder {
 
   private gifArgs(): string[] {
     // Two-pass palette approach for best GIF quality
-    const scale = `${this.opts.width / 2}:-1`   // GIF at 50% resolution
+    const scale = `${this.opts.width / 2}:-1`
     return [
       '-f',        'image2pipe',
-      '-framerate', '15',           // GIF at 15fps max
+      '-framerate', '15',
       '-i',        'pipe:0',
       '-vf',       `fps=15,scale=${scale}:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=256[p];[s1][p]paletteuse=dither=bayer`,
-      '-loop',     '0',             // infinite loop
+      '-loop',     '0',
       '-y',
       this.opts.outputPath,
     ]

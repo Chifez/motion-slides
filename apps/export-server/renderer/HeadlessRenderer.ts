@@ -124,7 +124,6 @@ export class HeadlessRenderer {
         '--use-gl=angle',
         '--use-angle=swiftshader',
 
-        // Standard headless flags
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
@@ -152,7 +151,6 @@ export class HeadlessRenderer {
       deviceScaleFactor: 1,
     })
 
-    // Open CDP session for BeginFrame
     this.cdp = await this.page.target().createCDPSession()
     await this.cdp.send('HeadlessExperimental.enable')
   }
@@ -175,7 +173,6 @@ export class HeadlessRenderer {
     )
 
     try {
-      // Inject the project and playback settings into the store
       await this.page!.evaluate((data: any) => {
         console.log('[Browser] Starting state injection…')
         const store = (window as any).__motionslides_store__
@@ -260,7 +257,6 @@ export class HeadlessRenderer {
     const remainingHoldFrames = Math.max(0, Math.ceil(remainingHoldMs / FRAME_MS))
 
     if (remainingHoldFrames > 0) {
-      // Jump to end of hold
       await this.tickClock(remainingHoldMs)
       await this.captureFrame()
 
@@ -292,7 +288,6 @@ export class HeadlessRenderer {
 
   private async getLastFrame(): Promise<Buffer> {
     if (this.lastFrameBuffer) return this.lastFrameBuffer
-    // Fallback: capture a fresh frame
     const result = await this.cdp!.send('HeadlessExperimental.beginFrame', {
       screenshot: { format: 'jpeg', quality: 95 },
     })

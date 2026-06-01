@@ -31,7 +31,6 @@ export function PresentationOverlay() {
   const { autoplay: urlAutoplay } = useAccessControl()
   const [autoplayPaused, setAutoplayPaused] = useState(false)
 
-  // Audio References
   const slideAudioRef = useRef<HTMLAudioElement | null>(null)
   const bgMusicRef = useRef<HTMLAudioElement | null>(null)
   const bgMusicIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -60,14 +59,12 @@ export function PresentationOverlay() {
     if (activeSlideIndex > 0) setActiveSlide(activeSlideIndex - 1)
   }, [activeSlideIndex, setActiveSlide])
 
-  // Helper to start playback safely (browsers block un-interacted audio)
   const playAudioSafe = (audioEl: HTMLAudioElement) => {
     audioEl.play().catch(err => {
       console.warn('Audio playback blocked or failed:', err)
     })
   }
 
-  // Smooth background music volume adjuster
   const adjustBgMusicVolume = useCallback((duck: boolean) => {
     const bgAudio = bgMusicRef.current
     const musicConfig = playbackSettings.backgroundMusic
@@ -77,7 +74,6 @@ export function PresentationOverlay() {
       ? musicConfig.volume * 0.2
       : musicConfig.volume
 
-    // Smoothly fade volume to targetVolume over 300ms
     const steps = 10
     const stepTime = 30
     const currentVolume = bgAudio.volume
@@ -94,11 +90,9 @@ export function PresentationOverlay() {
     }, stepTime)
   }, [playbackSettings.backgroundMusic, playbackSettings.duckBackgroundMusic])
 
-  // ── Manage Slide Audio ──
   useEffect(() => {
     if (!isPresenting) return
 
-    // Stop and clear previous slide audio
     if (slideAudioRef.current) {
       slideAudioRef.current.pause()
       slideAudioRef.current = null
@@ -121,7 +115,6 @@ export function PresentationOverlay() {
       playAudioSafe(audioEl)
       slideAudioPlaying = true
 
-      // Monitor trim boundaries and loop
       slideAudioIntervalRef.current = setInterval(() => {
         if (!audioEl) return
         if (audioEl.currentTime >= audioConfig.trimEnd) {
@@ -136,7 +129,6 @@ export function PresentationOverlay() {
       }, 50)
     }
 
-    // Duck the background music if voiceover is playing
     adjustBgMusicVolume(slideAudioPlaying)
 
     return () => {
@@ -149,7 +141,6 @@ export function PresentationOverlay() {
     }
   }, [activeSlideIndex, isPresenting, slide?.audio, adjustBgMusicVolume])
 
-  // ── Manage Global Background Music ──
   useEffect(() => {
     if (!isPresenting || !playbackSettings.backgroundMusic) {
       if (bgMusicRef.current) {

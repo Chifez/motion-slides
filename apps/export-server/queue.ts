@@ -19,7 +19,6 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
 const CHROME_EXECUTABLE = process.env.CHROME_EXECUTABLE
 const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT_EXPORTS ?? '2')
 
-// Ensure export folder exists
 fs.mkdirSync(OUTPUT_DIR, { recursive: true })
 
 // ─── Redis Connections ────────────────────────────────────────────────────────
@@ -36,7 +35,6 @@ redisConnection.on('error', (err) => {
   console.error('[Redis Connection Error]:', err)
 })
 
-// Redis Pub/Sub publisher client
 const pubOptions = isSecure ? { tls: { rejectUnauthorized } } : {}
 export const redisPubClient = new Redis(REDIS_URL, pubOptions)
 redisPubClient.on('error', (err) => {
@@ -110,14 +108,12 @@ export async function getCachedExport(hash: string): Promise<string | null> {
   const fileId = await redisConnection.get(cacheKey)
   if (!fileId) return null
 
-  // Verify file actually exists on disk/storage before returning cache hit
   const extensions = ['mp4', 'webm', 'gif', 'pdf']
   const filePath = extensions
     .map(ext => path.join(OUTPUT_DIR, `${fileId}.${ext}`))
     .find(p => fs.existsSync(p))
 
   if (!filePath) {
-    // Stale cache: file was deleted. Clean cache entry.
     await redisConnection.del(cacheKey)
     return null
   }
@@ -169,10 +165,8 @@ export function initExportWorker(): void {
       }
 
       const sendProgress = (event: ExportProgressEvent) => {
-        // Report progress to BullMQ
         job.updateProgress(event.percent)
         
-        // Publish progress over Redis Pub/Sub for live SSE streams
         publishJobProgress(jobId, event)
       }
 
@@ -187,10 +181,8 @@ export function initExportWorker(): void {
       try {
         await renderer.render(sceneGraph)
 
-        // Cache the completed job ID
         await setCachedExport(hash, jobId)
 
-        // Publish completion
         sendProgress({
           stage: 'done',
           percent: 100,

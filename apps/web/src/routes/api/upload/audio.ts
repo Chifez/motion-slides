@@ -19,7 +19,6 @@ export const Route = createFileRoute('/api/upload/audio')({
             })
           }
 
-          // Validate file type
           if (!isValidAudioFile(file)) {
             return new Response(JSON.stringify({ error: 'Uploaded file is not a valid audio file' }), {
               status: 400,
@@ -27,25 +26,20 @@ export const Route = createFileRoute('/api/upload/audio')({
             })
           }
 
-          // Extract file extension or default to .mp3
           const originalExt = path.extname(file.name)
           const ext = originalExt ? originalExt : '.mp3'
           
-          // Generate unique file name
           const uniqueId = crypto.randomUUID()
           const safeName = `${Date.now()}-${uniqueId}${ext}`
 
-          // Configure save directory to public/uploads
           const uploadsDir = path.join(process.cwd(), 'apps', 'web', 'public', 'uploads')
           fs.mkdirSync(uploadsDir, { recursive: true })
           const filePath = path.join(uploadsDir, safeName)
 
-          // Write file buffer to local disk
           const arrayBuffer = await file.arrayBuffer()
           const buffer = Buffer.from(arrayBuffer)
           await fs.promises.writeFile(filePath, buffer)
 
-          // Public access URL in dev/prod
           const url = `/api/uploads/${safeName}`
           const duration = durationStr ? parseFloat(durationStr) : 0
 

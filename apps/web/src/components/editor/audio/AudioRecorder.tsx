@@ -20,14 +20,12 @@ export function AudioRecorder({ existingAudio, onSave }: AudioRecorderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null)
   
-  // Clean up timer on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [])
 
-  // Sync existing audio
   useEffect(() => {
     setAudioUrl(existingAudio?.url || null)
   }, [existingAudio])
@@ -49,10 +47,8 @@ export function AudioRecorder({ existingAudio, onSave }: AudioRecorderProps) {
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
         
-        // Stop all tracks on the stream to release the mic
         stream.getTracks().forEach(track => track.stop())
         
-        // Process & upload
         await uploadAudioBlob(audioBlob, 'voiceover.webm')
       }
 
@@ -95,12 +91,10 @@ export function AudioRecorder({ existingAudio, onSave }: AudioRecorderProps) {
   const uploadAudioBlob = async (blob: Blob, defaultName: string) => {
     setIsUploading(true)
     try {
-      // 1. Generate temp URL to extract duration on the client side
       const tempUrl = URL.createObjectURL(blob)
       const duration = await getAudioDuration(tempUrl)
       URL.revokeObjectURL(tempUrl)
 
-      // 2. Upload to server
       const formData = new FormData()
       formData.append('file', blob, defaultName)
       formData.append('duration', duration.toString())
