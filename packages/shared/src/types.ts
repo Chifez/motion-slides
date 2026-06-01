@@ -162,11 +162,24 @@ export interface SceneElement {
   content: TextContent | CodeContent | ShapeContent | LineContent | ChartContent | SectionContent
 }
 
+export interface SlideAudio {
+  id: string
+  url: string            // Storage URL or data URI
+  fileName: string
+  duration: number       // duration in seconds
+  volume: number         // 0.0 to 1.0
+  loop: boolean
+  playbackRate: number   // speed
+  trimStart: number      // trim start point (seconds)
+  trimEnd: number        // trim end point (seconds)
+}
+
 export interface Slide {
   id: string
   name: string
   elements: SceneElement[]
   background: string
+  audio?: SlideAudio | null
 }
 
 // ── AI Chat ───────────────────────────────────────────────────────────────────
@@ -210,6 +223,8 @@ export interface PlaybackSettings {
   aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
   exportResolution: { width: number; height: number; label: string }
   clipContent?: boolean
+  backgroundMusic?: SlideAudio | null
+  duckBackgroundMusic?: boolean
 }
 
 // ─────────────────────────────────────────────
@@ -274,6 +289,7 @@ export interface SerializedSlide {
   id:         string
   elements:   SerializedElement[]
   background: string
+  audio?:     SlideAudio | null
   transition?: {
     type:      string
     duration:  number
@@ -303,6 +319,8 @@ export interface SerializedPlaybackSettings {
   aspectRatio:        string
   transitionType?:    string
   transitionEasing?:  string
+  backgroundMusic?:   SlideAudio | null
+  duckBackgroundMusic?: boolean
 }
 
 // ─── Export Engine Types ──────────────────────────────────────────────────────

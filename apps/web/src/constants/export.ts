@@ -59,4 +59,5 @@ export const DEFAULT_PLAYBACK_SETTINGS: PlaybackSettings = {
   aspectRatio: '16:9',
   exportResolution: { ...EXPORT_RESOLUTIONS['16:9'][1] },
   clipContent: true,
+  duckBackgroundMusic: true,
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react'
+import { useState, useCallback, useRef, useLayoutEffect, useMemo, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useShallow } from 'zustand/react/shallow'
@@ -31,6 +31,12 @@ export function PresentationOverlay() {
   const { autoplay: urlAutoplay } = useAccessControl()
   const [autoplayPaused, setAutoplayPaused] = useState(false)
 
+  // Audio References
+  const slideAudioRef = useRef<HTMLAudioElement | null>(null)
+  const bgMusicRef = useRef<HTMLAudioElement | null>(null)
+  const bgMusicIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const slideAudioIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   // ── Sync global autoplay with local state ──
   const resolvedAutoplay = urlAutoplay !== null ? urlAutoplay : playbackSettings.autoplay
   const isAutoplayActive = resolvedAutoplay && !autoplayPaused
@@ -54,6 +60,141 @@ export function PresentationOverlay() {
     if (activeSlideIndex > 0) setActiveSlide(activeSlideIndex - 1)
   }, [activeSlideIndex, setActiveSlide])
 
+  // Helper to start playback safely (browsers block un-interacted audio)
+  const playAudioSafe = (audioEl: HTMLAudioElement) => {
+    audioEl.play().catch(err => {
+      console.warn('Audio playback blocked or failed:', err)
+    })
+  }
+
+  // Smooth background music volume adjuster
+  const adjustBgMusicVolume = useCallback((duck: boolean) => {
+    const bgAudio = bgMusicRef.current
+    const musicConfig = playbackSettings.backgroundMusic
+    if (!bgAudio || !musicConfig) return
+
+    const targetVolume = duck && playbackSettings.duckBackgroundMusic
+      ? musicConfig.volume * 0.2
+      : musicConfig.volume
+
+    // Smoothly fade volume to targetVolume over 300ms
+    const steps = 10
+    const stepTime = 30
+    const currentVolume = bgAudio.volume
+    const diff = targetVolume - currentVolume
+    
+    let currentStep = 0
+    const interval = setInterval(() => {
+      currentStep++
+      bgAudio.volume = currentVolume + (diff * (currentStep / steps))
+      if (currentStep >= steps) {
+        bgAudio.volume = targetVolume
+        clearInterval(interval)
+      }
+    }, stepTime)
+  }, [playbackSettings.backgroundMusic, playbackSettings.duckBackgroundMusic])
+
+  // ── Manage Slide Audio ──
+  useEffect(() => {
+    if (!isPresenting) return
+
+    // Stop and clear previous slide audio
+    if (slideAudioRef.current) {
+      slideAudioRef.current.pause()
+      slideAudioRef.current = null
+    }
+    if (slideAudioIntervalRef.current) {
+      clearInterval(slideAudioIntervalRef.current)
+      slideAudioIntervalRef.current = null
+    }
+
+    let slideAudioPlaying = false
+
+    if (slide?.audio) {
+      const audioConfig = slide.audio
+      const audioEl = new Audio(audioConfig.url)
+      audioEl.volume = audioConfig.volume
+      audioEl.playbackRate = audioConfig.playbackRate
+      audioEl.currentTime = audioConfig.trimStart
+      
+      slideAudioRef.current = audioEl
+      playAudioSafe(audioEl)
+      slideAudioPlaying = true
+
+      // Monitor trim boundaries and loop
+      slideAudioIntervalRef.current = setInterval(() => {
+        if (!audioEl) return
+        if (audioEl.currentTime >= audioConfig.trimEnd) {
+          if (audioConfig.loop) {
+            audioEl.currentTime = audioConfig.trimStart
+          } else {
+            audioEl.pause()
+            slideAudioPlaying = false
+            adjustBgMusicVolume(false)
+          }
+        }
+      }, 50)
+    }
+
+    // Duck the background music if voiceover is playing
+    adjustBgMusicVolume(slideAudioPlaying)
+
+    return () => {
+      if (slideAudioRef.current) {
+        slideAudioRef.current.pause()
+      }
+      if (slideAudioIntervalRef.current) {
+        clearInterval(slideAudioIntervalRef.current)
+      }
+    }
+  }, [activeSlideIndex, isPresenting, slide?.audio, adjustBgMusicVolume])
+
+  // ── Manage Global Background Music ──
+  useEffect(() => {
+    if (!isPresenting || !playbackSettings.backgroundMusic) {
+      if (bgMusicRef.current) {
+        bgMusicRef.current.pause()
+        bgMusicRef.current = null
+      }
+      if (bgMusicIntervalRef.current) {
+        clearInterval(bgMusicIntervalRef.current)
+        bgMusicIntervalRef.current = null
+      }
+      return
+    }
+
+    const musicConfig = playbackSettings.backgroundMusic
+    const audioEl = new Audio(musicConfig.url)
+    audioEl.volume = musicConfig.volume
+    audioEl.playbackRate = musicConfig.playbackRate
+    audioEl.currentTime = musicConfig.trimStart
+    
+    bgMusicRef.current = audioEl
+    playAudioSafe(audioEl)
+
+    bgMusicIntervalRef.current = setInterval(() => {
+      if (!audioEl) return
+      if (audioEl.currentTime >= musicConfig.trimEnd) {
+        if (musicConfig.loop) {
+          audioEl.currentTime = musicConfig.trimStart
+        } else {
+          audioEl.pause()
+        }
+      }
+    }, 100)
+
+    return () => {
+      if (bgMusicRef.current) {
+        bgMusicRef.current.pause()
+        bgMusicRef.current = null
+      }
+      if (bgMusicIntervalRef.current) {
+        clearInterval(bgMusicIntervalRef.current)
+        bgMusicIntervalRef.current = null
+      }
+    }
+  }, [isPresenting, playbackSettings.backgroundMusic])
+
   // ── Keyboard navigation ──
   const onKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'ArrowRight' || e.key === ' ') {
@@ -73,9 +214,17 @@ export function PresentationOverlay() {
 
   // ── Autoplay ──
   const entranceDuration = activeTransition?.duration ?? playbackSettings.transitionDuration
-  const autoplayDelay = autoTransition
-    ? (autoTransition.autoDelay ?? 0) + entranceDuration
-    : playbackSettings.autoplayDelay + entranceDuration
+  
+  const configuredSlideDuration = autoTransition
+    ? (autoTransition.autoDelay ?? 0)
+    : playbackSettings.autoplayDelay
+
+  const activeAudioDurationMs = slide?.audio
+    ? ((slide.audio.trimEnd - slide.audio.trimStart) / slide.audio.playbackRate) * 1000
+    : 0
+
+  const resolvedSlideDuration = Math.max(configuredSlideDuration, activeAudioDurationMs)
+  const autoplayDelay = resolvedSlideDuration + entranceDuration
 
   // Global autoplay must not fire when the current slide uses a prototype
   // click-trigger transition — the user explicitly chose manual navigation.

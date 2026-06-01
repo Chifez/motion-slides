@@ -13,6 +13,8 @@ import { Route as ExportViewRouteImport } from './routes/export-view'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PProjectIdRouteImport } from './routes/p.$projectId'
+import { Route as ApiUploadsFilenameRouteImport } from './routes/api/uploads/$filename'
+import { Route as ApiUploadAudioRouteImport } from './routes/api/upload/audio'
 import { Route as ApiGenerateReadmeRouteImport } from './routes/api/generate/readme'
 import { Route as ApiGenerateArchitectureRouteImport } from './routes/api/generate/architecture'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
@@ -35,6 +37,16 @@ const IndexRoute = IndexRouteImport.update({
 const PProjectIdRoute = PProjectIdRouteImport.update({
   id: '/p/$projectId',
   path: '/p/$projectId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUploadsFilenameRoute = ApiUploadsFilenameRouteImport.update({
+  id: '/api/uploads/$filename',
+  path: '/api/uploads/$filename',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUploadAudioRoute = ApiUploadAudioRouteImport.update({
+  id: '/api/upload/audio',
+  path: '/api/upload/audio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGenerateReadmeRoute = ApiGenerateReadmeRouteImport.update({
@@ -61,6 +73,8 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
+  '/api/upload/audio': typeof ApiUploadAudioRoute
+  '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +84,8 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
+  '/api/upload/audio': typeof ApiUploadAudioRoute
+  '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +96,8 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
+  '/api/upload/audio': typeof ApiUploadAudioRoute
+  '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +109,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/generate/architecture'
     | '/api/generate/readme'
+    | '/api/upload/audio'
+    | '/api/uploads/$filename'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +120,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/generate/architecture'
     | '/api/generate/readme'
+    | '/api/upload/audio'
+    | '/api/uploads/$filename'
   id:
     | '__root__'
     | '/'
@@ -109,6 +131,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/generate/architecture'
     | '/api/generate/readme'
+    | '/api/upload/audio'
+    | '/api/uploads/$filename'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +143,8 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiGenerateArchitectureRoute: typeof ApiGenerateArchitectureRoute
   ApiGenerateReadmeRoute: typeof ApiGenerateReadmeRoute
+  ApiUploadAudioRoute: typeof ApiUploadAudioRoute
+  ApiUploadsFilenameRoute: typeof ApiUploadsFilenameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -149,6 +175,20 @@ declare module '@tanstack/react-router' {
       path: '/p/$projectId'
       fullPath: '/p/$projectId'
       preLoaderRoute: typeof PProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/uploads/$filename': {
+      id: '/api/uploads/$filename'
+      path: '/api/uploads/$filename'
+      fullPath: '/api/uploads/$filename'
+      preLoaderRoute: typeof ApiUploadsFilenameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/upload/audio': {
+      id: '/api/upload/audio'
+      path: '/api/upload/audio'
+      fullPath: '/api/upload/audio'
+      preLoaderRoute: typeof ApiUploadAudioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/generate/readme': {
@@ -183,6 +223,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiGenerateArchitectureRoute: ApiGenerateArchitectureRoute,
   ApiGenerateReadmeRoute: ApiGenerateReadmeRoute,
+  ApiUploadAudioRoute: ApiUploadAudioRoute,
+  ApiUploadsFilenameRoute: ApiUploadsFilenameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

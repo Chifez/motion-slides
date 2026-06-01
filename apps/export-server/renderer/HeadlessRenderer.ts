@@ -64,6 +64,7 @@ export class HeadlessRenderer {
         fps:        OUTPUT_FPS,
         width:      resolution.width,
         height:     resolution.height,
+        sceneGraph,
       })
       await this.encoder.start()
 
@@ -217,7 +218,11 @@ export class HeadlessRenderer {
   ): Promise<void> {
     const { playbackSettings, project } = sceneGraph
     const transitionDuration = playbackSettings.transitionDuration ?? 1000
-    const autoplayDelay      = playbackSettings.autoplayDelay      ?? 3000
+    const slide = project.slides[slideIndex]
+    const activeAudioDurationMs = slide?.audio
+      ? ((slide.audio.trimEnd - slide.audio.trimStart) / slide.audio.playbackRate) * 1000
+      : 0
+    const autoplayDelay = Math.max(playbackSettings.autoplayDelay ?? 3000, activeAudioDurationMs)
 
     // ── Activate the slide ───────────────────────────────────────────────────
     await this.page!.evaluate((idx: number) => {
