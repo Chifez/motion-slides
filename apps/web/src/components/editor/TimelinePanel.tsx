@@ -9,6 +9,7 @@ import { MotionStage } from './MotionStage'
 import { getCanvasDimensions } from '@motionslides/shared'
 import { usePermissions } from '@/context/PermissionContext'
 import type { SlideAudio } from '@motionslides/shared'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 
 const PX_PER_SEC = 80
 
@@ -316,6 +317,7 @@ function BgmUploader({ onSave, onClose }: { onSave: (audio: SlideAudio) => void;
 // ─── Main TimelinePanel ────────────────────────────────────────────────────────
 export function TimelinePanel() {
   usePermissions()
+  const isMobile = useIsMobile()
 
   const timelineTracksVisible = useEditorStore(s => s.timelineTracksVisible ?? true)
   const setTimelineTracksVisible = useEditorStore(s => s.setTimelineTracksVisible)
@@ -716,28 +718,30 @@ export function TimelinePanel() {
         </div>
 
         {/* Right: Loop + track toggle */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => updateProject(activeProjectId || '', {
-              playbackSettings: { ...playbackSettings, loop: !playbackSettings.loop }
-            })}
-            className={`text-[10px] font-semibold px-2.5 py-1 rounded-md border cursor-pointer transition-all ${
-              playbackSettings.loop
-                ? 'bg-violet-600/20 border-violet-500/50 text-violet-300'
-                : 'bg-transparent border-white/10 text-white/30 hover:text-white/60'
-            }`}
-          >
-            Loop
-          </button>
+        {!isMobile && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => updateProject(activeProjectId || '', {
+                playbackSettings: { ...playbackSettings, loop: !playbackSettings.loop }
+              })}
+              className={`text-[10px] font-semibold px-2.5 py-1 rounded-md border cursor-pointer transition-all ${
+                playbackSettings.loop
+                  ? 'bg-violet-600/20 border-violet-500/50 text-violet-300'
+                  : 'bg-transparent border-white/10 text-white/30 hover:text-white/60'
+              }`}
+            >
+              Loop
+            </button>
 
-          <button
-            onClick={() => setTimelineTracksVisible(!timelineTracksVisible)}
-            className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md border border-white/10 text-white/40 hover:text-white/80 hover:border-white/20 transition-all cursor-pointer bg-transparent"
-          >
-            {timelineTracksVisible ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
-            {timelineTracksVisible ? 'Hide Tracks' : 'Show Tracks'}
-          </button>
-        </div>
+            <button
+              onClick={() => setTimelineTracksVisible(!timelineTracksVisible)}
+              className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md border border-white/10 text-white/40 hover:text-white/80 hover:border-white/20 transition-all cursor-pointer bg-transparent"
+            >
+              {timelineTracksVisible ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+              {timelineTracksVisible ? 'Hide Tracks' : 'Show Tracks'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ══ Preview Area ═════════════════════════════════════════════════════ */}
@@ -790,6 +794,32 @@ export function TimelinePanel() {
                 }`}
               />
             ))}
+          </div>
+        )}
+
+        {/* Mobile Loop + Hide/Show track toggle */}
+        {isMobile && (
+          <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+            <button
+              onClick={() => updateProject(activeProjectId || '', {
+                playbackSettings: { ...playbackSettings, loop: !playbackSettings.loop }
+              })}
+              className={`text-[10px] font-semibold px-2.5 py-1 rounded-md border cursor-pointer transition-all ${
+                playbackSettings.loop
+                  ? 'bg-violet-600/20 border-violet-500/50 text-violet-300'
+                  : 'bg-transparent border-white/10 text-white/30 hover:text-white/60'
+              }`}
+            >
+              Loop
+            </button>
+
+            <button
+              onClick={() => setTimelineTracksVisible(!timelineTracksVisible)}
+              className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md border border-white/10 text-white/40 hover:text-white/80 hover:border-white/20 transition-all cursor-pointer bg-transparent"
+            >
+              {timelineTracksVisible ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+              {timelineTracksVisible ? 'Hide Tracks' : 'Show Tracks'}
+            </button>
           </div>
         )}
       </div>

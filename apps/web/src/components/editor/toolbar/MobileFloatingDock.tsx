@@ -1,4 +1,4 @@
-import { memo, useState, useRef } from 'react'
+import { memo, useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Type, Layout, Shapes, Minus, BarChart3, X,
@@ -30,6 +30,24 @@ export const MobileFloatingDock = memo(function MobileFloatingDock() {
   useClickOutside(dockRef, () => {
     if (activeMenu === 'main') setIsOpen(false)
   })
+
+  const [constraints, setConstraints] = useState({ left: -30, right: 300, top: -600, bottom: 30 })
+
+  useEffect(() => {
+    const updateConstraints = () => {
+      const w = window.innerWidth
+      const h = window.innerHeight
+      setConstraints({
+        left: -30,
+        right: Math.max(0, w - 40 - 56 - 10),
+        top: -Math.max(0, h - 40 - 56 - 10),
+        bottom: 30,
+      })
+    }
+    updateConstraints()
+    window.addEventListener('resize', updateConstraints)
+    return () => window.removeEventListener('resize', updateConstraints)
+  }, [])
 
   if (isPrototypeMode) return null
 
@@ -121,7 +139,14 @@ export const MobileFloatingDock = memo(function MobileFloatingDock() {
 
   return (
     <>
-      <div className="fixed bottom-10 left-10 z-100" ref={dockRef}>
+      <motion.div
+        drag
+        dragConstraints={constraints}
+        dragElastic={0.1}
+        dragMomentum={false}
+        className="fixed bottom-10 left-10 z-100 cursor-grab active:cursor-grabbing select-none"
+        ref={dockRef}
+      >
         <AnimatePresence>
           {isOpen && activeMenu === 'main' && mainTools.map((tool, i) => {
             const angle = (i / (mainTools.length - 1)) * 90
@@ -168,7 +193,7 @@ export const MobileFloatingDock = memo(function MobileFloatingDock() {
             )}
           </AnimatePresence>
         </button>
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {activeMenu !== 'main' && (
