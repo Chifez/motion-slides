@@ -1,13 +1,13 @@
 import { useState, useMemo, useCallback } from 'react'
-import type { SlideAudio } from '@motionslides/shared'
+import type { SlideAudio, Slide, PlaybackSettings, Project } from '@motionslides/shared'
 import type { AudioKey, AudioDrawer } from '@/components/editor/timeline/types'
 import { AUDIO_TYPE_VOICEOVER } from '@/components/editor/timeline/constants'
 
 interface Params {
-  slides: any[]
-  playbackSettings: any
+  slides: Slide[]
+  playbackSettings: PlaybackSettings
   activeProjectId: string | null
-  updateProject: (id: string, updates: any) => void
+  updateProject: (id: string, updates: Partial<Project>) => void
   liveSlideIndex: number
 }
 

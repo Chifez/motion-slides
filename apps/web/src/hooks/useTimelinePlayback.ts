@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import type { PlaybackSettings, Project } from '@motionslides/shared'
 import { PX_PER_SEC } from '@/components/editor/timeline/constants'
 import type { SlideWithTiming } from '@/components/editor/timeline/types'
 
@@ -7,9 +8,9 @@ interface Params {
   totalDurationRef: React.MutableRefObject<number>
   slidesWithTimingRef: React.MutableRefObject<SlideWithTiming[]>
   getSlideIndexAtTimeRef: React.MutableRefObject<(time: number) => number>
-  playbackSettings: any
+  playbackSettings: PlaybackSettings
   setActiveSlide: (idx: number) => void
-  project: any
+  project: Project | null
 }
 
 interface Result {

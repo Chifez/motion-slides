@@ -1,4 +1,5 @@
 import { Layers, SkipBack, Play, Pause, SkipForward, ChevronDown, ChevronUp } from 'lucide-react'
+import type { PlaybackSettings, Project } from '@motionslides/shared'
 import { formatTime } from './constants'
 
 interface Props {
@@ -7,9 +8,9 @@ interface Props {
   currentTime: number
   setCurrentTime: (v: number) => void
   totalDuration: number
-  playbackSettings: any
+  playbackSettings: PlaybackSettings
   activeProjectId: string | null
-  updateProject: (id: string, updates: any) => void
+  updateProject: (id: string, updates: Partial<Project>) => void
   timelineTracksVisible: boolean
   setTimelineTracksVisible: (v: boolean) => void
   isMobile: boolean

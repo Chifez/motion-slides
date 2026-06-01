@@ -1,14 +1,15 @@
+import type { Slide, SlideTransition, PlaybackSettings, Project } from '@motionslides/shared'
 import { PX_PER_SEC } from '@/components/editor/timeline/constants'
 
 interface Params {
   totalDuration: number
   timelineBodyRef: React.RefObject<HTMLDivElement>
   setCurrentTime: (v: number | ((prev: number) => number)) => void
-  slides: any[]
-  transitions: any[]
-  playbackSettings: any
+  slides: Slide[]
+  transitions: SlideTransition[]
+  playbackSettings: PlaybackSettings
   activeProjectId: string | null
-  updateProject: (id: string, updates: any) => void
+  updateProject: (id: string, updates: Partial<Project>) => void
 }
 
 interface Result {

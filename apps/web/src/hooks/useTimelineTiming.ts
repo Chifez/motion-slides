@@ -1,10 +1,11 @@
 import { useMemo, useCallback } from 'react'
+import type { Slide, SlideTransition, PlaybackSettings } from '@motionslides/shared'
 import type { SlideWithTiming } from '@/components/editor/timeline/types'
 
 interface Params {
-  slides: any[]
-  transitions: any[]
-  playbackSettings: any
+  slides: Slide[]
+  transitions: SlideTransition[]
+  playbackSettings: PlaybackSettings
   activeSlideIndex: number
   isPlaying: boolean
   currentTime: number
@@ -15,8 +16,8 @@ interface Result {
   totalDuration: number
   getSlideIndexAtTime: (time: number) => number
   liveSlideIndex: number
-  liveSlide: any
-  livePrevSlide: any
+  liveSlide: Slide | null
+  livePrevSlide: Slide | null
 }
 
 /**
@@ -39,7 +40,7 @@ export function useTimelineTiming({
       const hasTransition = idx > 0
       const transitionDuration = hasTransition ? (playbackSettings.transitionDuration ?? 500) : 0
       const transitionObj = transitions.find(
-        (t: any) => t.fromSlideId === s.id && t.trigger === 'auto',
+        (t: SlideTransition) => t.fromSlideId === s.id && t.trigger === 'auto',
       )
       const configuredSlideDuration = transitionObj
         ? (transitionObj.autoDelay ?? 3000)

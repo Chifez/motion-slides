@@ -1,4 +1,4 @@
-import type { SlideAudio } from '@motionslides/shared'
+import type { SlideAudio, Slide, Project, PlaybackSettings } from '@motionslides/shared'
 import {
   PX_PER_SEC,
   RULER_H,
@@ -6,6 +6,7 @@ import {
   VO_TRACK_H,
   BGM_TRACK_H,
   AUDIO_TYPE_BGM,
+  AUDIO_TYPE_VOICEOVER,
   BGM_LABEL,
   VO_LABEL_PREFIX,
   BGM_ACCENT_COLOR,
@@ -40,10 +41,10 @@ interface Props {
   totalDuration: number
   currentTime: number
   liveSlideIndex: number
-  slides: any[]
-  playbackSettings: any
+  slides: Slide[]
+  playbackSettings: PlaybackSettings
   activeProjectId: string | null
-  updateProject: (id: string, updates: any) => void
+  updateProject: (id: string, updates: Partial<Project>) => void
   setActiveSlide: (idx: number) => void
   setCurrentTime: (v: number) => void
   audio: AudioState
@@ -97,7 +98,7 @@ export function TimelineTracks({
             label={
               audio.selectedAudioKey?.type === AUDIO_TYPE_BGM
                 ? BGM_LABEL
-                : `${VO_LABEL_PREFIX} ${slides.findIndex(s => s.id === (audio.selectedAudioKey as any)?.slideId) + 1}`
+                : `${VO_LABEL_PREFIX} ${slides.findIndex(s => s.id === (audio.selectedAudioKey?.type === AUDIO_TYPE_VOICEOVER ? audio.selectedAudioKey.slideId : '')) + 1}`
             }
             accentColor={audio.selectedAudioKey?.type === AUDIO_TYPE_BGM ? BGM_ACCENT_COLOR : VO_ACCENT_COLOR}
             onUpdate={audio.updateSelectedAudio}
@@ -145,7 +146,7 @@ export function TimelineTracks({
               />
 
               <BgmTrackRow
-                backgroundMusic={playbackSettings.backgroundMusic}
+                backgroundMusic={playbackSettings.backgroundMusic ?? null}
                 totalDuration={totalDuration}
                 selectedAudioKey={audio.selectedAudioKey}
                 setSelectedAudioKey={audio.setSelectedAudioKey}

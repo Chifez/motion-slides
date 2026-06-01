@@ -1,16 +1,17 @@
 import { Volume2 } from 'lucide-react'
+import type { Slide, Project } from '@motionslides/shared'
 import { PX_PER_SEC, VO_TRACK_H, AUDIO_TYPE_VOICEOVER } from './constants'
 import type { AudioKey, SlideWithTiming } from './types'
 import { WaveformDecoration } from './WaveformDecoration'
 
 interface Props {
   slidesWithTiming: SlideWithTiming[]
-  slides: any[]
+  slides: Slide[]
   selectedAudioKey: AudioKey | null
   setSelectedAudioKey: (key: AudioKey | null) => void
   setInspectorOpen: (open: boolean) => void
   activeProjectId: string | null
-  updateProject: (id: string, updates: any) => void
+  updateProject: (id: string, updates: Partial<Project>) => void
 }
 
 export function VoiceoverTrackRow({

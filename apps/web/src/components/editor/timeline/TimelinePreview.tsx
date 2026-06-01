@@ -1,14 +1,15 @@
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import type { Slide, PlaybackSettings, SlideTransition, Project } from '@motionslides/shared'
 import { ScaledStage } from './ScaledStage'
 import type { SlideWithTiming } from './types'
 
 interface Props {
-  liveSlide: any
-  livePrevSlide: any
-  playbackSettings: any
-  activeTransition: any
+  liveSlide: Slide | null
+  livePrevSlide: Slide | null
+  playbackSettings: PlaybackSettings
+  activeTransition: SlideTransition | null
   liveSlideIndex: number
-  slides: any[]
+  slides: Slide[]
   slidesWithTiming: SlideWithTiming[]
   setActiveSlide: (idx: number) => void
   setCurrentTime: (v: number) => void
@@ -16,7 +17,7 @@ interface Props {
   timelineTracksVisible: boolean
   setTimelineTracksVisible: (v: boolean) => void
   activeProjectId: string | null
-  updateProject: (id: string, updates: any) => void
+  updateProject: (id: string, updates: Partial<Project>) => void
 }
 
 /**

@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { MotionStage } from '@/components/editor/MotionStage'
 import { getCanvasDimensions } from '@motionslides/shared'
+import type { Slide, PlaybackSettings, SlideTransition } from '@motionslides/shared'
 
 interface Props {
-  slide: any
-  previousSlide: any
-  settings: any
-  activeTransition: any
+  slide: Slide
+  previousSlide: Slide | null
+  settings: PlaybackSettings
+  activeTransition: SlideTransition | null
 }
 
 /**

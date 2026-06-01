@@ -1,3 +1,4 @@
+import type { Slide } from '@motionslides/shared'
 import {
   AUDIO_TYPE_BGM,
   AUDIO_TYPE_VOICEOVER,
@@ -12,11 +13,12 @@ export type AudioKey =
 export type AudioDrawer = typeof AUDIO_DRAWER_VO | typeof AUDIO_DRAWER_BGM | null
 
 export interface SlideWithTiming {
-  slide: any
+  slide: Slide
   index: number
   start: number
   end: number
   duration: number
   transitionDuration: number
 }
+
 

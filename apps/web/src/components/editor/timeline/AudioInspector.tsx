@@ -1,10 +1,11 @@
 import { X, Trash2 } from 'lucide-react'
+import type { SlideAudio } from '@motionslides/shared'
 
 interface Props {
-  audioInfo: any
+  audioInfo: SlideAudio
   label: string
   accentColor: string
-  onUpdate: (updates: Partial<any>) => void
+  onUpdate: (updates: Partial<SlideAudio>) => void
   onDelete: () => void
   onClose: () => void
 }
