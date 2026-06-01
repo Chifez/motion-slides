@@ -14,6 +14,7 @@ import { useIsMobile } from '@/hooks/useMediaQuery'
 import { MobileFloatingDock } from '@/components/editor/toolbar/MobileFloatingDock'
 import { Tour } from '@/components/ui/tour/Tour'
 import { useOnboardingTrigger } from '@/hooks/useOnboardingTrigger'
+import { TimelinePanel } from '@/components/editor/TimelinePanel'
 
 interface Props {
   projectId: string
@@ -30,6 +31,7 @@ export const EditorShell = memo(function EditorShell({ projectId, blocker }: Pro
   const isPresenting = useEditorStore(s => s.isPresenting)
   const isPrototypeMode = useEditorStore(s => s.isPrototypeMode)
   const startPresentation = useEditorStore(s => s.startPresentation)
+  const editorMode = useEditorStore(s => s.editorMode ?? 'design')
   
   const isMobile = useIsMobile()
   const showEditorUI = !isPresenting && mode === 'edit'
@@ -44,10 +46,16 @@ export const EditorShell = memo(function EditorShell({ projectId, blocker }: Pro
       {showEditorUI && <EditorToolbar projectId={projectId} />}
 
       <div className="flex flex-1 overflow-hidden relative">
-        {showEditorUI && !isPrototypeMode && <SlidePanel />}
-        {isPrototypeMode ? <PrototypeCanvas /> : <CanvasStage />}
-        {showEditorUI && !isPrototypeMode && <InspectorPanel />}
-        {showEditorUI && <AIChat />}
+        {editorMode === 'timeline' ? (
+          <TimelinePanel />
+        ) : (
+          <>
+            {showEditorUI && !isPrototypeMode && <SlidePanel />}
+            {isPrototypeMode ? <PrototypeCanvas /> : <CanvasStage />}
+            {showEditorUI && !isPrototypeMode && <InspectorPanel />}
+            {showEditorUI && <AIChat />}
+          </>
+        )}
       </div>
 
       {showEditorUI && isMobile && <MobileFloatingDock />}

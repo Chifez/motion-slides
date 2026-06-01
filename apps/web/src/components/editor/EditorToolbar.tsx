@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Play, PenSquare, GitBranch, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users, WifiOff } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch, Film, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users, WifiOff } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@motionslides/shared'
@@ -15,6 +15,7 @@ import type { ProjectSuggestion } from '@/lib/actions/suggestions'
 import { useAccessControl } from '@/hooks/useAccessControl'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { usePermissions } from '@/context/PermissionContext'
 
 interface Props { projectId: string }
 
@@ -31,6 +32,9 @@ export function EditorToolbar({ projectId }: Props) {
   const syncProjects = useEditorStore(state => state.syncProjects)
   const setSuggestions = useEditorStore(state => state.setSuggestions)
   const user = useEditorStore(state => state.user)
+  const editorMode = useEditorStore(state => state.editorMode ?? 'design')
+  const setEditorMode = useEditorStore(state => state.setEditorMode)
+  const { mode } = usePermissions()
 
   const projectName = useEditorStore(state => state.projects.find(projectItem => projectItem.id === projectId)?.name ?? '')
   const project = useEditorStore(state => state.projects.find(projectItem => projectItem.id === projectId))
@@ -109,26 +113,37 @@ export function EditorToolbar({ projectId }: Props) {
 
         <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1 hidden md:block" />
 
-        <div className="flex items-center bg-(--ms-bg-elevated) border border-(--ms-border) rounded-md p-0.5">
-          <button
-            onClick={() => setPrototypeMode(false)}
-            className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${!isPrototypeMode
-              ? 'bg-(--ms-border-strong) text-(--ms-text-primary) shadow-sm'
-              : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
-              }`}
-          >
-            <PenSquare size={12} /> {!isMobile && "Design"}
-          </button>
-          <button
-            onClick={() => setPrototypeMode(true)}
-            className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${isPrototypeMode
-              ? 'bg-(--ms-border-strong) text-blue-400 shadow-sm'
-              : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
-              }`}
-          >
-            <GitBranch size={12} /> {!isMobile && "Prototype"}
-          </button>
-        </div>
+        {mode === 'edit' && (
+          <div className="flex items-center bg-(--ms-bg-elevated) border border-(--ms-border) rounded-md p-0.5">
+            <button
+              onClick={() => setEditorMode('design')}
+              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${editorMode === 'design'
+                ? 'bg-(--ms-border-strong) text-(--ms-text-primary) shadow-sm'
+                : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
+                }`}
+            >
+              <PenSquare size={12} /> {!isMobile && "Design"}
+            </button>
+            <button
+              onClick={() => setEditorMode('prototype')}
+              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${editorMode === 'prototype'
+                ? 'bg-(--ms-border-strong) text-blue-400 shadow-sm'
+                : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
+                }`}
+            >
+              <GitBranch size={12} /> {!isMobile && "Prototype"}
+            </button>
+            <button
+              onClick={() => setEditorMode('timeline')}
+              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${editorMode === 'timeline'
+                ? 'bg-(--ms-border-strong) text-purple-400 shadow-sm'
+                : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
+                }`}
+            >
+              <Film size={12} /> {!isMobile && "Timeline"}
+            </button>
+          </div>
+        )}
 
         {!isPrototypeMode && !isMobile && (
           <>
@@ -193,12 +208,14 @@ export function EditorToolbar({ projectId }: Props) {
               </AnimatePresence>
             </div>
 
-            <button
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
-              onClick={() => startPresentation()}
-            >
-              <Play size={13} fill="currentColor" />
-            </button>
+            {mode !== 'edit' && (
+              <button
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
+                onClick={() => startPresentation()}
+              >
+                <Play size={13} fill="currentColor" />
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -217,13 +234,15 @@ export function EditorToolbar({ projectId }: Props) {
             <ExportDropdown />
             {isAuthenticated && <ShareMenu project={project} />}
 
-            <button
-              id="tour-present-button"
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
-              onClick={() => startPresentation()}
-            >
-              <Play size={13} fill="currentColor" /> {!isMobile && "Play"}
-            </button>
+            {mode !== 'edit' && (
+              <button
+                id="tour-present-button"
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
+                onClick={() => startPresentation()}
+              >
+                <Play size={13} fill="currentColor" /> {!isMobile && "Play"}
+              </button>
+            )}
           </>
         )}
       </header>

@@ -31,6 +31,10 @@ export interface UISlice {
   finishReview: () => void
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void
   dismissToast: (id: string) => void
+  editorMode: 'design' | 'prototype' | 'timeline'
+  timelineTracksVisible: boolean
+  setEditorMode: (mode: 'design' | 'prototype' | 'timeline') => void
+  setTimelineTracksVisible: (visible: boolean) => void
 }
 
 const getInitialTheme = (): 'dark' | 'light' => {
@@ -60,6 +64,8 @@ export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set, g
   suggestions: [],
   originalProjectBackup: null,
   suggestedProjectBackup: null,
+  editorMode: 'design',
+  timelineTracksVisible: true,
 
   setTheme: (theme) => {
     set({ theme })
@@ -179,4 +185,13 @@ export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set, g
       suggestedProjectBackup: null,
     })
   },
+  setEditorMode: (mode) => {
+    set({ editorMode: mode })
+    if (mode === 'prototype') {
+      get().setPrototypeMode(true)
+    } else {
+      get().setPrototypeMode(false)
+    }
+  },
+  setTimelineTracksVisible: (visible) => set({ timelineTracksVisible: visible }),
 })
