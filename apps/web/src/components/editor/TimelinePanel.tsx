@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
-  Play, Pause, Square, Volume2, ChevronDown, ChevronUp,
-  Trash2, X, Mic, Music, Layers, SkipBack, SkipForward,
+  Play, Pause, Volume2, ChevronDown, ChevronUp,
+  Trash2, X, Mic, Music, Layers, SkipBack, SkipForward, Plus, Upload, Loader2,
 } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
 import { useShallow } from 'zustand/react/shallow'
 import { MotionStage } from './MotionStage'
 import { getCanvasDimensions } from '@motionslides/shared'
 import { usePermissions } from '@/context/PermissionContext'
+import type { SlideAudio } from '@motionslides/shared'
 
 const PX_PER_SEC = 80
 
@@ -92,79 +93,222 @@ function ScaledStage({ slide, previousSlide, settings, activeTransition }: Scale
   )
 }
 
-// ─── Audio Settings Popover ────────────────────────────────────────────────────
-interface AudioPopoverProps {
+// ─── Audio Inspector (right-side panel, shown when a clip is selected) ─────────
+interface AudioInspectorProps {
   audioInfo: any
+  label: string
+  accentColor: string
   onUpdate: (updates: Partial<any>) => void
   onDelete: () => void
   onClose: () => void
 }
 
-function AudioPopover({ audioInfo, onUpdate, onDelete, onClose }: AudioPopoverProps) {
+function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDelete, onClose }: AudioInspectorProps) {
+  const activeDuration = (audioInfo.trimEnd - audioInfo.trimStart) / audioInfo.playbackRate
   return (
-    <div
-      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-64 rounded-xl border border-white/10 bg-[#1a1a1f]/95 shadow-2xl backdrop-blur-xl p-4 flex flex-col gap-3"
-      onClick={e => e.stopPropagation()}
-    >
+    <div className="w-52 shrink-0 bg-[#0f0f13] border-l border-white/[0.08] flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold tracking-widest uppercase text-white/60">Audio Settings</span>
-        <button onClick={onClose} className="p-1 hover:bg-white/10 rounded text-white/50 hover:text-white border-none bg-transparent cursor-pointer">
-          <X size={12} />
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.06]">
+        <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: accentColor }}>{label}</span>
+        <button onClick={onClose} className="p-1 hover:bg-white/8 rounded text-white/30 hover:text-white border-none bg-transparent cursor-pointer"><X size={12} /></button>
+      </div>
+
+      <div className="flex flex-col gap-4 px-3 py-3">
+        {/* Delete — at the top for quick access */}
+        <button
+          onClick={onDelete}
+          className="w-full flex items-center justify-center gap-1.5 py-2 bg-red-500/8 hover:bg-red-500/18 border border-red-900/40 hover:border-red-700/60 text-red-400/80 hover:text-red-300 text-[10px] font-semibold rounded-lg cursor-pointer transition-all"
+        >
+          <Trash2 size={10} /> Remove clip
         </button>
-      </div>
 
-      {/* Volume */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-[10px] text-white/50">
-          <span>Volume</span>
-          <span className="font-mono text-white/80">{Math.round(audioInfo.volume * 100)}%</span>
+        {/* Volume */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-[10px]">
+            <span className="text-white/40 font-medium">Volume</span>
+            <span className="font-mono text-white/70">{Math.round(audioInfo.volume * 100)}%</span>
+          </div>
+          <input
+            type="range" min="0" max="1" step="0.01"
+            value={audioInfo.volume}
+            onChange={e => onUpdate({ volume: parseFloat(e.target.value) })}
+            className="w-full h-1 rounded-full cursor-pointer"
+            style={{ accentColor }}
+          />
+          <div className="flex justify-between text-[8px] text-white/20">
+            <span>0%</span><span>50%</span><span>100%</span>
+          </div>
         </div>
-        <input
-          type="range" min="0" max="1" step="0.05"
-          value={audioInfo.volume}
-          onChange={e => onUpdate({ volume: parseFloat(e.target.value) })}
-          className="w-full h-1 rounded-full cursor-pointer accent-violet-500"
-        />
-      </div>
 
-      {/* Speed */}
-      <div className="space-y-1.5">
-        <span className="text-[10px] text-white/50">Speed</span>
-        <div className="grid grid-cols-4 gap-1">
-          {[0.5, 0.75, 1, 1.25, 1.5, 2].slice(0, 4).map(rate => (
-            <button
-              key={rate}
-              onClick={() => onUpdate({ playbackRate: rate })}
-              className={`py-1 text-[9px] font-mono rounded cursor-pointer border transition-colors ${
-                audioInfo.playbackRate === rate
-                  ? 'bg-violet-600 border-violet-500 text-white'
-                  : 'bg-white/5 border-white/10 text-white/50 hover:text-white hover:border-white/20'
-              }`}
-            >
-              {rate}x
-            </button>
-          ))}
+        {/* Speed */}
+        <div className="space-y-1.5">
+          <span className="text-[10px] text-white/40 font-medium">Speed</span>
+          <div className="grid grid-cols-3 gap-1">
+            {[0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => (
+              <button
+                key={rate}
+                onClick={() => onUpdate({ playbackRate: rate })}
+                className={`py-1 text-[9px] font-mono rounded cursor-pointer border transition-colors ${
+                  audioInfo.playbackRate === rate
+                    ? 'text-white border-transparent'
+                    : 'bg-white/[0.03] border-white/[0.07] text-white/40 hover:text-white/70'
+                }`}
+                style={audioInfo.playbackRate === rate ? { backgroundColor: accentColor + '33', borderColor: accentColor } : {}}
+              >
+                {rate}x
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Trim info */}
+        <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 space-y-1.5 text-[10px]">
+          <div className="flex justify-between text-white/40">
+            <span>Trim start</span><span className="font-mono text-white/60">{audioInfo.trimStart.toFixed(2)}s</span>
+          </div>
+          <div className="flex justify-between text-white/40">
+            <span>Trim end</span><span className="font-mono text-white/60">{audioInfo.trimEnd.toFixed(2)}s</span>
+          </div>
+          <div className="pt-1 border-t border-white/[0.06] flex justify-between font-semibold">
+            <span className="text-white/50">Active</span>
+            <span className="font-mono" style={{ color: accentColor }}>{activeDuration.toFixed(2)}s</span>
+          </div>
         </div>
       </div>
+    </div>
+  )
+}
 
-      {/* Trim info */}
-      <div className="text-[10px] text-white/40 bg-white/5 rounded-lg p-2.5 space-y-1">
-        <div className="flex justify-between">
-          <span>Duration</span>
-          <span className="font-mono text-violet-400">
-            {((audioInfo.trimEnd - audioInfo.trimStart) / audioInfo.playbackRate).toFixed(2)}s
-          </span>
-        </div>
-      </div>
+// ─── Inline V.O. quick-add (record or upload for a specific slide) ───────────────────────
+function VOQuickAdd({
+  existingAudio, onSave, onClose,
+}: { existingAudio: any; onSave: (audio: any) => void; onClose: () => void }) {
+  const [mode, setMode] = useState<'idle' | 'recording' | 'uploading'>('idle')
+  const [recordingTime, setRecordingTime] = useState(0)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-      {/* Delete */}
-      <button
-        onClick={onDelete}
-        className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] font-semibold rounded-lg cursor-pointer transition-colors"
-      >
-        <Trash2 size={11} /> Remove Track
+  const uploadBlob = async (blob: Blob, name: string) => {
+    setMode('uploading')
+    try {
+      const tempUrl = URL.createObjectURL(blob)
+      const duration = await new Promise<number>(resolve => {
+        const a = new Audio(tempUrl)
+        a.addEventListener('loadedmetadata', () => { URL.revokeObjectURL(tempUrl); resolve(a.duration) })
+        a.addEventListener('error', () => { URL.revokeObjectURL(tempUrl); resolve(0) })
+      })
+      const fd = new FormData()
+      fd.append('file', blob, name)
+      fd.append('duration', duration.toString())
+      const res = await fetch('/api/upload/audio', { method: 'POST', body: fd })
+      if (!res.ok) throw new Error('Upload failed')
+      const data = await res.json()
+      onSave({ id: Math.random().toString(36).substring(7), url: data.url, fileName: data.fileName, duration: data.duration || duration, volume: 1, loop: false, playbackRate: 1, trimStart: 0, trimEnd: data.duration || duration })
+    } catch { alert('Upload failed') }
+    finally { setMode('idle') }
+  }
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      chunksRef.current = []
+      const mr = new MediaRecorder(stream)
+      mediaRecorderRef.current = mr
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        await uploadBlob(new Blob(chunksRef.current, { type: 'audio/webm' }), 'voiceover.webm')
+      }
+      mr.start()
+      setMode('recording')
+      setRecordingTime(0)
+      timerRef.current = setInterval(() => setRecordingTime(p => p + 1), 1000)
+    } catch { alert('Could not access microphone.') }
+  }
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop()
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    setMode('uploading')
+  }
+
+  const fmt = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
+
+  if (mode === 'uploading') return (
+    <div className="flex items-center gap-2 text-[11px] text-white/50">
+      <Loader2 size={12} className="animate-spin" /> Uploading…
+    </div>
+  )
+
+  if (mode === 'recording') return (
+    <div className="flex items-center gap-3">
+      <span className="flex items-center gap-1.5 text-red-400 text-[11px] font-mono">
+        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+        {fmt(recordingTime)}
+      </span>
+      <button onClick={stopRecording} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/20 border border-red-500/40 text-red-300 text-[11px] font-semibold rounded-lg cursor-pointer"><Volume2 size={12} /> Stop recording</button>
+    </div>
+  )
+
+  return (
+    <div className="flex items-center gap-3">
+      {existingAudio && <span className="text-[10px] text-white/30 italic">Replace: {existingAudio.fileName}</span>}
+      <button onClick={startRecording} className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/40 text-violet-300 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-violet-600/30 transition-colors">
+        <Mic size={12} /> Record voice
       </button>
+      <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-white/60 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-white/10 transition-colors">
+        <Upload size={12} /> Upload file
+      </button>
+      <input ref={fileInputRef} type="file" accept="audio/*" className="hidden" onChange={async e => { const f = e.target.files?.[0]; if (f) await uploadBlob(f, f.name) }} />
+    </div>
+  )
+}
+
+// ─── Inline BGM uploader ──────────────────────────────────────────────────────
+function BgmUploader({ onSave, onClose }: { onSave: (audio: SlideAudio) => void; onClose: () => void }) {
+  const [uploading, setUploading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const tempUrl = URL.createObjectURL(file)
+      const duration = await new Promise<number>(resolve => {
+        const a = new Audio(tempUrl)
+        a.addEventListener('loadedmetadata', () => { URL.revokeObjectURL(tempUrl); resolve(a.duration) })
+        a.addEventListener('error', () => { URL.revokeObjectURL(tempUrl); resolve(0) })
+      })
+      const formData = new FormData()
+      formData.append('file', file, file.name)
+      formData.append('duration', duration.toString())
+      const res = await fetch('/api/upload/audio', { method: 'POST', body: formData })
+      if (!res.ok) throw new Error('Upload failed')
+      const data = await res.json()
+      onSave({
+        id: Math.random().toString(36).substring(7),
+        url: data.url, fileName: data.fileName,
+        duration: data.duration || duration,
+        volume: 0.7, loop: true, playbackRate: 1,
+        trimStart: 0, trimEnd: data.duration || duration,
+      })
+    } catch { alert('Failed to upload audio.') }
+    finally { setUploading(false) }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <input ref={inputRef} type="file" accept="audio/*" className="hidden" onChange={handleFile} />
+      {uploading
+        ? <span className="flex items-center gap-1.5 text-[11px] text-white/50"><Loader2 size={12} className="animate-spin" />Uploading…</span>
+        : <button onClick={() => inputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600/20 border border-sky-500/40 text-sky-300 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-sky-600/30 transition-colors">
+            <Upload size={12} /> Choose music file
+          </button>
+      }
+      <button onClick={onClose} className="p-1 text-white/30 hover:text-white/70 border-none bg-transparent cursor-pointer"><X size={14} /></button>
     </div>
   )
 }
@@ -176,7 +320,6 @@ export function TimelinePanel() {
   const timelineTracksVisible = useEditorStore(s => s.timelineTracksVisible ?? true)
   const setTimelineTracksVisible = useEditorStore(s => s.setTimelineTracksVisible)
   const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
-  const previousSlideIndex = useEditorStore(s => s.previousSlideIndex)
   const setActiveSlide = useEditorStore(s => s.setActiveSlide)
   const playbackSettings = useEditorStore(s => s.playbackSettings)
   const activeProjectId = useEditorStore(s => s.activeProjectId)
@@ -186,14 +329,15 @@ export function TimelinePanel() {
   const slides = project?.slides ?? []
   const transitions = project?.transitions ?? []
 
-  const activeSlide = slides[activeSlideIndex] ?? null
-  const previousSlide = previousSlideIndex !== null ? (slides[previousSlideIndex] ?? null) : null
   const { activeTransition } = useEditorStore(useShallow(s => s.getPlaybackTransitions()))
 
   // ── Playback State
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [selectedAudioKey, setSelectedAudioKey] = useState<{ type: 'voiceover'; slideId: string } | { type: 'bgm' } | null>(null)
+  const [inspectorOpen, setInspectorOpen] = useState(false)
+  // audioDrawer: which track's add-panel is open
+  const [audioDrawer, setAudioDrawer] = useState<'vo' | 'bgm' | null>(null)
 
   const bgMusicAudioRef = useRef<HTMLAudioElement | null>(null)
   const slideAudioRef = useRef<HTMLAudioElement | null>(null)
@@ -236,6 +380,34 @@ export function TimelinePanel() {
     return 0
   }, [slidesWithTiming, totalDuration, slides.length])
 
+  // ── Fix #3: derive live slide index synchronously from currentTime (no effect delay)
+  const liveSlideIndex = useMemo(
+    () => isPlaying ? getSlideIndexAtTime(currentTime) : activeSlideIndex,
+    [isPlaying, currentTime, getSlideIndexAtTime, activeSlideIndex]
+  )
+  const liveSlide = slides[liveSlideIndex] ?? null
+  const livePrevSlide = liveSlideIndex > 0 ? (slides[liveSlideIndex - 1] ?? null) : null
+
+  // ── Audio: save voiceover to the active slide in the timeline
+  const saveVoiceover = useCallback((audio: SlideAudio | null) => {
+    const targetId = slides[liveSlideIndex]?.id
+    if (!targetId || !activeProjectId) return
+    updateProject(activeProjectId, {
+      slides: slides.map(s => s.id === targetId ? { ...s, audio } : s),
+      synced: false,
+    })
+    setAudioDrawer(null)
+  }, [slides, liveSlideIndex, activeProjectId, updateProject])
+
+  const saveBgm = useCallback((audio: SlideAudio) => {
+    if (!activeProjectId) return
+    updateProject(activeProjectId, {
+      playbackSettings: { ...playbackSettings, backgroundMusic: audio },
+      synced: false,
+    })
+    setAudioDrawer(null)
+  }, [activeProjectId, playbackSettings, updateProject])
+
   const syncDucking = useCallback((isDuckTarget: boolean) => {
     const bgAudio = bgMusicAudioRef.current
     const musicConfig = playbackSettings.backgroundMusic
@@ -253,6 +425,8 @@ export function TimelinePanel() {
         if (nextTime >= totalDuration) {
           if (playbackSettings.loop) {
             nextTime = 0
+            // Fix 2: scroll timeline back to start on loop
+            if (timelineBodyRef.current) timelineBodyRef.current.scrollLeft = 0
             if (bgMusicAudioRef.current && playbackSettings.backgroundMusic) {
               bgMusicAudioRef.current.currentTime = playbackSettings.backgroundMusic.trimStart
             }
@@ -361,14 +535,15 @@ export function TimelinePanel() {
     }
   }, [])
 
-  // Auto-scroll playhead into view while playing
+  // ── Fix #1: keep playhead centered in the scroll viewport during playback
   useEffect(() => {
     if (!isPlaying || !timelineBodyRef.current) return
     const playheadX = currentTime * PX_PER_SEC
     const container = timelineBodyRef.current
-    const { scrollLeft, clientWidth } = container
-    if (playheadX > scrollLeft + clientWidth * 0.75) {
-      container.scrollLeft = playheadX - clientWidth * 0.25
+    const halfW = container.clientWidth / 2
+    // Only scroll once the playhead drifts past center; never scroll backward
+    if (playheadX > container.scrollLeft + halfW) {
+      container.scrollLeft = playheadX - halfW
     }
   }, [currentTime, isPlaying])
 
@@ -478,7 +653,8 @@ export function TimelinePanel() {
     setSelectedAudioKey(null)
   }
 
-  const timelineWidth = Math.max(900, totalDuration * PX_PER_SEC + 300)
+  // Exactly fits the content — no overflow padding so ruler stops cleanly
+  const timelineWidth = Math.max(900, Math.ceil(totalDuration) * PX_PER_SEC + PX_PER_SEC)
 
   // Track row heights (must be consistent between labels and body)
   const RULER_H = 32
@@ -575,10 +751,10 @@ export function TimelinePanel() {
         {/* The preview screen frame */}
         <div className="relative w-full max-w-3xl rounded-xl overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.07),0_25px_60px_rgba(0,0,0,0.6)] bg-black"
           style={{ aspectRatio: '16/9' }}>
-          {activeSlide ? (
+          {liveSlide ? (
             <ScaledStage
-              slide={activeSlide}
-              previousSlide={previousSlide}
+              slide={liveSlide}
+              previousSlide={livePrevSlide}
               settings={playbackSettings}
               activeTransition={activeTransition}
             />
@@ -596,7 +772,7 @@ export function TimelinePanel() {
 
           {/* Slide indicator badge */}
           <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-mono text-white/50 px-2 py-0.5 rounded-md">
-            {activeSlideIndex + 1} / {slides.length}
+            {liveSlideIndex + 1} / {slides.length}
           </div>
         </div>
 
@@ -608,7 +784,7 @@ export function TimelinePanel() {
                 key={idx}
                 onClick={() => { setActiveSlide(idx); setCurrentTime(slidesWithTiming[idx]?.start ?? 0) }}
                 className={`rounded-full border-none cursor-pointer transition-all ${
-                  idx === activeSlideIndex
+                  idx === liveSlideIndex
                     ? 'w-5 h-1.5 bg-violet-500'
                     : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
                 }`}
@@ -621,12 +797,15 @@ export function TimelinePanel() {
       {/* ══ Timeline Tracks ══════════════════════════════════════════════════ */}
       {timelineTracksVisible && (
         <div
-          className="shrink-0 border-t border-white/[0.06] flex bg-[#0a0a0c] overflow-hidden"
+          className="shrink-0 border-t border-white/[0.06] bg-[#0a0a0c] overflow-hidden relative"
           style={{ height: `${RULER_H + SLIDE_TRACK_H + VO_TRACK_H + BGM_TRACK_H + 1}px` }}
         >
+          {/* Centered max-width wrapper — Fix #1 */}
+          <div className="flex h-full max-w-6xl mx-auto w-full">
+
           {/* ── Left label column ── */}
-          <div className="w-[88px] shrink-0 bg-[#0d0d10] border-r border-white/[0.06] flex flex-col z-10">
-            {/* Ruler label */}
+          <div className="w-[88px] shrink-0 bg-[#0d0d10] border-r border-white/[0.06] flex flex-col z-10 relative">
+            {/* Ruler label row — holds audio-drawer trigger info */}
             <div
               className="border-b border-white/[0.06] flex items-center justify-center"
               style={{ height: RULER_H }}
@@ -643,35 +822,102 @@ export function TimelinePanel() {
               <span className="text-[9px] font-bold tracking-wider uppercase text-white/30">Slides</span>
             </div>
 
-            {/* V.O. label */}
+            {/* V.O. label + add button */}
             <div
-              className="border-b border-white/[0.06] flex flex-col items-center justify-center gap-1"
+              className="border-b border-white/[0.06] flex flex-col items-center justify-center gap-1 relative group/vo"
               style={{ height: VO_TRACK_H }}
             >
               <div className="w-7 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center">
                 <Mic size={12} className="text-violet-400" />
               </div>
               <span className="text-[9px] font-bold tracking-wider uppercase text-white/30">V.O.</span>
+              {/* Add voiceover button */}
+              <button
+                onClick={() => setAudioDrawer(audioDrawer === 'vo' ? null : 'vo')}
+                title={`Add voiceover to slide ${liveSlideIndex + 1}`}
+                className={`absolute top-1 right-1 w-4 h-4 rounded flex items-center justify-center border cursor-pointer transition-all ${
+                  audioDrawer === 'vo'
+                    ? 'bg-violet-500 border-violet-400 text-white'
+                    : 'bg-transparent border-white/15 text-white/30 hover:text-violet-300 hover:border-violet-500 opacity-0 group-hover/vo:opacity-100'
+                }`}
+              >
+                <Plus size={9} />
+              </button>
             </div>
 
-            {/* Music label */}
+            {/* Music label + add button */}
             <div
-              className="flex flex-col items-center justify-center gap-1"
+              className="flex flex-col items-center justify-center gap-1 relative group/bgm"
               style={{ height: BGM_TRACK_H }}
             >
               <div className="w-7 h-7 rounded-lg bg-sky-600/20 border border-sky-500/30 flex items-center justify-center">
                 <Music size={12} className="text-sky-400" />
               </div>
               <span className="text-[9px] font-bold tracking-wider uppercase text-white/30">Music</span>
+              {/* Add BGM button */}
+              <button
+                onClick={() => setAudioDrawer(audioDrawer === 'bgm' ? null : 'bgm')}
+                title="Add background music"
+                className={`absolute top-1 right-1 w-4 h-4 rounded flex items-center justify-center border cursor-pointer transition-all ${
+                  audioDrawer === 'bgm'
+                    ? 'bg-sky-500 border-sky-400 text-white'
+                    : 'bg-transparent border-white/15 text-white/30 hover:text-sky-300 hover:border-sky-500 opacity-0 group-hover/bgm:opacity-100'
+                }`}
+              >
+                <Plus size={9} />
+            </button>
             </div>
           </div>
 
           {/* ── Scrollable timeline body ── */}
-          <div
-            ref={timelineBodyRef}
-            className="flex-1 overflow-x-auto overflow-y-hidden relative"
-            style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}
-          >
+          {/* ══ Issue 5: Add-audio modal (centered card above the tracks) ══ */}
+          {audioDrawer && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setAudioDrawer(null)}>
+              <div
+                className="w-80 rounded-2xl border border-white/10 bg-[#13131c] shadow-2xl p-5 flex flex-col gap-4"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Modal header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {audioDrawer === 'vo'
+                      ? <><div className="w-7 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center"><Mic size={13} className="text-violet-400" /></div><div><p className="text-[12px] font-bold text-white">Add Voiceover</p><p className="text-[10px] text-white/35">Slide {liveSlideIndex + 1}</p></div></>
+                      : <><div className="w-7 h-7 rounded-lg bg-sky-600/20 border border-sky-500/30 flex items-center justify-center"><Music size={13} className="text-sky-400" /></div><div><p className="text-[12px] font-bold text-white">Background Music</p><p className="text-[10px] text-white/35">Plays across all slides</p></div></>}
+                  </div>
+                  <button onClick={() => setAudioDrawer(null)} className="p-1.5 text-white/30 hover:text-white hover:bg-white/8 rounded-lg border-none bg-transparent cursor-pointer"><X size={14} /></button>
+                </div>
+
+                <div className="h-px bg-white/[0.06]" />
+
+                {audioDrawer === 'vo' && (
+                  <VOQuickAdd existingAudio={slides[liveSlideIndex]?.audio ?? null} onSave={saveVoiceover} onClose={() => setAudioDrawer(null)} />
+                )}
+                {audioDrawer === 'bgm' && (
+                  <BgmUploader onSave={saveBgm} onClose={() => setAudioDrawer(null)} />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Audio Inspector right panel (opens on double-click) ── */}
+          {inspectorOpen && selectedAudioInfo && (
+            <AudioInspector
+              audioInfo={selectedAudioInfo}
+              label={selectedAudioKey?.type === 'bgm' ? 'Background Music' : `Voiceover – Slide ${slides.findIndex(s => s.id === (selectedAudioKey as any)?.slideId) + 1}`}
+              accentColor={selectedAudioKey?.type === 'bgm' ? '#38bdf8' : '#a78bfa'}
+              onUpdate={updateSelectedAudio}
+              onDelete={() => { deleteSelectedAudio(); setInspectorOpen(false) }}
+              onClose={() => setInspectorOpen(false)}
+            />
+          )}
+
+          <div className="flex-1 overflow-hidden relative border-l border-white/[0.10]">
+
+            <div
+              ref={timelineBodyRef}
+              className="w-full h-full overflow-x-auto overflow-y-hidden"
+              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}
+            >
             <div className="relative flex flex-col" style={{ width: timelineWidth, height: '100%' }}>
 
               {/* Playhead line (spans all rows) */}
@@ -689,8 +935,9 @@ export function TimelinePanel() {
                 style={{ height: RULER_H }}
                 onMouseDown={handleRulerMouseDown}
               >
-                {Array.from({ length: Math.ceil(totalDuration) + 6 }).map((_, idx) => {
-                  const isMajor = idx % 5 === 0
+                {/* Issue 2: ruler capped exactly at content end */}
+                {Array.from({ length: Math.ceil(totalDuration) + 1 }).map((_, idx) => {
+                  const isMajor = idx % 5 === 0 || idx === 0
                   return (
                     <div
                       key={idx}
@@ -700,12 +947,12 @@ export function TimelinePanel() {
                       <span className={`text-[8px] font-mono pl-1 ${isMajor ? 'text-white/40' : 'text-white/15'}`}>
                         {isMajor ? `${idx}s` : ''}
                       </span>
-                      <div className={`w-px ${isMajor ? 'h-2.5 bg-white/20' : 'h-1.5 bg-white/08'}`} />
+                      <div className={`w-px ${isMajor ? 'h-2.5 bg-white/20' : 'h-1.5 bg-white/[0.08]'}`} />
                     </div>
                   )
                 })}
-                {/* Half-second minor ticks */}
-                {Array.from({ length: Math.ceil(totalDuration * 2) + 12 }).map((_, idx) => {
+                {/* Half-second ticks */}
+                {Array.from({ length: Math.ceil(totalDuration * 2) }).map((_, idx) => {
                   if (idx % 2 === 0) return null
                   return (
                     <div
@@ -726,7 +973,7 @@ export function TimelinePanel() {
                 <div className="absolute inset-0 bg-[#0d0d11]" />
 
                 {slidesWithTiming.map((item) => {
-                  const isActive = activeSlideIndex === item.index
+                  const isActive = liveSlideIndex === item.index
                   const gradient = SLIDE_GRADIENTS[item.index % SLIDE_GRADIENTS.length]
                   const cardW = item.duration * PX_PER_SEC
 
@@ -808,8 +1055,14 @@ export function TimelinePanel() {
                         height: `${VO_TRACK_H - 16}px`,
                       }}
                     >
-                      <div
-                        onDoubleClick={() => setSelectedAudioKey({ type: 'voiceover', slideId: item.slide.id })}
+                      {/* Single click = select (trim handle visible); double click = open inspector */}
+                    <div
+                        onClick={() => {
+                          const alreadySelected = selectedAudioKey?.type === 'voiceover' && selectedAudioKey.slideId === item.slide.id
+                          if (alreadySelected) { setSelectedAudioKey(null); setInspectorOpen(false) }
+                          else { setSelectedAudioKey({ type: 'voiceover', slideId: item.slide.id }); setInspectorOpen(false) }
+                        }}
+                        onDoubleClick={() => { setSelectedAudioKey({ type: 'voiceover', slideId: item.slide.id }); setInspectorOpen(true) }}
                         className={`w-full h-full rounded-lg cursor-pointer relative overflow-hidden transition-all ${
                           isSelected
                             ? 'bg-violet-600/25 border-2 border-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.2)]'
@@ -817,20 +1070,36 @@ export function TimelinePanel() {
                         }`}
                       >
                         <WaveformDecoration color={isSelected ? 'rgba(167,139,250,0.45)' : 'rgba(139,92,246,0.25)'} />
-                        <div className="absolute inset-x-2 top-1 flex items-center gap-1 pointer-events-none">
+                        <div className="absolute inset-x-2 top-0.5 flex items-center gap-1 pointer-events-none">
                           <Volume2 size={8} className="text-violet-400/70 shrink-0" />
                           <span className="text-[8px] font-medium text-violet-300/60 truncate">{audio.fileName}</span>
                         </div>
+                        {isSelected && <div className="absolute inset-x-2 bottom-0.5 text-[7px] font-mono text-violet-400/50 pointer-events-none">dbl-click for settings</div>}
+                      </div>
 
-                        {/* Inline popover anchor */}
-                        {isSelected && (
-                          <AudioPopover
-                            audioInfo={audio}
-                            onUpdate={updateSelectedAudio}
-                            onDelete={deleteSelectedAudio}
-                            onClose={() => setSelectedAudioKey(null)}
-                          />
-                        )}
+                      {/* Trim-end drag handle — visible on hover AND when selected */}
+                      <div
+                        className={`absolute right-0 top-0 h-full w-2 cursor-ew-resize z-20 flex items-center justify-center transition-opacity ${
+                          isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                        onMouseDown={e => {
+                          e.stopPropagation()
+                          const startX = e.clientX
+                          const startTrimEnd = audio.trimEnd
+                          const onMove = (mv: MouseEvent) => {
+                            const delta = (mv.clientX - startX) / PX_PER_SEC
+                            const newTrimEnd = Math.min(audio.duration, Math.max(audio.trimStart + 0.5, startTrimEnd + delta))
+                            updateProject(activeProjectId!, {
+                              slides: slides.map(s => s.id === item.slide.id ? { ...s, audio: { ...audio, trimEnd: newTrimEnd } } : s),
+                              synced: false,
+                            })
+                          }
+                          const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+                          window.addEventListener('mousemove', onMove)
+                          window.addEventListener('mouseup', onUp)
+                        }}
+                      >
+                        <div className="w-0.5 h-4 bg-violet-400/50 rounded-full" />
                       </div>
                     </div>
                   )
@@ -839,7 +1108,7 @@ export function TimelinePanel() {
                 {/* Empty state label */}
                 {slides.every(s => !s.audio) && (
                   <div className="absolute inset-0 flex items-center px-4 text-[9px] text-white/15 font-medium">
-                    No voiceovers — add audio via the inspector
+                    No voiceovers — hover V.O. label and click +
                   </div>
                 )}
               </div>
@@ -862,7 +1131,12 @@ export function TimelinePanel() {
                       style={{ left: '2px', width: `${Math.max(40, bgmW - 4)}px`, height: `${BGM_TRACK_H - 16}px` }}
                     >
                       <div
-                        onDoubleClick={() => setSelectedAudioKey({ type: 'bgm' })}
+                        onClick={() => {
+                          const alreadySelected = selectedAudioKey?.type === 'bgm'
+                          if (alreadySelected) { setSelectedAudioKey(null); setInspectorOpen(false) }
+                          else { setSelectedAudioKey({ type: 'bgm' }); setInspectorOpen(false) }
+                        }}
+                        onDoubleClick={() => { setSelectedAudioKey({ type: 'bgm' }); setInspectorOpen(true) }}
                         className={`w-full h-full rounded-lg cursor-pointer relative overflow-hidden transition-all ${
                           isSelected
                             ? 'bg-sky-600/25 border-2 border-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.2)]'
@@ -870,31 +1144,26 @@ export function TimelinePanel() {
                         }`}
                       >
                         <WaveformDecoration color={isSelected ? 'rgba(125,211,252,0.4)' : 'rgba(56,189,248,0.2)'} />
-                        <div className="absolute inset-x-2 top-1 flex items-center gap-1 pointer-events-none">
+                        <div className="absolute inset-x-2 top-0.5 flex items-center gap-1 pointer-events-none">
                           <Music size={8} className="text-sky-400/70 shrink-0" />
                           <span className="text-[8px] font-medium text-sky-300/60 truncate">{bgm.fileName}</span>
                         </div>
-
-                        {isSelected && (
-                          <AudioPopover
-                            audioInfo={bgm}
-                            onUpdate={updateSelectedAudio}
-                            onDelete={deleteSelectedAudio}
-                            onClose={() => setSelectedAudioKey(null)}
-                          />
-                        )}
+                        {isSelected && <div className="absolute inset-x-2 bottom-0.5 text-[7px] font-mono text-sky-400/50 pointer-events-none">Click inspector →</div>}
                       </div>
                     </div>
                   )
                 })() : (
                   <div className="absolute inset-0 flex items-center px-4 text-[9px] text-white/15 font-medium">
-                    No background music — add via settings
+                    No background music — hover Music label and click +
                   </div>
                 )}
               </div>
 
-            </div>
-          </div>
+            </div>{/* end inner scroll content */}
+            </div>{/* end timelineBodyRef scroller */}
+            </div>{/* end flex-1 overlay wrapper */}
+
+          </div>{/* end max-w-6xl centered wrapper */}
         </div>
       )}
     </div>
