@@ -57,7 +57,13 @@ export function BgmTrackRow({
                 : 'bg-sky-900/20 border border-sky-700/30 hover:border-sky-600/50'
             }`}
           >
-            <WaveformDecoration color={isSelected ? 'rgba(125,211,252,0.4)' : 'rgba(56,189,248,0.2)'} />
+            <WaveformDecoration
+              color={isSelected ? 'rgba(125,211,252,0.4)' : 'rgba(56,189,248,0.2)'}
+              audioUrl={backgroundMusic.url}
+              trimStart={backgroundMusic.trimStart}
+              trimEnd={backgroundMusic.trimEnd}
+              duration={backgroundMusic.duration}
+            />
             <div className="absolute inset-x-2 top-0.5 flex items-center gap-1 pointer-events-none">
               <Music size={8} className="text-sky-400/70 shrink-0" />
               <span className="text-[8px] font-medium text-sky-300/60 truncate">{backgroundMusic.fileName}</span>

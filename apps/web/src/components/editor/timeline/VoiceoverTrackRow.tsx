@@ -96,7 +96,13 @@ export function VoiceoverTrackRow({
                   : 'bg-violet-900/20 border border-violet-700/30 hover:border-violet-600/50'
               }`}
             >
-              <WaveformDecoration color={isSelected ? 'rgba(167,139,250,0.45)' : 'rgba(139,92,246,0.25)'} />
+              <WaveformDecoration
+                color={isSelected ? 'rgba(167,139,250,0.45)' : 'rgba(139,92,246,0.25)'}
+                audioUrl={audio.url}
+                trimStart={audio.trimStart}
+                trimEnd={audio.trimEnd}
+                duration={audio.duration}
+              />
               <div className="absolute inset-x-2 top-0.5 flex items-center gap-1 pointer-events-none">
                 <Volume2 size={8} className="text-violet-400/70 shrink-0" />
                 <span className="text-[8px] font-medium text-violet-300/60 truncate">{audio.fileName}</span>
