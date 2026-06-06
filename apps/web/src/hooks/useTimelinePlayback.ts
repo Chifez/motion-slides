@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { PlaybackSettings, Project } from '@motionslides/shared'
 import { PX_PER_SEC } from '@/components/editor/timeline/constants'
 import type { SlideWithTiming } from '@/components/editor/timeline/types'
@@ -47,12 +47,12 @@ export function useTimelinePlayback({
   const previousTimeRef = useRef<number | null>(null)
   const timelineBodyRef = useRef<HTMLDivElement>(null!)
 
-  // Keep stable refs for playbackSettings values used inside the rAF closure
+
   const playbackSettingsRef = useRef(playbackSettings)
   useEffect(() => { playbackSettingsRef.current = playbackSettings })
 
-  // ── Ducking helper ──────────────────────────────────────────────────────────
-  const syncDucking = useCallback((isDuckTarget: boolean) => {
+
+  const syncDucking = (isDuckTarget: boolean) => {
     const bgAudio = bgMusicAudioRef.current
     const musicConfig = playbackSettingsRef.current.backgroundMusic
     if (!bgAudio || !musicConfig) return
@@ -60,10 +60,10 @@ export function useTimelinePlayback({
       isDuckTarget && playbackSettingsRef.current.duckBackgroundMusic !== false
         ? musicConfig.volume * 0.2
         : musicConfig.volume
-  }, [])
+  }
 
-  // ── rAF loop ────────────────────────────────────────────────────────────────
-  const animatePlayback = useCallback((time: number) => {
+
+  const animatePlayback = (time: number) => {
     if (previousTimeRef.current !== null) {
       const delta = (time - previousTimeRef.current) / 1000
       const totalDuration = totalDurationRef.current
@@ -87,9 +87,9 @@ export function useTimelinePlayback({
     }
     previousTimeRef.current = time
     requestRef.current = requestAnimationFrame(animatePlayback)
-  }, [totalDurationRef])
+  }
 
-  // Start / stop the rAF loop
+
   useEffect(() => {
     if (isPlaying) {
       previousTimeRef.current = null
@@ -103,9 +103,9 @@ export function useTimelinePlayback({
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current)
     }
-  }, [isPlaying, animatePlayback])
+  }, [isPlaying])
 
-  // ── Audio sync ──────────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!project) return
     const musicConfig = playbackSettings.backgroundMusic
@@ -121,7 +121,7 @@ export function useTimelinePlayback({
         if (bgRelativeTime <= musicConfig.trimEnd) {
           if (bgAudio.paused) {
             bgAudio.currentTime = bgRelativeTime
-            bgAudio.play().catch(() => {})
+            bgAudio.play().catch(() => { })
           } else if (Math.abs(bgAudio.currentTime - bgRelativeTime) > 0.25) {
             bgAudio.currentTime = bgRelativeTime
           }
@@ -164,7 +164,7 @@ export function useTimelinePlayback({
         slideAudio.playbackRate = slideAudioConfig.playbackRate
         if (slideAudio.paused) {
           slideAudio.currentTime = audioRelativeTime
-          slideAudio.play().catch(() => {})
+          slideAudio.play().catch(() => { })
           syncDucking(true)
         } else if (Math.abs(slideAudio.currentTime - audioRelativeTime) > 0.25) {
           slideAudio.currentTime = audioRelativeTime
@@ -198,10 +198,9 @@ export function useTimelinePlayback({
     playbackSettings.backgroundMusic,
     setActiveSlide,
     project,
-    syncDucking,
   ])
 
-  // Cleanup on unmount
+
   useEffect(() => {
     return () => {
       bgMusicAudioRef.current?.pause()
@@ -209,7 +208,7 @@ export function useTimelinePlayback({
     }
   }, [])
 
-  // ── Scroll playhead into view ───────────────────────────────────────────────
+
   useEffect(() => {
     if (!isPlaying || !timelineBodyRef.current) return
     const playheadX = currentTime * PX_PER_SEC

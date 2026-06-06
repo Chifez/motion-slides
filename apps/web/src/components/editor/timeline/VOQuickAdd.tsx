@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Loader2, Mic, Upload, Volume2 } from 'lucide-react'
 import type { SlideAudio } from '@motionslides/shared'
 
@@ -16,35 +16,63 @@ export function VOQuickAdd({ existingAudio, onSave, onClose }: Props) {
   const [mode, setMode] = useState<'idle' | 'recording' | 'uploading'>('idle')
   const [recordingTime, setRecordingTime] = useState(0)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const recordedChunksRef = useRef<Blob[]>([])
+  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current)
+      }
+      const mediaRecorder = mediaRecorderRef.current
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try {
+          if (mediaRecorder.stream) {
+            mediaRecorder.stream.getTracks().forEach(streamTrack => streamTrack.stop())
+          }
+          mediaRecorder.stop()
+        } catch (error) {
+          console.error('[VOQuickAdd Cleanup] Failed to stop recording on unmount:', error)
+        }
+      }
+    }
+  }, [])
 
   const uploadBlob = async (blob: Blob, name: string) => {
     setMode('uploading')
     try {
-      const tempUrl = URL.createObjectURL(blob)
+      const objectUrl = URL.createObjectURL(blob)
       const duration = await new Promise<number>(resolve => {
-        const a = new Audio(tempUrl)
-        a.addEventListener('loadedmetadata', () => { URL.revokeObjectURL(tempUrl); resolve(a.duration) })
-        a.addEventListener('error', () => { URL.revokeObjectURL(tempUrl); resolve(0) })
+        const audio = new Audio(objectUrl)
+        audio.addEventListener('loadedmetadata', () => {
+          URL.revokeObjectURL(objectUrl)
+          resolve(audio.duration)
+        })
+        audio.addEventListener('error', () => {
+          URL.revokeObjectURL(objectUrl)
+          resolve(0)
+        })
       })
-      const fd = new FormData()
-      fd.append('file', blob, name)
-      fd.append('duration', duration.toString())
-      const res = await fetch('/api/upload/audio', { method: 'POST', body: fd })
-      if (!res.ok) throw new Error('Upload failed')
-      const data = await res.json()
+      
+      const formData = new FormData()
+      formData.append('file', blob, name)
+      formData.append('duration', duration.toString())
+      
+      const response = await fetch('/api/upload/audio', { method: 'POST', body: formData })
+      if (!response.ok) throw new Error('Upload failed')
+      
+      const uploadResult = await response.json()
       onSave({
         id: Math.random().toString(36).substring(7),
-        url: data.url,
-        fileName: data.fileName,
-        duration: data.duration || duration,
+        url: uploadResult.url,
+        fileName: uploadResult.fileName,
+        duration: uploadResult.duration || duration,
         volume: 1,
         loop: false,
         playbackRate: 1,
         trimStart: 0,
-        trimEnd: data.duration || duration,
+        trimEnd: uploadResult.duration || duration,
       })
     } catch {
       alert('Upload failed')
@@ -56,18 +84,27 @@ export function VOQuickAdd({ existingAudio, onSave, onClose }: Props) {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      chunksRef.current = []
-      const mr = new MediaRecorder(stream)
-      mediaRecorderRef.current = mr
-      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-      mr.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop())
-        await uploadBlob(new Blob(chunksRef.current, { type: 'audio/webm' }), 'voiceover.webm')
+      recordedChunksRef.current = []
+      
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      
+      mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) {
+          recordedChunksRef.current.push(event.data)
+        }
       }
-      mr.start()
+      
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(streamTrack => streamTrack.stop())
+        const audioBlob = new Blob(recordedChunksRef.current, { type: 'audio/webm' })
+        await uploadBlob(audioBlob, 'voiceover.webm')
+      }
+      
+      mediaRecorder.start()
       setMode('recording')
       setRecordingTime(0)
-      timerRef.current = setInterval(() => setRecordingTime(p => p + 1), 1000)
+      recordingIntervalRef.current = setInterval(() => setRecordingTime(prevTime => prevTime + 1), 1000)
     } catch {
       alert('Could not access microphone.')
     }
@@ -75,12 +112,18 @@ export function VOQuickAdd({ existingAudio, onSave, onClose }: Props) {
 
   const stopRecording = () => {
     mediaRecorderRef.current?.stop()
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current)
+      recordingIntervalRef.current = null
+    }
     setMode('uploading')
   }
 
-  const fmt = (s: number) =>
-    `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
+  const formatTime = (seconds: number) => {
+    const minutesString = Math.floor(seconds / 60).toString().padStart(2, '0')
+    const secondsString = (seconds % 60).toString().padStart(2, '0')
+    return `${minutesString}:${secondsString}`
+  }
 
   if (mode === 'uploading') {
     return (
@@ -95,7 +138,7 @@ export function VOQuickAdd({ existingAudio, onSave, onClose }: Props) {
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1.5 text-red-400 text-[11px] font-mono">
           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          {fmt(recordingTime)}
+          {formatTime(recordingTime)}
         </span>
         <button
           onClick={stopRecording}
@@ -129,9 +172,9 @@ export function VOQuickAdd({ existingAudio, onSave, onClose }: Props) {
         type="file"
         accept="audio/*"
         className="hidden"
-        onChange={async e => {
-          const f = e.target.files?.[0]
-          if (f) await uploadBlob(f, f.name)
+        onChange={async event => {
+          const file = event.target.files?.[0]
+          if (file) await uploadBlob(file, file.name)
         }}
       />
     </div>

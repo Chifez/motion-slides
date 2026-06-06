@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState } from 'react'
 import type { SlideAudio, Slide, PlaybackSettings, Project } from '@motionslides/shared'
 import type { AudioKey, AudioDrawer } from '@/components/editor/timeline/types'
 import { AUDIO_TYPE_VOICEOVER } from '@/components/editor/timeline/constants'
@@ -39,65 +39,54 @@ export function useTimelineAudio({
   const [inspectorOpen, setInspectorOpen] = useState(false)
   const [audioDrawer, setAudioDrawer] = useState<AudioDrawer>(null)
 
-  const selectedAudioInfo = useMemo<SlideAudio | null>(() => {
-    if (!selectedAudioKey) return null
+  const selectedAudioInfo = selectedAudioKey
+    ? selectedAudioKey.type === AUDIO_TYPE_VOICEOVER
+      ? (slides.find(sl => sl.id === selectedAudioKey.slideId)?.audio || null)
+      : (playbackSettings.backgroundMusic || null)
+    : null
+
+  const saveVoiceover = (audio: SlideAudio | null) => {
+    const targetId = slides[liveSlideIndex]?.id
+    if (!targetId || !activeProjectId) return
+    updateProject(activeProjectId, {
+      slides: slides.map(s => (s.id === targetId ? { ...s, audio } : s)),
+      synced: false,
+    })
+    setAudioDrawer(null)
+  }
+
+  const saveBgm = (audio: SlideAudio) => {
+    if (!activeProjectId) return
+    updateProject(activeProjectId, {
+      playbackSettings: { ...playbackSettings, backgroundMusic: audio },
+      synced: false,
+    })
+    setAudioDrawer(null)
+  }
+
+  const updateSelectedAudio = (updates: Partial<SlideAudio>) => {
+    if (!selectedAudioKey || !activeProjectId) return
     if (selectedAudioKey.type === AUDIO_TYPE_VOICEOVER) {
-      return slides.find(sl => sl.id === selectedAudioKey.slideId)?.audio || null
-    }
-    return playbackSettings.backgroundMusic || null
-  }, [selectedAudioKey, slides, playbackSettings])
-
-  const saveVoiceover = useCallback(
-    (audio: SlideAudio | null) => {
-      const targetId = slides[liveSlideIndex]?.id
-      if (!targetId || !activeProjectId) return
-      updateProject(activeProjectId, {
-        slides: slides.map(s => (s.id === targetId ? { ...s, audio } : s)),
-        synced: false,
+      const updatedSlides = slides.map(s => {
+        if (s.id !== selectedAudioKey.slideId || !s.audio) return s
+        return { ...s, audio: { ...s.audio, ...updates } }
       })
-      setAudioDrawer(null)
-    },
-    [slides, liveSlideIndex, activeProjectId, updateProject],
-  )
-
-  const saveBgm = useCallback(
-    (audio: SlideAudio) => {
-      if (!activeProjectId) return
-      updateProject(activeProjectId, {
-        playbackSettings: { ...playbackSettings, backgroundMusic: audio },
-        synced: false,
-      })
-      setAudioDrawer(null)
-    },
-    [activeProjectId, playbackSettings, updateProject],
-  )
-
-  const updateSelectedAudio = useCallback(
-    (updates: Partial<SlideAudio>) => {
-      if (!selectedAudioKey || !activeProjectId) return
-      if (selectedAudioKey.type === AUDIO_TYPE_VOICEOVER) {
-        const updatedSlides = slides.map(s => {
-          if (s.id !== selectedAudioKey.slideId || !s.audio) return s
-          return { ...s, audio: { ...s.audio, ...updates } }
+      updateProject(activeProjectId, { slides: updatedSlides, synced: false })
+    } else {
+      const currentBgm = playbackSettings.backgroundMusic
+      if (currentBgm) {
+        updateProject(activeProjectId, {
+          playbackSettings: {
+            ...playbackSettings,
+            backgroundMusic: { ...currentBgm, ...updates },
+          },
+          synced: false,
         })
-        updateProject(activeProjectId, { slides: updatedSlides, synced: false })
-      } else {
-        const currentBgm = playbackSettings.backgroundMusic
-        if (currentBgm) {
-          updateProject(activeProjectId, {
-            playbackSettings: {
-              ...playbackSettings,
-              backgroundMusic: { ...currentBgm, ...updates },
-            },
-            synced: false,
-          })
-        }
       }
-    },
-    [selectedAudioKey, activeProjectId, slides, playbackSettings, updateProject],
-  )
+    }
+  }
 
-  const deleteSelectedAudio = useCallback(() => {
+  const deleteSelectedAudio = () => {
     if (!selectedAudioKey || !activeProjectId) return
     if (selectedAudioKey.type === AUDIO_TYPE_VOICEOVER) {
       updateProject(activeProjectId, {
@@ -113,7 +102,7 @@ export function useTimelineAudio({
       })
     }
     setSelectedAudioKey(null)
-  }, [selectedAudioKey, activeProjectId, slides, playbackSettings, updateProject])
+  }
 
   return {
     selectedAudioKey,
@@ -129,3 +118,4 @@ export function useTimelineAudio({
     deleteSelectedAudio,
   }
 }
+

@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
 import { Volume2, Gauge, RotateCw, Play, Pause, Loader2, Scissors } from 'lucide-react'
 import type { SlideAudio } from '@motionslides/shared'
+import { useAudioPreview } from '@/hooks/useAudioPreview'
+import { TrimWaveformCanvas } from './TrimWaveformCanvas'
 
 interface AudioTimelineEditorProps {
   audio: SlideAudio
@@ -8,296 +9,23 @@ interface AudioTimelineEditorProps {
 }
 
 export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProps) {
-  const [peaks, setPeaks] = useState<number[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [playbackTime, setPlaybackTime] = useState(audio.trimStart)
-  
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const audioBufferRef = useRef<AudioBuffer | null>(null)
-  
-  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null)
-  const gainNodeRef = useRef<GainNode | null>(null)
-  const startTimeRef = useRef<number>(0)
-  const pauseTimeRef = useRef<number>(audio.trimStart)
-  const animationFrameRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    let active = true
-    if (!audio.url) return
-
-    async function loadAudio() {
-      setIsLoading(true)
-      try {
-        const res = await fetch(audio.url)
-        if (!res.ok) throw new Error('Failed to fetch audio file')
-        const arrayBuffer = await res.arrayBuffer()
-        
-        // We initialize AudioContext lazily on user gesture to conform to browser policies,
-        // but here we can decode data with a temporary offline context or raw context.
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
-        const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer)
-        
-        if (!active) return
-        audioBufferRef.current = decodedBuffer
-
-        const channelData = decodedBuffer.getChannelData(0)
-        const sampleCount = 120
-        const blockSize = Math.floor(channelData.length / sampleCount)
-        const calculatedPeaks: number[] = []
-
-        for (let i = 0; i < sampleCount; i++) {
-          const start = i * blockSize
-          let max = 0
-          for (let j = 0; j < blockSize; j++) {
-            const val = Math.abs(channelData[start + j] || 0)
-            if (val > max) max = val
-          }
-          calculatedPeaks.push(max)
-        }
-
-        const maxPeak = Math.max(...calculatedPeaks, 0.01)
-        const normalized = calculatedPeaks.map(p => p / maxPeak)
-        
-        setPeaks(normalized)
-      } catch (err) {
-        console.error('[Waveform Generator] Failed to process audio:', err)
-        setPeaks(Array.from({ length: 80 }, () => Math.random() * 0.6 + 0.2))
-      } finally {
-        if (active) setIsLoading(false)
-      }
-    }
-
-    loadAudio()
-
-    return () => {
-      active = false
-      stopPlayback()
-    }
-  }, [audio.url])
-
-  useEffect(() => {
-    return () => {
-      stopPlayback()
-    }
-  }, [audio.url])
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas || peaks.length === 0) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const dpr = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
-    canvas.width = rect.width * dpr
-    canvas.height = rect.height * dpr
-    ctx.scale(dpr, dpr)
-
-    const w = rect.width
-    const h = rect.height
-
-    ctx.clearRect(0, 0, w, h)
-
-    const barWidth = w / peaks.length
-    const gap = 1.5
-
-    peaks.forEach((peak, i) => {
-      const x = i * barWidth
-      const barHeight = peak * (h - 8)
-      const y = (h - barHeight) / 2
-
-      const barTime = (i / peaks.length) * audio.duration
-      const isWithinTrim = barTime >= audio.trimStart && barTime <= audio.trimEnd
-      const isPlayed = isPlaying && barTime <= playbackTime && barTime >= audio.trimStart
-
-      if (isPlayed) {
-        ctx.fillStyle = '#3b82f6'
-      } else if (isWithinTrim) {
-        ctx.fillStyle = '#6366f1'
-      } else {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'
-      }
-
-      ctx.beginPath()
-      ctx.roundRect(x, y, barWidth - gap, barHeight, 2)
-      ctx.fill()
-    })
-
-    if (isPlaying) {
-      const playbackX = (playbackTime / audio.duration) * w
-      ctx.strokeStyle = '#ffffff'
-      ctx.lineWidth = 1.5
-      ctx.beginPath()
-      ctx.moveTo(playbackX, 0)
-      ctx.lineTo(playbackX, h)
-      ctx.stroke()
-    }
-
-    const startX = (audio.trimStart / audio.duration) * w
-    const endX = (audio.trimEnd / audio.duration) * w
-
-    ctx.strokeStyle = '#6366f1'
-    ctx.lineWidth = 2
-    
-    ctx.beginPath()
-    ctx.moveTo(startX, 0)
-    ctx.lineTo(startX, h)
-    ctx.stroke()
-
-    ctx.beginPath()
-    ctx.moveTo(endX, 0)
-    ctx.lineTo(endX, h)
-    ctx.stroke()
-
-  }, [peaks, audio.trimStart, audio.trimEnd, audio.duration, playbackTime, isPlaying])
-
-  const startPlayback = () => {
-    if (!audioBufferRef.current) return
-
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
-    }
-
-    const ctx = audioContextRef.current
-    if (ctx.state === 'suspended') {
-      ctx.resume()
-    }
-
-    if (audioSourceRef.current) {
-      try {
-        audioSourceRef.current.stop()
-      } catch (e) {}
-    }
-
-    const source = ctx.createBufferSource()
-    source.buffer = audioBufferRef.current
-    source.playbackRate.value = audio.playbackRate
-    source.loop = audio.loop
-    
-    if (audio.loop) {
-      source.loopStart = audio.trimStart
-      source.loopEnd = audio.trimEnd
-    }
-
-    const gainNode = ctx.createGain()
-    gainNode.gain.value = audio.volume
-    
-    source.connect(gainNode)
-    gainNode.connect(ctx.destination)
-
-    audioSourceRef.current = source
-    gainNodeRef.current = gainNode
-
-    let offset = pauseTimeRef.current
-    if (offset < audio.trimStart || offset > audio.trimEnd) {
-      offset = audio.trimStart
-    }
-
-    const durationToPlay = audio.trimEnd - offset
-    
-    startTimeRef.current = ctx.currentTime - (offset / audio.playbackRate)
-    
-    if (audio.loop) {
-      source.start(0, offset)
-    } else {
-      source.start(0, offset, durationToPlay)
-      source.onended = () => {
-        if (audioSourceRef.current === source) {
-          setIsPlaying(false)
-          pauseTimeRef.current = audio.trimStart
-          setPlaybackTime(audio.trimStart)
-        }
-      }
-    }
-
-    setIsPlaying(true)
-    
-    const updateCursor = () => {
-      if (!ctx || !isPlaying) return
-      const elapsed = (ctx.currentTime - startTimeRef.current) * audio.playbackRate
-      
-      if (audio.loop) {
-        const loopLen = audio.trimEnd - audio.trimStart
-        const currentLoopPos = audio.trimStart + (elapsed % loopLen)
-        setPlaybackTime(currentLoopPos)
-      } else {
-        const currentPos = Math.min(elapsed, audio.trimEnd)
-        setPlaybackTime(currentPos)
-        if (currentPos >= audio.trimEnd) {
-          setIsPlaying(false)
-          return
-        }
-      }
-      animationFrameRef.current = requestAnimationFrame(updateCursor)
-    }
-    
-    animationFrameRef.current = requestAnimationFrame(updateCursor)
-  }
-
-  const stopPlayback = () => {
-    setIsPlaying(false)
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current)
-      animationFrameRef.current = null
-    }
-
-    if (audioSourceRef.current) {
-      try {
-        audioSourceRef.current.stop()
-      } catch (e) {}
-      audioSourceRef.current = null
-    }
-
-    if (audioContextRef.current) {
-      pauseTimeRef.current = playbackTime
-    }
-  }
-
-  const togglePlay = () => {
-    if (isPlaying) {
-      stopPlayback()
-    } else {
-      startPlayback()
-    }
-  }
-
-  const handleWaveformClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const rect = canvas.getBoundingClientRect()
-    const clickX = e.clientX - rect.left
-    const percent = clickX / rect.width
-    const clickedTime = percent * audio.duration
-
-    const clampedTime = Math.max(audio.trimStart, Math.min(clickedTime, audio.trimEnd))
-    setPlaybackTime(clampedTime)
-    pauseTimeRef.current = clampedTime
-
-    if (isPlaying) {
-      stopPlayback()
-      setTimeout(startPlayback, 50)
-    }
-  }
+  const {
+    peaks,
+    isLoading,
+    isPlaying,
+    playbackTime,
+    togglePlay,
+    seekToPercent,
+  } = useAudioPreview(audio)
 
   const handleTrimStartChange = (val: number) => {
     const start = Math.max(0, Math.min(val, audio.trimEnd - 0.2))
     onUpdate({ trimStart: start })
-    if (playbackTime < start) {
-      setPlaybackTime(start)
-      pauseTimeRef.current = start
-    }
   }
 
   const handleTrimEndChange = (val: number) => {
     const end = Math.min(audio.duration, Math.max(val, audio.trimStart + 0.2))
     onUpdate({ trimEnd: end })
-    if (playbackTime > end) {
-      setPlaybackTime(end)
-      pauseTimeRef.current = end
-    }
   }
 
   return (
@@ -325,10 +53,14 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
             <span className="text-[10px] text-(--ms-text-muted)">Generating Waveform...</span>
           </div>
         ) : (
-          <canvas
-            ref={canvasRef}
-            onClick={handleWaveformClick}
-            className="w-full h-full cursor-pointer"
+          <TrimWaveformCanvas
+            peaks={peaks}
+            trimStart={audio.trimStart}
+            trimEnd={audio.trimEnd}
+            duration={audio.duration}
+            playbackTime={playbackTime}
+            isPlaying={isPlaying}
+            onClick={seekToPercent}
           />
         )}
       </div>

@@ -12,6 +12,7 @@ import { spawn, ChildProcess } from 'child_process'
 import fs   from 'fs'
 import path from 'path'
 import crypto from 'crypto'
+import os from 'os'
 import type { ExportProject, SlideAudio } from '@motionslides/shared'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -152,7 +153,7 @@ export class FfmpegEncoder {
       const hasBgMusic = bgMusicTrack !== null
 
       if (hasSlideAudio || hasBgMusic) {
-        this.tempAudioDir = path.join(process.cwd(), 'apps', 'export-server', 'temp_audio', crypto.randomUUID())
+        this.tempAudioDir = path.join(os.tmpdir(), 'motionslides-audio-' + crypto.randomUUID())
         fs.mkdirSync(this.tempAudioDir, { recursive: true })
 
         try {

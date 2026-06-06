@@ -335,3 +335,12 @@ export interface ExportProgressEvent {
   currentSlide?: number
   totalSlides?:  number
 }
+
+// ─── Storage Abstraction Types ────────────────────────────────────────────────
+
+export interface StorageProvider {
+  uploadFile(data: Uint8Array, filename: string, mimeType: string): Promise<{ url: string; key: string }>
+  getDownloadUrl(key: string): Promise<string>
+  deleteFile(key: string): Promise<void>
+}
+

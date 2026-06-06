@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import fs from 'fs'
 import path from 'path'
+import { getStorageProvider } from '@/lib/storage'
 
 export const Route = createFileRoute('/api/uploads/$filename')({
   server: {
@@ -8,13 +9,19 @@ export const Route = createFileRoute('/api/uploads/$filename')({
       GET: async ({ params }) => {
         try {
           const { filename } = params
-          const uploadsDir = path.join(process.cwd(), 'apps', 'web', 'public', 'uploads')
-          const filePath = path.join(uploadsDir, filename)
+          const storage = getStorageProvider()
+          if (typeof storage.getFilePath !== 'function') {
+            return new Response(JSON.stringify({ error: 'Local storage provider not active' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          }
 
-          // Defensive path traversal protection
-          const resolvedPath = path.resolve(filePath)
-          const resolvedUploadsDir = path.resolve(uploadsDir)
-          if (!resolvedPath.startsWith(resolvedUploadsDir)) {
+          let filePath: string
+          
+          try {
+            filePath = storage.getFilePath(`uploads/${filename}`)
+          } catch {
             return new Response(JSON.stringify({ error: 'Forbidden' }), {
               status: 403,
               headers: { 'Content-Type': 'application/json' },

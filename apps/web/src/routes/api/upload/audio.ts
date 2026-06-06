@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import fs from 'fs'
-import path from 'path'
 import { isValidAudioFile } from '@/lib/utils'
+import { getStorageProvider } from '@/lib/storage'
 
 export const Route = createFileRoute('/api/upload/audio')({
   server: {
@@ -26,22 +25,14 @@ export const Route = createFileRoute('/api/upload/audio')({
             })
           }
 
-          const originalExt = path.extname(file.name)
-          const ext = originalExt ? originalExt : '.mp3'
-          
-          const uniqueId = crypto.randomUUID()
-          const safeName = `${Date.now()}-${uniqueId}${ext}`
-
-          const uploadsDir = path.join(process.cwd(), 'apps', 'web', 'public', 'uploads')
-          fs.mkdirSync(uploadsDir, { recursive: true })
-          const filePath = path.join(uploadsDir, safeName)
-
           const arrayBuffer = await file.arrayBuffer()
-          const buffer = Buffer.from(arrayBuffer)
-          await fs.promises.writeFile(filePath, buffer)
+          const uint8Array = new Uint8Array(arrayBuffer)
 
-          const url = `/api/uploads/${safeName}`
+          const storage = getStorageProvider()
+          const { url } = await storage.uploadFile(uint8Array, file.name, file.type || 'audio/webm')
+
           const duration = durationStr ? parseFloat(durationStr) : 0
+
 
           return new Response(
             JSON.stringify({

@@ -11,7 +11,13 @@ export interface StyleGuideTokens {
  */
 export function parseStyleTokens(): StyleGuideTokens {
   try {
-    const cssPath = path.join(process.cwd(), 'apps/web/src/styles.css')
+    const cwd = process.cwd()
+    const normalized = cwd.replace(/\\/g, '/')
+    let root = cwd
+    if (normalized.includes('/apps/web')) {
+      root = normalized.split('/apps/web')[0]
+    }
+    const cssPath = path.resolve(root, 'apps/web/src/styles.css')
     if (!fs.existsSync(cssPath)) {
       return { light: {}, dark: {} }
     }

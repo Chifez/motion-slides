@@ -71,7 +71,9 @@ export async function startExport(
   // ── Handle Cache Hit ─────────────────────────────────────────────────────
   if (data.status === 'done' && data.url) {
     onProgress({ stage: 'done', percent: 100, message: 'Export complete (cached)!' })
-    const downloadUrl = `${serverUrl}${data.url}?filename=${encodeURIComponent(safeName)}`
+    const downloadUrl = data.url.startsWith('http')
+      ? data.url
+      : `${serverUrl}${data.url}?filename=${encodeURIComponent(safeName)}`
     triggerDownload(downloadUrl, `${safeName}.${format}`)
     return downloadUrl
   }
@@ -124,7 +126,9 @@ export async function startExport(
         onProgress(event)
 
         if (event.stage === 'done' && event.url) {
-          downloadUrl = `${serverUrl}${event.url}?filename=${encodeURIComponent(safeName)}`
+          downloadUrl = event.url.startsWith('http')
+            ? event.url
+            : `${serverUrl}${event.url}?filename=${encodeURIComponent(safeName)}`
           triggerDownload(downloadUrl, `${safeName}.${format}`)
         }
 

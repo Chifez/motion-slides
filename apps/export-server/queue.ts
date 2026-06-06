@@ -12,9 +12,10 @@ import path from 'path'
 import fs from 'fs'
 import { HeadlessRenderer } from './renderer/HeadlessRenderer.js'
 import type { ExportProgressEvent } from '@motionslides/shared'
+import { getStorageDir, getStorageProvider } from './storage.js'
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379'
-const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(process.cwd(), 'exports')
+const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(getStorageDir(), 'exports')
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
 const CHROME_EXECUTABLE = process.env.CHROME_EXECUTABLE
 const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT_EXPORTS ?? '2')
@@ -160,7 +161,7 @@ export function initExportWorker(): void {
       // Path traversal validation (defensive check)
       const resolvedPath = path.resolve(outPath)
       const resolvedOutputDir = path.resolve(OUTPUT_DIR)
-      if (!resolvedPath.startsWith(resolvedOutputDir)) {
+      if (!resolvedPath.startsWith(resolvedOutputDir + path.sep)) {
         throw new Error('Security Error: Invalid output path traversal detected')
       }
 
@@ -181,13 +182,28 @@ export function initExportWorker(): void {
       try {
         await renderer.render(sceneGraph)
 
+        let finalUrl = `/api/download/${jobId}`
+        const storage = getStorageProvider()
+        
+        if (process.env.STORAGE_PROVIDER === 's3') {
+          const fileData = await fs.promises.readFile(outPath)
+          const ext = path.extname(outPath)
+          const mimeType = ext === '.pdf' ? 'application/pdf' : (ext === '.webm' ? 'video/webm' : 'video/mp4')
+          const filename = path.basename(outPath)
+          const uploadRes = await storage.uploadFile(fileData, filename, mimeType)
+          finalUrl = uploadRes.url
+          if (fs.existsSync(outPath)) {
+            await fs.promises.unlink(outPath)
+          }
+        }
+
         await setCachedExport(hash, jobId)
 
         sendProgress({
           stage: 'done',
           percent: 100,
           message: 'Export complete!',
-          url: `/api/download/${jobId}`,
+          url: finalUrl,
         })
       } catch (err: any) {
         console.error(`[Worker] Failed job ${jobId}: ${err?.message || err}`)
