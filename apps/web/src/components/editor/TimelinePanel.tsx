@@ -81,11 +81,6 @@ export function TimelinePanel() {
     playheadRef: playback.playheadRef,
     timecodeRef: playback.timecodeRef
   }), [playback.playheadRef, playback.timecodeRef])
-
-  // Memoize the audio object so its reference stays stable during playback.
-  // All the individual function values are useCallback-stabilised in useTimelineAudio;
-  // the primitive state values (selectedAudioKey etc.) only change on user interactions,
-  // never during continuous playback.
   const stableAudio = useMemo(() => audio, [
     audio.selectedAudioKey,
     audio.setSelectedAudioKey,
@@ -100,7 +95,6 @@ export function TimelinePanel() {
     audio.deleteSelectedAudio,
   ])
 
-  // Stable slide-click handler: setActiveSlide (Zustand) and setCurrentTime (useCallback) are both stable.
   const handleSlideClick = useCallback((idx: number, start: number) => {
     setActiveSlide(idx)
     playback.setCurrentTime(start)

@@ -36,11 +36,9 @@ export function PresentationOverlay() {
   const bgMusicIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const slideAudioIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // ── Sync global autoplay with local state ──
   const resolvedAutoplay = urlAutoplay !== null ? urlAutoplay : playbackSettings.autoplay
   const isAutoplayActive = resolvedAutoplay && !autoplayPaused
 
-  // ── Resolve Prototype Transitions ────────────────────────────────────────
   const { activeTransition, clickTransition, autoTransition } = useEditorStore(
     useShallow(s => s.getPlaybackTransitions())
   )
@@ -186,7 +184,6 @@ export function PresentationOverlay() {
     }
   }, [isPresenting, playbackSettings.backgroundMusic])
 
-  // ── Keyboard navigation ──
   const onKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'ArrowRight' || e.key === ' ') {
       e.preventDefault()
@@ -203,7 +200,6 @@ export function PresentationOverlay() {
 
   useKeyboardShortcuts(isPresenting, onKey)
 
-  // ── Autoplay ──
   const entranceDuration = activeTransition?.duration ?? playbackSettings.transitionDuration
   
   const configuredSlideDuration = autoTransition
@@ -217,8 +213,6 @@ export function PresentationOverlay() {
   const resolvedSlideDuration = Math.max(configuredSlideDuration, activeAudioDurationMs)
   const autoplayDelay = resolvedSlideDuration + entranceDuration
 
-  // Global autoplay must not fire when the current slide uses a prototype
-  // click-trigger transition — the user explicitly chose manual navigation.
   const shouldAutoplay = isPresenting && (
     !!autoTransition ||
     (isAutoplayActive && !clickTransition)
@@ -241,7 +235,6 @@ export function PresentationOverlay() {
     [activeSlideIndex, isAutoplayActive, autoTransition, project?.slides, totalSlides],
   )
 
-  // ── Fullscreen ──
   const onExitFullscreen = useCallback(() => {
     useEditorStore.getState().stopPresentation()
   }, [])
@@ -254,7 +247,6 @@ export function PresentationOverlay() {
     return getCanvasDimensions(playbackSettings.aspectRatio)
   }, [playbackSettings.aspectRatio])
 
-  // Reset previousSlideIndex to null after slide transition animation duration
   useLayoutEffect(() => {
     if (!isPresenting || previousSlideIndex === null) return
 
@@ -266,7 +258,6 @@ export function PresentationOverlay() {
     return () => clearTimeout(timer)
   }, [activeSlideIndex, previousSlideIndex, isPresenting, activeTransition, playbackSettings.transitionDuration])
 
-  // Track screen size dynamically via ResizeObserver
   useLayoutEffect(() => {
     if (!isPresenting) return
     const el = containerRef.current
@@ -319,7 +310,6 @@ export function PresentationOverlay() {
         />
       </div>
 
-      {/* Controls — auto-hide */}
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-500"
         style={{ opacity: controlsVisible ? 1 : 0 }}
@@ -343,7 +333,6 @@ export function PresentationOverlay() {
         </div>
       </div>
 
-      {/* Progress Bar */}
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/5 overflow-hidden z-(--z-toast)">
         <div
           className="h-full bg-blue-500 transition-all duration-300 ease-out"

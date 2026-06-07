@@ -73,7 +73,6 @@ export function useTimelinePlayback({
     const ps = playbackSettingsRef.current
     const musicConfig = ps.backgroundMusic
 
-    // ─── Background Music Sync ──────────────────────────────────────────────
     if (musicConfig) {
       if (!bgMusicAudioRef.current) {
         bgMusicAudioRef.current = new Audio(musicConfig.url)
@@ -83,7 +82,7 @@ export function useTimelinePlayback({
       bgAudio.playbackRate = musicConfig.playbackRate
       
       if (isPlaying || forcePlay) {
-        const bgRelativeTime = musicConfig.trimStart + time
+        const bgRelativeTime = musicConfig.trimStart + (time * musicConfig.playbackRate)
         if (bgRelativeTime <= musicConfig.trimEnd) {
           if (bgAudio.paused) {
             bgAudio.currentTime = bgRelativeTime
@@ -104,7 +103,6 @@ export function useTimelinePlayback({
       }
     }
 
-    // ─── Slide Audio Sync ───────────────────────────────────────────────────
     const getSlideIndexAtTime = getSlideIndexAtTimeRef.current
     const slidesWithTiming = slidesWithTimingRef.current
     const activeIdx = getSlideIndexAtTime(time)
@@ -115,7 +113,7 @@ export function useTimelinePlayback({
 
     if (slideAudioConfig) {
       const relativeOffset = time - currentSlideTiming.start
-      const audioRelativeTime = slideAudioConfig.trimStart + relativeOffset
+      const audioRelativeTime = slideAudioConfig.trimStart + (relativeOffset * slideAudioConfig.playbackRate)
       if (
         (isPlaying || forcePlay) &&
         audioRelativeTime >= slideAudioConfig.trimStart &&
@@ -159,11 +157,7 @@ export function useTimelinePlayback({
     }
   }
 
-  // Keep a ref to syncAudio so useCallback-wrapped setCurrentTime always calls
-  // the latest version without needing syncAudio as a dependency.
-  // Must be placed after syncAudio is declared to avoid 'used before declaration' errors.
   const syncAudioRef = useRef(syncAudio)
-  // Update every render so the ref always holds the latest closure.
   syncAudioRef.current = syncAudio
 
   const animatePlayback = (time: number) => {
@@ -193,16 +187,13 @@ export function useTimelinePlayback({
       const prevTime = currentTimeRef.current
       currentTimeRef.current = nextTime
 
-      // Update playhead DOM offset immediately
       if (playheadRef.current) {
         playheadRef.current.style.left = `${nextTime * PX_PER_SEC}px`
       }
-      // Update timecode DOM text immediately
       if (timecodeRef.current) {
         timecodeRef.current.innerText = formatTime(nextTime)
       }
 
-      // Auto-scroll timeline container if playhead goes past the middle
       if (timelineBodyRef.current) {
         const playheadX = nextTime * PX_PER_SEC
         const container = timelineBodyRef.current
@@ -212,18 +203,14 @@ export function useTimelinePlayback({
         }
       }
 
-      // Check slide boundary crossing
       const getSlideIndexAtTime = getSlideIndexAtTimeRef.current
       const prevIdx = getSlideIndexAtTime(prevTime)
       const nextIdx = getSlideIndexAtTime(nextTime)
 
       if (nextIdx !== prevIdx || didLoopOrEnd) {
-        // Sync audio immediately at the slide boundary
         syncAudio(nextTime, true)
-        // Trigger React state update for slide transition
         setCurrentTimeState(nextTime)
       } else {
-        // Routine throttled audio sync check (approx every 10 frames / 166ms)
         frameCountRef.current++
         if (frameCountRef.current % 10 === 0) {
           syncAudio(nextTime)
@@ -234,13 +221,10 @@ export function useTimelinePlayback({
     requestRef.current = requestAnimationFrame(animatePlayback)
   }
 
-  // useCallback with empty deps: all mutation targets are refs; syncAudio is
-  // accessed via syncAudioRef so it always calls the latest version.
   const setCurrentTime = useCallback((v: number | ((prev: number) => number)) => {
     const nextVal = typeof v === 'function' ? v(currentTimeRef.current) : v
     currentTimeRef.current = nextVal
 
-    // Update DOM elements immediately
     if (playheadRef.current) {
       playheadRef.current.style.left = `${nextVal * PX_PER_SEC}px`
     }
@@ -248,15 +232,10 @@ export function useTimelinePlayback({
       timecodeRef.current.innerText = formatTime(nextVal)
     }
 
-    // Sync audio immediately on manual jumps/scrubs
     syncAudioRef.current(nextVal, true)
-
-    // Always update React state for user-triggered scrubs/jumps
     setCurrentTimeState(nextVal)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Start / stop the rAF loop
   useEffect(() => {
     if (isPlaying) {
       previousTimeRef.current = null
@@ -269,7 +248,6 @@ export function useTimelinePlayback({
       bgMusicAudioRef.current?.pause()
       slideAudioRef.current?.pause()
       
-      // Sync React state to match ref exactly when paused
       setCurrentTimeState(currentTimeRef.current)
     }
     return () => {
@@ -277,12 +255,10 @@ export function useTimelinePlayback({
     }
   }, [isPlaying])
 
-  // Sync audio play/pause status when isPlaying, backgroundMusic, or project change
   useEffect(() => {
     syncAudio(currentTimeRef.current)
   }, [isPlaying, playbackSettings.backgroundMusic, project])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       bgMusicAudioRef.current?.pause()

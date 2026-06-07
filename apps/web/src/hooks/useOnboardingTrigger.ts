@@ -12,22 +12,17 @@ export function useOnboardingTrigger(type: TourType, showEditorUI: boolean = tru
 
   const wasActiveRef = useRef(false)
 
-  // Track when the tour is closed during this session to prevent infinite restarts under VITE_FORCE_TOUR
   useEffect(() => {
     if (isOnboardingActive) {
       wasActiveRef.current = true
     } else if (wasActiveRef.current && !isOnboardingActive) {
-      // Tour was active but is now closed/completed
+
       if (typeof window !== 'undefined') {
         sessionStorage.setItem(`ms-dismissed-${type}`, 'true')
       }
     }
   }, [isOnboardingActive, type])
 
-  // Trigger the onboarding tour when conditions are met. Uses a ref to prevent
-  // re-triggering: the old approach included isOnboardingActive in the dep array,
-  // but startOnboarding sets isOnboardingActive=true, creating a self-retriggering
-  // cycle that only didn't infinite-loop due to fragile condition guards.
   const hasTriggered = useRef(false)
 
   useEffect(() => {
@@ -35,8 +30,6 @@ export function useOnboardingTrigger(type: TourType, showEditorUI: boolean = tru
 
     const forceTour = import.meta.env.VITE_FORCE_TOUR === 'true'
     const dismissedThisSession = typeof window !== 'undefined' ? sessionStorage.getItem(`ms-dismissed-${type}`) === 'true' : false
-    // Read isOnboardingActive imperatively — it's not a reactive dependency,
-    // it's a guard against calling startOnboarding while already active.
     const alreadyActive = useEditorStore.getState().isOnboardingActive
 
     if (forceTour) {

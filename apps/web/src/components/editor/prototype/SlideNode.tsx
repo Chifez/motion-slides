@@ -20,7 +20,6 @@ function SlideNodeComponent({ data, selected }: NodeProps<SlideNodeType>) {
       }`}
       style={{ width: 240 }}
     >
-      {/* Slide preview */}
       <div
         className="w-full aspect-video flex items-center justify-center relative"
         style={{ background: slide.background || '#0a0a0a' }}
@@ -33,14 +32,12 @@ function SlideNodeComponent({ data, selected }: NodeProps<SlideNodeType>) {
         </div>
       </div>
 
-      {/* Label */}
       <div className="px-2.5 py-1.5 flex items-center justify-between border-t border-(--ms-border)">
         <span className="text-[10px] text-(--ms-text-muted) font-medium truncate">
           {slide.name || `Slide ${index + 1}`}
         </span>
       </div>
 
-      {/* Handles */}
       <Handle
         type="source"
         position={Position.Right}

@@ -31,9 +31,6 @@ export function SlidePanel() {
   const totalSlides       = slides.length
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
-
-  // Desktop: 5px distance to prevent accidental drags on click
-  // Mobile: 250ms hold + 5px tolerance to avoid conflicting with scroll
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },

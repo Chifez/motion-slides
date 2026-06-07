@@ -25,7 +25,6 @@ interface Props {
 export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Props) {
   return (
     <div className="absolute top-4 right-4 w-72 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-50 overflow-hidden transition-colors">
-      {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-(--ms-border)">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted)">Transition</span>
         <button
@@ -37,7 +36,6 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
       </div>
 
       <div className="p-3 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
-        {/* Animation Type Grid */}
         <div>
           <span className={labelCls}>Animation Type</span>
           <div className="grid grid-cols-4 gap-1.5">
@@ -63,7 +61,6 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
           </div>
         </div>
 
-        {/* Duration */}
         <div>
           <span className={labelCls}>Duration</span>
           <div className="flex items-center gap-2">
@@ -80,7 +77,6 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
           </div>
         </div>
 
-        {/* Easing */}
         <div>
           <span className={labelCls}>Easing Curve</span>
           <BezierEditor
@@ -89,7 +85,6 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
           />
         </div>
 
-        {/* Trigger */}
         <div>
           <span className={labelCls}>Trigger</span>
           <div className="flex gap-1.5">
@@ -127,7 +122,6 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
           </div>
         )}
 
-        {/* Delete */}
         <div className="pt-2">
           <button
             onClick={onDelete}

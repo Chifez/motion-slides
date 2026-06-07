@@ -65,8 +65,8 @@ export function ElementButtons() {
 
   const addLine = (lineType: LineType) => {
     const branches = lineType === 'branching' ? [
-      { x: 1, y: 0 }, // Up
-      { x: 1, y: 1 }  // Down
+      { x: 1, y: 0 },
+      { x: 1, y: 1 }
     ] : undefined
     
     const lineContent = { ...DEFAULT_LINE_ELEMENT.content, lineType, branches }

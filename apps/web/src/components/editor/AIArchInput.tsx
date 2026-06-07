@@ -31,7 +31,6 @@ export function AIArchInput({ onGenerate, onBack }: Props) {
         />
       </div>
 
-      {/* Examples */}
       <div className="flex flex-wrap gap-2">
         {examples.map(ex => (
           <button
@@ -44,7 +43,6 @@ export function AIArchInput({ onGenerate, onBack }: Props) {
         ))}
       </div>
 
-      {/* Options */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-(--ms-text-muted) mb-1.5">Icon Set</label>

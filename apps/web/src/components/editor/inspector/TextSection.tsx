@@ -16,7 +16,6 @@ export function TextSection({ content, onUpdate }: Props) {
     <div className="px-3 py-3 border-b border-(--ms-border)">
       <span className={labelCls}>Text</span>
 
-      {/* Font Family */}
       <div className="mt-3">
         <span className="text-[9px] text-(--ms-text-muted) uppercase tracking-widest block mb-1">Font Family</span>
         <select
@@ -32,7 +31,6 @@ export function TextSection({ content, onUpdate }: Props) {
         </select>
       </div>
 
-      {/* Weight + Style row */}
       <div className="grid grid-cols-[1fr_auto] gap-2 mb-2">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">Weight</span>
@@ -63,7 +61,6 @@ export function TextSection({ content, onUpdate }: Props) {
         </div>
       </div>
 
-      {/* List Style */}
       <div className="flex gap-1 mb-2">
         {(['none', 'bullet', 'numbered'] as const).map((ls) => (
           <button
@@ -82,7 +79,6 @@ export function TextSection({ content, onUpdate }: Props) {
         ))}
       </div>
 
-      {/* Color + Size row */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">Color</span>
@@ -105,7 +101,6 @@ export function TextSection({ content, onUpdate }: Props) {
         />
       </div>
 
-      {/* Alignment */}
       <div className="flex gap-1 mb-2">
         {(['left', 'center', 'right'] as const).map((a) => (
           <button

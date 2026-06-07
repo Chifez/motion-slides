@@ -19,7 +19,7 @@ export interface SteadyStateRecord extends CharLayout {
   color: string;
 }
 
-// ─── LCS Diff result ─────────────────────────────────────────────────────────
+
 
 export interface LCSDiffResult {
   /** Characters matched by LCS — travel from old position to new position. */
@@ -30,7 +30,7 @@ export interface LCSDiffResult {
   leaving: Array<{ key: string; char: string }>;
 }
 
-// ─── AnimToken types ──────────────────────────────────────────────────────────
+
 
 export type ContinuingToken = {
   type: 'continuing';
@@ -89,7 +89,7 @@ export type LeavingToken = {
 
 export type AnimToken = ContinuingToken | EnteringToken | LeavingToken;
 
-// ─── Tokeniser ────────────────────────────────────────────────────────────────
+
 
 /**
  * Split text into CharTokens, giving each non-whitespace character a
@@ -105,7 +105,6 @@ export function tokenizeText(text: string): CharToken[] {
     const isWhitespace =
       char === ' ' || char === '\n' || char === '\r' || char === '\t';
 
-    // Readable slug so whitespace keys never clash with real character keys.
     const slug =
       char === ' '  ? '__sp' :
       char === '\n' ? '__nl' :
@@ -120,7 +119,7 @@ export function tokenizeText(text: string): CharToken[] {
   });
 }
 
-// ─── LCS Differ ───────────────────────────────────────────────────────────────
+
 
 /**
  * Compute the Longest Common Subsequence of two character token sequences and
@@ -145,7 +144,6 @@ export function lcsDiffTokens(
   const m = prevNws.length;
   const n = nextNws.length;
 
-  // Build DP table: dp[i][j] = length of LCS of prevNws[0..i-1] and nextNws[0..j-1]
   const dp: number[][] = Array.from({ length: m + 1 }, () =>
     new Array(n + 1).fill(0),
   );
@@ -158,7 +156,6 @@ export function lcsDiffTokens(
     }
   }
 
-  // Backtrack to extract matched pairs in forward order.
   const matchedPrev = new Set<number>();
   const matchedNext = new Set<number>();
   const continuing: LCSDiffResult['continuing'] = [];

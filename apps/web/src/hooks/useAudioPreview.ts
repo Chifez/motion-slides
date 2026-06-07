@@ -20,7 +20,6 @@ export function useAudioPreview(audio: SlideAudio) {
     audioRef.current = audio
   }, [audio])
 
-  // Sync playbackTime and pauseTimeRef when trimStart changes externally (if not playing)
   useEffect(() => {
     if (!isPlaying) {
       setPlaybackTime(audio.trimStart)
@@ -28,7 +27,6 @@ export function useAudioPreview(audio: SlideAudio) {
     }
   }, [audio.trimStart, isPlaying])
 
-  // Fetch and decode audio file
   useEffect(() => {
     let active = true
     if (!audio.url) {
@@ -88,7 +86,6 @@ export function useAudioPreview(audio: SlideAudio) {
     }
   }, [audio.url])
 
-  // Dynamically update gain volume and playback rate if they change while playing
   useEffect(() => {
     if (gainNodeRef.current) {
       gainNodeRef.current.gain.value = audio.volume

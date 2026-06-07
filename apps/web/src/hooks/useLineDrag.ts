@@ -63,7 +63,6 @@ export function useLineDrag(
 ) {
   const cleanupRef = useRef<(() => void) | null>(null)
 
-  // Ensure listeners are cleaned up if component unmounts mid-drag
   useEffect(() => {
     return () => cleanupRef.current?.()
   }, [])
@@ -109,8 +108,6 @@ export function useLineDrag(
             absEnd = { x: currentAbsX, y: currentAbsY }
           }
 
-          // For branching lines, absEnd is not rendered as a node and must not
-          // influence the bounding box — only start + branch endpoints matter.
           const isBranching = (element.content as LineContent).lineType === 'branching'
           const bboxPoints = [absStart]
           if (!isBranching) bboxPoints.push(absEnd)
@@ -148,8 +145,6 @@ export function useLineDrag(
             const oldAbs = b.connection
               ? getConnectionPos(b.connection, slide?.elements || [])
               : null
-            // Fall back to the branch's stored (pre-drag) absolute position if
-            // the connection target no longer exists in the slide.
             const resolvedOldAbs = oldAbs ?? {
               x: element.position.x + b.x * element.size.width,
               y: element.position.y + b.y * element.size.height,

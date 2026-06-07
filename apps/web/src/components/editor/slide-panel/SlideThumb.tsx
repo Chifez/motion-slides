@@ -75,7 +75,6 @@ export const SlideThumb = memo(function SlideThumb({
       } ${isDragging ? 'z-50' : ''}`}
       onClick={onSelect}
     >
-      {/* Drag handle — visible on hover */}
       <div
         {...attributes}
         {...listeners}
@@ -97,12 +96,10 @@ export const SlideThumb = memo(function SlideThumb({
           {elements.length > 0 ? `${elements.length} layer${elements.length > 1 ? 's' : ''}` : 'Empty'}
         </span>
 
-        {/* Index badge */}
         <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-md border border-white/10">
           <span className="text-[10px] text-white/70 font-bold leading-none">{index + 1}</span>
         </div>
 
-        {/* Action buttons on hover */}
         {isActive && !isDragOverlay && (
           <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
             <button
@@ -121,7 +118,6 @@ export const SlideThumb = memo(function SlideThumb({
         )}
       </div>
 
-      {/* Slide name label */}
       <div className={`px-2 py-1.5 ${isActive ? 'bg-blue-500/5' : 'bg-transparent'} transition-colors`} onDoubleClick={handleDoubleClick}>
         {isEditing ? (
           <input

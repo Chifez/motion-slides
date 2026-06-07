@@ -15,20 +15,16 @@ export function useSyncManager() {
   const projects = useEditorStore((s) => s.projects)
   const user = useEditorStore((s) => s.user)
 
-  // Sync on page leave (beforeunload)
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Offline mode (unauthenticated) doesn't need cloud sync warnings
       if (!user) return
 
       const hasUnsynced = projects.some(p => !p.synced)
       if (hasUnsynced) {
-        // Trigger background sync
         syncProjects()
         
-        // Show native confirmation dialog for external reload/close
         e.preventDefault()
         e.returnValue = ''
       }

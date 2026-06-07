@@ -34,7 +34,6 @@ export function AIReadmeInput({ onGenerate, onBack }: Props) {
         ← Back
       </button>
 
-      {/* Drop zone */}
       <div
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
@@ -50,7 +49,6 @@ export function AIReadmeInput({ onGenerate, onBack }: Props) {
       </div>
       <input ref={fileRef} type="file" accept=".md,.txt,.markdown" onChange={handleFile} className="hidden" />
 
-      {/* Paste area */}
       <textarea
         value={markdown}
         onChange={e => setMarkdown(e.target.value)}
@@ -58,7 +56,6 @@ export function AIReadmeInput({ onGenerate, onBack }: Props) {
         className="w-full h-32 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg p-3 text-xs text-(--ms-text-primary) placeholder-(--ms-text-muted) font-mono resize-none focus:outline-none focus:border-blue-500 transition-colors"
       />
 
-      {/* Options */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-(--ms-text-muted) mb-1.5">Style</label>

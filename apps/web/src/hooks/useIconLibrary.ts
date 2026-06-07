@@ -30,7 +30,7 @@ export function useIconLibrary(provider: 'aws' | 'gcp' = 'aws') {
       if (!res.ok) throw new Error(`${provider} manifest not found`)
       return res.json()
     },
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    staleTime: 1000 * 60 * 60,
   })
 
   const flatIcons = useMemo(() => {

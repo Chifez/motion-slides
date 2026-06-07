@@ -79,7 +79,6 @@ export function ExportDropdown({ isMobile }: { isMobile?: boolean }) {
   }, [])
 
   const handleSocialExport = useCallback(async (preset: SocialPreset) => {
-    // Apply the platform's aspect ratio and resolution before exporting
     useEditorStore.getState().updatePlaybackSettings({
       aspectRatio: preset.aspectRatio,
       exportResolution: { ...preset.resolution },
@@ -87,7 +86,6 @@ export function ExportDropdown({ isMobile }: { isMobile?: boolean }) {
 
     setOpen(false)
 
-    // Small delay to let the canvas adapt to the new aspect ratio
     await new Promise((r) => setTimeout(r, 500))
 
     await startExport('mp4', (p) => setProgress(p))
@@ -106,7 +104,6 @@ export function ExportDropdown({ isMobile }: { isMobile?: boolean }) {
         </button>
         {open && (
           <div className="absolute right-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-999 p-3 w-64 transition-colors">
-            {/* Standard exports */}
             <div className="space-y-1 mb-3">
               <button
                 onClick={() => handleExportFormat('mp4')}
@@ -150,7 +147,6 @@ export function ExportDropdown({ isMobile }: { isMobile?: boolean }) {
               </button>
             </div>
 
-            {/* Social export section */}
             <div className="border-t border-(--ms-border) pt-2.5">
               <span className="text-[10px] font-semibold text-(--ms-text-muted) uppercase tracking-wider block mb-2">Export for Social</span>
               <div className="grid grid-cols-3 gap-1.5">

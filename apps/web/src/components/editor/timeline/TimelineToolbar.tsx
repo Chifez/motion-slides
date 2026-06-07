@@ -49,7 +49,6 @@ export function TimelineToolbar({
       className="h-10 shrink-0 flex items-center justify-between px-4 border-b z-20"
       style={{ backgroundColor: 'var(--ms-tl-surface)', borderColor: 'var(--ms-tl-border)' }}
     >
-      {/* Left: mode label + transport */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase" style={{ color: 'var(--ms-tl-text-muted)' }}>
           <Layers size={12} />
@@ -58,7 +57,6 @@ export function TimelineToolbar({
 
         <div className="w-px h-4" style={{ backgroundColor: 'var(--ms-tl-border-strong)' }} />
 
-        {/* Transport controls */}
         <div className="flex items-center gap-0.5">
           <button
             onClick={() => { setCurrentTime(0); setIsPlaying(false) }}
@@ -95,7 +93,6 @@ export function TimelineToolbar({
           </button>
         </div>
 
-        {/* Timecode */}
         <div className="flex items-center gap-1 font-mono text-[11px]">
           <span
             ref={timecodeRef}
@@ -109,7 +106,6 @@ export function TimelineToolbar({
         </div>
       </div>
 
-      {/* Right: Loop + track toggle — desktop only */}
       {!isMobile && (
         <div className="flex items-center gap-2">
           <button

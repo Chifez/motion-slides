@@ -38,7 +38,6 @@ export function PrototypeCanvas() {
 
   const { slides, transitions, prototypeLayout } = project
 
-  // ── Nodes: built from slides, re-derived on every render ──
   const initialNodes: Node[] = slides.map((slide, i) => ({
     id: slide.id,
     type: 'slideNode',
@@ -76,10 +75,8 @@ export function PrototypeCanvas() {
     )
   }
 
-  // ── Edges: derived DIRECTLY from store transitions every render ──
-  // This is the source of truth — no parallel local edge state needed.
   const edges: Edge[] = transitions.map((t) => ({
-    id: t.id,          // edge.id === transition.id, always in sync
+    id: t.id,
     source: t.fromSlideId,
     target: t.toSlideId,
     type: 'transitionEdge',
@@ -94,7 +91,6 @@ export function PrototypeCanvas() {
     },
   }))
 
-  // ── Node position changes → persist to store ──
   function handleNodesChange(changes: NodeChange[]) {
     onNodesChange(changes)
     for (const change of changes) {
@@ -104,7 +100,6 @@ export function PrototypeCanvas() {
     }
   }
 
-  // ── Edge changes: only handle deletion (no local state needed) ──
   function handleEdgesChange(changes: EdgeChange[]) {
     for (const change of changes) {
       if (change.type === 'remove') {
@@ -113,17 +108,14 @@ export function PrototypeCanvas() {
     }
   }
 
-  // ── Connect: generate ID upfront so edge.id === transition.id ──
   function handleConnect(connection: RFConnection) {
     if (!connection.source || !connection.target) return
 
-    // Prevent duplicate transitions between same pair
     const exists = transitions.some(
       (t) => t.fromSlideId === connection.source && t.toSlideId === connection.target,
     )
     if (exists) return
 
-    // Generate the ID here so ReactFlow edge and store transition share it
     const id = uuid()
     const transition: any = {
       id,
@@ -135,11 +127,10 @@ export function PrototypeCanvas() {
       trigger: 'click'
     }
     addTransition(transition)
-    // Edges are derived from store, so ReactFlow will auto-reflect the new one
   }
 
   function handleEdgeClick(_: React.MouseEvent, edge: Edge) {
-    setSelectedTransition(edge.id) // edge.id === transition.id now
+    setSelectedTransition(edge.id)
   }
 
   function handlePaneClick() {
@@ -177,7 +168,6 @@ export function PrototypeCanvas() {
         />
       </ReactFlow>
 
-      {/* Transition settings panel — shown when an edge is selected */}
       {selectedTransition && (
         <TransitionPanel
           transition={selectedTransition}

@@ -46,7 +46,7 @@ export function useTimelineTiming({
   isPlaying,
   currentTime,
 }: Params): Result {
-  // ─── Pure computation: slide timing layout ────────────────────────────────
+
   const slidesWithTiming: SlideWithTiming[] = useMemo(() => {
     let current = 0
     return slides.map((s, idx) => {
@@ -87,7 +87,7 @@ export function useTimelineTiming({
     return 0
   }, [slidesWithTiming, totalDuration, slides.length])
 
-  // ─── Live slide index (synchronous — no effect delay) ─────────────────────
+
   const liveSlideIndex = isPlaying ? getSlideIndexAtTime(currentTime) : activeSlideIndex
 
   const currentSlide = slides[liveSlideIndex] ?? null
@@ -122,7 +122,7 @@ export function useTimelineTiming({
 
     const timer = setTimeout(() => {
       setTransitionState({ prevSlide: null, activeTransition: null, durationMs: 0 })
-    }, transitionState.durationMs + 50) // +50ms buffer matches PresentationOverlay
+    }, transitionState.durationMs + 50)
 
     return () => clearTimeout(timer)
   }, [transitionState.prevSlide, transitionState.durationMs])

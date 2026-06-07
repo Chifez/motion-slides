@@ -44,7 +44,6 @@ export function ProjectContainer() {
     syncProjects
   }
 
-  // ✅ Safe to early-return here — all hooks are already above this line
   if (isPending || (loaderProject && !project)) return <LoadingPage />
 
   if (!project || isDenied) {

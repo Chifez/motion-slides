@@ -34,7 +34,6 @@ function hasValidCoordinates(content: LineContent): boolean {
 
 /** Compute SVG path for a line within its bounding box */
 function buildLinePath(w: number, h: number, content: LineContent): string {
-  // Use safe numbers to avoid "undefined" or "NaN" in the path string
   const x1 = toSafeNum(content.x1) * w
   const y1 = toSafeNum(content.y1) * h
   const x2 = toSafeNum(content.x2) * w
@@ -50,7 +49,6 @@ function buildLinePath(w: number, h: number, content: LineContent): string {
       return `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`
     }
     case 'curved': {
-      // getArrow can fail if points are overlapping
       if (Math.abs(x1 - x2) < 0.1 && Math.abs(y1 - y2) < 0.1) {
         return `M ${x1} ${y1} L ${x2} ${y2}`
       }
@@ -97,11 +95,9 @@ export function LineElement({ element, isSelected }: Props) {
   const { isTransitioning, durationSec } = useMotionContext()
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
 
-  // CRITICAL: Early return if coordinates are not yet computed
   if (!hasValidCoordinates(content) && !content.customPath) {
     return (
       <div className="absolute inset-0 flex items-center justify-center opacity-0">
-        {/* Placeholder to prevent layout shift */}
       </div>
     )
   }
@@ -257,7 +253,6 @@ export function LineElement({ element, isSelected }: Props) {
         )
       })}
       
-      {/* Selection Highlight (if needed) */}
       {isSelected && (
         <rect
           x={-10}

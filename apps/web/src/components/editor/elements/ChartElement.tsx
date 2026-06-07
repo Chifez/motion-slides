@@ -24,8 +24,6 @@ export function ChartElement({ content }: Props) {
   function renderChart() {
     switch (content.chartType) {
       case 'bar': {
-        // Normalize: when stacked, every data point uses its `stack` array.
-        // Fall back to [d.value] if the stack array hasn't been set yet.
         const normalizedData = data.map(d => ({
           ...d,
           stack: content.isStacked ? (d.stack && d.stack.length > 0 ? d.stack : [d.value]) : [d.value],

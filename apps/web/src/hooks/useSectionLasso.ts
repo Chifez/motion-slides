@@ -72,7 +72,6 @@ export function useSectionLasso({
     const width = Math.abs(lasso.x2 - lasso.x1)
     const height = Math.abs(lasso.y2 - lasso.y1)
 
-    // Ignore tiny drag-clicks to prevent accidental section creations on simple clicks.
     if (width > 10 && height > 10) {
       const newSection: SceneElement = {
         id: `section-${Math.random().toString(36).substring(2, 11)}`,

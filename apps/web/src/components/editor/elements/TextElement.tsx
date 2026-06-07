@@ -37,8 +37,6 @@ export function TextElement({ element }: Props) {
     isEditing,
     listStyle: content.listStyle,
   })
-
-  // ── Auto-Height logic ──
   useLayoutEffect(() => {
     if (!element.autoHeight || !containerRef.current) return
 
@@ -58,8 +56,6 @@ export function TextElement({ element }: Props) {
 
     measure()
   }, [element.id, element.autoHeight, element.size.width, content.value, content.fontSize, content.fontWeight, content.fontFamily, updateElement, element.size.height])
-
-  // ── Focus logic ──
   useEffect(() => {
     if (isEditing && editableRef.current) {
       editableRef.current.focus()
@@ -114,10 +110,6 @@ export function TextElement({ element }: Props) {
   const fontFamily = `"${content.fontFamily || 'Inter'}", sans-serif`
   const fontWeight = FONT_WEIGHT_MAP[content.fontWeight]
 
-  // Whether to activate the ghost+stage character-level animation pipeline.
-  // — isPresenting: user pressed Play in the editor
-  // — isReadOnly: view/export URL mode
-  // In either case the hook will tokenize text and keep positions captured.
   const isAnimationMode =
     (isPresenting || isReadOnly || isTimelinePreview) &&
     !isEditing &&
@@ -125,7 +117,6 @@ export function TextElement({ element }: Props) {
     transitionAnimation === 'magic-move'
 
   const renderInner = () => {
-    // ── Editing: contentEditable ──────────────────────────────────────────
     if (isEditing) {
       return (
         <div
@@ -149,7 +140,6 @@ export function TextElement({ element }: Props) {
       )
     }
 
-    // ── List mode: no character animation ────────────────────────────────
     if (content.listStyle === 'bullet' || content.listStyle === 'numbered') {
       const Tag = content.listStyle === 'bullet' ? 'ul' : 'ol'
       const lines = content.value.split('\n').filter(l => l.trim().length > 0)
@@ -170,35 +160,12 @@ export function TextElement({ element }: Props) {
       )
     }
 
-    // ── Presentation / read-only: ghost + stage (CodeElement pattern) ─────
-    //
-    // The hook is in animation mode when we are inside a MotionProvider
-    // (isTransitioning is true from MotionContext). In that case we render:
-    //
-    //   Ghost layer  — opacity 0, in normal text flow.
-    //                  Gives the container correct height and provides
-    //                  per-character pixel positions for FLIP measurement.
-    //
-    //   Stage layer  — absolutely positioned overlay.
-    //                  Always shows animTokens. Between transitions the tokens
-    //                  rest at x:0, y:0 making the text visible. During a
-    //                  transition they fly from old to new positions.
-    //
-    // In editor mode (no MotionProvider) the hook returns an empty animTokens
-    // array, so `isAnimationMode` is false and we fall through to the plain
-    // <span> render below.
     if (isAnimationMode || isReadOnly || isTimelinePreview) {
       const tokens = tokenizeText(content.value)
 
       return (
-        // Coordinate origin for all absolute token positions.
         <div ref={layoutContainerRef} style={{ position: 'relative', width: '100%' }}>
 
-          {/*
-            Ghost layer — invisible, in normal text flow.
-            Must match the exact font settings of the parent to give accurate
-            per-character offsetLeft / offsetTop measurements.
-          */}
           <div
             aria-hidden="true"
             style={{
@@ -228,11 +195,6 @@ export function TextElement({ element }: Props) {
             )}
           </div>
 
-          {/*
-            Stage layer — absolutely positioned overlay.
-            TextAnimationLayer is always mounted (not conditional) so
-            AnimatePresence can handle exit animations for leaving tokens.
-          */}
           <TextAnimationLayer
             tokens={animTokens}
             durationSec={durationSec}
@@ -246,7 +208,6 @@ export function TextElement({ element }: Props) {
       )
     }
 
-    // ── Editor canvas: plain text ──────────────────────────────────────────
     return <span>{content.value}</span>
   }
 

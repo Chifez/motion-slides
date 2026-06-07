@@ -17,7 +17,6 @@ export function GroupBoundingBox({ elements }: Props) {
 
   if (elements.length < 2) return null
 
-  // Calculate the encompassing bounds
   const minX = Math.min(...elements.map(e => e.position.x))
   const maxX = Math.max(...elements.map(e => e.position.x + e.size.width))
   const minY = Math.min(...elements.map(e => e.position.y))
@@ -98,9 +97,8 @@ export function GroupBoundingBox({ elements }: Props) {
         top: bounds.y,
         width: bounds.width, 
         height: bounds.height,
-        // Rotation is disabled for groups in this iteration
         transform: `rotate(0deg)`,
-        border: '1.5px solid #3b82f6', // Distinctive blue border for multi-select
+        border: '1.5px solid #3b82f6',
         backgroundColor: 'rgba(59, 130, 246, 0.05)'
       }}
     >

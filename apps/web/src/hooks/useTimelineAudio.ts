@@ -39,8 +39,6 @@ export function useTimelineAudio({
   const [inspectorOpen, setInspectorOpen] = useState(false)
   const [audioDrawer, setAudioDrawer] = useState<AudioDrawer>(null)
 
-  // Keep liveSlideIndex in a ref so saveVoiceover's useCallback doesn't take it
-  // as a dependency (it changes on every slide boundary during playback).
   const liveSlideIndexRef = useRef(liveSlideIndex)
   liveSlideIndexRef.current = liveSlideIndex
 

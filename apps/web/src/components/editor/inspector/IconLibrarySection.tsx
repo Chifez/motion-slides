@@ -20,7 +20,6 @@ export function IconLibrarySection({ content, onUpdate }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Provider Toggle */}
       <div className="flex bg-(--ms-bg-base) p-0.5 rounded-md border border-(--ms-border) transition-colors">
         <button
           onClick={() => setProvider('aws')}
@@ -63,7 +62,6 @@ export function IconLibrarySection({ content, onUpdate }: Props) {
               iconPath: icon.path,
               iconCategory: icon.category,
               iconLabel: icon.label,
-              // Auto-fill label if empty
               label: content.label || icon.label
             })}
             title={icon.label}

@@ -32,7 +32,7 @@ export const SectionElement = memo(function SectionElement({ element, content }:
   const setSelectedElement = useEditorStore(s => s.setSelectedElement)
 
   const isEditing = isEditingId === element.id
-  const inputRef  = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -52,37 +52,31 @@ export const SectionElement = memo(function SectionElement({ element, content }:
 
   return (
     <div className="absolute inset-0 pointer-events-none select-none">
-      {/* 
-          HIT ZONE: The Border 
-          We render a slightly thicker invisible border to make it easier to grab.
-      */}
-      <div 
+      <div
         className="absolute inset-0 pointer-events-auto cursor-default"
         style={{
-          border:       `${borderWidth + 4}px solid transparent`, // Larger hit area
+          border: `${borderWidth + 4}px solid transparent`,
           borderRadius: cornerRadius,
         }}
         onClick={handleBorderClick}
       />
 
-      {/* VISUAL: The Container */}
       <motion.div
         layout
         className="absolute inset-0 overflow-hidden"
         style={{
           backgroundColor,
-          border:       borderStyle === 'none' ? 'none' : `${borderWidth}px ${borderStyle} ${borderColor}`,
+          border: borderStyle === 'none' ? 'none' : `${borderWidth}px ${borderStyle} ${borderColor}`,
           borderRadius: cornerRadius,
         }}
         transition={{ type: 'spring', stiffness: 280, damping: 34 }}
       >
-        {/* Label Area */}
         <div
           className="absolute top-0 left-0 px-2.5 py-1 pointer-events-auto cursor-text border-r border-b"
           style={{
-            color:        (borderColor?.includes('var')) ? 'var(--ms-text-primary)' : (borderColor || 'var(--ms-text-muted)'),
+            color: (borderColor?.includes('var')) ? 'var(--ms-text-primary)' : (borderColor || 'var(--ms-text-muted)'),
             backgroundColor: 'var(--ms-bg-elevated)',
-            borderColor:  borderColor || 'transparent',
+            borderColor: borderColor || 'transparent',
             borderRadius: `0 0 ${Math.round(cornerRadius * 0.5)}px 0`,
             backdropFilter: 'blur(8px)',
           }}

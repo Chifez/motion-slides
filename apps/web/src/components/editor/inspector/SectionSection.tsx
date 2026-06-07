@@ -12,7 +12,6 @@ const inputCls = "w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-m
 export const SectionSection = memo(function SectionSection({ content, onUpdate }: Props) {
   return (
     <div className="space-y-4 px-3 py-3">
-      {/* Label */}
       <div>
         <label className={labelCls}>Label</label>
         <input
@@ -24,7 +23,6 @@ export const SectionSection = memo(function SectionSection({ content, onUpdate }
         />
       </div>
 
-      {/* Colors */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls}>Background</label>
@@ -52,7 +50,6 @@ export const SectionSection = memo(function SectionSection({ content, onUpdate }
         </div>
       </div>
 
-      {/* Border Style */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls}>Style</label>

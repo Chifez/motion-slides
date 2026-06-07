@@ -11,9 +11,7 @@ interface Props {
   elementId: string
 }
 
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
+
 
 interface FlatToken {
   key: string
@@ -52,9 +50,7 @@ interface AnimToken extends FlatToken {
   transitionId: number
 }
 
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
+
 
 /**
  * Punctuation chars that Shiki sometimes bundles (e.g. `{}`, `=>`) and sometimes
@@ -103,7 +99,6 @@ async function buildFlatTokens(value: string, language: string): Promise<FlatTok
  */
 function measureGhostRects(ghostEl: HTMLElement, wrapperEl: HTMLElement): Map<string, Rect> {
   const wrapperRect = wrapperEl.getBoundingClientRect()
-  // offsetWidth is CSS px (no transforms). clientRect.width is viewport px (with transforms).
   const scaleX = wrapperRect.width / wrapperEl.offsetWidth
   const scaleY = wrapperRect.height / wrapperEl.offsetHeight
 
@@ -122,9 +117,7 @@ function measureGhostRects(ghostEl: HTMLElement, wrapperEl: HTMLElement): Map<st
   return map
 }
 
-// ─────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────
+
 
 export function CodeElement({ content, elementId: _elementId }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -138,32 +131,23 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
   const transitionIdRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // ── Pull user's transition settings from context ────────────────────────
-  // When used in the editor (not presenting), isTransitioning=false and we
-  // fall back to the CODE_PHASE constants for sane defaults.
   const { durationSec: ctxDuration, ease: ctxEase, isTransitioning } = useMotionContext()
 
-  // Scale phase durations proportionally to the user's configured duration.
-  // Phase 1 (flight) gets the largest share — it's the most perceptible part.
   const totalDur = isTransitioning
     ? ctxDuration
     : CODE_PHASE.EXIT_DUR + CODE_PHASE.LAYOUT_DUR + CODE_PHASE.ENTER_DUR
-  const exitDur = totalDur * 0.20          // Phase 0: removed tokens fade out
-  const layoutDur = totalDur * 0.55          // Phase 1: tokens fly to new positions
-  const enterDur = totalDur * 0.30          // Phase 2: new tokens fade in
-  const enterDelay = exitDur + layoutDur * 0.7 // Phase 2 starts near end of flight
+  const exitDur = totalDur * 0.20
+  const layoutDur = totalDur * 0.55
+  const enterDur = totalDur * 0.30
+  const enterDelay = exitDur + layoutDur * 0.7
 
-  // Use the user's configured easing for the flight phase (Phase 1).
-  // This is the most felt part of the animation — it should honour their setting.
   const FLIGHT_EASE = isTransitioning
     ? ctxEase
     : ([0.37, 0, 0.63, 1] as [number, number, number, number])
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
   const EASE_OUT: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
 
-  // ─────────────────────────────────────────────
-  // Step 1 — content changes → tokenize → update ghost
-  // ─────────────────────────────────────────────
+
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
     const isFirst = ghostTokens.length === 0
@@ -171,7 +155,6 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
     timerRef.current = setTimeout(async () => {
       try {
         const flat = await buildFlatTokens(content.value, content.language || 'javascript')
-        // Advance BEFORE setGhostTokens so useLayoutEffect reads the new id.
         transitionIdRef.current += 1
         setGhostTokens(flat)
       } catch {
@@ -187,15 +170,9 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
     }, isFirst ? 0 : CODE_DEBOUNCE_MS)
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content.value, content.language, content.fontSize, content.lineHeight, content.fontFamily])
 
-  // ─────────────────────────────────────────────
-  // Step 2 — ghost renders → measure → build FLIP animTokens
-  //
-  // useLayoutEffect fires synchronously after DOM update, before paint,
-  // so the ghost already shows the new tokens when we measure.
-  // ─────────────────────────────────────────────
+
   useLayoutEffect(() => {
     if (!wrapperRef.current || !ghostRef.current || ghostTokens.length === 0) return
 
@@ -210,17 +187,15 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
     const newAnimTokens: AnimToken[] = []
     let addedIdx = 0
 
-    // ── Unchanged + Added ────────────────────────
+
     for (const tok of ghostTokens) {
       if (tok.key.startsWith('__nl')) continue
       const next = nextPositions.get(tok.key)
       if (!next) continue
 
       if (isFirst) {
-        // First render: snap in place, no animation.
         newAnimTokens.push({ ...tok, ...next, dx: 0, dy: 0, status: 'unchanged', staggerIndex: 0, transitionId: tid })
       } else if (prevKeys.has(tok.key) && prevPos.has(tok.key)) {
-        // In both slides → FLIP from old position to new.
         const prev = prevPos.get(tok.key)!
         newAnimTokens.push({
           ...tok, ...next,
@@ -231,13 +206,10 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
           transitionId: tid,
         })
       } else {
-        // New token → fade in (Phase 2).
         newAnimTokens.push({ ...tok, ...next, dx: 0, dy: 0, status: 'added', staggerIndex: addedIdx++, transitionId: tid })
       }
     }
 
-    // ── Removed ──────────────────────────────────
-    // Placed at OLD pixel position, fades to 0 in Phase 0.
     if (!isFirst) {
       for (const tok of prevTokensRef.current) {
         if (tok.key.startsWith('__nl')) continue
@@ -253,9 +225,7 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
     setAnimTokens(newAnimTokens)
   }, [ghostTokens])
 
-  // ─────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────
+
 
   return (
     <div 
@@ -270,15 +240,8 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
         {content.language || 'javascript'}
       </div>
 
-      {/* Coordinate origin for all absolute token positions */}
       <div ref={wrapperRef} style={{ position: 'relative' }}>
 
-        {/*
-          Ghost layer — invisible, in normal text flow.
-          Gives the wrapper its correct height and provides pixel-accurate
-          positions for every token via getBoundingClientRect().
-          Must match font/size/line-height of the visible render exactly.
-        */}
         <div
           ref={ghostRef}
           aria-hidden="true"
@@ -297,19 +260,6 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
           ))}
         </div>
 
-        {/*
-          Stage layer — absolutely positioned overlay.
-
-          No `layoutId` on tokens. layoutId causes Framer Motion to briefly
-          remove the element from the DOM during its own FLIP pass, which is
-          what causes the "bracket disappears then reappears" flicker.
-          We do our own FLIP manually via dx/dy offsets instead.
-
-          Phase ordering:
-            0 (immediate):         removed tokens fade to opacity 0
-            1 (delay=exitDur):     unchanged tokens fly via FLIP (x:dx→0, y:dy→0)
-            2 (delay=enterDelay):  new tokens fade in
-        */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, pointerEvents: 'none' }}>
           <AnimatePresence>
             {animTokens.map((tok) => {
@@ -325,12 +275,9 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
                 textDecoration: tok.fontStyle & 4 ? 'underline' : 'none',
               }
 
-              // Phase 0: removed ────────────────────────────────────────
               if (tok.status === 'removed') {
                 return (
                   <motion.span
-                    // __rm suffix prevents key collision with a same-key entrance
-                    // that might be mounted in the same render pass.
                     key={`${tok.key}__rm${tok.transitionId}`}
                     style={baseStyle}
                     initial={{ opacity: 1 }}
@@ -343,7 +290,6 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
                 )
               }
 
-              // Phase 2: added ──────────────────────────────────────────
               if (tok.status === 'added') {
                 return (
                   <motion.span
@@ -362,18 +308,6 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
                 )
               }
 
-              // Phase 1: unchanged — fly from old position to new ───────
-              //
-              // WHY transitionId IS IN THE KEY:
-              //   Framer Motion's `initial` only fires on component MOUNT.
-              //   Without transitionId in the key, this span stays mounted
-              //   across transitions (stable key), so `initial={{ x:dx, y:dy }}`
-              //   is silently ignored on re-renders — the token snaps.
-              //   transitionId forces a remount on every transition, guaranteeing
-              //   `initial` fires and the FLIP offset is applied correctly.
-              //
-              //   On the first render (isFirst path), dx===0 && dy===0, so
-              //   `initial={false}` skips the entrance — tokens just appear.
               const hasMovement = tok.dx !== 0 || tok.dy !== 0
               return (
                 <motion.span
@@ -384,7 +318,7 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
                   transition={{
                     duration: layoutDur,
                     ease: FLIGHT_EASE,
-                    delay: exitDur,  // wait for Phase 0 to finish
+                    delay: exitDur,
                   }}
                 >
                   {tok.content}

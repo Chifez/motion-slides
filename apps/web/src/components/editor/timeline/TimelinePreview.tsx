@@ -53,12 +53,10 @@ export function TimelinePreview({
       className="flex-1 min-h-0 flex flex-col items-center justify-center px-8 py-4 relative"
       style={{ background: 'linear-gradient(to bottom, var(--ms-tl-bg), var(--ms-tl-surface))' }}
     >
-      {/* Ambient glow */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-[60%] h-[50%] rounded-full bg-violet-900/10 dark:bg-violet-900/10 blur-3xl" />
       </div>
 
-      {/* Screen frame */}
       <div
         className="relative w-full max-w-3xl rounded-xl overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.07),0_25px_60px_rgba(0,0,0,0.6)] bg-black"
         style={{ aspectRatio: '16/9' }}
@@ -76,19 +74,16 @@ export function TimelinePreview({
           </div>
         )}
 
-        {/* Corner accent lines */}
         <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-violet-500/40 rounded-tl-xl pointer-events-none" />
         <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-violet-500/40 rounded-tr-xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-violet-500/40 rounded-bl-xl pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-violet-500/40 rounded-br-xl pointer-events-none" />
 
-        {/* Slide indicator badge */}
         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-mono text-white/50 px-2 py-0.5 rounded-md">
           {liveSlideIndex + 1} / {slides.length}
         </div>
       </div>
 
-      {/* Slide dot nav */}
       {slides.length > 0 && (
         <div className="flex items-center gap-1.5 mt-3">
           {slides.map((_, idx) => (
@@ -109,7 +104,6 @@ export function TimelinePreview({
         </div>
       )}
 
-      {/* Mobile Loop + Hide/Show Tracks — bottom-right overlay */}
       {isMobile && (
         <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
           <button

@@ -25,9 +25,6 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
   const lastDx = useRef(0)
   const lastDy = useRef(0)
 
-  // Tracks the active drag listener cleanup function. If the component unmounts
-  // mid-drag (e.g., element deleted by collaborator), this ensures the native
-  // DOM listeners are removed and isDragging is reset.
   const cleanupRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {

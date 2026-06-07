@@ -84,9 +84,6 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
 
   const animationType = activeTransition?.animation ?? 'none'
 
-  // Only run a slide-wide transition when there is an explicit prototype transition
-  // connecting these two slides AND it is not a magic-move transition.
-  // Non-connected boundaries (activeTransition === null) get an instant cut instead.
   if (previousSlide && activeTransition && animationType !== 'magic-move') {
     const durationMs = activeTransition?.duration ?? settings.transitionDuration
     const durationSec = durationMs / 1000
@@ -107,7 +104,6 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
           perspective: animationType === 'flip' ? 1000 : undefined,
         }}
       >
-        {/* Outgoing Slide Container */}
         <motion.div
           key={`outgoing-${previousSlide.id}`}
           style={{
@@ -133,7 +129,6 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
           ))}
         </motion.div>
 
-        {/* Incoming Slide Container */}
         <motion.div
           key={`incoming-${slide.id}`}
           style={{
@@ -162,7 +157,6 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
     )
   }
 
-  // Otherwise, fallback to the standard element-level transition (Magic Move)
   const deletedElements = (reviewingSuggestionId && reviewMode === 'suggested' && originalProjectBackup)
     ? (originalProjectBackup.slides[activeSlideIndex]?.elements.filter(
       (originalElement) => !slide.elements.some((element) => element.id === originalElement.id)

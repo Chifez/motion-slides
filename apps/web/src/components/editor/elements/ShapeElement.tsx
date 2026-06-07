@@ -238,7 +238,6 @@ function ClusterWrapper({ children, content, transition }: { children: React.Rea
       <g transform="translate(0,0)">
         {children}
       </g>
-      {/* Badge */}
       {content.clusterCount && content.clusterCount > 1 && (
          <g transform="translate(85, 15)">
             <circle r="12" fill="var(--ms-accent, #3b82f6)" />

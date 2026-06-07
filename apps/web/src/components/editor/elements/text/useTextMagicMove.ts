@@ -6,7 +6,7 @@ import { usePermissions } from '@/context/PermissionContext';
 import { lcsDiffTokens, tokenizeText } from './charTokenizer';
 import type { AnimToken, CharLayout, CharToken, SteadyStateRecord } from './charTokenizer';
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+
 
 export interface TextMagicMoveOptions {
   elementId: string;
@@ -30,7 +30,7 @@ export interface TextMagicMoveResult {
   spanRefCallback: (key: string, el: HTMLSpanElement | null) => void;
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+
 
 /**
  * Mirrors the architecture of CodeElement:
@@ -65,9 +65,7 @@ export function useTextMagicMove({
   const isPresenting = useEditorStore(s => s.isPresenting);
   const { isReadOnly } = usePermissions();
 
-  // Ghost tokens: tokenized representation of the current text.
   const [ghostTokens, setGhostTokens] = useState(() => tokenizeText(text));
-  // AnimTokens: absolutely-positioned token descriptors for the stage layer.
   const [animTokens, setAnimTokens] = useState<AnimToken[]>([]);
 
   const layoutContainerRef = useRef<HTMLDivElement>(null);
@@ -96,20 +94,13 @@ export function useTextMagicMove({
    */
   const transitionIdRef = useRef(0);
 
-  // ── Element-level eligibility ─────────────────────────────────────────────
-  // We activate the ghost/stage pipeline whenever the element is inside a
-  // presentation context (editor play mode or export view) and is not being
-  // edited / is not a list.
-  //
-  // Do NOT gate on continuingIds — that was the P0 bug that blocked Slide 1
-  // position capture, meaning the first transition never had stored positions.
   const isAnimationMode =
     (isPresenting || isReadOnly || isTimelinePreview) &&
     !isEditing &&
     listStyle !== 'bullet' &&
     listStyle !== 'numbered';
 
-  // ── Ref callback ──────────────────────────────────────────────────────────
+
 
   const spanRefCallback = useCallback(
     (key: string, el: HTMLSpanElement | null) => {
@@ -119,13 +110,9 @@ export function useTextMagicMove({
     [],
   );
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Step 1 — content changes → tokenize → update ghost tokens
-  // (useEffect: async-friendly, low priority — just re-tokenizes the text)
-  // ─────────────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!isAnimationMode) {
-      // Clear everything when leaving animation mode (e.g. user starts editing).
       setGhostTokens([]);
       setAnimTokens([]);
       prevPositionsRef.current = new Map();
@@ -133,25 +120,14 @@ export function useTextMagicMove({
       return;
     }
 
-    // Advance BEFORE setGhostTokens so useLayoutEffect reads the new id.
     transitionIdRef.current += 1;
     setGhostTokens(tokenizeText(text));
-  // fontSize / color are intentionally excluded: we re-tokenize only when text
-  // changes. Font/color changes are picked up via the SteadyStateRecord update
-  // inside the useLayoutEffect, which always runs with fresh closure values.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, isAnimationMode]);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Step 2 — ghost renders → measure DOM → build FLIP animTokens
-  //
-  // useLayoutEffect fires synchronously after DOM mutations, before paint.
-  // The ghost already shows the new tokens when we measure — no flash.
-  // ─────────────────────────────────────────────────────────────────────────
+
   useLayoutEffect(() => {
     if (!isAnimationMode || ghostTokens.length === 0) return;
 
-    // Measure current (next-slide) positions from the ghost spans.
     const nextPositions = new Map<string, CharLayout>();
     spanRefsMap.current.forEach((span, key) => {
       if (!span) return;
@@ -170,8 +146,6 @@ export function useTextMagicMove({
     const newAnimTokens: AnimToken[] = [];
 
     if (isFirst) {
-      // First render: snap every character into place with no animation.
-      // dx === 0 / dy === 0 → the `initial={false}` path in TextAnimationLayer.
       for (const tok of ghostTokens) {
         if (tok.isWhitespace) continue;
         const next = nextPositions.get(tok.key);
@@ -194,13 +168,11 @@ export function useTextMagicMove({
         });
       }
     } else {
-      // LCS diff: match as many characters as possible without crossing paths.
       const { continuing, entering, leaving } = lcsDiffTokens(
         prevTokensRef.current,
         ghostTokens,
       );
 
-      // Continuing: FLIP from old position to new position.
       for (const { prevKey, nextKey, char } of continuing) {
         const prev = prevPos.get(prevKey);
         const next = nextPositions.get(nextKey);
@@ -223,7 +195,6 @@ export function useTextMagicMove({
         });
       }
 
-      // Entering: new characters — fade in.
       let staggerIndex = 0;
       for (const { key, char } of entering) {
         const next = nextPositions.get(key);
@@ -241,7 +212,6 @@ export function useTextMagicMove({
         });
       }
 
-      // Leaving: characters that don't exist on the next slide — fade out.
       for (const { key, char } of leaving) {
         const prev = prevPos.get(key);
         if (!prev) continue;
@@ -258,7 +228,6 @@ export function useTextMagicMove({
       }
     }
 
-    // Persist positions and tokens for the next transition.
     const nextSteadyState = new Map<string, SteadyStateRecord>();
     nextPositions.forEach((layout, key) => {
       nextSteadyState.set(key, { ...layout, fontSize, color });
@@ -267,12 +236,8 @@ export function useTextMagicMove({
     prevTokensRef.current    = ghostTokens;
 
     setAnimTokens(newAnimTokens);
-  // ghostTokens identity change is the only trigger we need.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ghostTokens]);
 
-  // Re-capture positions after font/color changes (without triggering a text FLIP).
-  // This keeps prevPositionsRef accurate for the next slide transition.
   useEffect(() => {
     if (!isAnimationMode || prevTokensRef.current.length === 0) return;
     const updated = new Map<string, SteadyStateRecord>(prevPositionsRef.current);
@@ -280,7 +245,6 @@ export function useTextMagicMove({
       updated.set(key, { ...record, fontSize, color });
     });
     prevPositionsRef.current = updated;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fontSize, color]);
 
   return {
@@ -290,5 +254,4 @@ export function useTextMagicMove({
   };
 }
 
-// Re-export the CharToken type so TextElement can import from one place.
 export type { CharToken } from './charTokenizer';

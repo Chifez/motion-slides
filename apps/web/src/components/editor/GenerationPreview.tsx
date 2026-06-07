@@ -24,7 +24,6 @@ export function GenerationPreview({ slides, title, onAccept, onReject, onRefine 
 
   return (
     <div className="flex flex-col h-full bg-black/40">
-      {/* Scrollable Slides Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {slides.map((s, i) => (
           <div key={s.id} className="group relative">
@@ -38,7 +37,6 @@ export function GenerationPreview({ slides, title, onAccept, onReject, onRefine 
         ))}
       </div>
 
-      {/* Floating Action Bar */}
       <div className="p-3 bg-(--ms-bg-elevated)/90 backdrop-blur-md border-t border-(--ms-border) flex gap-2">
         <button
           onClick={onReject}

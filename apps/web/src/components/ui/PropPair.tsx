@@ -14,10 +14,8 @@ interface Props {
  * Allows being cleared during typing but enforces limits on blur.
  */
 export const PropPair = memo(function PropPair({ label, value, onChange, min, max, step }: Props) {
-  // Local state to allow empty string while typing
   const [localValue, setLocalValue] = useState<string>(value.toString())
 
-  // Sync local state with external value changes (e.g. from canvas drags)
   useEffect(() => {
     setLocalValue(value.toString())
   }, [value])
@@ -28,7 +26,6 @@ export const PropPair = memo(function PropPair({ label, value, onChange, min, ma
     
     const numeric = parseFloat(val)
     if (!isNaN(numeric)) {
-      // Still apply clamping for live updates, but don't force string sync yet
       let clamped = numeric
       if (min !== undefined) clamped = Math.max(min, clamped)
       if (max !== undefined) clamped = Math.min(max, clamped)
@@ -39,12 +36,10 @@ export const PropPair = memo(function PropPair({ label, value, onChange, min, ma
   const handleBlur = () => {
     let numeric = parseFloat(localValue)
     
-    // If empty or invalid, default to 0 or min
     if (isNaN(numeric)) {
       numeric = min !== undefined ? min : 0
     }
 
-    // Final clamp check
     if (min !== undefined) numeric = Math.max(min, numeric)
     if (max !== undefined) numeric = Math.min(max, numeric)
     
@@ -56,7 +51,7 @@ export const PropPair = memo(function PropPair({ label, value, onChange, min, ma
     <div className="flex flex-col gap-0.5">
       <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">{label}</span>
       <input
-        type="text" // Using text to avoid browser-specific number input behavior interfering with empty states
+        type="text"
         inputMode="decimal"
         value={localValue}
         onChange={handleChange}

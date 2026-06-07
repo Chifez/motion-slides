@@ -54,8 +54,8 @@ export function AIChat() {
       description: opts.prompt,
       markdown:    opts.prompt,
       slideCount:  opts.slideCount,
-      style:       'technical', // Default to technical inference
-      diagramStyle: 'aws',      // Default to AWS inference
+      style:       'technical',
+      diagramStyle: 'aws',
       theme:       'dark',
       model:       opts.model
     })
@@ -71,7 +71,6 @@ export function AIChat() {
     >
       <AIChatHeader onClose={() => setChatOpen(false)} />
 
-      {/* TOP: Preview / Display Area */}
       <div className="h-[40%] border-b border-(--ms-border) bg-black/10 overflow-hidden relative">
         <AnimatePresence mode="wait">
           {isGenerating ? (
@@ -119,7 +118,6 @@ export function AIChat() {
         </AnimatePresence>
       </div>
 
-      {/* MIDDLE: Magic Pills (Only visible when pending slides exist) */}
       <AnimatePresence>
         {pendingSlides && !isGenerating && (
           <motion.div 
@@ -144,7 +142,6 @@ export function AIChat() {
         )}
       </AnimatePresence>
 
-      {/* BOTTOM: Input / Studio Area */}
       <div className="flex-1 overflow-y-auto">
         <AIStudio 
           isGenerating={isGenerating} 

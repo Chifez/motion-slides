@@ -6,9 +6,6 @@ import { DASHBOARD_STEPS, EDITOR_STEPS, type TourStep } from '@/store/slices/onb
 
 const isSSR = typeof window === 'undefined'
 
-// ─────────────────────────────────────────────
-// Compound Component Context
-// ─────────────────────────────────────────────
 interface TourContextValue {
   steps: TourStep[]
   activeStep: number
@@ -33,9 +30,6 @@ export function useTour() {
   return context
 }
 
-// ─────────────────────────────────────────────
-// Tour Root Component
-// ─────────────────────────────────────────────
 interface RootProps {
   children?: ReactNode
 }
@@ -53,20 +47,12 @@ function TourRoot({ children }: RootProps) {
   const steps = onboardingTourType === 'dashboard' ? DASHBOARD_STEPS : onboardingTourType === 'editor' ? EDITOR_STEPS : []
   const activeStepData = steps[onboardingStep]
 
-  // Single unified effect: find target element, observe it + viewport for layout changes.
-  // Previously, a separate effect tracked windowSize as state and piped it as a dependency
-  // into this effect — using state as an event bus between effects. Now the ResizeObserver
-  // on document.documentElement directly catches viewport changes, eliminating the phantom
-  // render and the cross-effect coupling entirely.
   useEffect(() => {
     if (!isOnboardingActive || isSSR) {
       setTargetRect(null)
       return
     }
 
-    // Derive step data inside the effect from onboardingStep alone,
-    // avoiding activeStepData as a dependency (it's derived from steps[onboardingStep]
-    // and including both would double-fire when both references update).
     const currentSteps = onboardingTourType === 'dashboard' ? DASHBOARD_STEPS : onboardingTourType === 'editor' ? EDITOR_STEPS : []
     const stepData = currentSteps[onboardingStep]
 
@@ -85,17 +71,13 @@ function TourRoot({ children }: RootProps) {
       setTargetRect(element.getBoundingClientRect())
     }
 
-    // Measure initially and scroll target into viewport
     updateRect()
     element.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 
-    // Observe the target element for size/position changes, and document.documentElement
-    // for viewport resizes — this replaces the old window 'resize' listener + state approach.
     const observer = new ResizeObserver(updateRect)
     observer.observe(element)
     observer.observe(document.documentElement)
 
-    // Capture scrolling inside any container to update the spotlight position in real time
     const handleScroll = () => {
       updateRect()
     }
@@ -107,7 +89,6 @@ function TourRoot({ children }: RootProps) {
     }
   }, [isOnboardingActive, onboardingStep, onboardingTourType])
 
-  // Dev warning for configuration issues
   if (isOnboardingActive && steps.length === 0 && onboardingTourType) {
     console.warn(`[Tour] Active onboarding tour type "${onboardingTourType}" returned 0 steps. Check your onboardingSlice configuration.`)
   }
@@ -139,13 +120,9 @@ function TourRoot({ children }: RootProps) {
   )
 }
 
-// ─────────────────────────────────────────────
-// Tour Spotlight Component
-// ─────────────────────────────────────────────
 function TourSpotlight() {
   const { targetRect, skipTour } = useTour()
 
-  // If no targetRect, we render a solid dark overlay with backdrop blur
   if (!targetRect) {
     return (
       <motion.div
@@ -158,18 +135,13 @@ function TourSpotlight() {
     )
   }
 
-  // Padding around target element spotlight
   const pad = 8
   const x = targetRect.left - pad
   const y = targetRect.top - pad
   const w = targetRect.width + pad * 2
   const h = targetRect.height + pad * 2
-  const r = 8 // border radius of spotlight cutout
+  const r = 8
 
-  // SVG path for the spotlight mask. Uses a large fixed rectangle (10000×10000)
-  // instead of tracking window dimensions as state, since the SVG viewBox and
-  // CSS inset-0 handle viewport coverage. This eliminates the need for windowSize
-  // state entirely.
   const S = 10000
   const path = `
     M 0 0
@@ -191,7 +163,6 @@ function TourSpotlight() {
 
   return (
     <>
-      {/* Interactive blocker overlay with cut-out */}
       <svg
         className="absolute inset-0 w-full h-full pointer-events-auto"
         onClick={skipTour}
@@ -207,8 +178,6 @@ function TourSpotlight() {
           transition={{ duration: 0.3 }}
         />
       </svg>
-
-      {/* Pulse ring indicating targeted item */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{
@@ -235,9 +204,6 @@ function TourSpotlight() {
   )
 }
 
-// ─────────────────────────────────────────────
-// Tour Content Component
-// ─────────────────────────────────────────────
 function TourContent() {
   const { steps, activeStep, activeStepData, nextStep, prevStep, skipTour, targetRect } = useTour()
   const [cardSize, setCardSize] = useState({ width: 320, height: 180 })
@@ -245,8 +211,6 @@ function TourContent() {
 
 
 
-  // Track the actual rendered size of the card dynamically to prevent content overflow or magic number mismatch.
-  // Using offsetWidth/offsetHeight gets the border-box size (including padding and border) without being affected by scale transforms.
   useEffect(() => {
     const cardEl = cardRef.current
     if (!cardEl) return
@@ -261,15 +225,8 @@ function TourContent() {
     return () => observer.disconnect()
   }, [])
 
-  // During AnimatePresence exit, the component renders one last frame after
-  // the tour is deactivated. activeStepData may be undefined if the step
-  // index is out of bounds — bail out to prevent the crash.
   if (!activeStepData) return null
 
-  // Position calculation based on dynamic target and card dimensions.
-  // Reads viewport dimensions inline at render time — this is fine because:
-  // 1. targetRect already updates on resize (via ResizeObserver on documentElement)
-  // 2. This component only renders during the active tour (not a hot path)
   const positionStyle = (() => {
     const vw = isSSR ? 1024 : window.innerWidth
     const vh = isSSR ? 768 : window.innerHeight
@@ -359,11 +316,9 @@ function TourContent() {
       style={positionStyle}
       className="w-full max-w-xs md:max-w-sm pointer-events-auto rounded-2xl border border-(--ms-border-strong) bg-(--ms-bg-elevated)/80 backdrop-blur-xl shadow-2xl p-5 select-none relative overflow-hidden"
     >
-      {/* Aesthetic glowing highlight */}
       <div className="absolute -top-12 -left-12 w-24 h-24 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
       <div className="absolute -bottom-12 -right-12 w-24 h-24 rounded-full bg-purple-500/10 blur-xl pointer-events-none" />
 
-      {/* Skip Button */}
       <button
         onClick={skipTour}
         className="absolute top-4 right-4 p-1 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors border-none bg-transparent cursor-pointer"
@@ -372,7 +327,6 @@ function TourContent() {
         <X size={15} />
       </button>
 
-      {/* Content */}
       <div className="flex flex-col gap-3 relative z-10">
         <AnimatePresence mode="popLayout">
           <motion.div
@@ -400,9 +354,7 @@ function TourContent() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Footer actions */}
         <footer className="flex items-center justify-between mt-4 pt-3 border-t border-(--ms-border)">
-          {/* Progress Indicator */}
           <div className="text-[10px] font-semibold text-(--ms-text-muted) tracking-wider uppercase">
             {activeStep + 1} of {steps.length}
           </div>

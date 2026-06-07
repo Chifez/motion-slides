@@ -4,8 +4,8 @@ import { Save, LogOut, X } from 'lucide-react'
 interface Props {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void // Save & Leave
-  onDiscard: () => void // Just Leave
+  onConfirm: () => void
+  onDiscard: () => void
 }
 
 export function UnsavedChangesModal({ isOpen, onClose, onConfirm, onDiscard }: Props) {

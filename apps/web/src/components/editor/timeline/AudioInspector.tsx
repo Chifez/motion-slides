@@ -22,7 +22,6 @@ export function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDele
       className="w-52 shrink-0 border-l flex flex-col overflow-y-auto"
       style={{ backgroundColor: 'var(--ms-bg-surface)', borderColor: 'var(--ms-border)', scrollbarWidth: 'none' } as React.CSSProperties}
     >
-      {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b" style={{ borderColor: 'var(--ms-border)' }}>
         <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: accentColor }}>
           {label}
@@ -36,7 +35,6 @@ export function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDele
       </div>
 
       <div className="flex flex-col gap-4 px-3 py-3">
-        {/* Delete — at the top for quick access */}
         <button
           onClick={onDelete}
           className="w-full flex items-center justify-center gap-1.5 py-2 bg-red-500/8 hover:bg-red-500/18 border border-red-900/40 hover:border-red-700/60 text-red-400/80 hover:text-red-300 text-[10px] font-semibold rounded-lg cursor-pointer transition-all"
@@ -44,7 +42,6 @@ export function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDele
           <Trash2 size={10} /> Remove clip
         </button>
 
-        {/* Volume */}
         <div className="space-y-2">
           <div className="flex justify-between text-[10px]">
             <span className="text-[10px] text-(--ms-text-secondary) font-medium">Volume</span>
@@ -65,7 +62,6 @@ export function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDele
           </div>
         </div>
 
-        {/* Speed */}
         <div className="space-y-1.5">
           <span className="text-[10px] text-(--ms-text-secondary) font-medium">Speed</span>
           <div className="grid grid-cols-3 gap-1">
@@ -90,7 +86,6 @@ export function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDele
           </div>
         </div>
 
-        {/* Trim info */}
         <div className="rounded-lg border p-2.5 space-y-1.5 text-[10px]" style={{ backgroundColor: 'color-mix(in srgb, var(--ms-bg-surface) 80%, transparent)', borderColor: 'var(--ms-border)' }}>
           <div className="flex justify-between text-white/40">
             <span>Trim start</span>

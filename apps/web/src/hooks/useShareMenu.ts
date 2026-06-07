@@ -37,7 +37,7 @@ export function useShareMenu(project: Project) {
   const toggleSharing = async () => {
     const isCurrentlyShared = project.visibility !== 'private'
     const newVisibility = isCurrentlyShared ? 'private' : 'link-shared'
-    const shouldRotate = !isCurrentlyShared // Always rotate key when enabling sharing to ensure a fresh valid link
+    const shouldRotate = !isCurrentlyShared
     
     setIsMutating(true)
     try {

@@ -183,7 +183,6 @@ export function EditorToolbar({ projectId }: Props) {
                     </button>
                     <div className="h-px bg-(--ms-border) my-1" />
 
-                    {/* Slots for dropdowns - using div to avoid button nesting conflict */}
                     <div className="space-y-0.5">
                       <div className="relative h-10 w-full flex items-center gap-2.5 px-3 rounded-lg hover:bg-(--ms-border) transition-colors">
                         <Settings size={16} className="text-(--ms-text-muted)" />

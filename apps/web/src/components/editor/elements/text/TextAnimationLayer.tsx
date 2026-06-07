@@ -39,18 +39,14 @@ export function TextAnimationLayer({
   fontStyle,
   lineHeight,
 }: Props) {
-  // Scale phase durations proportionally to the user's configured duration —
-  // same ratios as CodeElement for consistent feel.
-  const exitDur    = durationSec * 0.20;  // Phase 0: leaving tokens fade out
-  const layoutDur  = durationSec * 0.55;  // Phase 1: continuing tokens fly
-  const enterDur   = durationSec * 0.30;  // Phase 2: entering tokens fade in
+  const exitDur    = durationSec * 0.20;
+  const layoutDur  = durationSec * 0.55;
+  const enterDur   = durationSec * 0.30;
   const enterDelay = exitDur + layoutDur * 0.70;
 
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1];
   const EASE_OUT: [number, number, number, number]    = [0.25, 0.46, 0.45, 0.94];
 
-  // Shared non-animating font styles so characters render identically
-  // to the ghost spans.
   const baseStyle: React.CSSProperties = {
     position:      'absolute',
     display:       'inline-block',
@@ -74,12 +70,11 @@ export function TextAnimationLayer({
     >
       <AnimatePresence>
         {tokens.map(token => {
-          // ── Phase 0: Leaving — fade out immediately ────────────────────
+
           if (token.type === 'leaving') {
             return (
               <motion.span
-                // __rm suffix prevents key collision with a same-key entrance
-                // in the same render pass.
+
                 key={`${token.key}__rm${token.transitionId}`}
                 style={{
                   ...baseStyle,
@@ -98,7 +93,7 @@ export function TextAnimationLayer({
             );
           }
 
-          // ── Phase 2: Entering — fade in with stagger ───────────────────
+
           if (token.type === 'entering') {
             return (
               <motion.span
@@ -123,14 +118,6 @@ export function TextAnimationLayer({
             );
           }
 
-          // ── Phase 1: Continuing — FLIP from old position to new ────────
-          //
-          // We render at the NEW pixel position (style.left = toX, top = toY),
-          // then set `initial={{ x: dx, y: dy }}` to visually place the span at
-          // the OLD position. `animate={{ x: 0, y: 0 }}` flies it forward.
-          //
-          // On the first render (isFirst path in the hook), dx === 0 && dy === 0,
-          // so `initial={false}` skips the entrance — tokens just appear in place.
           const hasMovement = token.dx !== 0 || token.dy !== 0;
           return (
             <motion.span
@@ -163,7 +150,7 @@ export function TextAnimationLayer({
               transition={{
                 duration: layoutDur,
                 ease,
-                delay: exitDur, // wait for Phase 0 to finish
+                delay: exitDur,
               }}
             >
               {token.char}

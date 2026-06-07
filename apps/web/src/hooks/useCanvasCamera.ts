@@ -17,7 +17,6 @@ export function useCanvasCamera(containerRef: RefObject<HTMLElement | null>, dis
     if (!el) return
 
     const handleWheel = (e: WheelEvent) => {
-      // Zoom logic (Ctrl or Meta + Wheel)
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault()
         const delta = e.deltaY > 0 ? 0.9 : 1.1
@@ -27,7 +26,6 @@ export function useCanvasCamera(containerRef: RefObject<HTMLElement | null>, dis
           zoom: Math.min(Math.max(camera.zoom * delta, 0.05), 10)
         })
       }
-      // Pan logic (Normal Wheel)
       else {
         const { camera } = useEditorStore.getState()
         setCamera({

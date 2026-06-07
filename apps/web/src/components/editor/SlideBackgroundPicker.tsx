@@ -90,7 +90,7 @@ export const SlideBackgroundPicker = memo(function SlideBackgroundPicker() {
               <div className="flex gap-1">
                 <input
                   type="text"
-                  placeholder="https://images.unsplash.com/..."
+                  placeholder="https://example.com/image.png"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   onKeyDown={(e) => {

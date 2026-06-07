@@ -29,7 +29,6 @@ function StaticElement({ element, allElements }: { element: SceneElement, allEle
   const { x, y } = element.position
   const { width: w, height: h } = element.size
   
-  // Convert pixels to percentages for responsive thumbnail scaling
   const left   = (x / CANVAS_WIDTH) * 100
   const top    = (y / CANVAS_HEIGHT) * 100
   const width  = (w / CANVAS_WIDTH) * 100
@@ -52,7 +51,7 @@ function StaticElement({ element, allElements }: { element: SceneElement, allEle
           style={{ 
             ...style, 
             color: content.color || 'inherit',
-            fontSize: 'max(4px, 0.6em)', // Scale down font size for thumbnail
+            fontSize: 'max(4px, 0.6em)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: content.align === 'center' ? 'center' : (content.align === 'right' ? 'flex-end' : 'flex-start'),
@@ -120,7 +119,6 @@ function StaticElement({ element, allElements }: { element: SceneElement, allEle
       
       if (!fromEl || !toEl) return null
 
-      // Simplified line: straight between centers
       const x1 = ((fromEl.position.x + fromEl.size.width / 2) / CANVAS_WIDTH) * 100
       const y1 = ((fromEl.position.y + fromEl.size.height / 2) / CANVAS_HEIGHT) * 100
       const x2 = ((toEl.position.x + toEl.size.width / 2) / CANVAS_WIDTH) * 100

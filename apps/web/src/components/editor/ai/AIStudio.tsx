@@ -17,7 +17,6 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
   const fileRef = useRef<HTMLInputElement>(null)
   const modelMenuRef = useRef<HTMLDivElement>(null)
 
-  // Close menu on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (modelMenuRef.current && !modelMenuRef.current.contains(event.target as Node)) {
@@ -60,7 +59,6 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
 
   return (
     <div className="p-4 space-y-4">
-      {/* Integrated Input Box */}
       <div className="relative bg-(--ms-bg-elevated) border border-(--ms-border) rounded-2xl transition-all focus-within:border-blue-500/60 shadow-xl group">
         <div className="absolute top-3 left-4 pointer-events-none opacity-20">
           <Sparkles size={16} className="text-blue-400" />
@@ -79,7 +77,6 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
           }}
         />
 
-        {/* Inner Toolbar */}
         <div className="flex items-center justify-between p-2 pt-0 gap-2 border-t border-(--ms-border)/30">
           <div className="flex items-center gap-1">
             <button 
@@ -93,7 +90,6 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
 
             <div className="w-px h-4 bg-(--ms-border)/50 mx-1" />
 
-            {/* Model Selector (Subtle) */}
             <div className="relative" ref={modelMenuRef}>
               <button 
                 onClick={() => setShowModelMenu(!showModelMenu)}

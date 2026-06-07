@@ -27,7 +27,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         )}
       </div>
 
-      {/* Line Type */}
+
       <div className="mb-2">
         <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1">Type</span>
         <select
@@ -53,7 +53,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         </select>
       </div>
 
-      {/* Line Style */}
+
       <div className="mb-2">
         <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1">Style</span>
         <div className="flex gap-1">
@@ -73,7 +73,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         </div>
       </div>
 
-      {/* Arrow (Main Line) */}
+
       <div className="mb-2">
         <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1">
           {content.lineType === 'branching' ? 'Default Arrow' : 'Arrow'}
@@ -89,7 +89,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         </select>
       </div>
 
-      {/* Color + Width */}
+
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">
@@ -114,7 +114,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         />
       </div>
 
-      {/* Label & Font Size */}
+
       <div className="grid grid-cols-2 gap-2 mb-4">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider">
@@ -141,7 +141,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         />
       </div>
 
-      {/* Connections Info */}
+
       {(content.startConnection || content.endConnection) && (
         <div className="space-y-3 pt-2 border-t border-(--ms-border)">
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-2">Connected To</span>
@@ -174,7 +174,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
         </div>
       )}
 
-      {/* Branches management */}
+
       {content.lineType === 'branching' && (
         <div className="pt-3 mt-1 border-t border-(--ms-border)">
           <div className="flex items-center justify-between mb-3">
@@ -212,7 +212,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                 </button>
               </div>
 
-              {/* Individual Branch Label */}
+
               <div className="flex flex-col gap-1">
                 <span className="text-[9px] text-neutral-500 font-medium">Label</span>
                 <input
@@ -228,7 +228,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                 />
               </div>
 
-              {/* Individual Color, Style & Font Size */}
+
               <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col gap-1">
                   <span className="text-[9px] text-neutral-500 font-medium">Color</span>
@@ -317,7 +317,7 @@ export function LineSection({ content, onUpdate, onDelete }: Props) {
                   <option value="end">End →</option>
                 </select>
 
-              {/* Position Sliders */}
+
               <div className="flex flex-col gap-2 pt-1">
                 <div className="flex flex-col gap-1">
                   <div className="flex justify-between items-center px-0.5">

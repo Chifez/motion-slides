@@ -54,7 +54,6 @@ export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
           </div>
           
           <div className="space-y-3">
-            {/* Theme Toggle - Hidden on Desktop as it is in the main toolbar */}
             <div className="flex items-center justify-between pb-3 border-b border-(--ms-border) md:hidden">
               <span className="text-[11px] text-(--ms-text-secondary)">Appearance</span>
               <button
@@ -66,7 +65,6 @@ export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
               </button>
             </div>
 
-            {/* Autoplay */}
             <label className="flex items-center gap-2 cursor-pointer group">
               <input
                 type="checkbox"
@@ -109,7 +107,6 @@ export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
               </select>
             </div>
 
-            {/* Bezier Curve Editor */}
             <div className="border-t border-(--ms-border) pt-3">
               <span className={labelCls}>Transition Easing</span>
               <BezierEditor
@@ -118,7 +115,6 @@ export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
               />
             </div>
 
-            {/* Aspect Ratio */}
             <div className="border-t border-(--ms-border) pt-3">
               <span className={labelCls}>Aspect Ratio</span>
               <select
@@ -130,7 +126,6 @@ export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
               </select>
             </div>
 
-            {/* Export Resolution */}
             <div>
               <span className={labelCls}>Export Resolution</span>
               <select

@@ -23,7 +23,6 @@ export function LayerList({ elements, isActive }: LayerListProps) {
           className="bg-(--ms-bg-base) border-t border-(--ms-border) overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Collapsible header */}
           <button
             onClick={() => setLayersOpen((o) => !o)}
             className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[9px] text-(--ms-text-muted) hover:text-(--ms-text-primary) uppercase tracking-widest font-bold cursor-pointer border-none bg-transparent transition-colors"
@@ -32,7 +31,6 @@ export function LayerList({ elements, isActive }: LayerListProps) {
             Layers
           </button>
 
-          {/* Element rows */}
           {layersOpen && (
             <div className="pb-2 px-1 flex flex-col gap-px max-h-[240px] overflow-y-auto custom-scrollbar">
               {(() => {
@@ -132,7 +130,6 @@ function ElementRow({ element }: { element: SceneElement }) {
         <ElementIcon type={element.type} />
         <span className="text-[9px] font-medium truncate flex-1">{elementLabel(element)}</span>
 
-        {/* Lock indicator (visible if locked OR on hover) */}
         {(isLocked || isSelected) && (
           <button
             onClick={(e) => { e.stopPropagation(); toggleElementLock(element.id) }}
@@ -142,7 +139,6 @@ function ElementRow({ element }: { element: SceneElement }) {
           </button>
         )}
 
-        {/* Delete button (only on hover) */}
         <button
           onClick={(e) => { e.stopPropagation(); deleteElement(element.id) }}
           className="p-0.5 rounded text-(--ms-text-muted) opacity-0 group-hover/row:opacity-100 hover:text-red-400 border-none bg-transparent cursor-pointer"
@@ -166,7 +162,6 @@ function GroupRow({ childrenElements }: { groupId: string, childrenElements: Sce
         onClick={(e) => {
           e.stopPropagation()
           const ids = childrenElements.map(el => el.id)
-          // If shift key or multi-select mode, toggle selection for the whole group
           if (e.shiftKey || isMultiSelectMode) {
             if (allSelected) {
               const remaining = selectedElementIds.filter(id => !ids.includes(id))

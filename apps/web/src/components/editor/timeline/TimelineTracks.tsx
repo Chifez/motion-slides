@@ -166,13 +166,9 @@ export const TimelineTracks = memo(function TimelineTracks({
             </div>
           </div>
         </div>
-
       </div>
     </div>
   )
-// Custom comparator: deliberately skip `currentTime` because the playhead DOM position
-// is managed via playheadRef during playback. We only re-render when structural or
-// interaction-critical props change.
 }, (prev, next) =>
   prev.slidesWithTiming === next.slidesWithTiming &&
   prev.totalDuration === next.totalDuration &&

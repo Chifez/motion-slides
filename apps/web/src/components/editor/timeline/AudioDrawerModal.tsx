@@ -48,7 +48,6 @@ export function AudioDrawerModal({
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Modal header */}
         <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--ms-border)' }}>
           <div className="flex items-center gap-2">
             {audioDrawer === AUDIO_DRAWER_VO ? (
