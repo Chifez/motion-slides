@@ -18,6 +18,7 @@ import {
   msToSec,
   getContinuingIds,
   getNewElementIds,
+  getHeuristicMatchingMap,
   MAGIC_SPRING,
   BUILD_IN_SPRING,
   staggerDelay,
@@ -45,6 +46,8 @@ export interface MotionContextValue {
   newElementCount: number
   /** Get the stagger delay (in seconds) for a new element */
   getStaggerDelay: (staggerIndex: number) => number
+  /** Matches target IDs to source IDs for heuristic Magic Move */
+  matchingIdMap: Record<string, string>
   /**
    * The transition animation style from the prototype SlideTransition.
    * Drives enter/exit direction for new/removed elements.
@@ -58,6 +61,7 @@ export interface MotionContextValue {
 
 /** Default context when no provider is present (editor mode) */
 const EMPTY_SET = new Set<string>()
+const EMPTY_MAP = {}
 const defaultValue: MotionContextValue = {
   isTransitioning: false,
   transition: {
@@ -73,6 +77,7 @@ const defaultValue: MotionContextValue = {
   newElementIds: EMPTY_SET,
   newElementCount: 0,
   getStaggerDelay: () => 0,
+  matchingIdMap: EMPTY_MAP,
   transitionAnimation: 'magic-move',
   previousSlide: null,
   isTimelinePreview: false,
@@ -110,6 +115,7 @@ export function MotionProvider({ settings, previousSlide, currentSlide, activeTr
   const ease = cubicBezierToArray(easeBezier)
   const continuing = getContinuingIds(previousSlide, currentSlide)
   const newIds = getNewElementIds(previousSlide, currentSlide)
+  const matchingIdMap = getHeuristicMatchingMap(previousSlide, currentSlide)
 
   // React Compiler handles memoization of this value automatically.
   // The previous manual useMemo had a fragile 10-item dependency array that
@@ -126,6 +132,7 @@ export function MotionProvider({ settings, previousSlide, currentSlide, activeTr
     newElementCount: newIds.size,
     getStaggerDelay: (staggerIndex: number) =>
       staggerDelay(staggerIndex, newIds.size, durationSec),
+    matchingIdMap,
     transitionAnimation: activeTransition?.animation ?? 'magic-move',
     previousSlide,
     isTimelinePreview,

@@ -13,28 +13,166 @@ export interface DiffResult {
 }
 
 /**
- * Diff two slides by matching elements strictly by ID.
+ * Levenshtein distance for text label similarity checking.
+ */
+function levenshteinDistance(a: string, b: string): number {
+  const matrix = []
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i]
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          Math.min(
+            matrix[i][j - 1] + 1, // insertion
+            matrix[i - 1][j] + 1 // deletion
+          )
+        )
+      }
+    }
+  }
+  return matrix[b.length][a.length]
+}
+
+function getElementTextLabel(el: SceneElement): string | null {
+  if (el.type === 'text') {
+    return (el.content as any).value || null
+  }
+  if (el.type === 'shape') {
+    return (el.content as any).label || (el.content as any).iconLabel || null
+  }
+  return null
+}
+
+function calculateSimilarityScore(elA: SceneElement, elB: SceneElement): number {
+  if (elA.type !== elB.type) return 0
+
+  let score = 0
+
+  // 1. Label/Content match (weight: 50)
+  const labelA = getElementTextLabel(elA)
+  const labelB = getElementTextLabel(elB)
+  
+  if (labelA && labelB) {
+    if (labelA.toLowerCase() === labelB.toLowerCase()) {
+      score += 50
+    } else {
+      const editDistance = levenshteinDistance(labelA.toLowerCase(), labelB.toLowerCase())
+      const maxLen = Math.max(labelA.length, labelB.length)
+      if (maxLen > 0) {
+        const similarity = 1 - editDistance / maxLen
+        score += Math.round(similarity * 35)
+      }
+    }
+  }
+
+  // 2. Icon / shape properties match (weight: 30)
+  if (elA.type === 'shape' && elB.type === 'shape') {
+    const contentA = elA.content as any
+    const contentB = elB.content as any
+    if (contentA.shapeType === contentB.shapeType) {
+      score += 10
+      if (contentA.iconPath && contentB.iconPath && contentA.iconPath === contentB.iconPath) {
+        score += 20
+      }
+    }
+  }
+
+  // 3. Proximity match (weight: 20)
+  const dx = elA.position.x - elB.position.x
+  const dy = elA.position.y - elB.position.y
+  const distance = Math.sqrt(dx * dx + dy * dy)
+  if (distance < 500) {
+    score += Math.round((1 - distance / 500) * 20)
+  }
+
+  return score
+}
+
+/**
+ * Calculates a map of target element ID -> source element ID.
+ * Uses strict ID matches first, then falls back to semantic heuristics.
+ */
+export function getHeuristicMatchingMap(from: Slide | null, to: Slide | null): Record<string, string> {
+  const matchingMap: Record<string, string> = {}
+  if (!from || !to) return matchingMap
+
+  const fromElements = [...from.elements]
+  const toElements = [...to.elements]
+
+  const matchedFromIds = new Set<string>()
+  const matchedToIds = new Set<string>()
+
+  // 1. Strict ID Match Pass
+  for (const toEl of toElements) {
+    const fromEl = fromElements.find(e => e.id === toEl.id)
+    if (fromEl) {
+      matchingMap[toEl.id] = fromEl.id
+      matchedFromIds.add(fromEl.id)
+      matchedToIds.add(toEl.id)
+    }
+  }
+
+  // 2. Heuristic Match Pass
+  const unmatchedTo = toElements.filter(e => !matchedToIds.has(e.id))
+  const unmatchedFrom = fromElements.filter(e => !matchedFromIds.has(e.id))
+
+  for (const toEl of unmatchedTo) {
+    let bestCandidate: SceneElement | null = null
+    let highestScore = 0
+
+    for (const fromEl of unmatchedFrom) {
+      if (matchedFromIds.has(fromEl.id)) continue
+      
+      const score = calculateSimilarityScore(fromEl, toEl)
+      if (score > highestScore && score >= 75) {
+        highestScore = score
+        bestCandidate = fromEl
+      }
+    }
+
+    if (bestCandidate) {
+      matchingMap[toEl.id] = bestCandidate.id
+      matchedFromIds.add(bestCandidate.id)
+      matchedToIds.add(toEl.id)
+    }
+  }
+
+  return matchingMap
+}
+
+/**
+ * Diff two slides by matching elements using strict ID + heuristic fallback.
  * Tells us which elements should morph vs. enter/exit.
  */
 export function diffSlides(from: Slide | null, to: Slide | null): DiffResult {
   const fromElements = from?.elements ?? []
   const toElements = to?.elements ?? []
 
-  const fromMap = new Map(fromElements.map((el) => [el.id, el]))
-  const toMap = new Map(toElements.map((el) => [el.id, el]))
+  const matchingMap = getHeuristicMatchingMap(from, to)
+  const continuingFromIds = new Set(Object.values(matchingMap))
 
   const updated: DiffResult['updated'] = []
   const unchanged: SceneElement[] = []
   const added: SceneElement[] = []
   const removed: SceneElement[] = []
 
+  const fromMap = new Map(fromElements.map((el) => [el.id, el]))
+
   for (const toEl of toElements) {
-    const fromEl = fromMap.get(toEl.id)
-    if (fromEl) {
-      if (hasElementChanged(fromEl, toEl)) {
-        updated.push({ from: fromEl, to: toEl })
-      } else {
-        unchanged.push(toEl)
+    const fromId = matchingMap[toEl.id]
+    if (fromId) {
+      const fromEl = fromMap.get(fromId)
+      if (fromEl) {
+        if (hasElementChanged(fromEl, toEl)) {
+          updated.push({ from: fromEl, to: toEl })
+        } else {
+          unchanged.push(toEl)
+        }
       }
     } else {
       added.push(toEl)
@@ -42,7 +180,7 @@ export function diffSlides(from: Slide | null, to: Slide | null): DiffResult {
   }
 
   for (const fromEl of fromElements) {
-    if (!toMap.has(fromEl.id)) {
+    if (!continuingFromIds.has(fromEl.id)) {
       removed.push(fromEl)
     }
   }
@@ -51,27 +189,32 @@ export function diffSlides(from: Slide | null, to: Slide | null): DiffResult {
 }
 
 /**
- * Returns the Set of element IDs that exist in BOTH slides.
+ * Returns the Set of element IDs that exist in BOTH slides (strict ID or heuristic).
  * These elements should morph without fade in/out.
  */
 export function getContinuingIds(from: Slide | null, to: Slide | null): Set<string> {
-  const fromIds = new Set((from?.elements ?? []).map((el) => el.id))
-  const toIds = (to?.elements ?? []).map((el) => el.id)
   const continuing = new Set<string>()
-  for (const id of toIds) {
-    if (fromIds.has(id)) continuing.add(id)
+  if (!to) return continuing
+  
+  const map = getHeuristicMatchingMap(from, to)
+  for (const toId of Object.keys(map)) {
+    continuing.add(toId)
   }
   return continuing
 }
 
 /**
- * Returns the Set of element IDs that are NEW in the target slide.
+ * Returns the Set of element IDs that are NEW in the target slide (no matching element in source).
  */
 export function getNewElementIds(from: Slide | null, to: Slide | null): Set<string> {
-  const fromIds = new Set((from?.elements ?? []).map((el) => el.id))
   const newIds = new Set<string>()
-  for (const el of to?.elements ?? []) {
-    if (!fromIds.has(el.id)) newIds.add(el.id)
+  if (!to) return newIds
+
+  const map = getHeuristicMatchingMap(from, to)
+  for (const el of to.elements) {
+    if (!map[el.id]) {
+      newIds.add(el.id)
+    }
   }
   return newIds
 }

@@ -79,7 +79,7 @@ export const MotionWrapper = memo(function MotionWrapper({
   element, isSelected, isReadOnly, isContinuing, children,
   onPointerDown, onDoubleClick, onClick, ref
 }: Props) {
-  const { isTransitioning, durationSec, ease, transitionAnimation, newElementIds } = useMotionContext()
+  const { isTransitioning, durationSec, ease, transitionAnimation, newElementIds, matchingIdMap } = useMotionContext()
 
   const commonStyle = {
     position: 'absolute' as const,
@@ -97,7 +97,8 @@ export const MotionWrapper = memo(function MotionWrapper({
   const staggerIndex = Array.from(newElementIds).indexOf(element.id)
   const delay = staggerIndex >= 0 ? staggerIndex * 0.03 : 0
   const states = getTransitionStates(transitionAnimation, element.opacity)
-  const layoutId = (isTransitioning && isContinuing) ? element.id : undefined
+  const matchedId = matchingIdMap[element.id] || element.id
+  const layoutId = (isTransitioning && isContinuing) ? matchedId : undefined
   const layout = (isTransitioning && isContinuing) ? true : undefined
 
   const style = {

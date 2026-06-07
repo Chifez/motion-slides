@@ -5,11 +5,147 @@ import type { GeneratedPresentation, AISlideType, AIElementType, AIConnection } 
 import { resolveIconPath } from './iconResolver'
 import { resolveRoute } from './routingResolver'
 import { DIAGRAM_BLUEPRINTS, detectBlueprint } from './diagramBlueprints'
+import dagre from 'dagre'
 
 // ─── Coordinate Conversion ────────────────────────────────────────────────────
 
 function denorm(val: number, dimension: number): number {
   return Math.round(val * dimension)
+}
+
+function applyDagreLayoutToElements(
+  elements: SceneElement[],
+  connectionsData: AIConnection[] | undefined,
+  slide: AISlideType,
+  canvasW: number,
+  canvasH: number
+): SceneElement[] {
+  const diagramElements = elements.filter(el => el.type !== 'section' && el.type !== 'line')
+  if (diagramElements.length === 0) return elements
+
+  const g = new dagre.graphlib.Graph({ compound: true })
+  
+  const blueprint = detectBlueprint(slide.spatialPlan || '')
+  const rankdir = (blueprint.connectionPattern === 'tiered') ? 'TB' : 'LR'
+
+  g.setGraph({
+    rankdir,
+    nodesep: rankdir === 'LR' ? 45 : 65,
+    edgesep: 25,
+    ranksep: rankdir === 'LR' ? 85 : 55,
+    marginx: 120,
+    marginy: 80,
+  })
+  g.setDefaultEdgeLabel(() => ({}))
+
+  // 1. Add Layers as groups
+  const layers = new Set<string>()
+  diagramElements.forEach(el => {
+    if (el.layer) layers.add(el.layer)
+  })
+  layers.forEach(layer => {
+    g.setNode(layer, { label: layer, isLayer: true })
+  })
+
+  // 2. Add nodes to graph
+  diagramElements.forEach(el => {
+    g.setNode(el.id, { width: el.size.width, height: el.size.height })
+    if (el.layer) {
+      g.setParent(el.id, el.layer)
+    }
+  })
+
+  // 3. Add edges
+  if (connectionsData) {
+    connectionsData.forEach(conn => {
+      if (g.hasNode(conn.from) && g.hasNode(conn.to)) {
+        g.setEdge(conn.from, conn.to)
+      }
+    })
+  }
+
+  // 4. Compute layout
+  dagre.layout(g)
+
+  // 5. Retrieve laid out coordinates and update positions
+  const updatedElementsMap = new Map<string, { x: number; y: number }>()
+  
+  diagramElements.forEach(el => {
+    const node = g.node(el.id)
+    if (node) {
+      updatedElementsMap.set(el.id, {
+        x: node.x - el.size.width / 2,
+        y: node.y - el.size.height / 2,
+      })
+    }
+  })
+
+  // 6. Scale and Translate elements to fit perfectly within the canvas margins
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+
+  updatedElementsMap.forEach((pos, id) => {
+    const el = diagramElements.find(e => e.id === id)
+    if (el) {
+      minX = Math.min(minX, pos.x)
+      minY = Math.min(minY, pos.y)
+      maxX = Math.max(maxX, pos.x + el.size.width)
+      maxY = Math.max(maxY, pos.y + el.size.height)
+    }
+  })
+
+  layers.forEach(layer => {
+    const node = g.node(layer)
+    if (node && node.x !== undefined && node.y !== undefined) {
+      const w = node.width || 0
+      const h = node.height || 0
+      const lx = node.x - w / 2
+      const ly = node.y - h / 2
+      minX = Math.min(minX, lx)
+      minY = Math.min(minY, ly)
+      maxX = Math.max(maxX, lx + w)
+      maxY = Math.max(maxY, ly + h)
+    }
+  })
+
+  const graphW = maxX - minX
+  const graphH = maxY - minY
+
+  const paddingX = 100
+  const paddingY = 100
+  const targetW = canvasW - paddingX * 2
+  const targetH = canvasH - paddingY * 2
+
+  const scale = Math.min(1, Math.min(targetW / Math.max(1, graphW), targetH / Math.max(1, graphH)))
+
+  const finalGraphW = graphW * scale
+  const finalGraphH = graphH * scale
+  const offsetX = paddingX + (targetW - finalGraphW) / 2 - minX * scale
+  const offsetY = paddingY + (targetH - finalGraphH) / 2 - minY * scale
+
+  const updatedElements = elements.map(el => {
+    if (el.type === 'section' || el.type === 'line') return el
+
+    const pos = updatedElementsMap.get(el.id)
+    if (pos) {
+      return {
+        ...el,
+        position: {
+          x: Math.round(pos.x * scale + offsetX),
+          y: Math.round(pos.y * scale + offsetY),
+        },
+        size: {
+          width: Math.round(el.size.width * scale),
+          height: Math.round(el.size.height * scale),
+        }
+      }
+    }
+    return el
+  })
+
+  return updatedElements
 }
 
 /**
@@ -26,9 +162,13 @@ export function assembleSlides(
     const slideId = aiSlide.id || uuid()
 
     // 1. Build Base Elements (Icons, Clusters, Text, etc.)
-    const baseElements: SceneElement[] = aiSlide.elements
+    let baseElements: SceneElement[] = aiSlide.elements
       .map(aiEl => toSceneElement(aiEl, theme, generated, width, height))
       .filter(Boolean) as SceneElement[]
+
+    if (aiSlide.role === 'diagram') {
+      baseElements = applyDagreLayoutToElements(baseElements, aiSlide.connections, aiSlide, width, height)
+    }
 
     // 2. Auto-Generate Atmospheric Sections for Layers
     const autoSections = generateAutoSections(aiSlide, baseElements, width, height)

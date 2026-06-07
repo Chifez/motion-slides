@@ -6,7 +6,9 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { generateObject } from 'ai'
 import { 
-  GeneratedPresentationSchema, 
+  GeneratedPresentationSchema,
+  GeneratedPresentationLaxSchema,
+  formatZodIssues,
   type GeneratedPresentation,
   type AISlideType
 } from './slideGenerationSchema'
@@ -83,13 +85,14 @@ async function callLLMWithCorrection(
   maxTokens: number,
   modelName?: string
 ): Promise<GeneratedPresentation> {
-  // Pass 1: Primary Generation
+  // Pass 1: Primary Generation (uses Lax Schema)
   const presentation = await callLLM(userPrompt, maxTokens, modelName)
   
-  // Validation Pass
+  // Validation Pass (uses Strict Schema)
   const result = GeneratedPresentationSchema.safeParse(presentation)
   if (!result.success) {
-    console.warn('[generationClient] Validation failed, triggering correction loop...', result.error.issues)
+    console.warn('[generationClient] Layout/tier validation violations found. Triggering self-correction loop...')
+    console.warn(formatZodIssues(result.error.issues))
     return await selfCorrect(presentation, result.error.issues, modelName)
   }
   
@@ -151,17 +154,28 @@ async function callLLM(
 ): Promise<any> {
   const model = getModel(modelName)
 
-  const { object } = await generateObject({
-    model,
-    schema: GeneratedPresentationSchema,
-    system: ENRICHED_SYSTEM_PROMPT,
-    prompt: userPrompt,
-    // @ts-ignore
-    maxTokens: maxTokens,
-    temperature: 0.3,
-  })
-
-  return object
+  try {
+    const { object } = await generateObject({
+      model,
+      schema: GeneratedPresentationLaxSchema,
+      system: ENRICHED_SYSTEM_PROMPT,
+      prompt: userPrompt,
+      // @ts-ignore
+      maxTokens: maxTokens,
+      temperature: 0.3,
+    })
+    return object
+  } catch (err: any) {
+    console.error('[AI Generation Engine] Failed to generate valid schema object.')
+    if (err.issues && Array.isArray(err.issues)) {
+      console.error('Validation Issues:\n' + formatZodIssues(err.issues))
+    } else if (err.error && err.error.issues) {
+      console.error('Validation Issues:\n' + formatZodIssues(err.error.issues))
+    } else {
+      console.error(err)
+    }
+    throw err
+  }
 }
 
 /** @deprecated */

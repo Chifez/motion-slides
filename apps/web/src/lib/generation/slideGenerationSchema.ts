@@ -128,7 +128,7 @@ const AIElement = z.discriminatedUnion('type', [
 
 // ── Slide schema ──────────────────────────────────────────────────────────────
 
-const AISlide = z.object({
+export const AISlideBaseSchema = z.object({
   id:           z.string().min(1),
   title:        z.string().min(1),
   role:         z.enum(['title', 'content', 'diagram', 'code', 'summary', 'divider']),
@@ -142,7 +142,9 @@ const AISlide = z.object({
     easing:   z.enum(['easeInOut', 'easeOut', 'spring', 'linear']).nullable(),
   }).nullable(),
   speakerNotes: z.string().nullable(),
-}).superRefine((slide, ctx) => {
+})
+
+export const AISlideStrictSchema = AISlideBaseSchema.superRefine((slide, ctx) => {
   // 1. Spatial Fit Validation
   slide.elements.forEach((el, i) => {
     if ('position' in el) {
@@ -201,6 +203,20 @@ function validateTierPositions(elements: z.infer<typeof AIElement>[], ctx: z.Ref
 
 // ── Presentation schema ───────────────────────────────────────────────────────
 
+export const GeneratedPresentationLaxSchema = z.object({
+  title:       z.string().min(1),
+  description: z.string(),
+  theme: z.object({
+    primaryColor:    ColorSchema.unwrap(),
+    secondaryColor:  ColorSchema.unwrap(),
+    backgroundColor: ColorSchema.unwrap(),
+    textColor:       ColorSchema.unwrap(),
+    accentColor:     ColorSchema.unwrap(),
+    fontFamily:      z.enum(['inter', 'mono', 'serif', 'display']),
+  }),
+  slides: z.array(AISlideBaseSchema).min(1).max(30),
+})
+
 export const GeneratedPresentationSchema = z.object({
   title:       z.string().min(1),
   description: z.string(),
@@ -212,10 +228,16 @@ export const GeneratedPresentationSchema = z.object({
     accentColor:     ColorSchema.unwrap(),
     fontFamily:      z.enum(['inter', 'mono', 'serif', 'display']),
   }),
-  slides: z.array(AISlide).min(1).max(30),
+  slides: z.array(AISlideStrictSchema).min(1).max(30),
 })
 
+export function formatZodIssues(issues: z.ZodIssue[]): string {
+  return issues
+    .map(issue => `  - [${issue.path.join('.')}]: ${issue.message}`)
+    .join('\n')
+}
+
 export type GeneratedPresentation = z.infer<typeof GeneratedPresentationSchema>
-export type AISlideType            = z.infer<typeof AISlide>
+export type AISlideType            = z.infer<typeof AISlideBaseSchema>
 export type AIElementType          = z.infer<typeof AIElement>
 export type AISectionElementType   = z.infer<typeof AISectionElement>
