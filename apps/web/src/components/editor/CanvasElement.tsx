@@ -9,14 +9,18 @@ import { BoundingBox } from './BoundingBox'
 import { ElementRenderer } from './ElementRenderer'
 import { useElementDiffStatus } from '@/hooks/useElementDiffStatus'
 import { DiffBadge } from './DiffBadge'
+import type { SceneElement } from '@motionslides/shared'
 
 interface Props {
   elementId: string
   staggerIndex?: number
+  element?: SceneElement
+  ref?: React.Ref<HTMLDivElement>
 }
 
-export function CanvasElement({ elementId }: Props) {
-  const element = useEditorStore(state => state.activeSlide()?.elements.find(slideElement => slideElement.id === elementId))
+export function CanvasElement({ elementId, element: elementProp, ref }: Props) {
+  const elementFromStore = useEditorStore(state => state.activeSlide()?.elements.find(slideElement => slideElement.id === elementId))
+  const element = elementProp ?? elementFromStore
   const selectedElementIds = useEditorStore(state => state.selectedElementIds)
   const isEditingId = useEditorStore(state => state.isEditingId)
   const isMultiSelectMode = useEditorStore(state => state.isMultiSelectMode)
@@ -60,15 +64,16 @@ export function CanvasElement({ elementId }: Props) {
 
   return (
     <>
-      <MotionWrapper
-        element={element}
-        isSelected={isSelected}
-        isReadOnly={isReadOnly}
-        isContinuing={isContinuing}
-        onPointerDown={onPointerDown}
-        onDoubleClick={handleDoubleClick}
-        onClick={handleClick}
-      >
+<MotionWrapper
+      ref={ref}
+      element={element}
+      isSelected={isSelected}
+      isReadOnly={isReadOnly}
+      isContinuing={isContinuing}
+      onPointerDown={onPointerDown}
+      onDoubleClick={handleDoubleClick}
+      onClick={handleClick}
+    >
         <ElementRenderer element={element} isSelected={isSelected} />
         <DiffBadge status={diffStatus} />
       </MotionWrapper>

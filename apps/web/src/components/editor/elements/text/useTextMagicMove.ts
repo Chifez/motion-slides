@@ -61,7 +61,7 @@ export function useTextMagicMove({
   isEditing,
   listStyle,
 }: TextMagicMoveOptions): TextMagicMoveResult {
-  const { durationSec, ease } = useMotionContext();
+  const { durationSec, ease, isTimelinePreview } = useMotionContext();
   const isPresenting = useEditorStore(s => s.isPresenting);
   const { isReadOnly } = usePermissions();
 
@@ -104,7 +104,7 @@ export function useTextMagicMove({
   // Do NOT gate on continuingIds — that was the P0 bug that blocked Slide 1
   // position capture, meaning the first transition never had stored positions.
   const isAnimationMode =
-    (isPresenting || isReadOnly) &&
+    (isPresenting || isReadOnly || isTimelinePreview) &&
     !isEditing &&
     listStyle !== 'bullet' &&
     listStyle !== 'numbered';

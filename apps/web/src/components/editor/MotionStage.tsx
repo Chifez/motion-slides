@@ -74,7 +74,7 @@ function getSlideTransitionVariants(animationType: string, w: number, h: number)
   }
 }
 
-export function MotionStage({ slide, previousSlide, settings, activeTransition }: Props) {
+export function MotionStage({ slide, previousSlide, settings, activeTransition, mode }: Props) {
   const reviewingSuggestionId = useEditorStore(state => state.reviewingSuggestionId)
   const reviewMode = useEditorStore(state => state.reviewMode)
   const activeSlideIndex = useEditorStore(state => state.activeSlideIndex)
@@ -82,7 +82,7 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition }
 
   if (!slide) return null
 
-  const animationType = activeTransition?.animation ?? 'magic-move'
+  const animationType = activeTransition?.animation ?? 'none'
 
   // If a slide-wide transition is active (not magic-move) and we have a previous slide
   if (previousSlide && animationType !== 'magic-move') {
@@ -173,6 +173,7 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition }
       previousSlide={previousSlide}
       currentSlide={slide}
       activeTransition={activeTransition}
+      isTimelinePreview={mode === 'presentation'}
     >
       <LayoutGroup>
         <AnimatePresence mode="sync" initial={false}>
@@ -180,6 +181,7 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition }
             <CanvasElement
               key={element.id}
               elementId={element.id}
+              element={element}
             />
           ))}
         </AnimatePresence>

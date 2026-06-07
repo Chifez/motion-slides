@@ -22,7 +22,20 @@
   --ms-border-strong: rgba(0, 0, 0, 0.1);
   --ms-accent: #2563eb;
   --ms-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  
+
+  /* Timeline */
+  --ms-tl-bg: #f0f0f3;
+  --ms-tl-surface: #e8e8ec;
+  --ms-tl-border: rgba(0, 0, 0, 0.08);
+  --ms-tl-border-strong: rgba(0, 0, 0, 0.12);
+  --ms-tl-text-muted: rgba(0, 0, 0, 0.35);
+  --ms-tl-text-dim: rgba(0, 0, 0, 0.2);
+  /* Waveform fills */
+  --ms-vo-fill: rgba(109, 40, 217, 0.35);
+  --ms-vo-fill-selected: rgba(139, 92, 246, 0.6);
+  --ms-bgm-fill: rgba(7, 89, 133, 0.35);
+  --ms-bgm-fill-selected: rgba(14, 165, 233, 0.55);
+
   /* Z-Index Tokens */
   --z-canvas: 10;
   --z-connector: 50;
@@ -44,6 +57,19 @@
   --ms-border-strong: rgba(255, 255, 255, 0.15);
   --ms-accent: #3b82f6;
   --ms-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+
+  /* Timeline */
+  --ms-tl-bg: #0a0a0c;
+  --ms-tl-surface: #0d0d10;
+  --ms-tl-border: rgba(255, 255, 255, 0.06);
+  --ms-tl-border-strong: rgba(255, 255, 255, 0.10);
+  --ms-tl-text-muted: rgba(255, 255, 255, 0.30);
+  --ms-tl-text-dim: rgba(255, 255, 255, 0.15);
+  /* Waveform fills */
+  --ms-vo-fill: rgba(139, 92, 246, 0.25);
+  --ms-vo-fill-selected: rgba(167, 139, 250, 0.45);
+  --ms-bgm-fill: rgba(56, 189, 248, 0.20);
+  --ms-bgm-fill-selected: rgba(125, 211, 252, 0.40);
 }
 
 /* ── Resets ────────────────────────────────── */

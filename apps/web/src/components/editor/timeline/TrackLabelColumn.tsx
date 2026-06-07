@@ -10,27 +10,30 @@ interface Props {
 
 export function TrackLabelColumn({ audioDrawer, setAudioDrawer, liveSlideIndex }: Props) {
   return (
-    <div className="w-[88px] shrink-0 bg-[#0d0d10] border-r border-white/[0.06] flex flex-col z-10 relative">
-      <div className="border-b border-white/[0.06]" style={{ height: RULER_H }} />
+    <div
+      className="w-[88px] shrink-0 border-r flex flex-col z-10 relative"
+      style={{ backgroundColor: 'var(--ms-tl-surface)', borderColor: 'var(--ms-tl-border)' }}
+    >
+      <div className="border-b" style={{ height: RULER_H, borderColor: 'var(--ms-tl-border)' }} />
 
       <div
-        className="border-b border-white/[0.06] flex flex-col items-center justify-center gap-1 text-white/30"
-        style={{ height: SLIDE_TRACK_H }}
+        className="border-b flex flex-col items-center justify-center gap-1"
+        style={{ height: SLIDE_TRACK_H, borderColor: 'var(--ms-tl-border)', color: 'var(--ms-tl-text-muted)' }}
       >
         <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
           <Layers size={14} className="text-indigo-400" />
         </div>
-        <span className="text-[9px] font-bold tracking-wider uppercase text-white/30">Slides</span>
+        <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--ms-tl-text-muted)' }}>Slides</span>
       </div>
 
       <div
-        className="border-b border-white/[0.06] flex flex-col items-center justify-center gap-1 relative group/vo"
-        style={{ height: VO_TRACK_H }}
+        className="border-b flex flex-col items-center justify-center gap-1 relative group/vo"
+        style={{ height: VO_TRACK_H, borderColor: 'var(--ms-tl-border)' }}
       >
         <div className="w-7 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center">
           <Mic size={12} className="text-violet-400" />
         </div>
-        <span className="text-[9px] font-bold tracking-wider uppercase text-white/30">V.O.</span>
+        <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--ms-tl-text-muted)' }}>V.O.</span>
         <button
           onClick={() => setAudioDrawer(audioDrawer === AUDIO_DRAWER_VO ? null : AUDIO_DRAWER_VO)}
           title={`Add voiceover to slide ${liveSlideIndex + 1}`}
@@ -51,7 +54,7 @@ export function TrackLabelColumn({ audioDrawer, setAudioDrawer, liveSlideIndex }
         <div className="w-7 h-7 rounded-lg bg-sky-600/20 border border-sky-500/30 flex items-center justify-center">
           <Music size={12} className="text-sky-400" />
         </div>
-        <span className="text-[9px] font-bold tracking-wider uppercase text-white/30">Music</span>
+        <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--ms-tl-text-muted)' }}>Music</span>
         <button
           onClick={() => setAudioDrawer(audioDrawer === AUDIO_DRAWER_BGM ? null : AUDIO_DRAWER_BGM)}
           title="Add background music"

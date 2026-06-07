@@ -72,8 +72,8 @@ export function TimelineTracks({
 
   return (
     <div
-      className="shrink-0 border-t border-white/[0.06] bg-[#0a0a0c] overflow-hidden relative"
-      style={{ height: `${RULER_H + SLIDE_TRACK_H + VO_TRACK_H + BGM_TRACK_H + 1}px` }}
+      className="shrink-0 border-t overflow-hidden relative"
+      style={{ height: `${RULER_H + SLIDE_TRACK_H + VO_TRACK_H + BGM_TRACK_H + 1}px`, backgroundColor: 'var(--ms-tl-bg)', borderColor: 'var(--ms-tl-border)' }}
     >
       <div className="flex h-full max-w-6xl mx-auto w-full">
 
@@ -107,11 +107,14 @@ export function TimelineTracks({
           />
         )}
 
-        <div className="flex-1 overflow-hidden relative border-l border-white/[0.10]">
+        <div
+          className="flex-1 overflow-hidden relative border-l"
+          style={{ borderColor: 'var(--ms-tl-border-strong)' }}
+        >
           <div
             ref={timelineBodyRef}
             className="w-full h-full overflow-x-auto overflow-y-hidden"
-            style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}
+            style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--ms-tl-border-strong) transparent' }}
           >
             <div className="relative flex flex-col" style={{ width: timelineWidth, height: '100%' }}>
               <div

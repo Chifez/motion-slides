@@ -19,11 +19,11 @@ export function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDele
 
   return (
     <div
-      className="w-52 shrink-0 bg-[#0f0f13] border-l border-white/[0.08] flex flex-col overflow-y-auto"
-      style={{ scrollbarWidth: 'none' }}
+      className="w-52 shrink-0 border-l flex flex-col overflow-y-auto"
+      style={{ backgroundColor: 'var(--ms-bg-surface)', borderColor: 'var(--ms-border)', scrollbarWidth: 'none' } as React.CSSProperties}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.06]">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b" style={{ borderColor: 'var(--ms-border)' }}>
         <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: accentColor }}>
           {label}
         </span>
@@ -47,8 +47,8 @@ export function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDele
         {/* Volume */}
         <div className="space-y-2">
           <div className="flex justify-between text-[10px]">
-            <span className="text-white/40 font-medium">Volume</span>
-            <span className="font-mono text-white/70">{Math.round(audioInfo.volume * 100)}%</span>
+            <span className="text-[10px] text-(--ms-text-secondary) font-medium">Volume</span>
+            <span className="font-mono text-(--ms-text-primary)">{Math.round(audioInfo.volume * 100)}%</span>
           </div>
           <input
             type="range"
@@ -67,7 +67,7 @@ export function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDele
 
         {/* Speed */}
         <div className="space-y-1.5">
-          <span className="text-[10px] text-white/40 font-medium">Speed</span>
+          <span className="text-[10px] text-(--ms-text-secondary) font-medium">Speed</span>
           <div className="grid grid-cols-3 gap-1">
             {[0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => (
               <button
@@ -91,7 +91,7 @@ export function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDele
         </div>
 
         {/* Trim info */}
-        <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 space-y-1.5 text-[10px]">
+        <div className="rounded-lg border p-2.5 space-y-1.5 text-[10px]" style={{ backgroundColor: 'color-mix(in srgb, var(--ms-bg-surface) 80%, transparent)', borderColor: 'var(--ms-border)' }}>
           <div className="flex justify-between text-white/40">
             <span>Trim start</span>
             <span className="font-mono text-white/60">{audioInfo.trimStart.toFixed(2)}s</span>

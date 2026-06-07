@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import type { Slide, SlideTransition, PlaybackSettings } from '@motionslides/shared'
 import type { SlideWithTiming } from '@/components/editor/timeline/types'
 
@@ -16,7 +17,17 @@ interface Result {
   getSlideIndexAtTime: (time: number) => number
   liveSlideIndex: number
   liveSlide: Slide | null
+  /**
+   * The previous slide for transition rendering. This is set when the live
+   * slide index changes and automatically cleared to null after the transition
+   * duration elapses — exactly mirroring PresentationOverlay's lifecycle.
+   */
   livePrevSlide: Slide | null
+  /**
+   * The resolved transition between livePrevSlide → liveSlide.
+   * Null when there is no prototype transition defined for this pair.
+   */
+  liveActiveTransition: SlideTransition | null
 }
 
 /**
@@ -24,6 +35,8 @@ interface Result {
  * - per-slide start/end/duration map
  * - totalDuration
  * - live slide selection during playback
+ * - livePrevSlide with a self-clearing timer (mirrors PresentationOverlay)
+ * - liveActiveTransition for the current slide pair
  */
 export function useTimelineTiming({
   slides,
@@ -33,6 +46,7 @@ export function useTimelineTiming({
   isPlaying,
   currentTime,
 }: Params): Result {
+  // ─── Pure computation: slide timing layout ────────────────────────────────
   let current = 0
   const slidesWithTiming: SlideWithTiming[] = slides.map((s, idx) => {
     const hasTransition = idx > 0
@@ -61,7 +75,8 @@ export function useTimelineTiming({
     }
   })
 
-  const totalDuration = slidesWithTiming.length === 0 ? 0 : slidesWithTiming[slidesWithTiming.length - 1].end
+  const totalDuration =
+    slidesWithTiming.length === 0 ? 0 : slidesWithTiming[slidesWithTiming.length - 1].end
 
   const getSlideIndexAtTime = (time: number) => {
     const found = slidesWithTiming.find(s => time >= s.start && time < s.end)
@@ -70,11 +85,62 @@ export function useTimelineTiming({
     return 0
   }
 
-  // Derive live slide index synchronously — no effect delay
+  // ─── Live slide index (synchronous — no effect delay) ─────────────────────
   const liveSlideIndex = isPlaying ? getSlideIndexAtTime(currentTime) : activeSlideIndex
 
-  const liveSlide = slides[liveSlideIndex] ?? null
-  const livePrevSlide = liveSlideIndex > 0 ? (slides[liveSlideIndex - 1] ?? null) : null
+  // ─── Transition pair lookup ───────────────────────────────────────────────
+  // Resolve the prototype transition (if any) between the slide we're leaving
+  // and the slide we're entering. Used by MotionStage/MotionProvider.
+  const currentSlide = slides[liveSlideIndex] ?? null
 
-  return { slidesWithTiming, totalDuration, getSlideIndexAtTime, liveSlideIndex, liveSlide, livePrevSlide }
+  // ─── Self-clearing livePrevSlide ─────────────────────────────────────────
+  // We derive the transitionState synchronously during the render pass when
+  // liveSlideIndex changes. React will immediately re-run the render pass
+  // with the updated state before paint, eliminating the one-frame mismatch.
+  const [lastIndex, setLastIndex] = useState(liveSlideIndex)
+  const [transitionState, setTransitionState] = useState<{
+    prevSlide: Slide | null
+    activeTransition: SlideTransition | null
+    durationMs: number
+  }>({ prevSlide: null, activeTransition: null, durationMs: 0 })
+
+  if (liveSlideIndex !== lastIndex) {
+    const prevSlide = slides[lastIndex] ?? null
+    const nextSlide = slides[liveSlideIndex] ?? null
+    const resolvedTransition = prevSlide && nextSlide
+      ? (transitions.find(
+          t => t.fromSlideId === prevSlide.id && t.toSlideId === nextSlide.id,
+        ) ?? null)
+      : null
+    const durationMs = resolvedTransition?.duration ?? playbackSettings.transitionDuration ?? 500
+
+    setLastIndex(liveSlideIndex)
+    setTransitionState({
+      prevSlide,
+      activeTransition: resolvedTransition,
+      durationMs,
+    })
+  }
+
+  // After the transition is done, clear the previous slide so MotionStage
+  // exits the "transitioning" state and renders the new slide at rest.
+  useEffect(() => {
+    if (!transitionState.prevSlide) return
+
+    const timer = setTimeout(() => {
+      setTransitionState({ prevSlide: null, activeTransition: null, durationMs: 0 })
+    }, transitionState.durationMs + 50) // +50ms buffer matches PresentationOverlay
+
+    return () => clearTimeout(timer)
+  }, [transitionState.prevSlide, transitionState.durationMs])
+
+  return {
+    slidesWithTiming,
+    totalDuration,
+    getSlideIndexAtTime,
+    liveSlideIndex,
+    liveSlide: currentSlide,
+    livePrevSlide: transitionState.prevSlide,
+    liveActiveTransition: transitionState.activeTransition,
+  }
 }

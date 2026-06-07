@@ -23,7 +23,7 @@ export function TextElement({ element }: Props) {
   const isEditing = isEditingId === element.id
 
   const { isReadOnly } = usePermissions()
-  const { durationSec, ease, transitionAnimation } = useMotionContext()
+  const { durationSec, ease, transitionAnimation, isTimelinePreview } = useMotionContext()
 
   const {
     animTokens,
@@ -119,7 +119,7 @@ export function TextElement({ element }: Props) {
   // — isReadOnly: view/export URL mode
   // In either case the hook will tokenize text and keep positions captured.
   const isAnimationMode =
-    (isPresenting || isReadOnly) &&
+    (isPresenting || isReadOnly || isTimelinePreview) &&
     !isEditing &&
     !content.listStyle &&
     transitionAnimation === 'magic-move'
@@ -187,7 +187,7 @@ export function TextElement({ element }: Props) {
     // In editor mode (no MotionProvider) the hook returns an empty animTokens
     // array, so `isAnimationMode` is false and we fall through to the plain
     // <span> render below.
-    if (isAnimationMode || isReadOnly) {
+    if (isAnimationMode || isReadOnly || isTimelinePreview) {
       const tokens = tokenizeText(content.value)
 
       return (

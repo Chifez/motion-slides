@@ -25,10 +25,10 @@ export function VoiceoverTrackRow({
 }: Props) {
   return (
     <div
-      className="flex-shrink-0 border-b border-white/[0.06] relative"
-      style={{ height: VO_TRACK_H }}
+      className="flex-shrink-0 border-b relative"
+      style={{ height: VO_TRACK_H, borderColor: 'var(--ms-tl-border)' }}
     >
-      <div className="absolute inset-0 bg-[#0b0b0f]" />
+      <div className="absolute inset-0" style={{ backgroundColor: 'var(--ms-tl-bg)' }} />
       {slidesWithTiming.map(item => {
         const isSelected =
           selectedAudioKey?.type === AUDIO_TYPE_VOICEOVER && selectedAudioKey.slideId === item.slide.id
@@ -46,7 +46,7 @@ export function VoiceoverTrackRow({
         )
       })}
       {slides.every(s => !s.audio) && (
-        <div className="absolute inset-0 flex items-center px-4 text-[9px] text-white/15 font-medium">
+        <div className="absolute inset-0 flex items-center px-4 text-[9px] font-medium" style={{ color: 'var(--ms-tl-text-dim)' }}>
           No voiceovers — hover V.O. label and click +
         </div>
       )}
@@ -138,7 +138,7 @@ export function VoiceoverClip({
         }`}
       >
         <WaveformDecoration
-          color={isSelected ? 'rgba(167,139,250,0.45)' : 'rgba(139,92,246,0.25)'}
+          color={isSelected ? 'var(--ms-vo-fill-selected)' : 'var(--ms-vo-fill)'}
           audioUrl={audio.url}
           trimStart={audio.trimStart}
           trimEnd={audio.trimEnd}

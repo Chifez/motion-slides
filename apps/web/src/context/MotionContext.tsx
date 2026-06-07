@@ -52,6 +52,8 @@ export interface MotionContextValue {
    */
   transitionAnimation: TransitionAnimation
   previousSlide: Slide | null
+  /** True when rendering inside the Timeline panel preview (not full-screen presentation) */
+  isTimelinePreview: boolean
 }
 
 /** Default context when no provider is present (editor mode) */
@@ -73,6 +75,7 @@ const defaultValue: MotionContextValue = {
   getStaggerDelay: () => 0,
   transitionAnimation: 'magic-move',
   previousSlide: null,
+  isTimelinePreview: false,
 }
 
 const MotionCtx = createContext<MotionContextValue>(defaultValue)
@@ -93,9 +96,11 @@ interface ProviderProps {
    */
   activeTransition?: SlideTransition | null
   children: React.ReactNode
+  /** Pass true when this provider wraps the timeline panel preview */
+  isTimelinePreview?: boolean
 }
 
-export function MotionProvider({ settings, previousSlide, currentSlide, activeTransition, children }: ProviderProps) {
+export function MotionProvider({ settings, previousSlide, currentSlide, activeTransition, children, isTimelinePreview = false }: ProviderProps) {
   // Per-transition settings override global playback settings when defined
   const durationMs = activeTransition?.duration ?? settings.transitionDuration
   const easeBezier = activeTransition?.ease ?? settings.transitionEase
@@ -123,6 +128,7 @@ export function MotionProvider({ settings, previousSlide, currentSlide, activeTr
       staggerDelay(staggerIndex, newIds.size, durationSec),
     transitionAnimation: activeTransition?.animation ?? 'magic-move',
     previousSlide,
+    isTimelinePreview,
   }
 
   return <MotionCtx value={value}>{children}</MotionCtx>

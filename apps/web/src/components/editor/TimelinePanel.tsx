@@ -11,6 +11,7 @@ import { TimelineToolbar } from './timeline/TimelineToolbar'
 import { TimelinePreview } from './timeline/TimelinePreview'
 import { TimelineTracks } from './timeline/TimelineTracks'
 import type { SlideWithTiming } from './timeline/types'
+import type { SlideTransition } from '@motionslides/shared'
 
 export function TimelinePanel() {
   usePermissions()
@@ -28,9 +29,7 @@ export function TimelinePanel() {
     useShallow(s => s.projects.find(p => p.id === s.activeProjectId) ?? null),
   )
   const slides = project?.slides ?? []
-  const transitions = project?.transitions ?? []
-
-  const { activeTransition } = useEditorStore(useShallow(s => s.getPlaybackTransitions()))
+  const transitions: SlideTransition[] = project?.transitions ?? []
 
   const totalDurationRef = useRef<number>(0)
   const slidesWithTimingRef = useRef<SlideWithTiming[]>([])
@@ -78,7 +77,7 @@ export function TimelinePanel() {
   })
 
   return (
-    <div className="flex flex-col w-full h-full bg-[#0c0c0e] overflow-hidden select-none">
+    <div className="flex flex-col w-full h-full bg-(--ms-bg-base) text-(--ms-text-primary) overflow-hidden select-none">
 
       <TimelineToolbar
         isPlaying={playback.isPlaying}
@@ -98,7 +97,7 @@ export function TimelinePanel() {
         liveSlide={timing.liveSlide}
         livePrevSlide={timing.livePrevSlide}
         playbackSettings={playbackSettings}
-        activeTransition={activeTransition}
+        activeTransition={timing.liveActiveTransition}
         liveSlideIndex={timing.liveSlideIndex}
         slides={slides}
         slidesWithTiming={timing.slidesWithTiming}

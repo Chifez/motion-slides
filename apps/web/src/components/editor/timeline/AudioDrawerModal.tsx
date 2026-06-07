@@ -36,15 +36,20 @@ export function AudioDrawerModal({
 
   return (
     <div
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
+      className="fixed inset-0 z-(--z-overlay) flex items-end justify-center sm:items-center sm:justify-end sm:p-2 pointer-events-none"
     >
       <div
-        className="w-80 rounded-2xl border border-white/10 bg-[#13131c] shadow-2xl p-5 flex flex-col gap-4"
+        className="pointer-events-auto rounded-t-2xl sm:rounded-xl w-full sm:w-96 flex flex-col overflow-hidden border shadow-2xl"
+        style={{
+          maxHeight: '60vh',
+          backgroundColor: 'var(--ms-bg-elevated)',
+          borderColor: 'var(--ms-border)',
+          boxShadow: 'var(--ms-shadow)',
+        }}
         onClick={e => e.stopPropagation()}
       >
         {/* Modal header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--ms-border)' }}>
           <div className="flex items-center gap-2">
             {audioDrawer === AUDIO_DRAWER_VO ? (
               <>

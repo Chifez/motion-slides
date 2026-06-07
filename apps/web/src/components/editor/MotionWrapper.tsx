@@ -13,6 +13,7 @@ interface Props {
   onPointerDown: (e: React.PointerEvent) => void
   onDoubleClick: (e: React.MouseEvent) => void
   onClick: (e: React.MouseEvent) => void
+  ref?: React.Ref<HTMLDivElement>
 }
 
 const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
@@ -76,7 +77,7 @@ const getTransitionStates = (
 
 export const MotionWrapper = memo(function MotionWrapper({
   element, isSelected, isReadOnly, isContinuing, children,
-  onPointerDown, onDoubleClick, onClick
+  onPointerDown, onDoubleClick, onClick, ref
 }: Props) {
   const { isTransitioning, durationSec, ease, transitionAnimation, newElementIds } = useMotionContext()
 
@@ -93,65 +94,60 @@ export const MotionWrapper = memo(function MotionWrapper({
     overflow: element.type === 'line' ? 'visible' : undefined,
   }
 
-  if (!isTransitioning) {
-    return (
-      <motion.div
-        layoutId={element.id}
-        className="canvas-element"
-        style={commonStyle}
-        transition={{ layout: { duration: 0 }, default: { duration: 0 } }}
-        initial={false}
-        onClick={onClick}
-        onDoubleClick={onDoubleClick}
-        onPointerDown={onPointerDown}
-      >
-        {children}
-      </motion.div>
-    )
-  }
-
-  if (isContinuing) {
-    return (
-      <motion.div
-        layoutId={element.id}
-        layout
-        className="canvas-element"
-        style={{ ...commonStyle, opacity: undefined }} // Let animate handle opacity
-        initial={false}
-        animate={{ opacity: element.opacity }}
-        transition={{
-          layout: { duration: durationSec, ease },
-          opacity: { duration: durationSec * 0.4, ease: 'easeInOut' },
-        }}
-      >
-        {children}
-      </motion.div>
-    )
-  }
-
   const staggerIndex = Array.from(newElementIds).indexOf(element.id)
   const delay = staggerIndex >= 0 ? staggerIndex * 0.03 : 0
   const states = getTransitionStates(transitionAnimation, element.opacity)
 
+  const layoutId = (!isTransitioning || isContinuing) ? element.id : undefined
+  const layout = (isTransitioning && isContinuing) ? true : undefined
+
+  const style = {
+    ...commonStyle,
+    ...(isTransitioning && !isContinuing ? states.style : {}),
+    opacity: isTransitioning ? undefined : element.opacity,
+  }
+
+  const initial = isTransitioning && !isContinuing ? states.initial : false
+
+  const animate = isTransitioning
+    ? (isContinuing ? { opacity: element.opacity } : states.animate)
+    : undefined
+
+  const exit = {
+    ...states.exit,
+    transition: { duration: durationSec * 0.3, ease: EASE_IN_OUT },
+  }
+
+  let transition: any
+  if (!isTransitioning) {
+    transition = { layout: { duration: 0 }, default: { duration: 0 } }
+  } else if (isContinuing) {
+    transition = {
+      layout: { duration: durationSec, ease },
+      opacity: { duration: durationSec * 0.4, ease: 'easeInOut' },
+    }
+  } else {
+    transition = {
+      duration: durationSec * 0.5,
+      ease: EASE_IN_OUT,
+      delay,
+    }
+  }
+
   return (
     <motion.div
+      ref={ref}
+      layoutId={layoutId}
+      layout={layout}
       className="canvas-element"
-      style={{
-        ...commonStyle,
-        ...states.style,
-        opacity: undefined, // Let animate handle opacity
-      }}
-      initial={states.initial}
-      animate={states.animate}
-      exit={{
-        ...states.exit,
-        transition: { duration: durationSec * 0.3, ease: EASE_IN_OUT },
-      }}
-      transition={{
-        duration: durationSec * 0.5,
-        ease: EASE_IN_OUT,
-        delay,
-      }}
+      style={style}
+      initial={initial}
+      animate={animate}
+      exit={exit}
+      transition={transition}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
+      onPointerDown={onPointerDown}
     >
       {children}
     </motion.div>

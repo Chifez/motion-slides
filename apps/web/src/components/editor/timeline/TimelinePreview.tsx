@@ -49,10 +49,13 @@ export function TimelinePreview({
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#0c0c0e] to-[#0f0f12] px-8 py-4 relative">
+    <div
+      className="flex-1 min-h-0 flex flex-col items-center justify-center px-8 py-4 relative"
+      style={{ background: 'linear-gradient(to bottom, var(--ms-tl-bg), var(--ms-tl-surface))' }}
+    >
       {/* Ambient glow */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[60%] h-[50%] rounded-full bg-violet-900/10 blur-3xl" />
+        <div className="w-[60%] h-[50%] rounded-full bg-violet-900/10 dark:bg-violet-900/10 blur-3xl" />
       </div>
 
       {/* Screen frame */}
@@ -98,8 +101,9 @@ export function TimelinePreview({
               className={`rounded-full border-none cursor-pointer transition-all ${
                 idx === liveSlideIndex
                   ? 'w-5 h-1.5 bg-violet-500'
-                  : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
+                  : 'w-1.5 h-1.5 hover:opacity-70'
               }`}
+              style={idx !== liveSlideIndex ? { backgroundColor: 'var(--ms-tl-text-muted)' } : {}}
             />
           ))}
         </div>
@@ -112,16 +116,22 @@ export function TimelinePreview({
             onClick={toggleLoop}
             className={`text-[10px] font-semibold px-2.5 py-1 rounded-md border cursor-pointer transition-all ${
               playbackSettings.loop
-                ? 'bg-violet-600/20 border-violet-500/50 text-violet-300'
-                : 'bg-transparent border-white/10 text-white/30 hover:text-white/60'
+                ? 'bg-violet-600/20 border-violet-500/50 text-violet-500'
+                : ''
             }`}
+            style={!playbackSettings.loop ? {
+              background: 'transparent',
+              borderColor: 'var(--ms-tl-border-strong)',
+              color: 'var(--ms-tl-text-muted)',
+            } : {}}
           >
             Loop
           </button>
 
           <button
             onClick={() => setTimelineTracksVisible(!timelineTracksVisible)}
-            className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md border border-white/10 text-white/40 hover:text-white/80 hover:border-white/20 transition-all cursor-pointer bg-transparent"
+            className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md border transition-all cursor-pointer bg-transparent"
+            style={{ borderColor: 'var(--ms-tl-border-strong)', color: 'var(--ms-tl-text-muted)' }}
           >
             {timelineTracksVisible ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
             {timelineTracksVisible ? 'Hide Tracks' : 'Show Tracks'}

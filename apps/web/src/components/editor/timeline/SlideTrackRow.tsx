@@ -11,10 +11,10 @@ interface Props {
 export function SlideTrackRow({ slidesWithTiming, liveSlideIndex, onSlideResizeMouseDown, onSlideClick }: Props) {
   return (
     <div
-      className="flex-shrink-0 border-b border-white/[0.06] relative"
-      style={{ height: SLIDE_TRACK_H }}
+      className="flex-shrink-0 border-b relative"
+      style={{ height: SLIDE_TRACK_H, borderColor: 'var(--ms-tl-border)' }}
     >
-      <div className="absolute inset-0 bg-[#0d0d11]" />
+      <div className="absolute inset-0" style={{ backgroundColor: 'var(--ms-tl-surface)' }} />
       {slidesWithTiming.map(item => {
         const isActive = liveSlideIndex === item.index
         const gradient = SLIDE_GRADIENTS[item.index % SLIDE_GRADIENTS.length]
@@ -38,10 +38,10 @@ export function SlideTrackRow({ slidesWithTiming, liveSlideIndex, onSlideResizeM
                   : 'border border-white/10 hover:border-white/25'
               }`}
             >
-              <div className="absolute top-1.5 left-2 text-[10px] font-bold text-white/70 font-mono">
+              <div className="absolute top-1.5 left-2 text-[10px] font-bold font-mono" style={{ color: 'rgba(255,255,255,0.8)' }}>
                 {String(item.index + 1).padStart(2, '0')}
               </div>
-              <div className="absolute bottom-1.5 right-2 text-[8px] font-mono text-white/40 bg-black/30 px-1 rounded">
+              <div className="absolute bottom-1.5 right-2 text-[8px] font-mono px-1 rounded" style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(0,0,0,0.25)' }}>
                 {item.duration.toFixed(1)}s
               </div>
               {cardW > 100 && (

@@ -38,7 +38,7 @@ export function BgmTrackRow({
 
   return (
     <div className="flex-shrink-0 relative" style={{ height: BGM_TRACK_H }}>
-      <div className="absolute inset-0 bg-[#0a0a0d]" />
+      <div className="absolute inset-0" style={{ backgroundColor: 'var(--ms-tl-bg)' }} />
       {backgroundMusic ? (
         <div
           className="absolute top-2 group"
@@ -58,7 +58,7 @@ export function BgmTrackRow({
             }`}
           >
             <WaveformDecoration
-              color={isSelected ? 'rgba(125,211,252,0.4)' : 'rgba(56,189,248,0.2)'}
+              color={isSelected ? 'var(--ms-bgm-fill-selected)' : 'var(--ms-bgm-fill)'}
               audioUrl={backgroundMusic.url}
               trimStart={backgroundMusic.trimStart}
               trimEnd={backgroundMusic.trimEnd}
@@ -76,7 +76,7 @@ export function BgmTrackRow({
           </div>
         </div>
       ) : (
-        <div className="absolute inset-0 flex items-center px-4 text-[9px] text-white/15 font-medium">
+        <div className="absolute inset-0 flex items-center px-4 text-[9px] font-medium" style={{ color: 'var(--ms-tl-text-dim)' }}>
           No background music — hover Music label and click +
         </div>
       )}

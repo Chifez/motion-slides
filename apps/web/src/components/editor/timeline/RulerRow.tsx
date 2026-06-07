@@ -8,8 +8,8 @@ interface Props {
 export function RulerRow({ totalDuration, onMouseDown }: Props) {
   return (
     <div
-      className="flex-shrink-0 border-b border-white/[0.06] relative cursor-crosshair bg-[#0a0a0c]"
-      style={{ height: RULER_H }}
+      className="flex-shrink-0 border-b relative cursor-crosshair"
+      style={{ height: RULER_H, backgroundColor: 'var(--ms-tl-bg)', borderColor: 'var(--ms-tl-border)' }}
       onMouseDown={onMouseDown}
     >
       {Array.from({ length: Math.ceil(totalDuration) + 1 }).map((_, idx) => {
@@ -20,10 +20,13 @@ export function RulerRow({ totalDuration, onMouseDown }: Props) {
             className="absolute bottom-0 flex flex-col items-start"
             style={{ left: `${idx * PX_PER_SEC}px` }}
           >
-            <span className={`text-[8px] font-mono pl-1 ${isMajor ? 'text-white/40' : 'text-white/15'}`}>
+            <span className="text-[8px] font-mono pl-1" style={{ color: isMajor ? 'var(--ms-tl-text-muted)' : 'var(--ms-tl-text-dim)' }}>
               {isMajor ? `${idx}s` : ''}
             </span>
-            <div className={`w-px ${isMajor ? 'h-2.5 bg-white/20' : 'h-1.5 bg-white/[0.08]'}`} />
+            <div
+              className={`w-px ${isMajor ? 'h-2.5' : 'h-1.5'}`}
+              style={{ backgroundColor: isMajor ? 'var(--ms-tl-border-strong)' : 'var(--ms-tl-border)' }}
+            />
           </div>
         )
       })}
