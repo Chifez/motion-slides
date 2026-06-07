@@ -1,6 +1,6 @@
+import { useCallback } from 'react'
 import type { Slide, SlideTransition, PlaybackSettings, Project } from '@motionslides/shared'
 import { PX_PER_SEC } from '@/components/editor/timeline/constants'
-
 interface Params {
   totalDuration: number
   timelineBodyRef: React.RefObject<HTMLDivElement>
@@ -36,7 +36,7 @@ export function useTimelineScrub({
   activeProjectId,
   updateProject,
 }: Params): Result {
-  const handleRulerMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleRulerMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
     const scrollLeft = timelineBodyRef.current?.scrollLeft ?? 0
     const clickX = e.clientX - rect.left + scrollLeft
@@ -52,9 +52,9 @@ export function useTimelineScrub({
     }
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
-  }
+  }, [totalDuration, timelineBodyRef, setCurrentTime])
 
-  const handleSlideResizeMouseDown = (
+  const handleSlideResizeMouseDown = useCallback((
     e: React.MouseEvent,
     slideId: string,
     currentDuration: number,
@@ -95,7 +95,7 @@ export function useTimelineScrub({
     }
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
-  }
+  }, [slides, transitions, playbackSettings.transitionDuration, playbackSettings.transitionEase, activeProjectId, updateProject])
 
   return { handleRulerMouseDown, handleSlideResizeMouseDown }
 }

@@ -84,8 +84,10 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
 
   const animationType = activeTransition?.animation ?? 'none'
 
-  // If a slide-wide transition is active (not magic-move) and we have a previous slide
-  if (previousSlide && animationType !== 'magic-move') {
+  // Only run a slide-wide transition when there is an explicit prototype transition
+  // connecting these two slides AND it is not a magic-move transition.
+  // Non-connected boundaries (activeTransition === null) get an instant cut instead.
+  if (previousSlide && activeTransition && animationType !== 'magic-move') {
     const durationMs = activeTransition?.duration ?? settings.transitionDuration
     const durationSec = durationMs / 1000
     const ease = activeTransition?.ease
@@ -170,12 +172,12 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
   return (
     <MotionProvider
       settings={settings}
-      previousSlide={previousSlide}
+      previousSlide={activeTransition ? previousSlide : null}
       currentSlide={slide}
       activeTransition={activeTransition}
       isTimelinePreview={mode === 'presentation'}
     >
-      <LayoutGroup>
+      <LayoutGroup id="motion-stage">
         <AnimatePresence mode="sync" initial={false}>
           {slide.elements.map((element) => (
             <CanvasElement

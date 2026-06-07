@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useCallback } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { useShallow } from 'zustand/react/shallow'
 import { usePermissions } from '@/context/PermissionContext'
@@ -82,6 +82,30 @@ export function TimelinePanel() {
     timecodeRef: playback.timecodeRef
   }), [playback.playheadRef, playback.timecodeRef])
 
+  // Memoize the audio object so its reference stays stable during playback.
+  // All the individual function values are useCallback-stabilised in useTimelineAudio;
+  // the primitive state values (selectedAudioKey etc.) only change on user interactions,
+  // never during continuous playback.
+  const stableAudio = useMemo(() => audio, [
+    audio.selectedAudioKey,
+    audio.setSelectedAudioKey,
+    audio.inspectorOpen,
+    audio.setInspectorOpen,
+    audio.selectedAudioInfo,
+    audio.audioDrawer,
+    audio.setAudioDrawer,
+    audio.saveVoiceover,
+    audio.saveBgm,
+    audio.updateSelectedAudio,
+    audio.deleteSelectedAudio,
+  ])
+
+  // Stable slide-click handler: setActiveSlide (Zustand) and setCurrentTime (useCallback) are both stable.
+  const handleSlideClick = useCallback((idx: number, start: number) => {
+    setActiveSlide(idx)
+    playback.setCurrentTime(start)
+  }, [setActiveSlide, playback.setCurrentTime])
+
   return (
     <TimelineRefsContext value={refsValue}>
       <div className="flex flex-col w-full h-full bg-(--ms-bg-base) text-(--ms-text-primary) overflow-hidden select-none">
@@ -130,10 +154,12 @@ export function TimelinePanel() {
             updateProject={updateProject}
             setActiveSlide={setActiveSlide}
             setCurrentTime={playback.setCurrentTime}
-            audio={audio}
+            audio={stableAudio}
             handleRulerMouseDown={scrub.handleRulerMouseDown}
             handleSlideResizeMouseDown={scrub.handleSlideResizeMouseDown}
+            handleSlideClick={handleSlideClick}
           />
+
         )}
 
       </div>

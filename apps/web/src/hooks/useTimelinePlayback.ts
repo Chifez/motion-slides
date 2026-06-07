@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { PlaybackSettings, Project } from '@motionslides/shared'
 import { PX_PER_SEC, formatTime } from '@/components/editor/timeline/constants'
 import type { SlideWithTiming } from '@/components/editor/timeline/types'
@@ -159,6 +159,13 @@ export function useTimelinePlayback({
     }
   }
 
+  // Keep a ref to syncAudio so useCallback-wrapped setCurrentTime always calls
+  // the latest version without needing syncAudio as a dependency.
+  // Must be placed after syncAudio is declared to avoid 'used before declaration' errors.
+  const syncAudioRef = useRef(syncAudio)
+  // Update every render so the ref always holds the latest closure.
+  syncAudioRef.current = syncAudio
+
   const animatePlayback = (time: number) => {
     if (previousTimeRef.current !== null) {
       const delta = (time - previousTimeRef.current) / 1000
@@ -227,7 +234,9 @@ export function useTimelinePlayback({
     requestRef.current = requestAnimationFrame(animatePlayback)
   }
 
-  const setCurrentTime = (v: number | ((prev: number) => number)) => {
+  // useCallback with empty deps: all mutation targets are refs; syncAudio is
+  // accessed via syncAudioRef so it always calls the latest version.
+  const setCurrentTime = useCallback((v: number | ((prev: number) => number)) => {
     const nextVal = typeof v === 'function' ? v(currentTimeRef.current) : v
     currentTimeRef.current = nextVal
 
@@ -240,11 +249,12 @@ export function useTimelinePlayback({
     }
 
     // Sync audio immediately on manual jumps/scrubs
-    syncAudio(nextVal, true)
+    syncAudioRef.current(nextVal, true)
 
     // Always update React state for user-triggered scrubs/jumps
     setCurrentTimeState(nextVal)
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Start / stop the rAF loop
   useEffect(() => {

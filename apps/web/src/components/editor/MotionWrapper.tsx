@@ -98,7 +98,15 @@ export const MotionWrapper = memo(function MotionWrapper({
   const delay = staggerIndex >= 0 ? staggerIndex * 0.03 : 0
   const states = getTransitionStates(transitionAnimation, element.opacity)
 
-  const layoutId = (!isTransitioning || isContinuing) ? element.id : undefined
+  // layoutId is ONLY set during an active transition for continuing elements.
+  // Setting it during non-transition states (the previous `!isTransitioning` branch)
+  // caused Framer Motion's LayoutGroup to register every slide's element positions
+  // in the global layout namespace. When a later slide appeared with matching element
+  // IDs (e.g. duplicated slides in a magic-move chain), Framer Motion would animate
+  // those elements FROM the remembered positions — the visible ghost/stacking bug.
+  // Magic-move for same-key (continuing) elements is driven by `layout=true` (FLIP),
+  // so layoutId is only needed for coordinating the LayoutGroup during a transition.
+  const layoutId = (isTransitioning && isContinuing) ? element.id : undefined
   const layout = (isTransitioning && isContinuing) ? true : undefined
 
   const style = {

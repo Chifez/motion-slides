@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { SlideAudio, Slide, Project, PlaybackSettings } from '@motionslides/shared'
 import {
   PX_PER_SEC,
@@ -12,6 +13,7 @@ import {
   BGM_ACCENT_COLOR,
   VO_ACCENT_COLOR,
 } from './constants'
+
 import type { AudioKey, AudioDrawer, SlideWithTiming } from './types'
 import { AudioInspector } from './AudioInspector'
 import { AudioDrawerModal } from './AudioDrawerModal'
@@ -51,9 +53,10 @@ interface Props {
   audio: AudioState
   handleRulerMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void
   handleSlideResizeMouseDown: (e: React.MouseEvent, slideId: string, duration: number) => void
+  handleSlideClick: (idx: number, start: number) => void
 }
 
-export function TimelineTracks({
+export const TimelineTracks = memo(function TimelineTracks({
   timelineBodyRef,
   slidesWithTiming,
   totalDuration,
@@ -68,6 +71,7 @@ export function TimelineTracks({
   audio,
   handleRulerMouseDown,
   handleSlideResizeMouseDown,
+  handleSlideClick,
 }: Props) {
   const timelineWidth = Math.max(900, Math.ceil(totalDuration) * PX_PER_SEC + PX_PER_SEC)
 
@@ -139,7 +143,7 @@ export function TimelineTracks({
                 slidesWithTiming={slidesWithTiming}
                 liveSlideIndex={liveSlideIndex}
                 onSlideResizeMouseDown={handleSlideResizeMouseDown}
-                onSlideClick={(idx, start) => { setActiveSlide(idx); setCurrentTime(start) }}
+                onSlideClick={handleSlideClick}
               />
 
               <VoiceoverTrackRow
@@ -166,4 +170,21 @@ export function TimelineTracks({
       </div>
     </div>
   )
-}
+// Custom comparator: deliberately skip `currentTime` because the playhead DOM position
+// is managed via playheadRef during playback. We only re-render when structural or
+// interaction-critical props change.
+}, (prev, next) =>
+  prev.slidesWithTiming === next.slidesWithTiming &&
+  prev.totalDuration === next.totalDuration &&
+  prev.liveSlideIndex === next.liveSlideIndex &&
+  prev.slides === next.slides &&
+  prev.playbackSettings === next.playbackSettings &&
+  prev.activeProjectId === next.activeProjectId &&
+  prev.updateProject === next.updateProject &&
+  prev.setActiveSlide === next.setActiveSlide &&
+  prev.setCurrentTime === next.setCurrentTime &&
+  prev.audio === next.audio &&
+  prev.handleRulerMouseDown === next.handleRulerMouseDown &&
+  prev.handleSlideResizeMouseDown === next.handleSlideResizeMouseDown &&
+  prev.handleSlideClick === next.handleSlideClick
+)
