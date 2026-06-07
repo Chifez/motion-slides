@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useMemo } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { useShallow } from 'zustand/react/shallow'
 import { usePermissions } from '@/context/PermissionContext'
@@ -12,6 +12,7 @@ import { TimelinePreview } from './timeline/TimelinePreview'
 import { TimelineTracks } from './timeline/TimelineTracks'
 import type { SlideWithTiming } from './timeline/types'
 import type { SlideTransition } from '@motionslides/shared'
+import { TimelineRefsContext } from './timeline/TimelineRefsContext'
 
 export function TimelinePanel() {
   usePermissions()
@@ -76,59 +77,66 @@ export function TimelinePanel() {
     updateProject,
   })
 
+  const refsValue = useMemo(() => ({
+    playheadRef: playback.playheadRef,
+    timecodeRef: playback.timecodeRef
+  }), [playback.playheadRef, playback.timecodeRef])
+
   return (
-    <div className="flex flex-col w-full h-full bg-(--ms-bg-base) text-(--ms-text-primary) overflow-hidden select-none">
+    <TimelineRefsContext value={refsValue}>
+      <div className="flex flex-col w-full h-full bg-(--ms-bg-base) text-(--ms-text-primary) overflow-hidden select-none">
 
-      <TimelineToolbar
-        isPlaying={playback.isPlaying}
-        setIsPlaying={playback.setIsPlaying}
-        currentTime={playback.currentTime}
-        setCurrentTime={playback.setCurrentTime}
-        totalDuration={timing.totalDuration}
-        playbackSettings={playbackSettings}
-        activeProjectId={activeProjectId ?? null}
-        updateProject={updateProject}
-        timelineTracksVisible={timelineTracksVisible}
-        setTimelineTracksVisible={setTimelineTracksVisible}
-        isMobile={isMobile}
-      />
-
-      <TimelinePreview
-        liveSlide={timing.liveSlide}
-        livePrevSlide={timing.livePrevSlide}
-        playbackSettings={playbackSettings}
-        activeTransition={timing.liveActiveTransition}
-        liveSlideIndex={timing.liveSlideIndex}
-        slides={slides}
-        slidesWithTiming={timing.slidesWithTiming}
-        setActiveSlide={setActiveSlide}
-        setCurrentTime={playback.setCurrentTime}
-        isMobile={isMobile}
-        timelineTracksVisible={timelineTracksVisible}
-        setTimelineTracksVisible={setTimelineTracksVisible}
-        activeProjectId={activeProjectId ?? null}
-        updateProject={updateProject}
-      />
-
-      {timelineTracksVisible && (
-        <TimelineTracks
-          timelineBodyRef={playback.timelineBodyRef}
-          slidesWithTiming={timing.slidesWithTiming}
-          totalDuration={timing.totalDuration}
+        <TimelineToolbar
+          isPlaying={playback.isPlaying}
+          setIsPlaying={playback.setIsPlaying}
           currentTime={playback.currentTime}
-          liveSlideIndex={timing.liveSlideIndex}
-          slides={slides}
+          setCurrentTime={playback.setCurrentTime}
+          totalDuration={timing.totalDuration}
           playbackSettings={playbackSettings}
           activeProjectId={activeProjectId ?? null}
           updateProject={updateProject}
+          timelineTracksVisible={timelineTracksVisible}
+          setTimelineTracksVisible={setTimelineTracksVisible}
+          isMobile={isMobile}
+        />
+
+        <TimelinePreview
+          liveSlide={timing.liveSlide}
+          livePrevSlide={timing.livePrevSlide}
+          playbackSettings={playbackSettings}
+          activeTransition={timing.liveActiveTransition}
+          liveSlideIndex={timing.liveSlideIndex}
+          slides={slides}
+          slidesWithTiming={timing.slidesWithTiming}
           setActiveSlide={setActiveSlide}
           setCurrentTime={playback.setCurrentTime}
-          audio={audio}
-          handleRulerMouseDown={scrub.handleRulerMouseDown}
-          handleSlideResizeMouseDown={scrub.handleSlideResizeMouseDown}
+          isMobile={isMobile}
+          timelineTracksVisible={timelineTracksVisible}
+          setTimelineTracksVisible={setTimelineTracksVisible}
+          activeProjectId={activeProjectId ?? null}
+          updateProject={updateProject}
         />
-      )}
 
-    </div>
+        {timelineTracksVisible && (
+          <TimelineTracks
+            timelineBodyRef={playback.timelineBodyRef}
+            slidesWithTiming={timing.slidesWithTiming}
+            totalDuration={timing.totalDuration}
+            currentTime={playback.currentTime}
+            liveSlideIndex={timing.liveSlideIndex}
+            slides={slides}
+            playbackSettings={playbackSettings}
+            activeProjectId={activeProjectId ?? null}
+            updateProject={updateProject}
+            setActiveSlide={setActiveSlide}
+            setCurrentTime={playback.setCurrentTime}
+            audio={audio}
+            handleRulerMouseDown={scrub.handleRulerMouseDown}
+            handleSlideResizeMouseDown={scrub.handleSlideResizeMouseDown}
+          />
+        )}
+
+      </div>
+    </TimelineRefsContext>
   )
 }

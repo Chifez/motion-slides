@@ -20,6 +20,7 @@ import { RulerRow } from './RulerRow'
 import { SlideTrackRow } from './SlideTrackRow'
 import { VoiceoverTrackRow } from './VoiceoverTrackRow'
 import { BgmTrackRow } from './BgmTrackRow'
+import { useTimelineRefs } from './TimelineRefsContext'
 
 interface AudioState {
   selectedAudioKey: AudioKey | null
@@ -70,6 +71,8 @@ export function TimelineTracks({
 }: Props) {
   const timelineWidth = Math.max(900, Math.ceil(totalDuration) * PX_PER_SEC + PX_PER_SEC)
 
+  const { playheadRef } = useTimelineRefs()
+
   return (
     <div
       className="shrink-0 border-t overflow-hidden relative"
@@ -118,6 +121,7 @@ export function TimelineTracks({
           >
             <div className="relative flex flex-col" style={{ width: timelineWidth, height: '100%' }}>
               <div
+                ref={playheadRef}
                 className="absolute top-0 bottom-0 z-30 pointer-events-none"
                 style={{
                   left: `${currentTime * PX_PER_SEC}px`,

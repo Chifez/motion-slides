@@ -1,6 +1,7 @@
 import { Layers, SkipBack, Play, Pause, SkipForward, ChevronDown, ChevronUp } from 'lucide-react'
 import type { PlaybackSettings, Project } from '@motionslides/shared'
 import { formatTime } from './constants'
+import { useTimelineRefs } from './TimelineRefsContext'
 
 interface Props {
   isPlaying: boolean
@@ -40,6 +41,8 @@ export function TimelineToolbar({
       playbackSettings: { ...playbackSettings, loop: !playbackSettings.loop },
     })
   }
+
+  const { timecodeRef } = useTimelineRefs()
 
   return (
     <div
@@ -94,7 +97,13 @@ export function TimelineToolbar({
 
         {/* Timecode */}
         <div className="flex items-center gap-1 font-mono text-[11px]">
-          <span className="tabular-nums" style={{ color: 'var(--ms-text-primary)' }}>{formatTime(currentTime)}</span>
+          <span
+            ref={timecodeRef}
+            className="tabular-nums"
+            style={{ color: 'var(--ms-text-primary)' }}
+          >
+            {formatTime(currentTime)}
+          </span>
           <span style={{ color: 'var(--ms-tl-text-dim)' }}>/</span>
           <span className="tabular-nums" style={{ color: 'var(--ms-tl-text-muted)' }}>{formatTime(totalDuration)}</span>
         </div>

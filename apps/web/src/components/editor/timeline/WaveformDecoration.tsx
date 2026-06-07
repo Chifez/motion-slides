@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, memo } from 'react'
 import { WAVE_PATTERN } from './constants'
 import { useAudioWaveform } from '@/hooks/useAudioWaveform'
 
@@ -10,7 +10,7 @@ interface Props {
   duration?: number
 }
 
-export function WaveformDecoration({
+export const WaveformDecoration = memo(function WaveformDecoration({
   color = 'rgba(255,255,255,0.25)',
   audioUrl,
   trimStart = 0,
@@ -95,4 +95,4 @@ export function WaveformDecoration({
       className="absolute inset-0 w-full h-full pointer-events-none"
     />
   )
-}
+})
