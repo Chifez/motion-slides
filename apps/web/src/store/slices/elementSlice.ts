@@ -121,7 +121,8 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
         ...content, 
         x1: nx1, y1: ny1, 
         x2: nx2, y2: ny2,
-        branches: nBranches
+        branches: nBranches,
+        customPath: undefined
       },
     }
   })

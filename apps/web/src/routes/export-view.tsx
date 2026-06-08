@@ -49,7 +49,9 @@ function ExportView() {
     )
   }
 
-  const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
+  const defaultDims = getCanvasDimensions(playbackSettings.aspectRatio)
+  const canvasW = activeSlide.customWidth ?? defaultDims.width
+  const canvasH = activeSlide.customHeight ?? defaultDims.height
 
   return (
     <PermissionProvider value={EXPORT_ACCESS}>

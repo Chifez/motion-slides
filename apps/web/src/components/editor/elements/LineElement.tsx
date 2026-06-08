@@ -3,97 +3,30 @@ import { motion } from 'framer-motion'
 import type { LineContent, SceneElement } from '@motionslides/shared'
 import { useMotionContext } from '@/context/MotionContext'
 import { CODE_PHASE } from '@/lib/motionEngine'
-import { getArrow } from 'perfect-arrows'
+import { useLineEditing } from '@/hooks/useLineEditing'
+import { LineMarkers } from './LineMarkers'
+import { LabelGroup } from './LabelGroup'
+import {
+  toSafeNum,
+  hasValidCoordinates,
+  buildElbowPoints,
+  getPathMidpoint,
+  getLabelPosition,
+  buildLinePath,
+  buildRoundedPath,
+} from './lineHelpers'
 
 interface Props { 
   element: SceneElement 
   isSelected?: boolean
 }
 
-/** 
- * toSafeNum
- * Ensures coordinate is a number and not NaN/Infinity.
- */
-function toSafeNum(val: any, fallback = 0): number {
-  const n = Number(val)
-  return isNaN(n) || !isFinite(n) ? fallback : n
-}
-
-/**
- * hasValidCoordinates
- * Guard to prevent <path> errors when coordinates aren't ready.
- */
-function hasValidCoordinates(content: LineContent): boolean {
-  return (
-    typeof content.x1 === 'number' && !isNaN(content.x1) &&
-    typeof content.y1 === 'number' && !isNaN(content.y1) &&
-    typeof content.x2 === 'number' && !isNaN(content.x2) &&
-    typeof content.y2 === 'number' && !isNaN(content.y2)
-  )
-}
-
-/** Compute SVG path for a line within its bounding box */
-function buildLinePath(w: number, h: number, content: LineContent): string {
-  const x1 = toSafeNum(content.x1) * w
-  const y1 = toSafeNum(content.y1) * h
-  const x2 = toSafeNum(content.x2) * w
-  const y2 = toSafeNum(content.y2) * h
-
-  if (content.customPath) return content.customPath
-
-  switch (content.lineType) {
-    case 'straight':
-      return `M ${x1} ${y1} L ${x2} ${y2}`
-    case 'elbow': {
-      const midX = (x1 + x2) / 2
-      return `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`
-    }
-    case 'curved': {
-      if (Math.abs(x1 - x2) < 0.1 && Math.abs(y1 - y2) < 0.1) {
-        return `M ${x1} ${y1} L ${x2} ${y2}`
-      }
-      try {
-        const arrow = getArrow(x1, y1, x2, y2, {
-          bow: 0.2,
-          stretch: 0.5,
-          padStart: 0,
-          padEnd: 0,
-          straights: false,
-        })
-        const [sx, sy, cx, cy, ex, ey] = arrow
-        return `M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`
-      } catch (e) {
-        return `M ${x1} ${y1} L ${x2} ${y2}`
-      }
-    }
-    case 'step-after':
-      return `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`
-    case 'step-before':
-      return `M ${x1} ${y1} L ${x1} ${y2} L ${x2} ${y2}`
-    case 'branching': {
-      let path = `M ${x1} ${y1}`
-      const midX = (x1 + x2) / 2
-      path += ` L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`
-      
-      if (content.branches) {
-        content.branches.forEach(b => {
-          const bx = toSafeNum(b.x) * w
-          const by = toSafeNum(b.y) * h
-          const bmidX = (x1 + bx) / 2
-          path += ` M ${x1} ${y1} L ${bmidX} ${y1} L ${bmidX} ${by} L ${bx} ${by}`
-        })
-      }
-      return path
-    }
-    default:
-      return `M ${x1} ${y1} L ${x2} ${y2}`
-  }
-}
-
 export function LineElement({ element, isSelected }: Props) {
   const content = element.content as LineContent
   const { isTransitioning, durationSec } = useMotionContext()
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
+
+  const { isEditing, inputRef, handleBlur, handleKeyDown } = useLineEditing(element.id, content)
 
   if (!hasValidCoordinates(content) && !content.customPath) {
     return (
@@ -121,6 +54,7 @@ export function LineElement({ element, isSelected }: Props) {
   const sanitizeId = (c: string) => c.replace(/[^a-zA-Z0-9]/g, '')
   const isFork = content.lineType === 'branching'
   const mainD = content.customPath || buildLinePath(w, h, { ...content, branches: undefined })
+  const labelPos = getLabelPosition(w, h, content)
   
   return (
     <svg
@@ -135,34 +69,7 @@ export function LineElement({ element, isSelected }: Props) {
         pointerEvents: 'none',
       }}
     >
-      <defs>
-        {uniqueColors.map(color => (
-          <React.Fragment key={color}>
-            <marker
-              id={`arrow-end-${sanitizeId(color)}`}
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto"
-              markerUnits="userSpaceOnUse"
-            >
-              <path d="M0,0 L0,12 L12,6 z" fill={color} />
-            </marker>
-            <marker
-              id={`arrow-start-${sanitizeId(color)}`}
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto-start-reverse"
-              markerUnits="userSpaceOnUse"
-            >
-              <path d="M0,0 L0,12 L12,6 z" fill={color} />
-            </marker>
-          </React.Fragment>
-        ))}
-      </defs>
+      <LineMarkers uniqueColors={uniqueColors} sanitizeId={sanitizeId} />
 
       {!isFork && (
         <>
@@ -170,7 +77,7 @@ export function LineElement({ element, isSelected }: Props) {
             d={mainD}
             fill="none"
             stroke="transparent"
-            strokeWidth={Math.max(12, content.strokeWidth * 4)}
+            strokeWidth={Math.max(24, content.strokeWidth * 4)}
             style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
           />
           <motion.path
@@ -190,13 +97,44 @@ export function LineElement({ element, isSelected }: Props) {
             animate={{ d: mainD, stroke: content.color, strokeWidth: content.strokeWidth }}
             transition={pathTransition}
           />
-          {content.label && (
-            <LabelGroup 
-              text={content.label} 
-              x={toSafeNum((content.x1 + content.x2) / 2) * w} 
-              y={toSafeNum((content.y1 + content.y2) / 2) * h} 
-              fontSize={content.labelFontSize || 10}
-            />
+          {isEditing ? (
+            <foreignObject
+              x={labelPos.x - 60}
+              y={labelPos.y - 15}
+              width={120}
+              height={30}
+              style={{ overflow: 'visible' }}
+            >
+              <input
+                ref={inputRef}
+                defaultValue={content.label ?? ''}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                onClick={e => e.stopPropagation()}
+                onMouseDown={e => e.stopPropagation()}
+                style={{
+                  width: '100%',
+                  fontSize: 10,
+                  color: '#fff',
+                  background: '#1a1a1a',
+                  border: '1px solid #3b82f6',
+                  borderRadius: 4,
+                  padding: '2px 4px',
+                  textAlign: 'center',
+                  outline: 'none',
+                  pointerEvents: 'auto',
+                }}
+              />
+            </foreignObject>
+          ) : (
+            content.label && (
+              <LabelGroup 
+                text={content.label} 
+                x={labelPos.x} 
+                y={labelPos.y} 
+                fontSize={content.labelFontSize || 10}
+              />
+            )
           )}
         </>
       )}
@@ -206,15 +144,22 @@ export function LineElement({ element, isSelected }: Props) {
         const by = toSafeNum(b.y) * h
         const x1 = toSafeNum(content.x1) * w
         const y1 = toSafeNum(content.y1) * h
-        const bmidX = (x1 + bx) / 2
-        const branchD = `M ${x1} ${y1} L ${bmidX} ${y1} L ${bmidX} ${by} L ${bx} ${by}`
+        
+        const branchContent: LineContent = {
+          ...content,
+          startConnection: content.startConnection,
+          endConnection: b.connection
+        }
+        const branchPoints = buildElbowPoints(x1, y1, bx, by, branchContent)
+        const branchD = buildRoundedPath(branchPoints, 16)
         
         const branchColor = b.color || content.color
         const branchStyle = b.style || content.style
         const hasArrow = b.arrow === 'end' || (b.arrow === undefined && content.arrow !== 'none')
 
-        const lx = bmidX
-        const ly = (y1 + by) / 2
+        const branchMid = getPathMidpoint(branchPoints)
+        const lx = branchMid.x
+        const ly = branchMid.y
 
         return (
           <React.Fragment key={i}>
@@ -222,7 +167,7 @@ export function LineElement({ element, isSelected }: Props) {
               d={branchD}
               fill="none"
               stroke="transparent"
-              strokeWidth={Math.max(12, content.strokeWidth * 4)}
+              strokeWidth={Math.max(24, content.strokeWidth * 4)}
               style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
             />
             <motion.path
@@ -267,40 +212,6 @@ export function LineElement({ element, isSelected }: Props) {
         />
       )}
     </svg>
-  )
-}
-
-function LabelGroup({ text, x, y, fontSize }: { text: string, x: number, y: number, fontSize: number }) {
-  const charWidth = fontSize * 0.6
-  const padding = 8
-  const width = text.length * charWidth + padding
-  const height = fontSize + padding
-
-  return (
-    <g style={{ pointerEvents: 'none' }}>
-      <rect
-        x={x - width / 2}
-        y={y - height / 2}
-        width={width}
-        height={height}
-        rx={4}
-        fill="#1a1a1a"
-        fillOpacity={0.92}
-        stroke="rgba(255,255,255,0.12)"
-        strokeWidth={0.5}
-      />
-      <text
-        x={x}
-        y={y}
-        fill="#a3a3a3"
-        fontSize={fontSize}
-        fontFamily="Inter, sans-serif"
-        textAnchor="middle"
-        dominantBaseline="central"
-      >
-        {text}
-      </text>
-    </g>
   )
 }
 

@@ -128,14 +128,34 @@ const AIElement = z.discriminatedUnion('type', [
 
 // ── Slide schema ──────────────────────────────────────────────────────────────
 
+export const AILogicalNode = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  layer: z.string().min(1),
+  type: z.enum(['icon', 'cluster', 'shape']),
+  iconPath: z.string().nullable().optional(),
+  shapeType: z.enum(['rectangle', 'rounded-rectangle', 'circle', 'cylinder', 'diamond', 'hexagon', 'aws-icon']).nullable().optional(),
+})
+
+export const AILogicalConnection = z.object({
+  id: z.string().min(1),
+  from: z.string().min(1),
+  to: z.string().min(1),
+  type: z.enum(['directed', 'bidirectional', 'dashed', 'thick']),
+  label: z.string().nullable().optional(),
+})
+
 export const AISlideBaseSchema = z.object({
   id:           z.string().min(1),
   title:        z.string().min(1),
   role:         z.enum(['title', 'content', 'diagram', 'code', 'summary', 'divider']),
   background:   ColorSchema,
   spatialPlan:  z.string().min(1),
-  elements:     z.array(AIElement).min(1),
-  connections:  z.array(AIConnection), // Removed .optional()
+  elements:     z.array(AIElement).optional().nullable(),
+  connections:  z.array(AIConnection).optional().nullable(),
+  layoutTemplate: z.enum(['hero-title', 'bullets-standard', 'two-column', 'comparison', 'diagram-only', 'code-only']).optional().nullable(),
+  logicalNodes: z.array(AILogicalNode).optional().nullable(),
+  logicalConnections: z.array(AILogicalConnection).optional().nullable(),
   transition: z.object({
     type:     z.enum(['fade', 'slide', 'zoom', 'flip', 'morph', 'magic-move', 'none']),
     duration: z.number().min(0).max(5000).nullable(),

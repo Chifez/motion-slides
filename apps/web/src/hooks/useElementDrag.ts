@@ -1,7 +1,7 @@
 import { useRef, useCallback, useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS } from '@/constants/animation'
-import type { SceneElement } from '@motionslides/shared'
+import { type SceneElement, getCanvasDimensions } from '@motionslides/shared'
 
 interface UseElementDragOptions {
   element: SceneElement | undefined
@@ -93,6 +93,46 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
       })
 
       updateElementsBatch(updates, { silent: true })
+
+      // Canvas border expansion logic (preserving aspect ratio)
+      const state = useEditorStore.getState()
+      const slide = state.activeSlide()
+      const { playbackSettings, customCanvasWidth, customCanvasHeight, setCustomCanvasDimensions } = state
+      const { width: defaultW, height: defaultH } = getCanvasDimensions(playbackSettings.aspectRatio)
+      const currentCanvasW = customCanvasWidth ?? defaultW
+      const currentCanvasH = customCanvasHeight ?? defaultH
+
+      let maxRight = currentCanvasW
+      let maxBottom = currentCanvasH
+
+      updates.forEach(upd => {
+        const changes = upd.changes as any
+        const el = slide?.elements.find(e => e.id === upd.id)
+        if (el && changes.position) {
+          const right = changes.position.x + el.size.width
+          const bottom = changes.position.y + el.size.height
+          if (right > maxRight - 50) {
+            maxRight = right + 200
+          }
+          if (bottom > maxBottom - 50) {
+            maxBottom = bottom + 200
+          }
+        }
+      })
+
+      if (maxRight > currentCanvasW || maxBottom > currentCanvasH) {
+        const ratio = defaultW / defaultH
+        const nextWByRight = maxRight
+        const nextHByRight = nextWByRight / ratio
+
+        const nextHByBottom = maxBottom
+        const nextWByBottom = nextHByBottom * ratio
+
+        const nextW = Math.max(nextWByRight, nextWByBottom)
+        const nextH = nextW / ratio
+
+        setCustomCanvasDimensions(nextW, nextH)
+      }
     }
 
     const cleanup = () => {

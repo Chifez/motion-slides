@@ -19,6 +19,9 @@ export interface CanvasSlice {
   setIsDragging: (isDragging: boolean) => void
   activeTool: EditorTool
   setActiveTool: (tool: EditorTool) => void
+  customCanvasWidth: number | null
+  customCanvasHeight: number | null
+  setCustomCanvasDimensions: (w: number | null, h: number | null) => void
 }
 
 export const createCanvasSlice: StateCreator<EditorState, [], [], CanvasSlice> = (set) => ({
@@ -34,4 +37,28 @@ export const createCanvasSlice: StateCreator<EditorState, [], [], CanvasSlice> =
   setIsDragging: (isDragging) => set({ isDragging }),
   activeTool: 'select',
   setActiveTool: (activeTool) => set({ activeTool }),
+  customCanvasWidth: null,
+  customCanvasHeight: null,
+  setCustomCanvasDimensions: (w, h) => set((s) => {
+    const { activeProjectId, activeSlideIndex } = s
+    if (!activeProjectId) return { customCanvasWidth: w, customCanvasHeight: h }
+    return {
+      customCanvasWidth: w,
+      customCanvasHeight: h,
+      projects: s.projects.map((p) =>
+        p.id !== activeProjectId
+          ? p
+          : {
+              ...p,
+              slides: p.slides.map((slide, idx) =>
+                idx !== activeSlideIndex
+                  ? slide
+                  : { ...slide, customWidth: w ?? undefined, customHeight: h ?? undefined }
+              ),
+              updatedAt: Date.now(),
+              synced: false,
+            }
+      ),
+    }
+  }),
 })

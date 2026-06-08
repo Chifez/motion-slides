@@ -148,6 +148,54 @@ function applyDagreLayoutToElements(
   return updatedElements
 }
 
+function applyTemplateLayout(elements: SceneElement[], template: string, canvasW: number, canvasH: number) {
+  if (template === 'hero-title') {
+    const title = elements.find(e => e.type === 'text' && (e.content as any).value && (e as any).role === 'title')
+    if (title) {
+      title.position = { x: Math.round(canvasW * 0.1), y: Math.round(canvasH * 0.35) }
+      title.size = { width: Math.round(canvasW * 0.8), height: Math.round(canvasH * 0.15) }
+      ;(title.content as any).align = 'center'
+      ;(title.content as any).fontSize = 64
+    }
+    const subtitle = elements.find(e => e.type === 'text' && (e as any).role === 'subtitle')
+    if (subtitle) {
+      subtitle.position = { x: Math.round(canvasW * 0.1), y: Math.round(canvasH * 0.52) }
+      subtitle.size = { width: Math.round(canvasW * 0.8), height: Math.round(canvasH * 0.08) }
+      ;(subtitle.content as any).align = 'center'
+      ;(subtitle.content as any).fontSize = 28
+    }
+  } else if (template === 'bullets-standard') {
+    const title = elements.find(e => e.type === 'text' && (e as any).role === 'title')
+    if (title) {
+      title.position = { x: Math.round(canvasW * 0.08), y: Math.round(canvasH * 0.1) }
+      title.size = { width: Math.round(canvasW * 0.84), height: Math.round(canvasH * 0.12) }
+      ;(title.content as any).align = 'left'
+    }
+    const bullets = elements.filter(e => e.type === 'text' && (e as any).role !== 'title' && (e as any).role !== 'subtitle')
+    bullets.forEach((b, i) => {
+      b.position = { x: Math.round(canvasW * 0.08), y: Math.round(canvasH * 0.28 + i * 85) }
+      b.size = { width: Math.round(canvasW * 0.84), height: Math.round(canvasH * 0.09) }
+    })
+  } else if (template === 'two-column') {
+    const title = elements.find(e => e.type === 'text' && (e as any).role === 'title')
+    if (title) {
+      title.position = { x: Math.round(canvasW * 0.08), y: Math.round(canvasH * 0.1) }
+      title.size = { width: Math.round(canvasW * 0.84), height: Math.round(canvasH * 0.12) }
+    }
+    const columns = elements.filter(e => e.type === 'text' && (e as any).role !== 'title')
+    const mid = Math.ceil(columns.length / 2)
+    columns.forEach((col, i) => {
+      const isLeft = i < mid
+      const colIdx = isLeft ? i : i - mid
+      col.position = {
+        x: Math.round(isLeft ? canvasW * 0.08 : canvasW * 0.52),
+        y: Math.round(canvasH * 0.28 + colIdx * 90)
+      }
+      col.size = { width: Math.round(canvasW * 0.4), height: Math.round(canvasH * 0.1) }
+    })
+  }
+}
+
 /**
  * assembleSlides
  */
@@ -162,9 +210,13 @@ export function assembleSlides(
     const slideId = aiSlide.id || uuid()
 
     // 1. Build Base Elements (Icons, Clusters, Text, etc.)
-    let baseElements: SceneElement[] = aiSlide.elements
+    let baseElements: SceneElement[] = (aiSlide.elements || [])
       .map(aiEl => toSceneElement(aiEl, theme, generated, width, height))
       .filter(Boolean) as SceneElement[]
+
+    if (aiSlide.layoutTemplate && aiSlide.role !== 'diagram') {
+      applyTemplateLayout(baseElements, aiSlide.layoutTemplate, width, height)
+    }
 
     if (aiSlide.role === 'diagram') {
       baseElements = applyDagreLayoutToElements(baseElements, aiSlide.connections, aiSlide, width, height)
@@ -292,6 +344,20 @@ function generateConnections(slide: AISlideType, elements: SceneElement[], theme
       return `${nx} ${ny}`
     })
 
+    let lineType: 'straight' | 'elbow' | 'curved' = 'curved'
+    if (conn.routing === 'straight') {
+      lineType = 'straight'
+    } else if (
+      conn.routing === 'elbow-h' ||
+      conn.routing === 'elbow-v' ||
+      conn.routing === 'bypass-top' ||
+      conn.routing === 'bypass-bottom'
+    ) {
+      lineType = 'elbow'
+    } else {
+      lineType = 'curved'
+    }
+
     return {
       id: uuid(),
       type: 'line',
@@ -303,7 +369,7 @@ function generateConnections(slide: AISlideType, elements: SceneElement[], theme
       animation: 'draw',
       animationDelay: 500,
       content: {
-        lineType: 'curved',
+        lineType,
         x1: localX1, y1: localY1, x2: localX2, y2: localY2,
         color: conn.color ?? theme.accentColor,
         strokeWidth: conn.type === 'thick' ? 4 : 2,
@@ -410,6 +476,31 @@ function toSceneElement(
         } as any,
       }
     }
+
+    case 'shape':
+      return {
+        ...common,
+        type: 'shape',
+        content: {
+          shapeType: aiEl.shape,
+          label: aiEl.label,
+          sublabel: aiEl.sublabel,
+          iconPath: aiEl.iconPath,
+          fill: aiEl.style?.backgroundColor ?? 'rgba(255, 255, 255, 0.05)',
+          stroke: aiEl.style?.borderColor ?? theme.accentColor,
+          strokeWidth: aiEl.style?.borderWidth ?? 2,
+        } as any,
+      }
+
+    case 'code':
+      return {
+        ...common,
+        type: 'code',
+        content: {
+          value: aiEl.code,
+          language: aiEl.language,
+        } as CodeContent,
+      }
 
     default:
       return null

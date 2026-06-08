@@ -180,6 +180,8 @@ export interface Slide {
   elements: SceneElement[]
   background: string
   audio?: SlideAudio | null
+  customWidth?: number
+  customHeight?: number
 }
 
 // ── AI Chat ───────────────────────────────────────────────────────────────────

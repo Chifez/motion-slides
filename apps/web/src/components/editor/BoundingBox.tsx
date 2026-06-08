@@ -6,6 +6,7 @@ import { RESIZE_HANDLES } from '@/constants/editor'
 import type { SceneElement, LineContent } from '@motionslides/shared'
 import { useAccessControl } from '@/hooks/useAccessControl'
 import { useLineDrag } from '@/hooks/useLineDrag'
+import { useConnectionDrag } from '@/hooks/useConnectionDrag'
 
 interface Props { element: SceneElement }
 
@@ -134,6 +135,7 @@ export function BoundingBox({ element }: Props) {
   }, [element, updateElement])
 
   const { startNodeDrag } = useLineDrag(element, updateElement)
+  const { startConnectionDrag } = useConnectionDrag(element)
 
   if (element.type === 'line') {
     const content = element.content as LineContent
@@ -200,6 +202,38 @@ export function BoundingBox({ element }: Props) {
       {RESIZE_HANDLES.map((h) => (
         <div key={h} className={`resize-handle ${h}`} onMouseDown={startResize(h)} />
       ))}
+      {['shape', 'image', 'code', 'text', 'chart'].includes(element.type) && (
+        <>
+          <div 
+            className="absolute left-1/2 -top-2.5 -translate-x-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition-all scale-75 hover:scale-100 z-100 group"
+            onMouseDown={startConnectionDrag('top')}
+            title="Drag to create connection"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          </div>
+          <div 
+            className="absolute left-1/2 -bottom-2.5 -translate-x-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition-all scale-75 hover:scale-100 z-100 group"
+            onMouseDown={startConnectionDrag('bottom')}
+            title="Drag to create connection"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          </div>
+          <div 
+            className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition-all scale-75 hover:scale-100 z-100 group"
+            onMouseDown={startConnectionDrag('left')}
+            title="Drag to create connection"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          </div>
+          <div 
+            className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition-all scale-75 hover:scale-100 z-100 group"
+            onMouseDown={startConnectionDrag('right')}
+            title="Drag to create connection"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          </div>
+        </>
+      )}
     </div>
   )
 }

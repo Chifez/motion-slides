@@ -1,8 +1,10 @@
+import { useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import type { ShapeContent } from '@motionslides/shared'
 import { useMotionContext } from '@/context/MotionContext'
+import { useEditorStore } from '@/store/editorStore'
 
-interface Props { content: ShapeContent }
+interface Props { content: ShapeContent; elementId: string }
 
 interface ShapeProps {
   fill: string
@@ -194,22 +196,79 @@ const shapeMap: Record<string, React.FC<any>> = {
   'gcp-icon': AwsIconShape,
 }
 
-export function ShapeElement({ content }: Props) {
+export function ShapeElement({ content, elementId }: Props) {
   const { isTransitioning, durationSec } = useMotionContext()
   const colorTransition = isTransitioning ? { duration: durationSec, ease: [0.37, 0, 0.63, 1] } : { duration: 0 }
   const ShapeSVG = shapeMap[content.shapeType] || RectangleShape
 
+  const isEditingId = useEditorStore(state => state.isEditingId)
+  const setEditingId = useEditorStore(state => state.setEditingId)
+  const updateElement = useEditorStore(state => state.updateElement)
+
+  const isEditing = isEditingId === elementId
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isEditing])
+
+  const handleBlur = () => {
+    if (inputRef.current) {
+      updateElement(elementId, {
+        content: { ...content, label: inputRef.current.value }
+      })
+    }
+    setEditingId(null)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      inputRef.current?.blur()
+    }
+    if (e.key === 'Escape') {
+      setEditingId(null)
+    }
+  }
+
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: content.label ? 4 : 0 }}>
-      <svg viewBox="0 0 100 100" style={{ flex: 1, overflow: 'hidden', display: 'block' }}>
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio={content.shapeType === 'rectangle' ? 'none' : 'xMidYMid meet'}
+        style={{ flex: 1, overflow: 'hidden', display: 'block', width: '100%', height: '100%' }}
+      >
         <ClusterWrapper content={content} transition={colorTransition}>
           <ShapeSVG fill={content.fill} stroke={content.stroke} transition={colorTransition} iconPath={content.iconPath} />
         </ClusterWrapper>
       </svg>
-      {content.label && (
-        <span style={{ fontSize: 11, color: '#ccc', fontWeight: 500, textAlign: 'center', userSelect: 'none' }}>
-          {content.label}
-        </span>
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          defaultValue={content.label ?? ''}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          onClick={e => e.stopPropagation()}
+          style={{
+            fontSize: 11,
+            color: '#fff',
+            background: 'var(--ms-bg-elevated, #222)',
+            border: '1px solid var(--ms-border, #444)',
+            borderRadius: 4,
+            padding: '2px 4px',
+            width: '85%',
+            textAlign: 'center',
+            outline: 'none',
+          }}
+        />
+      ) : (
+        content.label && (
+          <span style={{ fontSize: 11, color: '#ccc', fontWeight: 500, textAlign: 'center', userSelect: 'none' }}>
+            {content.label}
+          </span>
+        )
       )}
     </div>
   )

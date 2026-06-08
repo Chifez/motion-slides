@@ -35,8 +35,57 @@ export function CanvasStage() {
   const slideBackground = slide?.background ?? '#0a0a0a'
   const slideName = slide?.name ?? `Slide ${(useEditorStore.getState().activeSlideIndex) + 1}`
 
-  const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
-  const scale = useCanvasScale(stageRef, canvasW, canvasH)
+  const customCanvasWidth = useEditorStore(state => state.customCanvasWidth) ?? slide?.customWidth ?? null
+  const customCanvasHeight = useEditorStore(state => state.customCanvasHeight) ?? slide?.customHeight ?? null
+  const { width: defaultW, height: defaultH } = getCanvasDimensions(playbackSettings.aspectRatio)
+  const canvasW = customCanvasWidth ?? defaultW
+  const canvasH = customCanvasHeight ?? defaultH
+  const scale = useCanvasScale(stageRef, defaultW, defaultH)
+
+  const setCustomCanvasDimensions = useEditorStore(state => state.setCustomCanvasDimensions)
+  const zoom = camera.zoom
+
+  const startCanvasResize = (edge: 'right' | 'bottom' | 'both') => (e: React.PointerEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const startW = canvasW
+    const startH = canvasH
+    const startX = e.clientX
+    const startY = e.clientY
+    const currentScale = scale * zoom
+    const ratio = defaultW / defaultH
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const dx = moveEvent.clientX - startX
+      const dy = moveEvent.clientY - startY
+
+      let nextW = startW
+      let nextH = startH
+
+      if (edge === 'right') {
+        nextW = Math.max(defaultW, startW + dx / currentScale)
+        nextH = nextW / ratio
+      } else if (edge === 'bottom') {
+        nextH = Math.max(defaultH, startH + dy / currentScale)
+        nextW = nextH * ratio
+      } else if (edge === 'both') {
+        const delta = Math.max(dx / currentScale, (dy / currentScale) * ratio)
+        nextW = Math.max(defaultW, startW + delta)
+        nextH = nextW / ratio
+      }
+
+      setCustomCanvasDimensions(nextW, nextH)
+    }
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', onPointerUp)
+    }
+
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerUp)
+  }
 
   const selectedElementIds = useEditorStore(state => state.selectedElementIds)
   
@@ -111,6 +160,35 @@ export function CanvasStage() {
               height: Math.abs(lasso.y2 - lasso.y1),
             }}
           />
+        )}
+
+        {/* Manual Canvas Resize Handles */}
+        {mode === 'edit' && !isReadOnly && (
+          <>
+            {/* Right Resize Handle */}
+            <div
+              className="absolute top-0 right-0 w-2 h-full cursor-ew-resize hover:bg-blue-500/20 active:bg-blue-500/40 z-50 pointer-events-auto transition-colors"
+              onPointerDown={startCanvasResize('right')}
+              title="Drag to resize canvas width"
+            />
+            {/* Bottom Resize Handle */}
+            <div
+              className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize hover:bg-blue-500/20 active:bg-blue-500/40 z-50 pointer-events-auto transition-colors"
+              onPointerDown={startCanvasResize('bottom')}
+              title="Drag to resize canvas height"
+            />
+            {/* Bottom-right Corner Resize Handle */}
+            <div
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize hover:bg-blue-500/40 active:bg-blue-500/60 z-50 pointer-events-auto transition-colors flex items-end justify-end p-0.5"
+              onPointerDown={startCanvasResize('both')}
+              title="Drag to resize canvas width and height"
+            >
+              <svg width="8" height="8" viewBox="0 0 8 8" className="text-blue-500 opacity-60">
+                <line x1="6" y1="0" x2="6" y2="8" stroke="currentColor" strokeWidth="1.5" />
+                <line x1="0" y1="6" x2="8" y2="6" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </div>
+          </>
         )}
       </div>
 

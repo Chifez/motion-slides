@@ -91,7 +91,9 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
       ? cubicBezierToArray(activeTransition.ease)
       : cubicBezierToArray(settings.transitionEase)
     
-    const { width: canvasW, height: canvasH } = getCanvasDimensions(settings.aspectRatio)
+    const defaultDims = getCanvasDimensions(settings.aspectRatio)
+    const canvasW = slide.customWidth ?? defaultDims.width
+    const canvasH = slide.customHeight ?? defaultDims.height
     const variants = getSlideTransitionVariants(animationType, canvasW, canvasH)
 
     return (

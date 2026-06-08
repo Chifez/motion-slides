@@ -17,7 +17,11 @@ interface Props {
 export function ScaledStage({ slide, previousSlide, settings, activeTransition }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
-  const canvasDims = getCanvasDimensions(settings.aspectRatio)
+  const defaultDims = getCanvasDimensions(settings.aspectRatio)
+  const canvasDims = {
+    width: slide.customWidth ?? defaultDims.width,
+    height: slide.customHeight ?? defaultDims.height
+  }
 
   useEffect(() => {
     const handleResize = () => {

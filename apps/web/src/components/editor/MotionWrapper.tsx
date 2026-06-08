@@ -92,6 +92,7 @@ export const MotionWrapper = memo(function MotionWrapper({
     zIndex: isSelected ? SELECTED_Z_INDEX : element.zIndex,
     cursor: isReadOnly ? 'default' : 'grab',
     overflow: element.type === 'line' ? 'visible' : undefined,
+    pointerEvents: element.type === 'line' ? ('none' as const) : undefined,
   }
 
   const staggerIndex = Array.from(newElementIds).indexOf(element.id)

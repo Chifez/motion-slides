@@ -50,7 +50,7 @@ export function CanvasElement({ elementId, element: elementProp, ref }: Props) {
     event.stopPropagation()
     if (!element.locked) {
       setSelectedElement(element.id, false)
-      if (element.type === 'text') setEditingId(element.id)
+      if (element.type === 'text' || element.type === 'shape' || element.type === 'line') setEditingId(element.id)
       if (isMobile) setMobileInspectorOpen(true)
     }
   }

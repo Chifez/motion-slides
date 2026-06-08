@@ -144,6 +144,14 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
   setActiveSlide: (index) => {
     const current = get().activeSlideIndex
     if (current === index) return
-    set({ previousSlideIndex: current, activeSlideIndex: index, selectedElementIds: [] })
+    const project = get().activeProject()
+    const targetSlide = project?.slides[index]
+    set({
+      previousSlideIndex: current,
+      activeSlideIndex: index,
+      selectedElementIds: [],
+      customCanvasWidth: targetSlide?.customWidth ?? null,
+      customCanvasHeight: targetSlide?.customHeight ?? null,
+    })
   },
 })

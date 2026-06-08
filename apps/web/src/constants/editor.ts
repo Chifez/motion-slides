@@ -24,6 +24,7 @@ export const CODE_LANGUAGES = [
 /** Shape type options for the inspector dropdown */
 export const SHAPE_OPTIONS: { value: ShapeType; label: string }[] = [
   { value: 'rectangle', label: 'Rectangle' },
+  { value: 'circle', label: 'Circle / Cycle' },
   { value: 'database', label: 'Database' },
   { value: 'server', label: 'Server' },
   { value: 'cloud', label: 'Cloud' },

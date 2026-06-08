@@ -54,6 +54,34 @@ describe('Dagre Diagram Layout In Slide Assembler', () => {
               position: { x: 0.3, y: 0.5, w: 0.08, h: 0.08 },
               animation: null,
               animationDelay: null,
+            },
+            {
+              id: 'node-db',
+              type: 'shape',
+              shape: 'cylinder',
+              label: 'User DB',
+              sublabel: null,
+              iconPath: null,
+              layer: 'Database Layer',
+              position: { x: 0.5, y: 0.7, w: 0.14, h: 0.08 },
+              style: {
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderColor: 'var(--ms-accent)',
+                borderWidth: 2,
+                opacity: 1,
+              },
+              animation: null,
+              animationDelay: null,
+            },
+            {
+              id: 'node-config',
+              type: 'code',
+              code: 'const config = {}',
+              language: 'javascript',
+              layer: 'API Edge',
+              position: { x: 0.7, y: 0.3, w: 0.2, h: 0.1 },
+              animation: null,
+              animationDelay: null,
             }
           ],
           connections: [
@@ -104,5 +132,18 @@ describe('Dagre Diagram Layout In Slide Assembler', () => {
     expect(apiEdgeSection).toBeDefined()
     expect(apiEdgeSection!.size.width).toBeGreaterThan(0)
     expect(apiEdgeSection!.size.height).toBeGreaterThan(0)
+
+    // Assert that node-db and node-config are present and correctly mapped
+    const dbNode = slide.elements.find(e => e.id === 'node-db')
+    expect(dbNode).toBeDefined()
+    expect(dbNode!.type).toBe('shape')
+    expect((dbNode!.content as any).shapeType).toBe('cylinder')
+    expect((dbNode!.content as any).label).toBe('User DB')
+
+    const configNode = slide.elements.find(e => e.id === 'node-config')
+    expect(configNode).toBeDefined()
+    expect(configNode!.type).toBe('code')
+    expect((configNode!.content as any).value).toBe('const config = {}')
+    expect((configNode!.content as any).language).toBe('javascript')
   })
 })

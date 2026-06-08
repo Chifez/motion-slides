@@ -33,7 +33,14 @@ export async function exportAsVideo(
   const { exportResolution, transitionDuration, autoplayDelay, aspectRatio } = playbackSettings
   const totalSlides = project.slides.length
 
-  const canvasDims = getCanvasDimensions(aspectRatio)
+  const defaultDims = getCanvasDimensions(aspectRatio)
+  const getSlideCanvasDims = (slideIndex: number) => {
+    const slide = project.slides[slideIndex]
+    return {
+      width: slide?.customWidth ?? defaultDims.width,
+      height: slide?.customHeight ?? defaultDims.height
+    }
+  }
 
   onProgress({ stage: 'preparing', currentSlide: 0, totalSlides, message: 'Warming up engine…' })
 
@@ -68,7 +75,7 @@ export async function exportAsVideo(
   // High-fidelity warmup: wait for fonts and initial layout
   await document.fonts.ready
   await sleep(1500)
-  await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
+  await captureFrame(canvasBoard, canvas, ctx, exportResolution, getSlideCanvasDims(0))
 
   for (let i = 0; i < totalSlides; i++) {
     if (signal?.aborted) {
@@ -85,14 +92,14 @@ export async function exportAsVideo(
       // Capture more frequently during transition for better frame density
       while (Date.now() - startTime < transitionDuration + 200) {
         if (signal?.aborted) break
-        await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
+        await captureFrame(canvasBoard, canvas, ctx, exportResolution, getSlideCanvasDims(i))
         await sleep(16)
       }
     }
 
     if (signal?.aborted) continue
 
-    await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
+    await captureFrame(canvasBoard, canvas, ctx, exportResolution, getSlideCanvasDims(i))
 
     onProgress({ stage: 'recording', currentSlide: i + 1, totalSlides, message: `Holding slide ${i + 1}…` })
 
@@ -100,7 +107,7 @@ export async function exportAsVideo(
     const holdStart = Date.now()
     while (Date.now() - holdStart < autoplayDelay) {
       if (signal?.aborted) break
-      await captureFrame(canvasBoard, canvas, ctx, exportResolution, canvasDims)
+      await captureFrame(canvasBoard, canvas, ctx, exportResolution, getSlideCanvasDims(i))
       await sleep(100)
     }
   }
