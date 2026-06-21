@@ -375,22 +375,15 @@ export function LandingShowcase() {
             transformOrigin: 'center center',
           }}
         >
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={activeSlide.id}
-              className="absolute inset-0 w-full h-full"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: 'easeInOut' }}
-            >
+          <div className="absolute inset-0 w-full h-full">
+            <AnimatePresence mode="sync" initial={false}>
               {/* Render Section boundaries under node/line layouts */}
               {activeSlide.elements
                 .filter((el) => el.type === 'section')
                 .map((sec: any) => {
                   return (
                     <motion.div
-                      key={sec.id}
+                      key={`${activeSlide.id}-${sec.id}`}
                       layoutId={`demo-${sec.id}`}
                       className="absolute border border-dashed border-white/10 rounded-2xl flex flex-col justify-start p-3 select-none"
                       style={{
@@ -401,6 +394,9 @@ export function LandingShowcase() {
                         background: 'rgba(255, 255, 255, 0.02)',
                         zIndex: 1,
                       }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
                       transition={{ type: 'spring', stiffness: 90, damping: 16 }}
                     >
                       <div className="inline-flex self-start text-[9px] font-black uppercase tracking-wider bg-[#101012] border border-white/10 rounded px-1.5 py-0.5 text-white/50">
@@ -409,11 +405,13 @@ export function LandingShowcase() {
                     </motion.div>
                   )
                 })}
+            </AnimatePresence>
 
               {/* Draw connectors under shape layers */}
-              {activeSlide.elements
-                .filter((el) => el.type === 'line')
-                .map((line: any) => {
+              <AnimatePresence mode="sync" initial={false}>
+                {activeSlide.elements
+                  .filter((el) => el.type === 'line')
+                  .map((line: any) => {
                   const fromEl = activeSlide.elements.find((e) => e.id === line.from) as any
                   const toEl = activeSlide.elements.find((e) => e.id === line.to) as any
                   if (!fromEl || !toEl) return null
@@ -468,7 +466,14 @@ export function LandingShowcase() {
                   }
 
                   return (
-                    <svg key={line.id} className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                    <motion.svg 
+                      key={line.id} 
+                      className="absolute inset-0 w-full h-full pointer-events-none z-0"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.5 }}
+                    >
                       <defs>
                         <marker 
                           id={`arrow-${line.id}`} 
@@ -492,8 +497,9 @@ export function LandingShowcase() {
                         strokeDasharray={line.style === 'dashed' ? '8 5' : line.style === 'dotted' ? '2 4' : undefined}
                         markerEnd={`url(#arrow-${line.id})`}
                         initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: 0.6 }}
-                        transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+                        animate={{ pathLength: 1, opacity: 0.6, d: pathD }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
                       />
                       <foreignObject 
                         x={labelX - 35} 
@@ -505,18 +511,20 @@ export function LandingShowcase() {
                           {line.label}
                         </div>
                       </foreignObject>
-                    </svg>
+                    </motion.svg>
                   )
                 })}
+            </AnimatePresence>
 
 
               {/* Elements (Shapes, Code, Text) */}
-              {activeSlide.elements
-                .filter((el) => el.type !== 'line' && el.type !== 'section')
-                .map((el: any) => {
+              <AnimatePresence mode="sync" initial={false}>
+                {activeSlide.elements
+                  .filter((el) => el.type !== 'line' && el.type !== 'section')
+                  .map((el: any) => {
                   return (
                     <motion.div
-                      key={el.id}
+                      key={el.type === 'code' ? el.id : `${activeSlide.id}-${el.id}`}
                       layoutId={`demo-${el.id}`}
                       className="absolute flex flex-col items-center justify-center"
                       style={{
@@ -526,6 +534,9 @@ export function LandingShowcase() {
                         height: el.h,
                         zIndex: 10,
                       }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
                       transition={{ type: 'spring', stiffness: 90, damping: 16 }}
                     >
                       {el.type === 'shape' && (
@@ -618,8 +629,8 @@ export function LandingShowcase() {
                     </motion.div>
                   )
                 })}
-            </motion.div>
-          </AnimatePresence>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>
