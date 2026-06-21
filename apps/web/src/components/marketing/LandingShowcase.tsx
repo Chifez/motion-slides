@@ -383,7 +383,7 @@ export function LandingShowcase() {
                 .map((sec: any) => {
                   return (
                     <motion.div
-                      key={`${activeSlide.id}-${sec.id}`}
+                      key={sec.id}
                       layoutId={`demo-${sec.id}`}
                       className="absolute border border-dashed border-white/10 rounded-2xl flex flex-col justify-start p-3 select-none"
                       style={{
@@ -524,7 +524,7 @@ export function LandingShowcase() {
                   .map((el: any) => {
                   return (
                     <motion.div
-                      key={el.type === 'code' ? el.id : `${activeSlide.id}-${el.id}`}
+                      key={el.id}
                       layoutId={`demo-${el.id}`}
                       className="absolute flex flex-col items-center justify-center"
                       style={{
