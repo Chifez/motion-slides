@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { LandingNavbar } from '@/components/LandingNavbar'
 import { LandingFooter } from '@/components/LandingFooter'
 import { getSessionFn } from '@/lib/auth-actions'
+import { LandingShowcase } from '@/components/marketing/LandingShowcase'
 
 export const Route = createFileRoute('/')({
   beforeLoad: async () => {
@@ -29,7 +30,7 @@ const features = [
   {
     icon: <Share2 size={18} />,
     title: 'Architecture Diagrams',
-    desc: 'Ten semantic shapes, drag-to-connect, and smooth SVG path morphing — built for technical storytelling.',
+    desc: 'Ten semantic shapes, drag-to-connect, and SVG path morphing — built for technical storytelling.',
   },
   {
     icon: <WifiOff size={18} />,
@@ -112,6 +113,11 @@ function LandingPage() {
             </a>
           </div>
         </motion.div>
+      </section>
+
+      {/* ── Interactive Canvas Showcase ── */}
+      <section className="px-6 pb-12 relative z-10">
+        <LandingShowcase />
       </section>
 
       {/* ── Features ── */}
