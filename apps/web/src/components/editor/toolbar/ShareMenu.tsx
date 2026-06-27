@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react'
-import { Share2, Copy, Lock, Check, Link as LinkIcon, Eye, Unlock } from 'lucide-react'
+import { Share2, Copy, Lock, Check, Link as LinkIcon, Eye, Unlock, Code } from 'lucide-react'
 import type { Project } from '@motionslides/shared'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import { motion } from 'framer-motion'
 import { useShareMenu } from '@/hooks/useShareMenu'
+import { EmbedCodeModal } from '../embed/EmbedCodeModal'
 
 interface Props {
   project: Project
@@ -13,6 +14,7 @@ interface Props {
 export function ShareMenu({ project, isMobile }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [copiedType, setCopiedType] = useState<'edit' | 'view' | null>(null)
+  const [embedOpen, setEmbedOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   const {
@@ -103,6 +105,14 @@ export function ShareMenu({ project, isMobile }: Props) {
                   <Copy size={12} className="text-(--ms-text-muted) group-hover:text-blue-400 transition-colors shrink-0" />
                 )}
               </button>
+              <button
+                onClick={() => setEmbedOpen(true)}
+                disabled={!isShared}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 hover:border-blue-500/40 transition-all cursor-pointer text-xs font-semibold disabled:cursor-not-allowed border-dashed"
+              >
+                <Code size={12} />
+                <span>Embed Options</span>
+              </button>
             </div>
 
 
@@ -159,6 +169,12 @@ export function ShareMenu({ project, isMobile }: Props) {
           </div>
         </div>
       )}
+
+      <EmbedCodeModal
+        isOpen={embedOpen}
+        onClose={() => setEmbedOpen(false)}
+        project={project}
+      />
     </div>
   )
 }
