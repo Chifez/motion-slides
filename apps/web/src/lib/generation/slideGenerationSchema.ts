@@ -166,7 +166,7 @@ export const AISlideBaseSchema = z.object({
 
 export const AISlideStrictSchema = AISlideBaseSchema.superRefine((slide, ctx) => {
   // 1. Spatial Fit Validation
-  slide.elements.forEach((el, i) => {
+  (slide.elements || []).forEach((el, i) => {
     if ('position' in el) {
       const { x, y, w, h } = el.position
       if (x + w > 1.001 || y + h > 1.001) {
@@ -181,7 +181,7 @@ export const AISlideStrictSchema = AISlideBaseSchema.superRefine((slide, ctx) =>
 
   // 2. Connection Integrity Validation
   if (slide.role === 'diagram') {
-    const elementIds = new Set(slide.elements.map(e => e.id))
+    const elementIds = new Set((slide.elements || []).map(e => e.id))
     slide.connections?.forEach((conn, i) => {
       if (!elementIds.has(conn.from)) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Connection from \"${conn.from}\" references non-existent element`, path: ['connections', i, 'from'] })
@@ -194,7 +194,7 @@ export const AISlideStrictSchema = AISlideBaseSchema.superRefine((slide, ctx) =>
 
   // 3. Tier Validation
   if (slide.role === 'diagram') {
-    validateTierPositions(slide.elements, ctx)
+    validateTierPositions(slide.elements || [], ctx)
   }
 })
 
@@ -261,3 +261,4 @@ export type GeneratedPresentation = z.infer<typeof GeneratedPresentationSchema>
 export type AISlideType            = z.infer<typeof AISlideBaseSchema>
 export type AIElementType          = z.infer<typeof AIElement>
 export type AISectionElementType   = z.infer<typeof AISectionElement>
+export type AIConnectionType       = z.infer<typeof AIConnection>

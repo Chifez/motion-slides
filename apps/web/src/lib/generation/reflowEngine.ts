@@ -20,7 +20,7 @@ export function computeLayerReflow(
 ): ReflowInstruction[] {
   // 1. Group nodes by layer
   const layerMap = new Map<string, any[]>();
-  slide.elements.forEach(el => {
+  (slide.elements || []).forEach(el => {
     if ('layer' in el && el.layer) {
       if (!layerMap.has(el.layer)) layerMap.set(el.layer, []);
       layerMap.get(el.layer)!.push(el);
@@ -34,7 +34,7 @@ export function computeLayerReflow(
     // Only reflow if there's an actual violation in this layer
     const hasViolation = violations.some(v => 
       v.path.includes('elements') && 
-      layerNodes.some(n => n.id === slide.elements[v.path[1]]?.id)
+      layerNodes.some(n => n.id === (slide.elements || [])[v.path[1]]?.id)
     );
 
     if (!hasViolation) return;

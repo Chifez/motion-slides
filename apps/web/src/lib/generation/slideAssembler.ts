@@ -1,21 +1,21 @@
 import type { Slide, SceneElement, TextContent, ShapeContent, CodeContent, AnimationType, SectionContent, LineContent } from '@motionslides/shared'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../../constants/export'
 import { uuid } from '../uuid'
-import type { GeneratedPresentation, AISlideType, AIElementType, AIConnection } from './slideGenerationSchema'
+import type { GeneratedPresentation, AISlideType, AIElementType, AIConnectionType } from './slideGenerationSchema'
 import { resolveIconPath } from './iconResolver'
 import { resolveRoute } from './routingResolver'
 import { DIAGRAM_BLUEPRINTS, detectBlueprint } from './diagramBlueprints'
 import dagre from 'dagre'
-
+ 
 // ─── Coordinate Conversion ────────────────────────────────────────────────────
-
+ 
 function denorm(val: number, dimension: number): number {
   return Math.round(val * dimension)
 }
-
+ 
 function applyDagreLayoutToElements(
   elements: SceneElement[],
-  connectionsData: AIConnection[] | undefined,
+  connectionsData: AIConnectionType[] | undefined,
   slide: AISlideType,
   canvasW: number,
   canvasH: number
@@ -219,7 +219,7 @@ export function assembleSlides(
     }
 
     if (aiSlide.role === 'diagram') {
-      baseElements = applyDagreLayoutToElements(baseElements, aiSlide.connections, aiSlide, width, height)
+      baseElements = applyDagreLayoutToElements(baseElements, aiSlide.connections || undefined, aiSlide, width, height)
     }
 
     // 2. Auto-Generate Atmospheric Sections for Layers
