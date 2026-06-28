@@ -27,6 +27,9 @@ describe('AI Schema Decoupling (Lax vs Strict)', () => {
           spatialPlan: 'standard layout',
           transition: null,
           speakerNotes: null,
+          layoutTemplate: null,
+          logicalNodes: null,
+          logicalConnections: null,
           elements: [
             {
               id: 'node-client',
@@ -63,6 +66,9 @@ describe('AI Schema Decoupling (Lax vs Strict)', () => {
           spatialPlan: 'standard layout',
           transition: null,
           speakerNotes: null,
+          layoutTemplate: null,
+          logicalNodes: null,
+          logicalConnections: null,
           elements: [
             {
               id: 'node-overflow',
@@ -102,6 +108,9 @@ describe('AI Schema Decoupling (Lax vs Strict)', () => {
           spatialPlan: 'standard layout',
           transition: null,
           speakerNotes: null,
+          layoutTemplate: null,
+          logicalNodes: null,
+          logicalConnections: null,
           elements: [
             {
               id: 'node-database',

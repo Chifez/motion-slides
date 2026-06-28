@@ -6,13 +6,29 @@ import { resolveIconPath } from './iconResolver'
 import { resolveRoute } from './routingResolver'
 import { DIAGRAM_BLUEPRINTS, detectBlueprint } from './diagramBlueprints'
 import dagre from 'dagre'
- 
+
 // ─── Coordinate Conversion ────────────────────────────────────────────────────
- 
+
 function denorm(val: number, dimension: number): number {
   return Math.round(val * dimension)
 }
- 
+
+type PortHandle = 'top' | 'right' | 'bottom' | 'left'
+
+function getPortPoint(
+  el: SceneElement,
+  port: PortHandle,
+): { x: number; y: number } {
+  const { x, y } = el.position
+  const { width: w, height: h } = el.size
+  switch (port) {
+    case 'left': return { x, y: y + h / 2 }
+    case 'right': return { x: x + w, y: y + h / 2 }
+    case 'top': return { x: x + w / 2, y }
+    case 'bottom': return { x: x + w / 2, y: y + h }
+  }
+}
+
 function applyDagreLayoutToElements(
   elements: SceneElement[],
   connectionsData: AIConnectionType[] | undefined,
@@ -24,7 +40,7 @@ function applyDagreLayoutToElements(
   if (diagramElements.length === 0) return elements
 
   const g = new dagre.graphlib.Graph({ compound: true })
-  
+
   const blueprint = detectBlueprint(slide.spatialPlan || '')
   const rankdir = (blueprint.connectionPattern === 'tiered') ? 'TB' : 'LR'
 
@@ -69,7 +85,7 @@ function applyDagreLayoutToElements(
 
   // 5. Retrieve laid out coordinates and update positions
   const updatedElementsMap = new Map<string, { x: number; y: number }>()
-  
+
   diagramElements.forEach(el => {
     const node = g.node(el.id)
     if (node) {
@@ -154,22 +170,22 @@ function applyTemplateLayout(elements: SceneElement[], template: string, canvasW
     if (title) {
       title.position = { x: Math.round(canvasW * 0.1), y: Math.round(canvasH * 0.35) }
       title.size = { width: Math.round(canvasW * 0.8), height: Math.round(canvasH * 0.15) }
-      ;(title.content as any).align = 'center'
-      ;(title.content as any).fontSize = 64
+        ; (title.content as any).align = 'center'
+        ; (title.content as any).fontSize = 64
     }
     const subtitle = elements.find(e => e.type === 'text' && (e as any).role === 'subtitle')
     if (subtitle) {
       subtitle.position = { x: Math.round(canvasW * 0.1), y: Math.round(canvasH * 0.52) }
       subtitle.size = { width: Math.round(canvasW * 0.8), height: Math.round(canvasH * 0.08) }
-      ;(subtitle.content as any).align = 'center'
-      ;(subtitle.content as any).fontSize = 28
+        ; (subtitle.content as any).align = 'center'
+        ; (subtitle.content as any).fontSize = 28
     }
   } else if (template === 'bullets-standard') {
     const title = elements.find(e => e.type === 'text' && (e as any).role === 'title')
     if (title) {
       title.position = { x: Math.round(canvasW * 0.08), y: Math.round(canvasH * 0.1) }
       title.size = { width: Math.round(canvasW * 0.84), height: Math.round(canvasH * 0.12) }
-      ;(title.content as any).align = 'left'
+        ; (title.content as any).align = 'left'
     }
     const bullets = elements.filter(e => e.type === 'text' && (e as any).role !== 'title' && (e as any).role !== 'subtitle')
     bullets.forEach((b, i) => {
@@ -201,8 +217,8 @@ function applyTemplateLayout(elements: SceneElement[], template: string, canvasW
  */
 export function assembleSlides(
   generated: GeneratedPresentation,
-  width:     number = CANVAS_WIDTH,
-  height:    number = CANVAS_HEIGHT
+  width: number = CANVAS_WIDTH,
+  height: number = CANVAS_HEIGHT
 ): Slide[] {
   const theme = generated.theme
 
@@ -224,24 +240,24 @@ export function assembleSlides(
 
     // 2. Auto-Generate Atmospheric Sections for Layers
     const autoSections = generateAutoSections(aiSlide, baseElements, width, height)
-    
+
     // 3. Resolve Connections into Line Elements
     const connections = generateConnections(aiSlide, baseElements, theme, width, height)
 
     const allElements = [...autoSections, ...baseElements, ...connections]
 
     const sanitized = sanitize(allElements, width, height)
-    const resolved  = resolveOverlaps(sanitized, width, height)
+    const resolved = resolveOverlaps(sanitized, width, height)
 
     return {
-      id:         slideId,
-      name:       aiSlide.title,
+      id: slideId,
+      name: aiSlide.title,
       background: aiSlide.background ?? generated.theme.backgroundColor ?? 'var(--ms-bg-base)',
-      elements:   resolved,
+      elements: resolved,
       transition: aiSlide.transition ? {
-        type:     aiSlide.transition.type as any,
+        type: aiSlide.transition.type as any,
         duration: ensureMs(aiSlide.transition.duration, 500),
-        easing:   aiSlide.transition.easing ?? 'easeInOut',
+        easing: aiSlide.transition.easing ?? 'easeInOut',
       } : undefined,
     }
   })
@@ -251,8 +267,8 @@ export function assembleSlides(
 
 function generateAutoSections(slide: AISlideType, elements: SceneElement[], canvasW: number, canvasH: number): SceneElement[] {
   if (slide.role !== 'diagram') return []
-  
-  const blueprint = detectBlueprint(slide.spatialPlan)
+
+  const blueprint = detectBlueprint(slide.spatialPlan || '')
   if (!blueprint.backgroundSections) return []
 
   const layerMap = new Map<string, SceneElement[]>()
@@ -284,12 +300,12 @@ function generateAutoSections(slide: AISlideType, elements: SceneElement[], canv
       animation: 'fade-in',
       animationDelay: 0,
       content: {
-        label:           layerName,
+        label: layerName,
         backgroundColor: 'rgba(255, 255, 255, 0.04)', // Translucent atmospheric tint
-        borderColor:     'rgba(255, 255, 255, 0.1)',
-        borderStyle:     'solid',
-        borderWidth:     1,
-        cornerRadius:    12,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderStyle: 'solid',
+        borderWidth: 1,
+        cornerRadius: 12,
       } as SectionContent,
     })
   })
@@ -304,12 +320,18 @@ function generateConnections(slide: AISlideType, elements: SceneElement[], theme
 
   return slide.connections.map(conn => {
     const fromEl = elements.find(e => e.id === conn.from)
-    const toEl   = elements.find(e => e.id === conn.to)
+    const toEl = elements.find(e => e.id === conn.to)
     if (!fromEl || !toEl) return null
 
-    // 1. Calculate Absolute Center Points
-    const p1 = { x: fromEl.position.x + fromEl.size.width / 2,  y: fromEl.position.y + fromEl.size.height / 2 }
-    const p2 = { x: toEl.position.x + toEl.size.width / 2,      y: toEl.position.y + toEl.size.height / 2 }
+    const fromPort = conn.fromPort as PortHandle | null | undefined
+    const toPort = conn.toPort as PortHandle | null | undefined
+
+    const p1 = fromPort
+      ? getPortPoint(fromEl, fromPort)
+      : { x: fromEl.position.x + fromEl.size.width / 2, y: fromEl.position.y + fromEl.size.height / 2 }
+    const p2 = toPort
+      ? getPortPoint(toEl, toPort)
+      : { x: toEl.position.x + toEl.size.width / 2, y: toEl.position.y + toEl.size.height / 2 }
 
     // 2. Calculate Tight Bounding Box (with slight padding for selection handles/curves)
     const PADDING = 40
@@ -377,6 +399,8 @@ function generateConnections(slide: AISlideType, elements: SceneElement[], theme
         arrow: conn.type === 'bidirectional' ? 'both' : 'end',
         label: conn.label,
         customPath: shiftedPath,
+        ...(fromPort ? { startConnection: { elementId: conn.from, handleId: fromPort } } : {}),
+        ...(toPort ? { endConnection: { elementId: conn.to, handleId: toPort } } : {}),
       } as any,
     }
   }).filter(Boolean) as SceneElement[]
@@ -393,20 +417,20 @@ function toSceneElement(
 ): SceneElement | null {
   const pos = 'position' in aiEl ? aiEl.position : { x: 0, y: 0, w: 0.1, h: 0.1 }
 
-  const x      = denorm(pos.x, canvasWidth)
-  const y      = denorm(pos.y, canvasHeight)
-  const width  = denorm(pos.w, canvasWidth)
+  const x = denorm(pos.x, canvasWidth)
+  const y = denorm(pos.y, canvasHeight)
+  const width = denorm(pos.w, canvasWidth)
   const height = denorm(pos.h, canvasHeight)
 
   const common = {
-    id:             aiEl.id || uuid(),
-    position:       { x, y },
-    size:           { width, height },
-    rotation:       0,
-    opacity:        1,
-    zIndex:         10,
-    layer:          (aiEl as any).layer,
-    animation:      (aiEl.animation ?? 'none') as AnimationType,
+    id: aiEl.id || uuid(),
+    position: { x, y },
+    size: { width, height },
+    rotation: 0,
+    opacity: 1,
+    zIndex: 10,
+    layer: (aiEl as any).layer,
+    animation: (aiEl.animation ?? 'none') as AnimationType,
     animationDelay: ensureMs(aiEl.animationDelay, 0),
   }
 
@@ -432,14 +456,14 @@ function toSceneElement(
       return {
         ...common,
         zIndex: 1,
-        type:   'section',
+        type: 'section',
         content: {
-          label:           aiEl.label ?? undefined,
+          label: aiEl.label ?? undefined,
           backgroundColor: aiEl.backgroundColor,
-          borderColor:     aiEl.borderColor,
-          borderStyle:     aiEl.borderStyle,
-          borderWidth:     aiEl.borderWidth,
-          cornerRadius:    aiEl.cornerRadius,
+          borderColor: aiEl.borderColor,
+          borderStyle: aiEl.borderStyle,
+          borderWidth: aiEl.borderWidth,
+          cornerRadius: aiEl.cornerRadius,
         } as SectionContent,
       }
 
@@ -449,13 +473,13 @@ function toSceneElement(
         type: 'text',
         autoHeight: true,
         content: {
-          value:      aiEl.content,
-          fontSize:   mapFontSize(aiEl.style?.fontSize ?? 'md', aiEl.role),
+          value: aiEl.content,
+          fontSize: mapFontSize(aiEl.style?.fontSize ?? 'md', aiEl.role),
           fontWeight: aiEl.style?.fontWeight ?? (aiEl.role === 'title' ? 'bold' : 'normal'),
           fontFamily: mapFontFamily(generated.theme.fontFamily),
-          fontStyle:  'normal',
-          color:      aiEl.style?.color ?? generated.theme.textColor,
-          align:      aiEl.style?.align ?? 'left',
+          fontStyle: 'normal',
+          color: aiEl.style?.color ?? generated.theme.textColor,
+          align: aiEl.style?.align ?? 'left',
         } as TextContent,
       }
 
@@ -465,14 +489,14 @@ function toSceneElement(
         ...common,
         type: 'shape',
         content: {
-          shapeType:    'aws-icon',
-          iconPath:     resolved.found ? resolved.path : aiEl.iconPath,
-          iconLabel:    resolved.label,
+          shapeType: 'aws-icon',
+          iconPath: resolved.found ? resolved.path : aiEl.iconPath,
+          iconLabel: resolved.label,
           iconCategory: resolved.category,
-          label:        aiEl.label ?? resolved.label,
-          fill:         'transparent',
-          stroke:       theme.secondaryColor,
-          strokeWidth:  0,
+          label: aiEl.label ?? resolved.label,
+          fill: 'transparent',
+          stroke: theme.secondaryColor,
+          strokeWidth: 0,
         } as any,
       }
     }
@@ -511,9 +535,9 @@ function toSceneElement(
 
 function sanitize(elements: SceneElement[], canvasWidth: number, canvasHeight: number): SceneElement[] {
   return elements.map(el => {
-    const width  = Math.min(el.size.width,  canvasWidth)
+    const width = Math.min(el.size.width, canvasWidth)
     const height = Math.min(el.size.height, canvasHeight)
-    const x = Math.max(0, Math.min(el.position.x, canvasWidth  - width))
+    const x = Math.max(0, Math.min(el.position.x, canvasWidth - width))
     const y = Math.max(0, Math.min(el.position.y, canvasHeight - height))
     return { ...el, position: { x, y }, size: { width, height } }
   })
