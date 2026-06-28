@@ -42,7 +42,18 @@ function applyDagreLayoutToElements(
   const g = new dagre.graphlib.Graph({ compound: true })
 
   const blueprint = detectBlueprint(slide.spatialPlan || '')
-  const rankdir = (blueprint.connectionPattern === 'tiered') ? 'TB' : 'LR'
+  let rankdir: 'TB' | 'LR' = canvasH > canvasW ? 'TB' : 'LR'
+
+  if (slide.spatialPlan) {
+    const plan = slide.spatialPlan.toLowerCase()
+    if (plan.includes('left-to-right') || plan.includes('horizontal') || plan.includes('lr')) {
+      rankdir = 'LR'
+    } else if (plan.includes('top-to-bottom') || plan.includes('vertical') || plan.includes('tb')) {
+      rankdir = 'TB'
+    }
+  } else if (blueprint.connectionPattern === 'tiered') {
+    rankdir = 'TB'
+  }
 
   g.setGraph({
     rankdir,
@@ -313,7 +324,35 @@ function generateAutoSections(slide: AISlideType, elements: SceneElement[], canv
   return sections
 }
 
-// ─── Connection Generation ────────────────────────────────────────────────────
+function resolveBestPorts(
+  fromEl: SceneElement,
+  toEl: SceneElement,
+  explicitFrom?: string | null,
+  explicitTo?: string | null
+): { fromPort: PortHandle; toPort: PortHandle } {
+  let fromPort = explicitFrom
+  let toPort = explicitTo
+
+  if (!fromPort || !toPort) {
+    const dx = toEl.position.x - fromEl.position.x
+    const dy = toEl.position.y - fromEl.position.y
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Horizontal flow dominant
+      if (!fromPort) fromPort = dx > 0 ? 'right' : 'left'
+      if (!toPort) toPort = dx > 0 ? 'left' : 'right'
+    } else {
+      // Vertical flow dominant
+      if (!fromPort) fromPort = dy > 0 ? 'bottom' : 'top'
+      if (!toPort) toPort = dy > 0 ? 'top' : 'bottom'
+    }
+  }
+
+  return {
+    fromPort: fromPort as PortHandle,
+    toPort: toPort as PortHandle
+  }
+}
 
 function generateConnections(slide: AISlideType, elements: SceneElement[], theme: GeneratedPresentation['theme'], canvasW: number, canvasH: number): SceneElement[] {
   if (!slide.connections) return []
@@ -323,15 +362,15 @@ function generateConnections(slide: AISlideType, elements: SceneElement[], theme
     const toEl = elements.find(e => e.id === conn.to)
     if (!fromEl || !toEl) return null
 
-    const fromPort = conn.fromPort as PortHandle | null | undefined
-    const toPort = conn.toPort as PortHandle | null | undefined
+    const { fromPort, toPort } = resolveBestPorts(
+      fromEl,
+      toEl,
+      conn.fromPort,
+      conn.toPort
+    )
 
-    const p1 = fromPort
-      ? getPortPoint(fromEl, fromPort)
-      : { x: fromEl.position.x + fromEl.size.width / 2, y: fromEl.position.y + fromEl.size.height / 2 }
-    const p2 = toPort
-      ? getPortPoint(toEl, toPort)
-      : { x: toEl.position.x + toEl.size.width / 2, y: toEl.position.y + toEl.size.height / 2 }
+    const p1 = getPortPoint(fromEl, fromPort)
+    const p2 = getPortPoint(toEl, toPort)
 
     // 2. Calculate Tight Bounding Box (with slight padding for selection handles/curves)
     const PADDING = 40
@@ -394,7 +433,7 @@ function generateConnections(slide: AISlideType, elements: SceneElement[], theme
         lineType,
         x1: localX1, y1: localY1, x2: localX2, y2: localY2,
         color: conn.color ?? theme.accentColor,
-        strokeWidth: conn.type === 'thick' ? 4 : 2,
+        strokeWidth: 1.5,
         style: conn.type === 'dashed' ? 'dashed' : 'solid',
         arrow: conn.type === 'bidirectional' ? 'both' : 'end',
         label: conn.label,
@@ -550,10 +589,10 @@ function resolveOverlaps(elements: SceneElement[], canvasWidth: number, canvasHe
 
 function mapFontSize(size: string, role: string): number {
   const sizes: Record<string, number> = {
-    xs: 12, sm: 16, md: 24, lg: 32, xl: 48, '2xl': 64, '3xl': 80, '4xl': 96
+    xs: 12, sm: 14, md: 18, lg: 24, xl: 32, '2xl': 40, '3xl': 48, '4xl': 56
   }
-  if (role === 'title') return sizes[size] || 54
-  return sizes[size] || 24
+  if (role === 'title') return sizes[size] || 36
+  return sizes[size] || 18
 }
 
 function mapFontFamily(themeFont: string): string {

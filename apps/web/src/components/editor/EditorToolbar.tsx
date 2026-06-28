@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Play, PenSquare, GitBranch, Film, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users, WifiOff } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch, Film, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users, WifiOff, MousePointer, Hand } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@motionslides/shared'
@@ -34,6 +34,8 @@ export function EditorToolbar({ projectId }: Props) {
   const user = useEditorStore(state => state.user)
   const editorMode = useEditorStore(state => state.editorMode ?? 'design')
   const setEditorMode = useEditorStore(state => state.setEditorMode)
+  const activeTool = useEditorStore(state => state.activeTool)
+  const setActiveTool = useEditorStore(state => state.setActiveTool)
   const { mode } = usePermissions()
 
   const projectName = useEditorStore(state => state.projects.find(projectItem => projectItem.id === projectId)?.name ?? '')
@@ -148,6 +150,30 @@ export function EditorToolbar({ projectId }: Props) {
         {!isPrototypeMode && !isMobile && (
           <>
             <div className="w-px h-5 bg-(--ms-border) mx-1" />
+            <div className="flex items-center bg-(--ms-bg-elevated) border border-(--ms-border) rounded-md p-0.5 mr-1 shrink-0">
+              <button
+                onClick={() => setActiveTool('select')}
+                className={`flex items-center justify-center p-1 rounded-sm cursor-pointer border-none transition-all ${
+                  activeTool === 'select'
+                    ? 'bg-(--ms-border-strong) text-blue-400 shadow-sm'
+                    : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
+                }`}
+                title="Select Tool (V)"
+              >
+                <MousePointer size={14} />
+              </button>
+              <button
+                onClick={() => setActiveTool('hand')}
+                className={`flex items-center justify-center p-1 rounded-sm cursor-pointer border-none transition-all ${
+                  activeTool === 'hand'
+                    ? 'bg-(--ms-border-strong) text-blue-400 shadow-sm'
+                    : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
+                }`}
+                title="Hand Tool (H)"
+              >
+                <Hand size={14} />
+              </button>
+            </div>
             <ElementButtons />
           </>
         )}

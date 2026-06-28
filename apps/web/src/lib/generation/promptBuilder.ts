@@ -171,7 +171,9 @@ MANDATORY spatial targets:
 </generation_rules>
 
 <design_system>
-COLORS: Use CSS var tokens or HSL. NEVER hex.
+COLORS: Use HSL or CSS var tokens. NEVER hex.
+- The presentation MUST be in DARK MODE by default. Background color must always be a dark HSL (e.g., hsla(240, 10%, 4%, 1), hsla(224, 30%, 5%, 1), or HSL equivalent of dark mode base).
+- Text color must be a high-contrast light color (e.g., hsla(0, 0%, 90%, 1) or var(--ms-text-primary)).
 - Preferred: var(--ms-accent), var(--ms-bg-base), var(--ms-border), var(--ms-text-muted)
 - Section backgrounds: "hsla(220, 20%, 8%, 0.5)" or "hsla(250, 15%, 10%, 0.4)"
 - Use distinct layer colors: Client="hsla(200,80%,60%,0.15)", Edge="hsla(270,70%,60%,0.15)", Logic="hsla(160,70%,60%,0.12)", Data="hsla(20,80%,60%,0.12)"
@@ -184,6 +186,7 @@ ANIMATIONS:
 
 <anti_patterns>
 - NO hex codes or raw rgb(). Use HSL or CSS var tokens only.
+- NEVER use white, light, or bright background colors for slides or presentations.
 - Do NOT output x, y, w, h in logicalNodes — the layout engine places them.
 - Do NOT leave fromPort/toPort null on connections.
 - Do NOT use fewer than 8 nodes on a diagram slide — fill the canvas.

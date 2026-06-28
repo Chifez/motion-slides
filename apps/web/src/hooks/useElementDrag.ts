@@ -17,6 +17,7 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
   const setSelectedElements = useEditorStore(s => s.setSelectedElements)
   const updateElementsBatch = useEditorStore(s => s.updateElementsBatch)
   const setIsDragging = useEditorStore(s => s.setIsDragging)
+  const activeTool = useEditorStore(s => s.activeTool)
 
 
   const isDragging = useRef(false)
@@ -32,7 +33,7 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
   }, [])
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (!element || isReadOnly || isEditing) return
+    if (!element || isReadOnly || isEditing || activeTool !== 'select') return
     if ((e.target as HTMLElement).closest('.bounding-box')) return
     e.stopPropagation()
 
@@ -121,17 +122,10 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
       })
 
       if (maxRight > currentCanvasW || maxBottom > currentCanvasH) {
-        const ratio = defaultW / defaultH
-        const nextWByRight = maxRight
-        const nextHByRight = nextWByRight / ratio
-
-        const nextHByBottom = maxBottom
-        const nextWByBottom = nextHByBottom * ratio
-
-        const nextW = Math.max(nextWByRight, nextWByBottom)
-        const nextH = nextW / ratio
-
-        setCustomCanvasDimensions(nextW, nextH)
+        setCustomCanvasDimensions(
+          maxRight > currentCanvasW ? maxRight : currentCanvasW,
+          maxBottom > currentCanvasH ? maxBottom : currentCanvasH
+        )
       }
     }
 
@@ -168,7 +162,7 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
     cleanupRef.current = cleanup
-  }, [element, isReadOnly, isEditing, isMultiSelectMode, setSelectedElement, setSelectedElements, updateElementsBatch, setIsDragging])
+  }, [element, isReadOnly, isEditing, isMultiSelectMode, setSelectedElement, setSelectedElements, updateElementsBatch, setIsDragging, activeTool])
 
   return { onPointerDown, isDragging: isDragging.current }
 }

@@ -123,7 +123,9 @@ const AISectionElement = z.object({
 export const AIConnection = z.object({
   id: z.string().min(1),
   from: z.string().min(1),
+  fromPort: z.enum(['top', 'right', 'bottom', 'left']).nullable().optional(),
   to: z.string().min(1),
+  toPort: z.enum(['top', 'right', 'bottom', 'left']).nullable().optional(),
   type: z.enum(['directed', 'bidirectional', 'dashed', 'thick']),
   label: z.string().nullable(),
   color: ColorSchema,

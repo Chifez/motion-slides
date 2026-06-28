@@ -5,7 +5,7 @@ import { findOpenAiSchemaViolations } from './openAiSchemaGuard'
 
 describe('OpenAI structured output schema compatibility', () => {
   it('should have every object property listed in required (OpenAI strict mode)', () => {
-    const jsonSchema = zodToJsonSchema(GeneratedPresentationLaxSchema, {
+    const jsonSchema = zodToJsonSchema(GeneratedPresentationLaxSchema as any, {
       name: 'response',
       $refStrategy: 'none',
     })

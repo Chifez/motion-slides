@@ -208,7 +208,11 @@ export function TextElement({ element }: Props) {
       )
     }
 
-    return <span>{content.value}</span>
+    return (
+      <span style={{ width: '100%', whiteSpace: 'pre-wrap', wordBreak: 'break-word', textAlign: content.align }}>
+        {content.value}
+      </span>
+    )
   }
 
   return (

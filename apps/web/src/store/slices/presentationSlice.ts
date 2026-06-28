@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand'
-import type { PlaybackSettings } from '@motionslides/shared'
+import { type PlaybackSettings, type AspectRatioKey, getCanvasDimensions } from '@motionslides/shared'
 import { DEFAULT_PLAYBACK_SETTINGS } from '@/constants/export'
 import type { EditorState } from '@/store/editorStore'
 
@@ -45,8 +45,57 @@ export const createPresentationSlice: StateCreator<EditorState, [], [], Presenta
       if (activeId) {
         updatedProjects = s.projects.map((p) => {
           if (p.id !== activeId) return p
+
+          const oldRatio = s.playbackSettings.aspectRatio
+          const newRatio = updates.aspectRatio
+          const ratioChanged = newRatio && oldRatio !== newRatio
+
+          let slides = p.slides
+          if (ratioChanged) {
+            const oldDims = getCanvasDimensions(oldRatio as AspectRatioKey)
+            const newDims = getCanvasDimensions(newRatio as AspectRatioKey)
+            const scaleX = newDims.width / oldDims.width
+            const scaleY = newDims.height / oldDims.height
+
+            slides = p.slides.map((slide) => {
+              const scaledElements = slide.elements.map((el) => {
+                if (el.type === 'line') {
+                  const content = el.content as any
+                  return {
+                    ...el,
+                    position: {
+                      x: Math.round(el.position.x * scaleX),
+                      y: Math.round(el.position.y * scaleY),
+                    },
+                    size: {
+                      width: Math.max(1, Math.round(el.size.width * scaleX)),
+                      height: Math.max(1, Math.round(el.size.height * scaleY)),
+                    },
+                    content: {
+                      ...content,
+                      customPath: undefined, // Clear static server path to trigger client re-route
+                    }
+                  }
+                }
+                return {
+                  ...el,
+                  position: {
+                    x: Math.round(el.position.x * scaleX),
+                    y: Math.round(el.position.y * scaleY),
+                  },
+                  size: {
+                    width: Math.max(1, Math.round(el.size.width * scaleX)),
+                    height: Math.max(1, Math.round(el.size.height * scaleY)),
+                  }
+                }
+              })
+              return { ...slide, elements: scaledElements }
+            })
+          }
+
           return {
             ...p,
+            slides,
             playbackSettings: newSettings,
             synced: false,
             updatedAt: Math.max(Date.now(), (p.updatedAt ?? 0) + 1),

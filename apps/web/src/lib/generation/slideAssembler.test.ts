@@ -20,8 +20,11 @@ describe('Dagre Diagram Layout In Slide Assembler', () => {
           id: 'slide-1',
           title: 'Architecture Overview',
           role: 'diagram',
+          layoutTemplate: 'diagram-only',
           background: 'var(--ms-bg-base)',
           spatialPlan: 'tiered client-logic-database layout',
+          logicalNodes: null,
+          logicalConnections: null,
           transition: null,
           speakerNotes: null,
           elements: [

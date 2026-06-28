@@ -40,7 +40,7 @@ export function CanvasStage() {
   const { width: defaultW, height: defaultH } = getCanvasDimensions(playbackSettings.aspectRatio)
   const canvasW = customCanvasWidth ?? defaultW
   const canvasH = customCanvasHeight ?? defaultH
-  const scale = useCanvasScale(stageRef, defaultW, defaultH)
+  const scale = useCanvasScale(stageRef, canvasW, canvasH)
 
   const setCustomCanvasDimensions = useEditorStore(state => state.setCustomCanvasDimensions)
   const zoom = camera.zoom
@@ -54,7 +54,6 @@ export function CanvasStage() {
     const startX = e.clientX
     const startY = e.clientY
     const currentScale = scale * zoom
-    const ratio = defaultW / defaultH
 
     const onPointerMove = (moveEvent: PointerEvent) => {
       const dx = moveEvent.clientX - startX
@@ -64,15 +63,12 @@ export function CanvasStage() {
       let nextH = startH
 
       if (edge === 'right') {
-        nextW = Math.max(defaultW, startW + dx / currentScale)
-        nextH = nextW / ratio
+        nextW = Math.max(300, startW + dx / currentScale)
       } else if (edge === 'bottom') {
-        nextH = Math.max(defaultH, startH + dy / currentScale)
-        nextW = nextH * ratio
+        nextH = Math.max(200, startH + dy / currentScale)
       } else if (edge === 'both') {
-        const delta = Math.max(dx / currentScale, (dy / currentScale) * ratio)
-        nextW = Math.max(defaultW, startW + delta)
-        nextH = nextW / ratio
+        nextW = Math.max(300, startW + dx / currentScale)
+        nextH = Math.max(200, startH + dy / currentScale)
       }
 
       setCustomCanvasDimensions(nextW, nextH)
