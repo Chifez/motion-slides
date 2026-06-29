@@ -7,6 +7,13 @@ export interface Camera {
   zoom: number
 }
 
+export interface AlignmentGuide {
+  type: 'h' | 'v'
+  coord: number
+  start: number
+  end: number
+}
+
 export type EditorTool = 'select' | 'section' | 'hand'
 
 export interface CanvasSlice {
@@ -22,6 +29,8 @@ export interface CanvasSlice {
   customCanvasWidth: number | null
   customCanvasHeight: number | null
   setCustomCanvasDimensions: (w: number | null, h: number | null) => void
+  alignmentGuides: AlignmentGuide[]
+  setAlignmentGuides: (guides: AlignmentGuide[]) => void
 }
 
 export const createCanvasSlice: StateCreator<EditorState, [], [], CanvasSlice> = (set) => ({
@@ -39,6 +48,8 @@ export const createCanvasSlice: StateCreator<EditorState, [], [], CanvasSlice> =
   setActiveTool: (activeTool) => set({ activeTool }),
   customCanvasWidth: null,
   customCanvasHeight: null,
+  alignmentGuides: [],
+  setAlignmentGuides: (alignmentGuides) => set({ alignmentGuides }),
   setCustomCanvasDimensions: (w, h) => set((s) => {
     const { activeProjectId, activeSlideIndex } = s
     if (!activeProjectId) return { customCanvasWidth: w, customCanvasHeight: h }

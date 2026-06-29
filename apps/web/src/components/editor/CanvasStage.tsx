@@ -13,6 +13,9 @@ import { SlideBackgroundPicker } from './SlideBackgroundPicker'
 import { SlideNavigation } from './SlideNavigation'
 import { SyncStatusButton } from './SyncStatusButton'
 import { ReviewOverlay } from './ReviewOverlay'
+import { AlignmentGuides } from './AlignmentGuides'
+import { Keyboard } from 'lucide-react'
+import { ShortcutsHelper } from './ShortcutsHelper'
 
 // ---------------------------------------------------------------------------
 // CanvasResizeHandles
@@ -119,6 +122,26 @@ function CanvasResizeHandles({
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
   const { isReadOnly, isAuthenticated, mode } = useAccessControl()
+  const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useState(false)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement
+      const isInput = activeEl && (
+        activeEl.tagName === 'INPUT' || 
+        activeEl.tagName === 'TEXTAREA' || 
+        activeEl.getAttribute('contenteditable') === 'true'
+      )
+      if (isInput) return
+
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault()
+        setIsShortcutsHelpOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   useCanvasCamera(stageRef, mode === 'view')
 
@@ -293,6 +316,7 @@ export function CanvasStage() {
         />
         <ConnectionAnchors />
         {isGroupSelection && <GroupBoundingBox elements={selectedElements} />}
+        <AlignmentGuides />
 
         {lasso && (
           <div
@@ -331,6 +355,23 @@ export function CanvasStage() {
 
       {mode === 'edit' && <SlideNavigation />}
       {reviewingSuggestionId && <ReviewOverlay />}
+
+      {/* Floating help shortcuts button */}
+      {mode === 'edit' && (
+        <button
+          onClick={() => setIsShortcutsHelpOpen(true)}
+          className="absolute bottom-4 right-4 z-[400] flex items-center justify-center p-2 rounded-lg bg-(--ms-bg-surface)/80 backdrop-blur border border-(--ms-border) hover:bg-(--ms-bg-surface) text-(--ms-text-secondary) hover:text-(--ms-text-primary) shadow-sm cursor-pointer transition-all hover:scale-105"
+          title="Keyboard Shortcuts (Ctrl + /)"
+        >
+          <Keyboard size={16} />
+        </button>
+      )}
+
+      {/* Shortcuts Helper Dialog */}
+      <ShortcutsHelper 
+        isOpen={isShortcutsHelpOpen} 
+        onClose={() => setIsShortcutsHelpOpen(false)} 
+      />
     </main>
   )
 }

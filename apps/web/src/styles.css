@@ -126,6 +126,7 @@ html, body {
   pointer-events: all;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  z-index: calc(var(--z-bounding-box) + 20);
 }
 .resize-handle.tl { top: -4px; left: -4px; cursor: nwse-resize; }
 .resize-handle.tm { top: -4px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
