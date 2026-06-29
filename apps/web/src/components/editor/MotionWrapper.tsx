@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { useMotionContext } from '@/context/MotionContext'
+import { useEditorStore } from '@/store/editorStore'
 import { SELECTED_Z_INDEX } from '@/constants/export'
 import type { SceneElement } from '@motionslides/shared'
 import { EASE_IN_OUT, getTransitionStates } from '@/lib/motionShared'
@@ -22,6 +23,8 @@ export const MotionWrapper = memo(function MotionWrapper({
   onPointerDown, onDoubleClick, onClick, ref
 }: Props) {
   const { isTransitioning, durationSec, ease, transitionAnimation, newElementIds, matchingIdMap } = useMotionContext()
+  const selectedElementIds = useEditorStore(s => s.selectedElementIds)
+  const isMultiSelected = isSelected && selectedElementIds.length > 1
 
   const commonStyle = {
     position: 'absolute' as const,
@@ -82,7 +85,7 @@ export const MotionWrapper = memo(function MotionWrapper({
       ref={ref}
       layoutId={layoutId}
       layout={layout}
-      className="canvas-element"
+      className={`canvas-element ${isSelected ? 'selected' : ''} ${isMultiSelected ? 'multi-selected' : ''} ${element.locked ? 'locked' : ''}`}
       style={style}
       initial={initial}
       animate={animate}

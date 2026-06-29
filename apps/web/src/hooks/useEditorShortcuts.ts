@@ -22,20 +22,57 @@ export function useEditorShortcuts() {
       const { 
         selectedElementIds, duplicateElement, deleteElement,
         activeSlideIndex, setActiveSlide, projects, activeProjectId,
-        groupElements, ungroupElements
+        groupElements, ungroupElements, updateElementsBatch
       } = state
 
       const project = projects.find(p => p.id === activeProjectId)
       if (!project) return
 
+      // Arrow key element nudging (Figma feel)
+      if (selectedElementIds.length > 0) {
+        const arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
+        if (arrowKeys.includes(e.key)) {
+          e.preventDefault()
+          const nudgeAmount = e.shiftKey ? 10 : 1
+          let dx = 0
+          let dy = 0
+          if (e.key === 'ArrowUp') dy = -nudgeAmount
+          if (e.key === 'ArrowDown') dy = nudgeAmount
+          if (e.key === 'ArrowLeft') dx = -nudgeAmount
+          if (e.key === 'ArrowRight') dx = nudgeAmount
 
-      if (e.key === 'ArrowUp' && activeSlideIndex > 0) {
-        e.preventDefault()
-        setActiveSlide(activeSlideIndex - 1)
-      }
-      if (e.key === 'ArrowDown' && activeSlideIndex < project.slides.length - 1) {
-        e.preventDefault()
-        setActiveSlide(activeSlideIndex + 1)
+          const slide = project.slides[activeSlideIndex]
+          if (slide) {
+            const updates = selectedElementIds.map(id => {
+              const el = slide.elements.find(item => item.id === id)
+              if (!el) return null
+              return {
+                id,
+                changes: {
+                  position: {
+                    x: el.position.x + dx,
+                    y: el.position.y + dy
+                  }
+                }
+              }
+            }).filter(Boolean) as { id: string; changes: any }[]
+
+            if (updates.length > 0) {
+              updateElementsBatch(updates, { silent: false })
+            }
+          }
+          return
+        }
+      } else {
+        // Slide navigation only when selection is empty
+        if (e.key === 'ArrowUp' && activeSlideIndex > 0) {
+          e.preventDefault()
+          setActiveSlide(activeSlideIndex - 1)
+        }
+        if (e.key === 'ArrowDown' && activeSlideIndex < project.slides.length - 1) {
+          e.preventDefault()
+          setActiveSlide(activeSlideIndex + 1)
+        }
       }
 
 

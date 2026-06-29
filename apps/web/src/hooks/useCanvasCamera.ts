@@ -79,8 +79,24 @@ export function useCanvasCamera(containerRef: RefObject<HTMLElement | null>, dis
         e.preventDefault()
         const delta = e.deltaY > 0 ? 0.9 : 1.1
         const { camera } = useEditorStore.getState()
+        const zoom1 = camera.zoom
+        const zoom2 = Math.min(Math.max(zoom1 * delta, 0.05), 10)
+
+        // Mouse position relative to the stage container element
+        const rect = el.getBoundingClientRect()
+        const mx = e.clientX - rect.left
+        const my = e.clientY - rect.top
+
+        // Stage dimensions
+        const stageW = el.clientWidth
+        const stageH = el.clientHeight
+
+        const ratio = zoom2 / zoom1
+
         setCamera({
-          zoom: Math.min(Math.max(camera.zoom * delta, 0.05), 10)
+          zoom: zoom2,
+          x: camera.x * ratio + (mx - stageW / 2) * (1 - ratio),
+          y: camera.y * ratio + (my - stageH / 2) * (1 - ratio)
         })
       } else {
         const { camera } = useEditorStore.getState()

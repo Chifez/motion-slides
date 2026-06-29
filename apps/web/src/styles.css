@@ -90,16 +90,28 @@ html, body {
 
 
 /* ── Canvas element – must be absolute ────── */
+/* ── Canvas element – must be absolute ────── */
 .canvas-element {
   position: absolute;
   user-select: none;
+  transition: box-shadow 0.1s ease;
+}
+
+.canvas-element:hover:not(.selected):not(.locked) {
+  box-shadow: 0 0 0 1.5px rgba(24, 160, 251, 0.6);
+  border-radius: 1px;
+}
+
+.canvas-element.multi-selected {
+  box-shadow: 0 0 0 1px #18a0fb;
+  border-radius: 1px;
 }
 
 /* ── Bounding box ─────────────────────────── */
 .bounding-box {
   position: absolute;
-  border: 1.5px solid rgba(59, 130, 246, 0.8);
-  border-radius: 2px;
+  border: 1.5px solid #18a0fb;
+  border-radius: 1px;
   pointer-events: none;
   z-index: var(--z-bounding-box);
 }
@@ -108,11 +120,12 @@ html, body {
   position: absolute;
   width: 8px;
   height: 8px;
-  background: #3b82f6;
-  border: 1.5px solid #fff;
-  border-radius: 2px;
+  background: #ffffff;
+  border: 1.5px solid #18a0fb;
+  border-radius: 1px;
   pointer-events: all;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 .resize-handle.tl { top: -4px; left: -4px; cursor: nwse-resize; }
 .resize-handle.tm { top: -4px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
@@ -125,19 +138,50 @@ html, body {
 
 .rotate-handle {
   position: absolute;
-  top: -28px;
+  top: -24px;
   left: 50%;
   transform: translateX(-50%);
-  width: 18px;
-  height: 18px;
-  background: #3b82f6;
-  border: 1.5px solid #fff;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border: 1.5px solid #18a0fb;
   border-radius: 50%;
   cursor: grab;
   pointer-events: all;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Rotation zones just outside the corners ── */
+.rotate-zone {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: transparent;
+  pointer-events: all;
+  z-index: calc(var(--z-bounding-box) + 10);
+}
+.rotate-zone.tl {
+  top: -13px;
+  left: -13px;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2318a0fb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 8.5C6 5.5 9 3.5 12.5 3.5c4.5 0 8 3.5 8 8s-3.5 8-8 8c-3.5 0-6.5-2-8-5'/%3E%3Cpath d='M8 9H4V5'/%3E%3Cpath d='M4 19v-4h4'/%3E%3C/svg%3E") 12 12, pointer;
+}
+.rotate-zone.tr {
+  top: -13px;
+  right: -13px;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2318a0fb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 8.5C6 5.5 9 3.5 12.5 3.5c4.5 0 8 3.5 8 8s-3.5 8-8 8c-3.5 0-6.5-2-8-5'/%3E%3Cpath d='M8 9H4V5'/%3E%3Cpath d='M4 19v-4h4'/%3E%3C/svg%3E") 12 12, pointer;
+}
+.rotate-zone.bl {
+  bottom: -13px;
+  left: -13px;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2318a0fb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 8.5C6 5.5 9 3.5 12.5 3.5c4.5 0 8 3.5 8 8s-3.5 8-8 8c-3.5 0-6.5-2-8-5'/%3E%3Cpath d='M8 9H4V5'/%3E%3Cpath d='M4 19v-4h4'/%3E%3C/svg%3E") 12 12, pointer;
+}
+.rotate-zone.br {
+  bottom: -13px;
+  right: -13px;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2318a0fb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 8.5C6 5.5 9 3.5 12.5 3.5c4.5 0 8 3.5 8 8s-3.5 8-8 8c-3.5 0-6.5-2-8-5'/%3E%3Cpath d='M8 9H4V5'/%3E%3Cpath d='M4 19v-4h4'/%3E%3C/svg%3E") 12 12, pointer;
 }
 
 /* ── SVG connector overlay ───────────────── */

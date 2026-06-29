@@ -21,21 +21,12 @@ import { ReviewOverlay } from './ReviewOverlay'
 // true painted screen location — no manual transform math required.
 // ---------------------------------------------------------------------------
 
-interface ScreenRect {
-  left: number
-  top: number
-  width: number
-  height: number
-}
-
 interface CanvasResizeHandlesProps {
-  // Props are used purely as effect dependencies to trigger re-measurement.
-  // Actual handle positions come from getBoundingClientRect.
   canvasW: number
   canvasH: number
   scale: number
-  cameraX: number
-  cameraY: number
+  translateX: number
+  translateY: number
   onResize: (edge: 'right' | 'bottom' | 'both') => (e: React.PointerEvent) => void
 }
 
@@ -43,43 +34,20 @@ function CanvasResizeHandles({
   canvasW,
   canvasH,
   scale,
-  cameraX,
-  cameraY,
+  translateX,
+  translateY,
   onResize,
 }: CanvasResizeHandlesProps) {
-  const [boardRect, setBoardRect] = useState<ScreenRect | null>(null)
-  const [stageRect, setStageRect] = useState<ScreenRect | null>(null)
-
-  useEffect(() => {
-    const board = document.querySelector('[data-canvas-board]') as HTMLElement | null
-    const stage = document.querySelector('#tour-canvas-stage') as HTMLElement | null
-    if (!board || !stage) return
-
-    const measure = () => {
-      const b = board.getBoundingClientRect()
-      const s = stage.getBoundingClientRect()
-      setBoardRect({ left: b.left, top: b.top, width: b.width, height: b.height })
-      setStageRect({ left: s.left, top: s.top, width: s.width, height: s.height })
-    }
-
-    measure()
-
-    const ro = new ResizeObserver(measure)
-    ro.observe(board)
-    ro.observe(stage)
-    return () => ro.disconnect()
-  }, [canvasW, canvasH, scale, cameraX, cameraY])
-
-  if (!boardRect || !stageRect) return null
-
   const EDGE_HIT = 8
   const CORNER = 16
 
-  // Convert absolute screen coords → relative to the stage (position: relative)
-  const relLeft = boardRect.left - stageRect.left
-  const relTop = boardRect.top - stageRect.top
-  const relRight = relLeft + boardRect.width
-  const relBottom = relTop + boardRect.height
+  // Mathematical boundaries of the board in stage coordinates
+  const relLeft = translateX
+  const relTop = translateY
+  const relRight = translateX + canvasW * scale
+  const relBottom = translateY + canvasH * scale
+  const boardWidth = canvasW * scale
+  const boardHeight = canvasH * scale
 
   return (
     <>
@@ -91,7 +59,7 @@ function CanvasResizeHandles({
           left: relRight,
           top: relTop,
           width: EDGE_HIT,
-          height: boardRect.height,
+          height: boardHeight,
           cursor: 'ew-resize',
           zIndex: 100,
         }}
@@ -106,7 +74,7 @@ function CanvasResizeHandles({
           position: 'absolute',
           left: relLeft,
           top: relBottom,
-          width: boardRect.width,
+          width: boardWidth,
           height: EDGE_HIT,
           cursor: 'ns-resize',
           zIndex: 100,
@@ -142,6 +110,7 @@ function CanvasResizeHandles({
     </>
   )
 }
+
 
 // ---------------------------------------------------------------------------
 // CanvasStage
@@ -344,8 +313,8 @@ export function CanvasStage() {
           canvasW={canvasW}
           canvasH={canvasH}
           scale={scale * zoom}
-          cameraX={camera.x}
-          cameraY={camera.y}
+          translateX={boardTranslateX}
+          translateY={boardTranslateY}
           onResize={startCanvasResize}
         />
       )}

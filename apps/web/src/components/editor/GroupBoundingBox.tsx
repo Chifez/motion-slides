@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { MIN_ELEMENT_WIDTH, MIN_ELEMENT_HEIGHT } from '@/constants/animation'
 import { RESIZE_HANDLES } from '@/constants/editor'
@@ -13,7 +13,9 @@ function getCanvasScale(): number {
 }
 
 export function GroupBoundingBox({ elements }: Props) {
-  const { updateElementsBatch } = useEditorStore()
+  const updateElementsBatch = useEditorStore(s => s.updateElementsBatch)
+  const isDragging = useEditorStore(s => s.isDragging)
+  const [isResizing, setIsResizing] = useState(false)
 
   if (elements.length < 2) return null
 
@@ -32,6 +34,16 @@ export function GroupBoundingBox({ elements }: Props) {
   const startResize = useCallback((corner: string) => (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    setIsResizing(true)
+
+    // Set cursor lock globally
+    let cursor = 'pointer'
+    if (corner === 'tl' || corner === 'br') cursor = 'nwse-resize'
+    else if (corner === 'tr' || corner === 'bl') cursor = 'nesw-resize'
+    else if (corner === 'tm' || corner === 'bm') cursor = 'ns-resize'
+    else if (corner === 'ml' || corner === 'mr') cursor = 'ew-resize'
+    document.body.style.cursor = cursor
+
     const startX = e.clientX
     const startY = e.clientY
     const scale = getCanvasScale()
@@ -53,11 +65,60 @@ export function GroupBoundingBox({ elements }: Props) {
       let newY = startBounds.y
       let newW = startBounds.width
       let newH = startBounds.height
+      
+      const cx = startBounds.x + startBounds.width / 2
+      const cy = startBounds.y + startBounds.height / 2
 
-      if (corner.includes('r')) newW = Math.max(MIN_ELEMENT_WIDTH, startBounds.width + dx)
-      if (corner.includes('l')) { newX = startBounds.x + dx; newW = Math.max(MIN_ELEMENT_WIDTH, startBounds.width - dx) }
-      if (corner.includes('b')) newH = Math.max(MIN_ELEMENT_HEIGHT, startBounds.height + dy)
-      if (corner.includes('t')) { newY = startBounds.y + dy; newH = Math.max(MIN_ELEMENT_HEIGHT, startBounds.height - dy) }
+      if (ev.altKey) {
+        // Alt-key center resizing
+        const factorX = corner.includes('r') ? 2 : corner.includes('l') ? -2 : 0
+        const factorY = corner.includes('b') ? 2 : corner.includes('t') ? -2 : 0
+        
+        if (factorX !== 0) newW = Math.max(MIN_ELEMENT_WIDTH, startBounds.width + factorX * dx)
+        if (factorY !== 0) newH = Math.max(MIN_ELEMENT_HEIGHT, startBounds.height + factorY * dy)
+        
+        if (ev.shiftKey && corner.length === 2) {
+          // Alt + Shift constraint
+          const scaleFactor = Math.max(newW / startBounds.width, newH / startBounds.height)
+          newW = startBounds.width * scaleFactor
+          newH = startBounds.height * scaleFactor
+        }
+        
+        if (factorX !== 0) newX = cx - newW / 2
+        if (factorY !== 0) newY = cy - newH / 2
+      } else if (ev.shiftKey && corner.length === 2) {
+        // Shift-key proportional aspect ratio resize
+        let tempW = startBounds.width
+        let tempH = startBounds.height
+        if (corner.includes('r')) tempW = Math.max(MIN_ELEMENT_WIDTH, startBounds.width + dx)
+        if (corner.includes('l')) tempW = Math.max(MIN_ELEMENT_WIDTH, startBounds.width - dx)
+        if (corner.includes('b')) tempH = Math.max(MIN_ELEMENT_HEIGHT, startBounds.height + dy)
+        if (corner.includes('t')) tempH = Math.max(MIN_ELEMENT_HEIGHT, startBounds.height - dy)
+        
+        const scaleFactor = Math.max(tempW / startBounds.width, tempH / startBounds.height)
+        newW = startBounds.width * scaleFactor
+        newH = startBounds.height * scaleFactor
+        
+        if (corner === 'br') {
+          newX = startBounds.x
+          newY = startBounds.y
+        } else if (corner === 'bl') {
+          newX = startBounds.x + (startBounds.width - newW)
+          newY = startBounds.y
+        } else if (corner === 'tr') {
+          newX = startBounds.x
+          newY = startBounds.y + (startBounds.height - newH)
+        } else if (corner === 'tl') {
+          newX = startBounds.x + (startBounds.width - newW)
+          newY = startBounds.y + (startBounds.height - newH)
+        }
+      } else {
+        // Standard drag resizing
+        if (corner.includes('r')) newW = Math.max(MIN_ELEMENT_WIDTH, startBounds.width + dx)
+        if (corner.includes('l')) { newX = startBounds.x + dx; newW = Math.max(MIN_ELEMENT_WIDTH, startBounds.width - dx) }
+        if (corner.includes('b')) newH = Math.max(MIN_ELEMENT_HEIGHT, startBounds.height + dy)
+        if (corner.includes('t')) { newY = startBounds.y + dy; newH = Math.max(MIN_ELEMENT_HEIGHT, startBounds.height - dy) }
+      }
 
       const scaleX = newW / startBounds.width
       const scaleY = newH / startBounds.height
@@ -84,6 +145,8 @@ export function GroupBoundingBox({ elements }: Props) {
     const onUp = () => {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
+      setIsResizing(false)
+      document.body.style.cursor = ''
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
@@ -98,8 +161,8 @@ export function GroupBoundingBox({ elements }: Props) {
         width: bounds.width, 
         height: bounds.height,
         transform: `rotate(0deg)`,
-        border: '1.5px solid #3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.05)'
+        border: '1.5px solid #18a0fb',
+        backgroundColor: 'rgba(24, 160, 251, 0.04)'
       }}
     >
       {RESIZE_HANDLES.map((h) => (
@@ -107,9 +170,32 @@ export function GroupBoundingBox({ elements }: Props) {
           key={h} 
           className={`resize-handle ${h}`} 
           onMouseDown={startResize(h)}
-          style={{ borderColor: '#3b82f6' }} 
+          style={{ borderColor: '#18a0fb' }} 
         />
       ))}
+
+      {/* Figma-style Dimension Badge */}
+      {(isDragging || isResizing) && (
+        <div
+          className="absolute left-1/2 -bottom-8 -translate-x-1/2 bg-neutral-900/90 text-white font-mono text-[10px] px-2 py-0.5 rounded shadow-lg border border-white/10 z-[300] select-none whitespace-nowrap flex items-center gap-1.5 pointer-events-none"
+        >
+          {isDragging ? (
+            <>
+              <span className="text-neutral-400">X:</span>
+              <span>{Math.round(bounds.x)}</span>
+              <span className="text-neutral-400">Y:</span>
+              <span>{Math.round(bounds.y)}</span>
+            </>
+          ) : (
+            <>
+              <span className="text-neutral-400">W:</span>
+              <span>{Math.round(bounds.width)}</span>
+              <span className="text-neutral-400">H:</span>
+              <span>{Math.round(bounds.height)}</span>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
