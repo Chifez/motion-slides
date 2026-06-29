@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { useCanvasScale } from '@/hooks/useCanvasScale'
 import { useCanvasCamera } from '@/hooks/useCanvasCamera'
@@ -14,6 +14,139 @@ import { SlideNavigation } from './SlideNavigation'
 import { SyncStatusButton } from './SyncStatusButton'
 import { ReviewOverlay } from './ReviewOverlay'
 
+// ---------------------------------------------------------------------------
+// CanvasResizeHandles
+// ---------------------------------------------------------------------------
+// Uses getBoundingClientRect so handle positions always reflect the board's
+// true painted screen location — no manual transform math required.
+// ---------------------------------------------------------------------------
+
+interface ScreenRect {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+interface CanvasResizeHandlesProps {
+  // Props are used purely as effect dependencies to trigger re-measurement.
+  // Actual handle positions come from getBoundingClientRect.
+  canvasW: number
+  canvasH: number
+  scale: number
+  cameraX: number
+  cameraY: number
+  onResize: (edge: 'right' | 'bottom' | 'both') => (e: React.PointerEvent) => void
+}
+
+function CanvasResizeHandles({
+  canvasW,
+  canvasH,
+  scale,
+  cameraX,
+  cameraY,
+  onResize,
+}: CanvasResizeHandlesProps) {
+  const [boardRect, setBoardRect] = useState<ScreenRect | null>(null)
+  const [stageRect, setStageRect] = useState<ScreenRect | null>(null)
+
+  useEffect(() => {
+    const board = document.querySelector('[data-canvas-board]') as HTMLElement | null
+    const stage = document.querySelector('#tour-canvas-stage') as HTMLElement | null
+    if (!board || !stage) return
+
+    const measure = () => {
+      const b = board.getBoundingClientRect()
+      const s = stage.getBoundingClientRect()
+      setBoardRect({ left: b.left, top: b.top, width: b.width, height: b.height })
+      setStageRect({ left: s.left, top: s.top, width: s.width, height: s.height })
+    }
+
+    measure()
+
+    const ro = new ResizeObserver(measure)
+    ro.observe(board)
+    ro.observe(stage)
+    return () => ro.disconnect()
+  }, [canvasW, canvasH, scale, cameraX, cameraY])
+
+  if (!boardRect || !stageRect) return null
+
+  const EDGE_HIT = 8
+  const CORNER = 16
+
+  // Convert absolute screen coords → relative to the stage (position: relative)
+  const relLeft = boardRect.left - stageRect.left
+  const relTop = boardRect.top - stageRect.top
+  const relRight = relLeft + boardRect.width
+  const relBottom = relTop + boardRect.height
+
+  return (
+    <>
+      {/* Right edge */}
+      <div
+        title="Drag to resize canvas width"
+        style={{
+          position: 'absolute',
+          left: relRight,
+          top: relTop,
+          width: EDGE_HIT,
+          height: boardRect.height,
+          cursor: 'ew-resize',
+          zIndex: 100,
+        }}
+        className="hover:bg-blue-500/20 active:bg-blue-500/40 transition-colors"
+        onPointerDown={onResize('right')}
+      />
+
+      {/* Bottom edge */}
+      <div
+        title="Drag to resize canvas height"
+        style={{
+          position: 'absolute',
+          left: relLeft,
+          top: relBottom,
+          width: boardRect.width,
+          height: EDGE_HIT,
+          cursor: 'ns-resize',
+          zIndex: 100,
+        }}
+        className="hover:bg-blue-500/20 active:bg-blue-500/40 transition-colors"
+        onPointerDown={onResize('bottom')}
+      />
+
+      {/* Corner */}
+      <div
+        title="Drag to resize canvas"
+        style={{
+          position: 'absolute',
+          left: relRight,
+          top: relBottom,
+          width: CORNER,
+          height: CORNER,
+          cursor: 'nwse-resize',
+          zIndex: 101,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'flex-end',
+          padding: 2,
+        }}
+        className="hover:bg-blue-500/40 active:bg-blue-500/60 transition-colors"
+        onPointerDown={onResize('both')}
+      >
+        <svg width="8" height="8" viewBox="0 0 8 8" className="text-blue-500 opacity-60">
+          <line x1="6" y1="0" x2="6" y2="8" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="0" y1="6" x2="8" y2="6" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      </div>
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// CanvasStage
+// ---------------------------------------------------------------------------
+
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
   const { isReadOnly, isAuthenticated, mode } = useAccessControl()
@@ -23,9 +156,7 @@ export function CanvasStage() {
   const resetCamera = useEditorStore(state => state.resetCamera)
 
   useEffect(() => {
-    if (mode === 'view') {
-      resetCamera()
-    }
+    if (mode === 'view') resetCamera()
   }, [mode, resetCamera])
 
   const playbackSettings = useEditorStore(state => state.playbackSettings)
@@ -40,53 +171,96 @@ export function CanvasStage() {
   const { width: defaultW, height: defaultH } = getCanvasDimensions(playbackSettings.aspectRatio)
   const canvasW = customCanvasWidth ?? defaultW
   const canvasH = customCanvasHeight ?? defaultH
+
+  // ---------------------------------------------------------------------------
+  // Stage dimensions — tracked via ResizeObserver so the board transform always
+  // uses the real stage size for centering rather than flexbox doing it for us.
+  // ---------------------------------------------------------------------------
+  const [stageSize, setStageSize] = useState({ w: 0, h: 0 })
+
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect
+      setStageSize({ w: width, h: height })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const scale = useCanvasScale(stageRef, canvasW, canvasH)
 
   const setCustomCanvasDimensions = useEditorStore(state => state.setCustomCanvasDimensions)
   const zoom = camera.zoom
 
-  const startCanvasResize = (edge: 'right' | 'bottom' | 'both') => (e: React.PointerEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  // ---------------------------------------------------------------------------
+  // Board transform
+  //
+  // Instead of relying on flexbox centering (which re-centers on every resize
+  // and causes the board to drift), we position the board absolutely at (0,0)
+  // and compute the centering translation ourselves using the live stage size.
+  //
+  // transformOrigin: 'top left' means scale grows rightward and downward only —
+  // the top-left corner stays pinned. This makes right/bottom resize handles
+  // track the cursor correctly with zero camera compensation.
+  //
+  // Translation breakdown:
+  //   stageSize.w / 2               → move to horizontal center of stage
+  //   - canvasW / 2 * scale * zoom  → shift left so board center aligns to stage center
+  //   + camera.x                    → apply pan offset
+  // ---------------------------------------------------------------------------
+  const boardTranslateX = stageSize.w / 2 - (canvasW / 2) * scale * zoom + camera.x
+  const boardTranslateY = stageSize.h / 2 - (canvasH / 2) * scale * zoom + camera.y
 
-    const startW = canvasW
-    const startH = canvasH
-    const startX = e.clientX
-    const startY = e.clientY
-    const currentScale = scale * zoom
+  // ---------------------------------------------------------------------------
+  // Resize drag handler
+  //
+  // With transformOrigin: top left, growing canvasW only moves the right edge —
+  // no camera compensation needed. The drag delta in screen pixels is converted
+  // to canvas units via the current combined scale.
+  // ---------------------------------------------------------------------------
+  const startCanvasResize = useCallback(
+    (edge: 'right' | 'bottom' | 'both') => (e: React.PointerEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
 
-    const onPointerMove = (moveEvent: PointerEvent) => {
-      const dx = moveEvent.clientX - startX
-      const dy = moveEvent.clientY - startY
+      const startW = canvasW
+      const startH = canvasH
+      const startX = e.clientX
+      const startY = e.clientY
+      const currentScale = scale * zoom
 
-      let nextW = startW
-      let nextH = startH
+      const onPointerMove = (ev: PointerEvent) => {
+        const dx = ev.clientX - startX
+        const dy = ev.clientY - startY
 
-      if (edge === 'right') {
-        nextW = Math.max(300, startW + dx / currentScale)
-      } else if (edge === 'bottom') {
-        nextH = Math.max(200, startH + dy / currentScale)
-      } else if (edge === 'both') {
-        nextW = Math.max(300, startW + dx / currentScale)
-        nextH = Math.max(200, startH + dy / currentScale)
+        let nextW = startW
+        let nextH = startH
+
+        if (edge === 'right' || edge === 'both') {
+          nextW = Math.max(300, startW + dx / currentScale)
+        }
+        if (edge === 'bottom' || edge === 'both') {
+          nextH = Math.max(200, startH + dy / currentScale)
+        }
+
+        setCustomCanvasDimensions(nextW, nextH)
       }
 
-      setCustomCanvasDimensions(nextW, nextH)
-    }
+      const onPointerUp = () => {
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', onPointerUp)
+      }
 
-    const onPointerUp = () => {
-      window.removeEventListener('pointermove', onPointerMove)
-      window.removeEventListener('pointerup', onPointerUp)
-    }
-
-    window.addEventListener('pointermove', onPointerMove)
-    window.addEventListener('pointerup', onPointerUp)
-  }
+      window.addEventListener('pointermove', onPointerMove)
+      window.addEventListener('pointerup', onPointerUp)
+    },
+    [canvasW, canvasH, scale, zoom, setCustomCanvasDimensions],
+  )
 
   const selectedElementIds = useEditorStore(state => state.selectedElementIds)
-  
-  const selectedElements = slide?.elements.filter(element => selectedElementIds.includes(element.id)) ?? []
-
+  const selectedElements = slide?.elements.filter(el => selectedElementIds.includes(el.id)) ?? []
   const isGroupSelection = selectedElements.length > 1 || (selectedElements.length === 1 && !!selectedElements[0].groupId)
 
   const setSelectedElement = useEditorStore(state => state.setSelectedElement)
@@ -114,18 +288,23 @@ export function CanvasStage() {
     <main
       ref={stageRef}
       id="tour-canvas-stage"
-      className={`flex-1 bg-(--ms-bg-base) flex items-center justify-center overflow-hidden relative p-2 md:p-0 transition-colors ${activeTool === 'section' ? 'cursor-crosshair' : ''
+      className={`flex-1 bg-(--ms-bg-base) overflow-hidden relative transition-colors ${activeTool === 'section' ? 'cursor-crosshair' : ''
         }`}
       onClick={handleStageClick}
       {...pointerHandlers}
     >
-
+      {/*
+        Board is absolutely positioned at (0,0) and centered via an explicit
+        translation. transformOrigin: top left ensures scale grows only
+        rightward and downward, so right/bottom resize handles track correctly.
+      */}
       <div
         data-canvas-board
-        className={`relative rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)] ${
-          playbackSettings.clipContent ? 'overflow-hidden' : ''
-        }`}
+        className={`absolute rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_32px_80px_rgba(0,0,0,0.8)] ${playbackSettings.clipContent ? 'overflow-hidden' : ''
+          }`}
         style={{
+          top: 0,
+          left: 0,
           width: canvasW,
           height: canvasH,
           backgroundColor: slideBackground.startsWith('url') ? 'transparent' : slideBackground,
@@ -133,8 +312,8 @@ export function CanvasStage() {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          transform: `translate(${camera.x}px, ${camera.y}px) scale(${scale * camera.zoom})`,
-          transformOrigin: 'center center',
+          transform: `translate(${boardTranslateX}px, ${boardTranslateY}px) scale(${scale * zoom})`,
+          transformOrigin: 'top left',
         }}
       >
         <MotionStage
@@ -157,43 +336,25 @@ export function CanvasStage() {
             }}
           />
         )}
-
-        {/* Manual Canvas Resize Handles */}
-        {mode === 'edit' && !isReadOnly && (
-          <>
-            {/* Right Resize Handle */}
-            <div
-              className="absolute top-0 right-0 w-2 h-full cursor-ew-resize hover:bg-blue-500/20 active:bg-blue-500/40 z-50 pointer-events-auto transition-colors"
-              onPointerDown={startCanvasResize('right')}
-              title="Drag to resize canvas width"
-            />
-            {/* Bottom Resize Handle */}
-            <div
-              className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize hover:bg-blue-500/20 active:bg-blue-500/40 z-50 pointer-events-auto transition-colors"
-              onPointerDown={startCanvasResize('bottom')}
-              title="Drag to resize canvas height"
-            />
-            {/* Bottom-right Corner Resize Handle */}
-            <div
-              className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize hover:bg-blue-500/40 active:bg-blue-500/60 z-50 pointer-events-auto transition-colors flex items-end justify-end p-0.5"
-              onPointerDown={startCanvasResize('both')}
-              title="Drag to resize canvas width and height"
-            >
-              <svg width="8" height="8" viewBox="0 0 8 8" className="text-blue-500 opacity-60">
-                <line x1="6" y1="0" x2="6" y2="8" stroke="currentColor" strokeWidth="1.5" />
-                <line x1="0" y1="6" x2="8" y2="6" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-            </div>
-          </>
-        )}
       </div>
+
+      {/* Resize handles live outside the board in unscaled stage space */}
+      {mode === 'edit' && !isReadOnly && (
+        <CanvasResizeHandles
+          canvasW={canvasW}
+          canvasH={canvasH}
+          scale={scale * zoom}
+          cameraX={camera.x}
+          cameraY={camera.y}
+          onResize={startCanvasResize}
+        />
+      )}
 
       {mode === 'edit' && (
         <div className="absolute top-3 left-3 flex items-center gap-2">
           <span className="text-[10px] text-(--ms-text-muted) font-medium bg-(--ms-bg-surface)/80 backdrop-blur-sm border border-(--ms-border) rounded-md px-2 py-1">
             {slideName}
           </span>
-
           <SlideBackgroundPicker />
           <SyncStatusButton isAuthenticated={isAuthenticated} isReadOnly={isReadOnly} />
         </div>

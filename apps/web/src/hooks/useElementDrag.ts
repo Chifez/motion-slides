@@ -122,10 +122,17 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
       })
 
       if (maxRight > currentCanvasW || maxBottom > currentCanvasH) {
-        setCustomCanvasDimensions(
-          maxRight > currentCanvasW ? maxRight : currentCanvasW,
-          maxBottom > currentCanvasH ? maxBottom : currentCanvasH
-        )
+        const ratio = defaultW / defaultH
+        const nextWByRight = maxRight
+        const nextHByRight = nextWByRight / ratio
+
+        const nextHByBottom = maxBottom
+        const nextWByBottom = nextHByBottom * ratio
+
+        const nextW = Math.max(nextWByRight, nextWByBottom)
+        const nextH = nextW / ratio
+
+        setCustomCanvasDimensions(nextW, nextH)
       }
     }
 

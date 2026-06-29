@@ -9,6 +9,8 @@ export const SlideNavigation = memo(function SlideNavigation() {
   const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
   const totalSlides = useEditorStore(s => s.activeProject()?.slides.length ?? 0)
   const setActiveSlide = useEditorStore(s => s.setActiveSlide)
+  const zoom = useEditorStore(s => s.camera.zoom)
+  const resetCamera = useEditorStore(s => s.resetCamera)
 
   if (totalSlides === 0) return null
 
@@ -32,6 +34,16 @@ export const SlideNavigation = memo(function SlideNavigation() {
         className="p-1 rounded-full text-(--ms-text-muted) hover:text-(--ms-text-primary) disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer border-none bg-transparent"
       >
         <ChevronRight size={16} />
+      </button>
+
+      <div className="w-[1px] h-4 bg-(--ms-border) mx-1" />
+
+      <button
+        onClick={() => resetCamera()}
+        title="Reset zoom to 100%"
+        className="text-[10px] text-(--ms-text-muted) hover:text-(--ms-text-primary) font-semibold select-none border-none bg-transparent cursor-pointer px-1.5 py-0.5 rounded hover:bg-(--ms-border) transition-colors"
+      >
+        {Math.round(zoom * 100)}%
       </button>
     </div>
   )

@@ -20,6 +20,7 @@ export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
   const theme = useEditorStore(s => s.theme)
   const updatePlaybackSettings = useEditorStore(s => s.updatePlaybackSettings)
   const toggleTheme = useEditorStore(s => s.toggleTheme)
+  const setCustomCanvasDimensions = useEditorStore(s => s.setCustomCanvasDimensions)
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useClickOutside(ref, () => setOpen(false))
@@ -28,11 +29,24 @@ export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
   const resolutionsForRatio = EXPORT_RESOLUTIONS[activeRatio]
 
   const handleRatioChange = (newRatio: AspectRatioKey) => {
-    const newResolutions = EXPORT_RESOLUTIONS[newRatio]
-    updatePlaybackSettings({
-      aspectRatio: newRatio,
-      exportResolution: { ...newResolutions[0] },
-    })
+    if (newRatio === 'custom') {
+      const w = playbackSettings.customWidth ?? 1280
+      const h = playbackSettings.customHeight ?? 720
+      updatePlaybackSettings({
+        aspectRatio: newRatio,
+        customWidth: w,
+        customHeight: h,
+        exportResolution: { width: w, height: h, label: 'Custom Resolution' },
+      })
+      setCustomCanvasDimensions(w, h)
+    } else {
+      const newResolutions = EXPORT_RESOLUTIONS[newRatio]
+      updatePlaybackSettings({
+        aspectRatio: newRatio,
+        exportResolution: { ...newResolutions[0] },
+      })
+      setCustomCanvasDimensions(null, null)
+    }
   }
 
   return (
@@ -124,6 +138,55 @@ export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
               >
                 {ASPECT_RATIO_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
+
+              {activeRatio === 'custom' && (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <span className={labelCls}>Width</span>
+                    <input
+                      type="number"
+                      min={300}
+                      max={5000}
+                      value={playbackSettings.customWidth ?? 1280}
+                      onChange={(e) => {
+                        const val = Math.max(300, Math.min(5000, parseInt(e.target.value) || 1280))
+                        updatePlaybackSettings({
+                          customWidth: val,
+                          exportResolution: {
+                            width: val,
+                            height: playbackSettings.customHeight ?? 720,
+                            label: 'Custom Resolution',
+                          },
+                        })
+                        setCustomCanvasDimensions(val, playbackSettings.customHeight ?? 720)
+                      }}
+                      className={selectCls}
+                    />
+                  </div>
+                  <div>
+                    <span className={labelCls}>Height</span>
+                    <input
+                      type="number"
+                      min={200}
+                      max={5000}
+                      value={playbackSettings.customHeight ?? 720}
+                      onChange={(e) => {
+                        const val = Math.max(200, Math.min(5000, parseInt(e.target.value) || 720))
+                        updatePlaybackSettings({
+                          customHeight: val,
+                          exportResolution: {
+                            width: playbackSettings.customWidth ?? 1280,
+                            height: val,
+                            label: 'Custom Resolution',
+                          },
+                        })
+                        setCustomCanvasDimensions(playbackSettings.customWidth ?? 1280, val)
+                      }}
+                      className={selectCls}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>

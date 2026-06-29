@@ -39,6 +39,7 @@ export const CANVAS_DIMENSIONS: Record<AspectRatioKey, { width: number; height: 
   '9:16': { width: 720, height: 1280 },
   '1:1': { width: 720, height: 720 },
   '4:3': { width: 960, height: 720 },
+  'custom': { width: 1280, height: 720 },
 }
 
 /**
@@ -57,6 +58,7 @@ export const ASPECT_RATIO_OPTIONS: { value: AspectRatioKey; label: string }[] = 
   { value: '9:16', label: 'Vertical (9:16)' },
   { value: '1:1', label: 'Square (1:1)' },
   { value: '4:3', label: 'Traditional (4:3)' },
+  { value: 'custom', label: 'Custom' },
 ]
 
 export const EXPORT_RESOLUTIONS: Record<
@@ -81,5 +83,8 @@ export const EXPORT_RESOLUTIONS: Record<
     { width: 960, height: 720, label: '960×720 (SD)' },
     { width: 1440, height: 1080, label: '1440×1080 (HD)' },
     { width: 1920, height: 1440, label: '1920×1440 (Full HD)' },
+  ],
+  'custom': [
+    { width: 1280, height: 720, label: 'Custom Resolution' },
   ],
 }

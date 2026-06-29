@@ -25,7 +25,7 @@ export type LineType = 'straight' | 'elbow' | 'curved' | 'step-after' | 'step-be
 
 export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line' | 'chart' | 'section'
 
-export type AspectRatioKey = '16:9' | '9:16' | '1:1' | '4:3'
+export type AspectRatioKey = '16:9' | '9:16' | '1:1' | '4:3' | 'custom'
 
 export interface Position {
   x: number
@@ -222,11 +222,13 @@ export interface PlaybackSettings {
   loop: boolean
   transitionDuration: number
   transitionEase: CubicBezier
-  aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
+  aspectRatio: AspectRatioKey
   exportResolution: { width: number; height: number; label: string }
   clipContent?: boolean
   backgroundMusic?: SlideAudio | null
   duckBackgroundMusic?: boolean
+  customWidth?: number
+  customHeight?: number
 }
 
 // ─────────────────────────────────────────────
