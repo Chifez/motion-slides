@@ -30,6 +30,8 @@ export function useSectionLasso({
   const activeTool = useEditorStore(state => state.activeTool)
   const addElement = useEditorStore(state => state.addElement)
   const setSelectedElement = useEditorStore(state => state.setSelectedElement)
+  const setSelectedElements = useEditorStore(state => state.setSelectedElements)
+  const groupElements = useEditorStore(state => state.groupElements)
   const setEditingId = useEditorStore(state => state.setEditingId)
   const setActiveTool = useEditorStore(state => state.setActiveTool)
 
@@ -43,7 +45,7 @@ export function useSectionLasso({
   }
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (isReadOnly || activeTool !== 'section') return
+    if (isReadOnly || (activeTool !== 'section' && activeTool !== 'select')) return
     if (event.button !== 0) return
 
     const coords = getCanvasCoordinates(event.clientX, event.clientY)
@@ -60,12 +62,42 @@ export function useSectionLasso({
     if (!coords) return
 
     setLasso(prev => prev ? { ...prev, x2: coords.x, y2: coords.y } : null)
+
+    const slide = useEditorStore.getState().activeSlide()
+    if (slide && activeTool === 'select') {
+      const minLassoX = Math.min(lasso.x1, coords.x)
+      const maxLassoX = Math.max(lasso.x1, coords.x)
+      const minLassoY = Math.min(lasso.y1, coords.y)
+      const maxLassoY = Math.max(lasso.y1, coords.y)
+
+      const intersectingIds = slide.elements
+        .filter(el => {
+          if (el.type === 'section') return false
+          const elL = el.position.x
+          const elR = el.position.x + el.size.width
+          const elT = el.position.y
+          const elB = el.position.y + el.size.height
+
+          return elL < maxLassoX && elR > minLassoX && elT < maxLassoY && elB > minLassoY
+        })
+        .map(el => el.id)
+
+      setSelectedElements(intersectingIds)
+    }
   }
 
   const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
     if (!lasso) return
     setLasso(null)
     event.currentTarget.releasePointerCapture(event.pointerId)
+
+    if (activeTool === 'select') {
+      const selectedIds = useEditorStore.getState().selectedElementIds
+      if (selectedIds.length > 1) {
+        groupElements(selectedIds)
+      }
+      return
+    }
 
     const x = Math.min(lasso.x1, lasso.x2)
     const y = Math.min(lasso.y1, lasso.y2)

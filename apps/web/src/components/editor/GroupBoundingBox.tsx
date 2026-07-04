@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
+import { useElementDrag } from '@/hooks/useElementDrag'
 import { MIN_ELEMENT_WIDTH, MIN_ELEMENT_HEIGHT } from '@/constants/animation'
 import { RESIZE_HANDLES } from '@/constants/editor'
 import type { SceneElement } from '@motionslides/shared'
@@ -14,10 +15,23 @@ function getCanvasScale(): number {
 
 export function GroupBoundingBox({ elements }: Props) {
   const updateElementsBatch = useEditorStore(s => s.updateElementsBatch)
+  const groupElements = useEditorStore(s => s.groupElements)
+  const ungroupElements = useEditorStore(s => s.ungroupElements)
   const isDragging = useEditorStore(s => s.isDragging)
   const [isResizing, setIsResizing] = useState(false)
 
+  const firstElement = elements[0]
+  const { onPointerDown: dragOnPointerDown } = useElementDrag({
+    element: firstElement,
+    isReadOnly: false,
+    isEditing: false,
+    isMultiSelectMode: false
+  })
+
   if (elements.length < 2) return null
+
+  const firstGroupId = elements[0]?.groupId
+  const isGrouped = firstGroupId && elements.every(el => el.groupId === firstGroupId)
 
   const minX = Math.min(...elements.map(e => e.position.x))
   const maxX = Math.max(...elements.map(e => e.position.x + e.size.width))
@@ -162,8 +176,11 @@ export function GroupBoundingBox({ elements }: Props) {
         height: bounds.height,
         transform: `rotate(0deg)`,
         border: '1.5px solid #18a0fb',
-        backgroundColor: 'rgba(24, 160, 251, 0.04)'
+        backgroundColor: 'rgba(24, 160, 251, 0.04)',
+        pointerEvents: 'all',
+        cursor: 'move'
       }}
+      onPointerDown={dragOnPointerDown}
     >
       {RESIZE_HANDLES.map((h) => (
         <div 
@@ -173,6 +190,37 @@ export function GroupBoundingBox({ elements }: Props) {
           style={{ borderColor: '#18a0fb' }} 
         />
       ))}
+
+      {/* Floating Canvas Group/Ungroup Badge */}
+      <div 
+        className="absolute top-0 left-0 -translate-y-full -mt-2.5 flex items-center gap-1.5 bg-[#18a0fb] text-white text-[10px] font-bold px-2 py-1 rounded shadow-md pointer-events-auto select-none z-[300]"
+        onPointerDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+      >
+        {isGrouped ? (
+          <>
+            <span className="uppercase tracking-wider">Group</span>
+            <span className="w-[1px] h-3 bg-white/30" />
+            <button
+              onClick={() => ungroupElements(firstGroupId)}
+              className="text-white hover:text-white/80 font-bold border-none bg-transparent cursor-pointer p-0 text-[10px] uppercase tracking-wider transition-colors"
+            >
+              Ungroup
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="uppercase tracking-wider">Selection</span>
+            <span className="w-[1px] h-3 bg-white/30" />
+            <button
+              onClick={() => groupElements(elements.map(el => el.id))}
+              className="text-white hover:text-white/80 font-bold border-none bg-transparent cursor-pointer p-0 text-[10px] uppercase tracking-wider transition-colors"
+            >
+              Group
+            </button>
+          </>
+        )}
+      </div>
 
       {/* Figma-style Dimension Badge */}
       {(isDragging || isResizing) && (

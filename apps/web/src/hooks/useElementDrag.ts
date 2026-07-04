@@ -37,7 +37,8 @@ export function useElementDrag({ element, isReadOnly, isEditing, isMultiSelectMo
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (!element || isReadOnly || isEditing || activeTool !== 'select') return
-    if ((e.target as HTMLElement).closest('.bounding-box')) return
+    const targetEl = e.target as HTMLElement
+    if (targetEl.closest('.resize-handle') || targetEl.closest('.rotate-handle') || targetEl.closest('.rotate-zone')) return
     e.stopPropagation()
 
     if (!element.locked) {
