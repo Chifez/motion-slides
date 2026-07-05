@@ -13,6 +13,7 @@ export const SLIDE_GRADIENTS = [
 
 export const RULER_H = 32
 export const SLIDE_TRACK_H = 80
+export const CAPTION_TRACK_H = 52
 export const VO_TRACK_H = 52
 export const BGM_TRACK_H = 52
 

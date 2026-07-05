@@ -27,8 +27,8 @@ export const MotionWrapper = memo(function MotionWrapper({
   const isMultiSelected = isSelected && selectedElementIds.length > 1
 
   const slide = useEditorStore(s => s.activeSlide())
-  const hasFocalElements = slide?.elements.some(el => el.isFocal) ?? false
-  const isFocal = element.isFocal
+  const hasFocalElements = slide?.elements.some(el => el.isFocal || el.isHotspot) ?? false
+  const isFocal = element.isFocal || element.isHotspot
 
   let targetZIndex = element.zIndex ?? 0
   if (isSelected) {
@@ -56,7 +56,6 @@ export const MotionWrapper = memo(function MotionWrapper({
     cursor: isReadOnly ? 'default' : 'grab',
     overflow: element.type === 'line' ? 'visible' : undefined,
     pointerEvents: element.type === 'line' ? ('none' as const) : undefined,
-    borderRadius: isCircle ? '50%' : undefined,
   }
 
   const staggerIndex = Array.from(newElementIds).indexOf(element.id)
@@ -115,7 +114,7 @@ export const MotionWrapper = memo(function MotionWrapper({
       onPointerDown={onPointerDown}
     >
       {element.pulseEffect && !isSelected && (
-        <div className="ripple-ring" />
+        <div className="ripple-ring" style={{ borderRadius: isCircle ? '50%' : undefined }} />
       )}
       {children}
     </motion.div>

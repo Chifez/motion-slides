@@ -31,6 +31,39 @@ export function PresentationOverlay() {
   const [controlsVisible, showControls] = useAutoHide(isPresenting)
   const { autoplay: urlAutoplay } = useAccessControl()
   const [autoplayPaused, setAutoplayPaused] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+
+  // Compute slide starting times in absolute seconds
+  const slidesWithTiming = useMemo(() => {
+    let current = 0
+    return (project?.slides ?? []).map((s, idx) => {
+      const hasTransition = idx > 0
+      const transitionDuration = hasTransition ? (playbackSettings.transitionDuration ?? 500) : 0
+      const transitionObj = project?.transitions?.find(t => t.fromSlideId === s.id && t.trigger === 'auto')
+      const configuredSlideDuration = transitionObj ? (transitionObj.autoDelay ?? 3000) : (playbackSettings.autoplayDelay ?? 3000)
+      const activeAudioDurationMs = s.audio ? ((s.audio.trimEnd - s.audio.trimStart) / s.audio.playbackRate) * 1000 : 0
+      const durationMs = Math.max(configuredSlideDuration, activeAudioDurationMs)
+      const durationSec = durationMs / 1000
+      const start = current
+      const end = current + durationSec
+      current = end
+      return { start, duration: durationSec }
+    })
+  }, [project?.slides, project?.transitions, playbackSettings])
+
+  // Timer loop tracking slide playback progress
+  useEffect(() => {
+    if (!isPresenting) return
+    setElapsed(0)
+    const startTime = Date.now()
+    const interval = setInterval(() => {
+      setElapsed((Date.now() - startTime) / 1000)
+    }, 50)
+    return () => clearInterval(interval)
+  }, [activeSlideIndex, isPresenting])
+
+  const slideStart = slidesWithTiming[activeSlideIndex]?.start ?? 0
+  const currentTime = slideStart + elapsed
 
   const slideAudioRef = useRef<HTMLAudioElement | null>(null)
   const bgMusicRef = useRef<HTMLAudioElement | null>(null)
@@ -311,7 +344,11 @@ export function PresentationOverlay() {
         />
       </div>
 
-      <CaptionOverlay script={slide.script} />
+      <CaptionOverlay 
+        script={slide.script} 
+        captions={project?.captions}
+        currentTime={currentTime}
+      />
 
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-500"

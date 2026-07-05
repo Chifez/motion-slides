@@ -271,6 +271,13 @@ export interface SlideTransition {
   autoDelay?: number
 }
 
+export interface TimedCaption {
+  id: string
+  text: string
+  start: number // absolute start timestamp in seconds from the beginning of the entire presentation
+  end: number   // absolute end timestamp in seconds from the beginning of the entire presentation
+}
+
 export interface Project {
   id: string
   name: string
@@ -288,6 +295,7 @@ export interface Project {
   localAuthorId?: string
   visibility: 'private' | 'link-shared' | 'collaborative' | 'public'
   parentUpdatedAt?: number
+  captions?: TimedCaption[]
 }
 
 // ─── Serialized Scene Graph ───────────────────────────────────────────────────

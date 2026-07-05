@@ -75,6 +75,7 @@ export function TimelinePanel() {
     playbackSettings,
     activeProjectId: activeProjectId ?? null,
     updateProject,
+    slidesWithTiming: timing.slidesWithTiming,
   })
 
   const refsValue = useMemo(() => ({
@@ -133,6 +134,7 @@ export function TimelinePanel() {
           setTimelineTracksVisible={setTimelineTracksVisible}
           activeProjectId={activeProjectId ?? null}
           updateProject={updateProject}
+          currentTime={playback.currentTime}
         />
 
         {timelineTracksVisible && (

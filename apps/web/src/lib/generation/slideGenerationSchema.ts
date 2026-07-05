@@ -292,6 +292,12 @@ export const GeneratedPresentationLaxSchema = z.object({
     fontFamily: z.enum(['inter', 'mono', 'serif', 'display']),
   }),
   slides: z.array(AISlideBaseSchema).min(1).max(30),
+  captions: z.array(z.object({
+    id: z.string(),
+    text: z.string(),
+    start: z.number(),
+    end: z.number(),
+  })).optional(),
 })
 
 export const GeneratedPresentationSchema = z.object({
@@ -306,6 +312,12 @@ export const GeneratedPresentationSchema = z.object({
     fontFamily: z.enum(['inter', 'mono', 'serif', 'display']),
   }),
   slides: z.array(AISlideStrictSchema).min(1).max(30),
+  captions: z.array(z.object({
+    id: z.string(),
+    text: z.string(),
+    start: z.number(),
+    end: z.number(),
+  })).optional(),
 })
 
 export function formatZodIssues(issues: z.ZodIssue[]): string {

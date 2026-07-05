@@ -1,9 +1,10 @@
-import { memo } from 'react'
+import { memo, useCallback } from 'react'
 import type { SlideAudio, Slide, Project, PlaybackSettings } from '@motionslides/shared'
 import {
   PX_PER_SEC,
   RULER_H,
   SLIDE_TRACK_H,
+  CAPTION_TRACK_H,
   VO_TRACK_H,
   BGM_TRACK_H,
   AUDIO_TYPE_BGM,
@@ -15,11 +16,13 @@ import {
 } from './constants'
 
 import type { AudioKey, AudioDrawer, SlideWithTiming } from './types'
+import { useEditorStore } from '@/store/editorStore'
 import { AudioInspector } from './AudioInspector'
 import { AudioDrawerModal } from './AudioDrawerModal'
 import { TrackLabelColumn } from './TrackLabelColumn'
 import { RulerRow } from './RulerRow'
 import { SlideTrackRow } from './SlideTrackRow'
+import { CaptionTrackRow } from './CaptionTrackRow'
 import { VoiceoverTrackRow } from './VoiceoverTrackRow'
 import { BgmTrackRow } from './BgmTrackRow'
 import { useTimelineRefs } from './TimelineRefsContext'
@@ -77,10 +80,23 @@ export const TimelineTracks = memo(function TimelineTracks({
 
   const { playheadRef } = useTimelineRefs()
 
+  const handleAddCaption = useCallback(() => {
+    const proj = useEditorStore.getState().activeProject()
+    if (!proj || !activeProjectId) return
+    const newCaption = {
+      id: Math.random().toString(36).substring(2, 9),
+      text: 'New Subtitle...',
+      start: currentTime,
+      end: currentTime + 2.5,
+    }
+    const nextCaptions = [...(proj.captions ?? []), newCaption]
+    updateProject(activeProjectId, { captions: nextCaptions, synced: false })
+  }, [currentTime, activeProjectId, updateProject])
+
   return (
     <div
       className="shrink-0 border-t overflow-hidden relative"
-      style={{ height: `${RULER_H + SLIDE_TRACK_H + VO_TRACK_H + BGM_TRACK_H + 1}px`, backgroundColor: 'var(--ms-tl-bg)', borderColor: 'var(--ms-tl-border)' }}
+      style={{ height: `${RULER_H + SLIDE_TRACK_H + CAPTION_TRACK_H + VO_TRACK_H + BGM_TRACK_H + 1}px`, backgroundColor: 'var(--ms-tl-bg)', borderColor: 'var(--ms-tl-border)' }}
     >
       <div className="flex h-full max-w-6xl mx-auto w-full">
 
@@ -88,6 +104,7 @@ export const TimelineTracks = memo(function TimelineTracks({
           audioDrawer={audio.audioDrawer}
           setAudioDrawer={audio.setAudioDrawer}
           liveSlideIndex={liveSlideIndex}
+          onAddCaption={handleAddCaption}
         />
 
         <AudioDrawerModal
@@ -144,6 +161,11 @@ export const TimelineTracks = memo(function TimelineTracks({
                 liveSlideIndex={liveSlideIndex}
                 onSlideResizeMouseDown={handleSlideResizeMouseDown}
                 onSlideClick={handleSlideClick}
+              />
+
+              <CaptionTrackRow
+                currentTime={currentTime}
+                totalDuration={totalDuration}
               />
 
               <VoiceoverTrackRow

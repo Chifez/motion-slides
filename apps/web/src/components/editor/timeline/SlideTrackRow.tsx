@@ -44,9 +44,16 @@ export function SlideTrackRow({ slidesWithTiming, liveSlideIndex, onSlideResizeM
               <div className="absolute bottom-1.5 right-2 text-[8px] font-mono px-1 rounded" style={{ color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(0,0,0,0.25)' }}>
                 {item.duration.toFixed(1)}s
               </div>
-              {cardW > 100 && (
-                <div className="absolute inset-x-2 bottom-5 text-[9px] font-semibold text-white/50 truncate">
-                  {item.slide.name || 'Slide'}
+              {cardW > 60 && (
+                <div className="absolute inset-x-2 bottom-5 flex flex-col min-w-0">
+                  <span className="text-[9px] font-bold text-white/80 truncate">
+                    {item.slide.name || 'Untitled Slide'}
+                  </span>
+                  {item.slide.script && (
+                    <span className="text-[7.5px] text-white/50 truncate italic leading-tight">
+                      "{item.slide.script}"
+                    </span>
+                  )}
                 </div>
               )}
               {isActive && (

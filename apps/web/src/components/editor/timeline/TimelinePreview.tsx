@@ -3,6 +3,7 @@ import type { Slide, PlaybackSettings, SlideTransition, Project } from '@motions
 import { ScaledStage } from './ScaledStage'
 import type { SlideWithTiming } from './types'
 import { CaptionOverlay } from '../presentation/CaptionOverlay'
+import { useEditorStore } from '@/store/editorStore'
 
 interface Props {
   liveSlide: Slide | null
@@ -19,6 +20,7 @@ interface Props {
   setTimelineTracksVisible: (v: boolean) => void
   activeProjectId: string | null
   updateProject: (id: string, updates: Partial<Project>) => void
+  currentTime: number
 }
 
 /**
@@ -41,7 +43,10 @@ export function TimelinePreview({
   setTimelineTracksVisible,
   activeProjectId,
   updateProject,
+  currentTime,
 }: Props) {
+  const project = useEditorStore(state => state.activeProject())
+
   const toggleLoop = () => {
     if (!activeProjectId) return
     updateProject(activeProjectId, {
@@ -77,6 +82,8 @@ export function TimelinePreview({
 
         <CaptionOverlay 
           script={liveSlide?.script} 
+          captions={project?.captions}
+          currentTime={currentTime}
           className="absolute bottom-4 left-0 right-0 flex justify-center px-4 pointer-events-none scale-90 origin-bottom" 
         />
 

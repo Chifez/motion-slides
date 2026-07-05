@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type React from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { useMotionContext } from '@/context/MotionContext'
@@ -12,8 +11,6 @@ import { useElementDiffStatus } from '@/hooks/useElementDiffStatus'
 import { DiffBadge } from './DiffBadge'
 import type { SceneElement } from '@motionslides/shared'
 import { Info } from 'lucide-react'
-import { AnimatePresence } from 'framer-motion'
-import { HotspotCard } from './elements/HotspotCard'
 
 interface Props {
   elementId: string
@@ -61,8 +58,6 @@ export function CanvasElement({ elementId, element: elementProp, ref }: Props) {
 
   const diffStatus = useElementDiffStatus(elementId, element)
 
-  const [isCardOpen, setIsCardOpen] = useState(false)
-
   if (!element) return null
 
   const isSelected = selectedElementIds.includes(element.id)
@@ -85,23 +80,10 @@ export function CanvasElement({ elementId, element: elementProp, ref }: Props) {
 
         {element.isHotspot && (
           <div 
-            className="absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg z-[5500] hover:scale-115 active:scale-95 transition-transform pointer-events-auto cursor-pointer border border-white/20"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsCardOpen(!isCardOpen)
-            }}
+            className="absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-lg z-[5500] border border-white/20 pointer-events-none"
+            title={`Info Card: ${element.hotspotTitle || 'Annotation'}`}
           >
             <Info size={10} className="text-white" />
-            <AnimatePresence>
-              {isCardOpen && (
-                <HotspotCard
-                  title={element.hotspotTitle || 'Annotation'}
-                  body={element.hotspotBody || ''}
-                  color="#3b82f6"
-                  onClose={() => setIsCardOpen(false)}
-                />
-              )}
-            </AnimatePresence>
           </div>
         )}
       </MotionWrapper>

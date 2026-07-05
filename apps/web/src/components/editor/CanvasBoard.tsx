@@ -30,7 +30,7 @@ export function CanvasBoard({
         selectedElements.length > 1 ||
         (selectedElements.length === 1 && !!selectedElements[0].groupId)
 
-    const hasFocal = slide?.elements.some(el => el.isFocal) ?? false
+    const hasFocal = slide?.elements.some(el => el.isFocal || el.isHotspot) ?? false
 
     return (
         <div

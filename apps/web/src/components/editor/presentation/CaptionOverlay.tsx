@@ -1,20 +1,29 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import type { TimedCaption } from '@motionslides/shared'
 
 interface Props {
-  script: string | null | undefined
+  script?: string | null | undefined
   className?: string
+  captions?: TimedCaption[]
+  currentTime?: number
 }
 
-export function CaptionOverlay({ script, className }: Props) {
+export function CaptionOverlay({ script, className, captions, currentTime }: Props) {
+  const activeCaption = captions && currentTime !== undefined
+    ? captions.find(c => currentTime >= c.start && currentTime <= c.end)
+    : null
+  
+  const textToDisplay = activeCaption ? activeCaption.text : script
+
   return (
     <div
       className={className || "absolute bottom-20 left-0 right-0 flex justify-center px-8 pointer-events-none"}
       style={{ zIndex: 9500 }}
     >
       <AnimatePresence mode="wait">
-        {script && script.trim() && (
+        {textToDisplay && textToDisplay.trim() && (
           <motion.div
-            key={script}
+            key={textToDisplay}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
@@ -25,7 +34,7 @@ export function CaptionOverlay({ script, className }: Props) {
               {/* Left accent bar */}
               <div className="absolute left-0 top-3 bottom-3 w-0.5 bg-blue-500 rounded-full" />
               <p className="text-sm leading-relaxed text-white/90 font-medium tracking-wide text-center">
-                {script}
+                {textToDisplay}
               </p>
             </div>
           </motion.div>

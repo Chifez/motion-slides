@@ -1,14 +1,15 @@
-import { Layers, Mic, Music, Plus } from 'lucide-react'
-import { RULER_H, SLIDE_TRACK_H, VO_TRACK_H, BGM_TRACK_H, AUDIO_DRAWER_VO, AUDIO_DRAWER_BGM } from './constants'
+import { Layers, Mic, Music, Plus, Type } from 'lucide-react'
+import { RULER_H, SLIDE_TRACK_H, CAPTION_TRACK_H, VO_TRACK_H, BGM_TRACK_H, AUDIO_DRAWER_VO, AUDIO_DRAWER_BGM } from './constants'
 import type { AudioDrawer } from './types'
 
 interface Props {
   audioDrawer: AudioDrawer
   setAudioDrawer: (drawer: AudioDrawer) => void
   liveSlideIndex: number
+  onAddCaption: () => void
 }
 
-export function TrackLabelColumn({ audioDrawer, setAudioDrawer, liveSlideIndex }: Props) {
+export function TrackLabelColumn({ audioDrawer, setAudioDrawer, liveSlideIndex, onAddCaption }: Props) {
   return (
     <div
       className="w-[88px] shrink-0 border-r flex flex-col z-10 relative"
@@ -24,6 +25,23 @@ export function TrackLabelColumn({ audioDrawer, setAudioDrawer, liveSlideIndex }
           <Layers size={14} className="text-indigo-400" />
         </div>
         <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--ms-tl-text-muted)' }}>Slides</span>
+      </div>
+
+      <div
+        className="border-b flex flex-col items-center justify-center gap-1 relative group/captions"
+        style={{ height: CAPTION_TRACK_H, borderColor: 'var(--ms-tl-border)' }}
+      >
+        <div className="w-7 h-7 rounded-lg bg-pink-600/20 border border-pink-500/30 flex items-center justify-center">
+          <Type size={12} className="text-pink-400" />
+        </div>
+        <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--ms-tl-text-muted)' }}>Captions</span>
+        <button
+          onClick={onAddCaption}
+          title="Add caption block at playhead"
+          className="absolute top-1 right-1 w-4 h-4 rounded flex items-center justify-center border cursor-pointer transition-all bg-transparent border-white/15 text-white/30 hover:text-pink-300 hover:border-pink-500 opacity-0 group-hover/captions:opacity-100"
+        >
+          <Plus size={9} />
+        </button>
       </div>
 
       <div

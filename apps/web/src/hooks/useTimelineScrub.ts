@@ -1,6 +1,9 @@
 import { useCallback } from 'react'
 import type { Slide, SlideTransition, PlaybackSettings, Project } from '@motionslides/shared'
 import { PX_PER_SEC } from '@/components/editor/timeline/constants'
+import type { SlideWithTiming } from '@/components/editor/timeline/types'
+import { useEditorStore } from '@/store/editorStore'
+
 interface Params {
   totalDuration: number
   timelineBodyRef: React.RefObject<HTMLDivElement>
@@ -10,6 +13,7 @@ interface Params {
   playbackSettings: PlaybackSettings
   activeProjectId: string | null
   updateProject: (id: string, updates: Partial<Project>) => void
+  slidesWithTiming: SlideWithTiming[]
 }
 
 interface Result {
@@ -35,16 +39,25 @@ export function useTimelineScrub({
   playbackSettings,
   activeProjectId,
   updateProject,
+  slidesWithTiming,
 }: Params): Result {
   const handleRulerMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const scrollLeft = timelineBodyRef.current?.scrollLeft ?? 0
-    const clickX = e.clientX - rect.left + scrollLeft
-    setCurrentTime(Math.max(0, Math.min(clickX / PX_PER_SEC, totalDuration)))
+    e.preventDefault()
+    const el = timelineBodyRef.current
+    if (!el) return
+
+    const rect = el.getBoundingClientRect()
+    const updateTimeFromX = (clientX: number) => {
+      const scrollLeft = el.scrollLeft
+      const relativeX = clientX - rect.left + scrollLeft - 88 // 88px sidebar column
+      const sec = Math.max(0, relativeX / PX_PER_SEC)
+      setCurrentTime(Math.min(totalDuration, sec))
+    }
+
+    updateTimeFromX(e.clientX)
 
     const handleMouseMove = (ev: MouseEvent) => {
-      const dragX = ev.clientX - rect.left + (timelineBodyRef.current?.scrollLeft ?? 0)
-      setCurrentTime(Math.max(0, Math.min(dragX / PX_PER_SEC, totalDuration)))
+      updateTimeFromX(ev.clientX)
     }
     const handleMouseUp = () => {
       window.removeEventListener('mousemove', handleMouseMove)
@@ -61,9 +74,19 @@ export function useTimelineScrub({
   ) => {
     e.stopPropagation()
     const startX = e.clientX
+    
+    // Find slide timing start/end in project
+    const timingInfo = slidesWithTiming.find(s => s.slide.id === slideId)
+    const originalSlideEndTime = timingInfo ? timingInfo.end : 0
+    const project = useEditorStore.getState().activeProject()
+    const originalCaptions = project?.captions ? [...project.captions] : []
+
     const handleMouseMove = (ev: MouseEvent) => {
       const deltaX = ev.clientX - startX
-      const targetDuration = Math.max(1, currentDuration + deltaX / PX_PER_SEC)
+      const deltaSec = deltaX / PX_PER_SEC
+      const targetDuration = Math.max(1, currentDuration + deltaSec)
+      const actualDelta = targetDuration - currentDuration
+
       const slideIdx = slides.findIndex(s => s.id === slideId)
       if (slideIdx === -1) return
       const existingTransIdx = transitions.findIndex(t => t.fromSlideId === slideId)
@@ -87,7 +110,26 @@ export function useTimelineScrub({
           autoDelay: Math.round(targetDuration * 1000),
         })
       }
-      if (activeProjectId) updateProject(activeProjectId, { transitions: updatedTransitions, synced: false })
+
+      // Ripple offset all captions starting after the current slide's end boundary
+      const updatedCaptions = originalCaptions.map(c => {
+        if (c.start >= originalSlideEndTime) {
+          return {
+            ...c,
+            start: Math.max(0, c.start + actualDelta),
+            end: Math.max(0.5, c.end + actualDelta),
+          }
+        }
+        return c
+      })
+
+      if (activeProjectId) {
+        updateProject(activeProjectId, {
+          transitions: updatedTransitions,
+          captions: updatedCaptions,
+          synced: false,
+        })
+      }
     }
     const handleMouseUp = () => {
       window.removeEventListener('mousemove', handleMouseMove)
@@ -95,7 +137,7 @@ export function useTimelineScrub({
     }
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
-  }, [slides, transitions, playbackSettings.transitionDuration, playbackSettings.transitionEase, activeProjectId, updateProject])
+  }, [slides, transitions, playbackSettings.transitionDuration, playbackSettings.transitionEase, activeProjectId, updateProject, slidesWithTiming])
 
   return { handleRulerMouseDown, handleSlideResizeMouseDown }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { MotionProvider } from '@/context/MotionContext'
 import { CanvasElement } from './CanvasElement'
@@ -19,10 +19,34 @@ interface Props {
   mode: 'editor' | 'presentation'
 }
 
-function CanvasElementStatic({ element, hasFocal }: { element: SceneElement; hasFocal: boolean }) {
+function CanvasElementStatic({ 
+  element, 
+  hasFocal,
+  activeTransition,
+  settings,
+}: { 
+  element: SceneElement
+  hasFocal: boolean 
+  activeTransition?: SlideTransition | null
+  settings?: PlaybackSettings
+}) {
   const [isCardOpen, setIsCardOpen] = useState(false)
+
+  // Auto-open card after slide transition completes
+  useEffect(() => {
+    if (!element.isHotspot) return
+    setIsCardOpen(false)
+    const transitionMs = activeTransition?.duration ?? settings?.transitionDuration ?? 500
+    const timer = setTimeout(() => {
+      setIsCardOpen(true)
+    }, transitionMs + 100)
+    
+    return () => clearTimeout(timer)
+  }, [element.id, activeTransition, settings, element.isHotspot])
+
+  const isFocalOrHotspot = element.isFocal || element.isHotspot
   let targetZIndex = element.zIndex ?? 0
-  if (hasFocal && element.isFocal) {
+  if (hasFocal && isFocalOrHotspot) {
     targetZIndex = 5000 + (element.zIndex ?? 0)
   }
   const isCircle = element.type === 'shape' && (element.content as any).shapeType === 'circle'
@@ -35,11 +59,12 @@ function CanvasElementStatic({ element, hasFocal }: { element: SceneElement; has
     rotate: `${element.rotation}deg`,
     opacity: element.opacity,
     zIndex: targetZIndex,
-    borderRadius: isCircle ? '50%' : undefined,
   }
   return (
     <div style={commonStyle}>
-      {element.pulseEffect && <div className="ripple-ring" />}
+      {element.pulseEffect && (
+        <div className="ripple-ring" style={{ borderRadius: isCircle ? '50%' : undefined }} />
+      )}
       <ElementRenderer element={element} isSelected={false} />
 
       {element.isHotspot && (
@@ -160,12 +185,14 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
           animate={variants.outgoing.animate}
           transition={{ duration: durationSec, ease }}
         >
-          <CanvasSpotlightOverlay isVisible={previousSlide.elements.some(el => el.isFocal)} />
+          <CanvasSpotlightOverlay isVisible={previousSlide.elements.some(el => el.isFocal || el.isHotspot)} />
           {previousSlide.elements.map((element) => (
             <CanvasElementStatic 
               key={element.id} 
               element={element} 
-              hasFocal={previousSlide.elements.some(el => el.isFocal)} 
+              hasFocal={previousSlide.elements.some(el => el.isFocal || el.isHotspot)} 
+              activeTransition={activeTransition}
+              settings={settings}
             />
           ))}
         </motion.div>
@@ -190,12 +217,14 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
           animate={variants.incoming.animate}
           transition={{ duration: durationSec, ease }}
         >
-          <CanvasSpotlightOverlay isVisible={slide.elements.some(el => el.isFocal)} />
+          <CanvasSpotlightOverlay isVisible={slide.elements.some(el => el.isFocal || el.isHotspot)} />
           {slide.elements.map((element) => (
             <CanvasElementStatic 
               key={element.id} 
               element={element} 
-              hasFocal={slide.elements.some(el => el.isFocal)} 
+              hasFocal={slide.elements.some(el => el.isFocal || el.isHotspot)} 
+              activeTransition={activeTransition}
+              settings={settings}
             />
           ))}
         </motion.div>
@@ -218,14 +247,24 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
       isTimelinePreview={mode === 'presentation'}
     >
       <LayoutGroup id="motion-stage">
-        <CanvasSpotlightOverlay isVisible={slide.elements.some(el => el.isFocal)} />
+        <CanvasSpotlightOverlay isVisible={slide.elements.some(el => el.isFocal || el.isHotspot)} />
         <AnimatePresence mode="sync" initial={false}>
           {slide.elements.map((element) => (
-            <CanvasElement
-              key={element.id}
-              elementId={element.id}
-              element={element}
-            />
+            mode === 'presentation' ? (
+              <CanvasElementStatic
+                key={element.id}
+                element={element}
+                hasFocal={slide.elements.some(el => el.isFocal || el.isHotspot)}
+                activeTransition={activeTransition}
+                settings={settings}
+              />
+            ) : (
+              <CanvasElement
+                key={element.id}
+                elementId={element.id}
+                element={element}
+              />
+            )
           ))}
         </AnimatePresence>
 
