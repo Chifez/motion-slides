@@ -10,7 +10,7 @@ import {
 import { useClickOutside } from '@/hooks/useClickOutside'
 import type { LineType, ShapeType, ChartType } from '@motionslides/shared'
 
-const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-(--ms-border) bg-(--ms-bg-elevated) text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)"
+const btnBase = "inline-flex items-center gap-1 text-xs font-medium p-1.5 rounded-md transition-colors cursor-pointer border border-(--ms-border) bg-(--ms-bg-elevated) text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border) shrink-0"
 
 export function ElementButtons() {
   const { addElement, addSection } = useEditorStore()
@@ -29,7 +29,7 @@ export function ElementButtons() {
 
   const addText = () => addElement({ ...DEFAULT_TEXT_ELEMENT, id: uuid() })
   const addCode = () => addElement({ ...DEFAULT_CODE_ELEMENT, id: uuid() })
-  
+
   const addShape = (shapeType: ShapeType = 'rectangle') => {
     const isAws = shapeType === 'aws-icon'
     const isGcp = shapeType === 'gcp-icon'
@@ -85,19 +85,20 @@ export function ElementButtons() {
 
   return (
     <>
-      <button className={btnBase} onClick={addText}>
-        <Type size={13} /> Text
+      <button className={btnBase} onClick={addText} title="Add Text Element">
+        <Type size={14} />
       </button>
-      <button className={btnBase} onClick={addSection}>
-        <Layout size={13} /> Section
+      <button className={btnBase} onClick={addSection} title="Add Section Boundary">
+        <Layout size={14} />
       </button>
-      <button className={btnBase} onClick={addCode}>
-        <Code2 size={13} /> Code
+      <button className={btnBase} onClick={addCode} title="Add Code Block">
+        <Code2 size={14} />
       </button>
 
       <div className="relative" ref={shapeRef}>
-        <button className={btnBase} onClick={() => setShowShapeMenu(!showShapeMenu)}>
-          <Shapes size={13} /> Shape <ChevronDown size={10} />
+        <button className={btnBase} onClick={() => setShowShapeMenu(!showShapeMenu)} title="Add Shape / Cloud Icon">
+          <Shapes size={14} />
+          <ChevronDown size={10} className="opacity-55" />
         </button>
         {showShapeMenu && (
           <div className="absolute left-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-50 p-1.5 w-44 max-h-64 overflow-y-auto custom-scrollbar transition-colors">
@@ -115,8 +116,9 @@ export function ElementButtons() {
       </div>
 
       <div className="relative" ref={chartRef}>
-        <button className={btnBase} onClick={() => setShowChartMenu(!showChartMenu)}>
-          <BarChart3 size={13} /> Chart <ChevronDown size={10} />
+        <button className={btnBase} onClick={() => setShowChartMenu(!showChartMenu)} title="Add Chart">
+          <BarChart3 size={14} />
+          <ChevronDown size={10} className="opacity-55" />
         </button>
         {showChartMenu && (
           <div className="absolute left-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-50 p-1.5 w-36 transition-colors">
@@ -134,13 +136,16 @@ export function ElementButtons() {
         )}
       </div>
 
-      <div className="w-px h-5 bg-(--ms-border) mx-0.5" />
+      <div className="w-px h-5 bg-(--ms-border) mx-0.5 self-center" />
+      
       <div className="relative" ref={lineRef}>
         <button
           className={btnBase}
           onClick={() => setShowLineMenu(!showLineMenu)}
+          title="Add Line / Connector"
         >
-          <Minus size={13} /> Line <ChevronDown size={10} />
+          <Minus size={14} />
+          <ChevronDown size={10} className="opacity-55" />
         </button>
         {showLineMenu && (
           <div className="absolute left-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-50 p-1.5 w-36 transition-colors">

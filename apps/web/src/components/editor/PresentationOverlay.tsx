@@ -10,6 +10,7 @@ import { getCanvasDimensions } from '@motionslides/shared'
 import { MotionStage } from './MotionStage'
 import { PresentationControls } from './presentation/PresentationControls'
 import { useAccessControl } from '@/hooks/useAccessControl'
+import { CaptionOverlay } from './presentation/CaptionOverlay'
 
 export function PresentationOverlay() {
   const isPresenting = useEditorStore(s => s.isPresenting)
@@ -310,6 +311,8 @@ export function PresentationOverlay() {
         />
       </div>
 
+      <CaptionOverlay script={slide.script} />
+
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-500"
         style={{ opacity: controlsVisible ? 1 : 0 }}
@@ -326,9 +329,11 @@ export function PresentationOverlay() {
             totalSlides={totalSlides}
             playbackSettings={playbackSettings}
             autoplayPaused={autoplayPaused}
+            slides={project?.slides || []}
             onPrev={handlePrev}
             onNext={handleNext}
             onToggleAutoplay={() => setAutoplayPaused(!autoplayPaused)}
+            onJumpToSlide={setActiveSlide}
           />
         </div>
       </div>

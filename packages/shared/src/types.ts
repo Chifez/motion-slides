@@ -23,7 +23,7 @@ export type ShapeType =
 
 export type LineType = 'straight' | 'elbow' | 'curved' | 'step-after' | 'step-before' | 'branching'
 
-export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line' | 'chart' | 'section'
+export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line' | 'chart' | 'section' | 'hotspot'
 
 export type AspectRatioKey = '16:9' | '9:16' | '1:1' | '4:3' | 'custom'
 
@@ -144,6 +144,13 @@ export interface LineContent {
 
 export type AnimationType = 'fade-in' | 'slide-up' | 'slide-left' | 'zoom-in' | 'pop' | 'draw' | 'none'
 
+export interface HotspotContent {
+  title: string
+  body: string
+  iconType: 'info' | 'question' | 'warning' | 'star'
+  color: string
+}
+
 export interface SceneElement {
   id: string
   type: ElementType
@@ -159,7 +166,14 @@ export interface SceneElement {
   animationDelay?: number
   autoWidth?: boolean
   autoHeight?: boolean
-  content: TextContent | CodeContent | ShapeContent | LineContent | ChartContent | SectionContent
+  pulseEffect?: boolean
+  isFocal?: boolean
+  isHotspot?: boolean
+  hotspotTitle?: string
+  hotspotBody?: string
+  hotspotIconType?: 'info' | 'question' | 'warning' | 'star'
+  hotspotColor?: string
+  content: TextContent | CodeContent | ShapeContent | LineContent | ChartContent | SectionContent | HotspotContent
 }
 
 export interface SlideAudio {
@@ -182,6 +196,7 @@ export interface Slide {
   audio?: SlideAudio | null
   customWidth?: number
   customHeight?: number
+  script?: string | null
 }
 
 // ── AI Chat ───────────────────────────────────────────────────────────────────

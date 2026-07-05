@@ -223,10 +223,10 @@ export function EditorToolbar({ projectId }: Props) {
             <button
               id="tour-ai-chat-button"
               onClick={() => toggleChat()}
-              className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-all cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
+              title="AI Design Studio Chat"
+              className={`inline-flex items-center justify-center p-1.5 rounded-md transition-all cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
             >
-              <Sparkles size={13} className={isChatOpen ? 'animate-pulse' : ''} />
-              <span>Chat</span>
+              <Sparkles size={14} className={isChatOpen ? 'animate-pulse' : ''} />
             </button>
 
             <ThemeToggle className="hidden md:flex" />
@@ -238,10 +238,11 @@ export function EditorToolbar({ projectId }: Props) {
             {mode !== 'edit' && (
               <button
                 id="tour-present-button"
-                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-2 md:px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
+                className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded-md transition-colors cursor-pointer border-none"
                 onClick={() => startPresentation()}
+                title="Play Presentation"
               >
-                <Play size={13} fill="currentColor" /> {!isMobile && "Play"}
+                <Play size={14} fill="currentColor" />
               </button>
             )}
           </>

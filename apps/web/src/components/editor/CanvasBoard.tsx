@@ -3,6 +3,7 @@ import { MotionStage } from './MotionStage'
 import { GroupBoundingBox } from './GroupBoundingBox'
 import { ConnectionAnchors } from './BoundingBox'
 import { AlignmentGuides } from './AlignmentGuides'
+import { CanvasSpotlightOverlay } from './elements/CanvasSpotlightOverlay'
 
 interface LassoRect { x1: number; y1: number; x2: number; y2: number }
 
@@ -29,6 +30,8 @@ export function CanvasBoard({
         selectedElements.length > 1 ||
         (selectedElements.length === 1 && !!selectedElements[0].groupId)
 
+    const hasFocal = slide?.elements.some(el => el.isFocal) ?? false
+
     return (
         <div
             data-canvas-board
@@ -49,6 +52,7 @@ export function CanvasBoard({
             }}
         >
             <MotionStage mode="editor" slide={slide} previousSlide={null} settings={playbackSettings} />
+            <CanvasSpotlightOverlay isVisible={hasFocal} />
             <ConnectionAnchors />
             {isGroupSelection && <GroupBoundingBox elements={selectedElements} />}
             <AlignmentGuides />

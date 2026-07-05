@@ -118,6 +118,23 @@ const AISectionElement = z.object({
   cornerRadius: z.number().min(0).max(24),
   animation: AnimationType.nullable(),
   animationDelay: z.number().min(0).max(5000).nullable(),
+  pulseEffect: z.boolean().nullable().optional(),
+  isFocal: z.boolean().nullable().optional(),
+})
+
+const AIHotspotElement = z.object({
+  type: z.literal('hotspot'),
+  id: z.string().min(1),
+  title: z.string().min(1),
+  body: z.string().min(1),
+  iconType: z.enum(['info', 'question', 'warning', 'star']),
+  color: ColorSchema,
+  position: AIRelativePosition,
+  layer: z.string().min(1),
+  animation: AnimationType.nullable(),
+  animationDelay: z.number().min(0).max(5000).nullable(),
+  pulseEffect: z.boolean().nullable().optional(),
+  isFocal: z.boolean().nullable().optional(),
 })
 
 export const AIConnection = z.object({
@@ -139,6 +156,7 @@ const AIElement = z.discriminatedUnion('type', [
   AICodeElement,
   AIIconElement,
   AIClusterElement,
+  AIHotspotElement,
 ])
 
 // ── Slide schema ──────────────────────────────────────────────────────────────
@@ -180,6 +198,7 @@ export const AISlideBaseSchema = z.object({
     easing: z.enum(['easeInOut', 'easeOut', 'spring', 'linear']).nullable(),
   }).nullable(),
   speakerNotes: z.string().nullable(),
+  script: z.string().nullable().optional(),
 })
 
 export const AISlideStrictSchema = AISlideBaseSchema.superRefine((slide, ctx) => {

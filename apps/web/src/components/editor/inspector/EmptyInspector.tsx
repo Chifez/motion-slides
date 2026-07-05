@@ -69,6 +69,20 @@ export const EmptyInspector = memo(function EmptyInspector() {
       {slide && (
         <div className={sectionCls}>
           <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-2 font-medium">
+            Walkthrough Script / Captions
+          </span>
+          <textarea
+            value={slide.script || ''}
+            onChange={(e) => updateSlide({ script: e.target.value })}
+            className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all resize-none h-20 leading-relaxed font-medium"
+            placeholder="Type captions for this step here..."
+          />
+        </div>
+      )}
+
+      {slide && (
+        <div className={sectionCls}>
+          <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-2 font-medium">
             Voice-Over Settings
           </span>
           <div className="space-y-3">

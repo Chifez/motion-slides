@@ -2,6 +2,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { Slide, PlaybackSettings, SlideTransition, Project } from '@motionslides/shared'
 import { ScaledStage } from './ScaledStage'
 import type { SlideWithTiming } from './types'
+import { CaptionOverlay } from '../presentation/CaptionOverlay'
 
 interface Props {
   liveSlide: Slide | null
@@ -73,6 +74,11 @@ export function TimelinePreview({
             No slides yet
           </div>
         )}
+
+        <CaptionOverlay 
+          script={liveSlide?.script} 
+          className="absolute bottom-4 left-0 right-0 flex justify-center px-4 pointer-events-none scale-90 origin-bottom" 
+        />
 
         <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-violet-500/40 rounded-tl-xl pointer-events-none" />
         <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-violet-500/40 rounded-tr-xl pointer-events-none" />

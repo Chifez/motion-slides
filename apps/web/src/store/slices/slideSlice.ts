@@ -11,7 +11,7 @@ export interface SlideSlice {
   duplicateSlide: (index: number) => void
   reorderSlides: (fromIndex: number, toIndex: number) => void
   setActiveSlide: (index: number) => void
-  updateSlide: (updates: Partial<Pick<Slide, 'name' | 'background' | 'audio'>>) => void
+  updateSlide: (updates: Partial<Pick<Slide, 'name' | 'background' | 'audio' | 'script'>>) => void
   activeSlide: () => Slide | null
   previousSlideIndex: number | null
 }

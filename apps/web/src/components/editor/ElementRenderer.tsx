@@ -5,8 +5,9 @@ import { ShapeElement } from './elements/ShapeElement'
 import { LineElement } from './elements/LineElement'
 import { ChartElement } from './elements/ChartElement'
 import { SectionElement } from './elements/SectionElement'
+import { HotspotElement } from './elements/HotspotElement'
 
-import type { CodeContent, ShapeContent, ChartContent, SectionContent } from '@motionslides/shared'
+import type { HotspotContent, CodeContent, ShapeContent, ChartContent, SectionContent } from '@motionslides/shared'
 
 interface Props {
   element: any
@@ -21,6 +22,7 @@ export const ElementRenderer = memo(function ElementRenderer({ element, isSelect
     case 'line': return <LineElement element={element} isSelected={isSelected} />
     case 'chart': return <ChartElement content={element.content as ChartContent} />
     case 'section': return <SectionElement element={element} content={element.content as SectionContent} />
+    case 'hotspot': return <HotspotElement content={element.content as HotspotContent} elementId={element.id} pulseEffect={element.pulseEffect} />
     default: return null
   }
 })

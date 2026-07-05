@@ -26,6 +26,24 @@ export const MotionWrapper = memo(function MotionWrapper({
   const selectedElementIds = useEditorStore(s => s.selectedElementIds)
   const isMultiSelected = isSelected && selectedElementIds.length > 1
 
+  const slide = useEditorStore(s => s.activeSlide())
+  const hasFocalElements = slide?.elements.some(el => el.isFocal) ?? false
+  const isFocal = element.isFocal
+
+  let targetZIndex = element.zIndex ?? 0
+  if (isSelected) {
+    targetZIndex = SELECTED_Z_INDEX
+  }
+  if (hasFocalElements) {
+    if (isFocal) {
+      targetZIndex = 5000 + (isSelected ? SELECTED_Z_INDEX : (element.zIndex ?? 0))
+    } else {
+      targetZIndex = element.zIndex ?? 0
+    }
+  }
+
+  const isCircle = element.type === 'shape' && (element.content as any).shapeType === 'circle'
+
   const commonStyle = {
     position: 'absolute' as const,
     left: element.position.x,
@@ -34,10 +52,11 @@ export const MotionWrapper = memo(function MotionWrapper({
     height: element.size.height,
     rotate: element.rotation,
     opacity: element.opacity,
-    zIndex: isSelected ? SELECTED_Z_INDEX : element.zIndex,
+    zIndex: targetZIndex,
     cursor: isReadOnly ? 'default' : 'grab',
     overflow: element.type === 'line' ? 'visible' : undefined,
     pointerEvents: element.type === 'line' ? ('none' as const) : undefined,
+    borderRadius: isCircle ? '50%' : undefined,
   }
 
   const staggerIndex = Array.from(newElementIds).indexOf(element.id)
@@ -95,6 +114,9 @@ export const MotionWrapper = memo(function MotionWrapper({
       onDoubleClick={onDoubleClick}
       onPointerDown={onPointerDown}
     >
+      {element.pulseEffect && !isSelected && (
+        <div className="ripple-ring" />
+      )}
       {children}
     </motion.div>
   )

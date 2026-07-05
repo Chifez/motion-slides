@@ -1,10 +1,11 @@
-import type { TextContent, CodeContent, ShapeContent, LineContent, ChartContent, SectionContent, SceneElement } from '@motionslides/shared'
+import type { TextContent, CodeContent, ShapeContent, LineContent, ChartContent, SectionContent, SceneElement, HotspotContent } from '@motionslides/shared'
 import { TextSection } from './TextSection'
 import { CodeSection } from './CodeSection'
 import { ShapeSection } from './ShapeSection'
 import { LineSection } from './LineSection'
 import { ChartSection } from './ChartSection'
 import { SectionSection } from './SectionSection'
+import { HotspotSection } from './HotspotSection'
 
 export interface InspectorSectionProps {
   element: SceneElement
@@ -50,6 +51,12 @@ export const INSPECTOR_REGISTRY: Record<string, React.ComponentType<InspectorSec
       onUpdate={(c: Partial<SectionContent>) => props.onUpdate({ 
         content: { ...(props.element.content as SectionContent), ...c } 
       })} 
+    />
+  ),
+  hotspot: (props) => (
+    <HotspotSection
+      content={props.element.content as HotspotContent}
+      onUpdate={(c) => props.onUpdate({ content: { ...(props.element.content as HotspotContent), ...c } })}
     />
   ),
 }

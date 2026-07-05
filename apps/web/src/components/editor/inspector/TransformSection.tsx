@@ -20,6 +20,63 @@ export function TransformSection({ element, onUpdate }: Props) {
         <PropPair label="Rotate" value={element.rotation} onChange={(v) => onUpdate({ rotation: v })} />
         <PropPair label="Opacity" value={element.opacity} min={0} max={1} step={0.01} onChange={(v) => onUpdate({ opacity: v })} />
       </div>
+
+      <div className="mt-4 pt-3 border-t border-(--ms-border) space-y-2">
+        <label className="flex items-center justify-between text-xs text-(--ms-text-secondary) cursor-pointer select-none">
+          <span>Focus Spotlight</span>
+          <input
+            type="checkbox"
+            checked={!!element.isFocal}
+            onChange={(e) => onUpdate({ isFocal: e.target.checked })}
+            className="w-3.5 h-3.5 rounded border-(--ms-border) accent-blue-500 cursor-pointer"
+          />
+        </label>
+        <label className="flex items-center justify-between text-xs text-(--ms-text-secondary) cursor-pointer select-none">
+          <span>Ripple Pulse</span>
+          <input
+            type="checkbox"
+            checked={!!element.pulseEffect}
+            onChange={(e) => onUpdate({ pulseEffect: e.target.checked })}
+            className="w-3.5 h-3.5 rounded border-(--ms-border) accent-blue-500 cursor-pointer"
+          />
+        </label>
+
+        <div className="h-px bg-(--ms-border) my-2" />
+
+        <label className="flex items-center justify-between text-xs text-(--ms-text-secondary) cursor-pointer select-none">
+          <span>Enable Info Card</span>
+          <input
+            type="checkbox"
+            checked={!!element.isHotspot}
+            onChange={(e) => onUpdate({ isHotspot: e.target.checked })}
+            className="w-3.5 h-3.5 rounded border-(--ms-border) accent-blue-500 cursor-pointer"
+          />
+        </label>
+
+        {element.isHotspot && (
+          <div className="space-y-2.5 mt-2 pl-2 border-l-2 border-blue-500/30">
+            <div>
+              <span className="text-[9px] font-semibold uppercase text-(--ms-text-muted) block mb-1">Popover Title</span>
+              <input
+                type="text"
+                value={element.hotspotTitle || ''}
+                onChange={(e) => onUpdate({ hotspotTitle: e.target.value })}
+                className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all"
+                placeholder="Popover Title"
+              />
+            </div>
+            <div>
+              <span className="text-[9px] font-semibold uppercase text-(--ms-text-muted) block mb-1">Popover Explanation</span>
+              <textarea
+                value={element.hotspotBody || ''}
+                onChange={(e) => onUpdate({ hotspotBody: e.target.value })}
+                className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all h-20 resize-none leading-relaxed"
+                placeholder="Write description here..."
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
