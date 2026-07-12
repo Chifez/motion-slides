@@ -27,7 +27,7 @@ export function PresentationControls({
           <button
             key={s.id}
             onClick={() => onJumpToSlide(idx)}
-            className={`h-1.5 rounded-full transition-all duration-300 border-none cursor-pointer ${
+            className={`h-1.5 rounded-full transition duration-300 border-none cursor-pointer ${
               idx === slideIndex 
                 ? 'w-6 bg-blue-500' 
                 : 'w-2 bg-white/20 hover:bg-white/50'
@@ -42,7 +42,7 @@ export function PresentationControls({
           <button
             onClick={onPrev}
             disabled={slideIndex === 0}
-            className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer border-none bg-transparent"
+            className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed transition cursor-pointer border-none bg-transparent"
             title="Previous Step"
           >
             <ChevronLeft size={16} />
@@ -55,7 +55,7 @@ export function PresentationControls({
           <button
             onClick={onNext}
             disabled={slideIndex >= totalSlides - 1 && !playbackSettings.loop}
-            className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer border-none bg-transparent"
+            className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed transition cursor-pointer border-none bg-transparent"
             title="Next Step"
           >
             <ChevronRight size={16} />
@@ -67,7 +67,7 @@ export function PresentationControls({
             <div className="w-px h-4 bg-white/10" />
             <button
               onClick={onToggleAutoplay}
-              className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-all cursor-pointer border-none bg-transparent"
+              className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition cursor-pointer border-none bg-transparent"
               title={autoplayPaused ? 'Play Autoplay' : 'Pause Autoplay'}
             >
               {autoplayPaused ? <Play size={14} fill="currentColor" /> : <Pause size={14} fill="currentColor" />}

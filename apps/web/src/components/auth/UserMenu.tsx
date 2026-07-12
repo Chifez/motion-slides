@@ -34,7 +34,7 @@ export function UserMenu() {
     <div className="relative">
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full bg-(--ms-bg-elevated) hover:bg-(--ms-border) border border-(--ms-border) transition-all cursor-pointer text-left"
+        className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full bg-(--ms-bg-elevated) hover:bg-(--ms-border) border border-(--ms-border) transition cursor-pointer text-left"
       >
         <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-inner">
           {user.name?.[0] || 'U'}
@@ -63,12 +63,12 @@ export function UserMenu() {
                 <p className="text-[11px] font-medium text-(--ms-text-primary) truncate">{user.email}</p>
               </div>
 
-              <button className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) rounded-lg transition-all cursor-pointer border-none bg-transparent">
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) rounded-lg transition cursor-pointer border-none bg-transparent">
                 <User size={14} />
                 <span>Profile Settings</span>
               </button>
 
-              <button className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) rounded-lg transition-all cursor-pointer border-none bg-transparent">
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) rounded-lg transition cursor-pointer border-none bg-transparent">
                 <Cloud size={14} />
                 <span>Sync Preferences</span>
               </button>
@@ -79,7 +79,7 @@ export function UserMenu() {
                     promptInstall()
                     setIsDropdownOpen(false)
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-(--ms-text-muted) hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all cursor-pointer border-none bg-transparent"
+                  className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-(--ms-text-muted) hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition cursor-pointer border-none bg-transparent"
                 >
                   <Download size={14} />
                   <span>Install App</span>
@@ -91,7 +91,7 @@ export function UserMenu() {
                   logout()
                   setIsDropdownOpen(false)
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-red-500 hover:bg-red-500/10 rounded-lg transition-all cursor-pointer border-none bg-transparent mt-1"
+                className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-red-500 hover:bg-red-500/10 rounded-lg transition cursor-pointer border-none bg-transparent mt-1"
               >
                 <LogOut size={14} />
                 <span>Sign Out</span>

@@ -19,7 +19,7 @@ export function HotspotSection({ content, onUpdate }: Props) {
           type="text"
           value={content.title || ''}
           onChange={(e) => onUpdate({ title: e.target.value })}
-          className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all font-medium"
+          className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition font-medium"
           placeholder="e.g. Load Balancer Details"
         />
       </div>
@@ -29,7 +29,7 @@ export function HotspotSection({ content, onUpdate }: Props) {
         <select
           value={content.iconType || 'info'}
           onChange={(e) => onUpdate({ iconType: e.target.value as HotspotContent['iconType'] })}
-          className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all cursor-pointer font-medium"
+          className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition cursor-pointer font-medium"
         >
           {iconTypes.map((t) => (
             <option key={t} value={t}>
@@ -52,7 +52,7 @@ export function HotspotSection({ content, onUpdate }: Props) {
             type="text"
             value={content.color || '#3b82f6'}
             onChange={(e) => onUpdate({ color: e.target.value })}
-            className="flex-1 bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all font-mono font-medium"
+            className="flex-1 bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition font-mono font-medium"
             placeholder="#3b82f6"
           />
         </div>
@@ -63,7 +63,7 @@ export function HotspotSection({ content, onUpdate }: Props) {
         <textarea
           value={content.body || ''}
           onChange={(e) => onUpdate({ body: e.target.value })}
-          className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all resize-none h-32 leading-relaxed font-medium"
+          className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition resize-none h-32 leading-relaxed font-medium"
           placeholder="Explain this system component..."
         />
       </div>

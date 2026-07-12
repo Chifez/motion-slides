@@ -5,6 +5,7 @@ import { useClickOutside } from '@/hooks/useClickOutside'
 import { motion } from 'framer-motion'
 import { useShareMenu } from '@/hooks/useShareMenu'
 import { EmbedCodeModal } from '../embed/EmbedCodeModal'
+import { UI_SPRING } from '@/lib/motionEngine'
 
 interface Props {
   project: Project
@@ -40,7 +41,7 @@ export function ShareMenu({ project, isMobile }: Props) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={isMobile ? "absolute inset-0 w-full h-full opacity-0 cursor-pointer" : "inline-flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-(--ms-text-secondary) hover:text-(--ms-text-primary) text-xs font-medium px-3 py-1.5 rounded-md transition-all border border-(--ms-border) cursor-pointer"}
+        className={isMobile ? "absolute inset-0 w-full h-full opacity-0 cursor-pointer" : "inline-flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-(--ms-text-secondary) hover:text-(--ms-text-primary) text-xs font-medium px-3 py-1.5 rounded-md transition border border-(--ms-border) cursor-pointer"}
         title="Share Project"
       >
         {!isMobile && <Share2 size={13} />}
@@ -69,7 +70,7 @@ export function ShareMenu({ project, isMobile }: Props) {
               <motion.div
                 animate={{ x: isShared ? 18 : 2 }}
                 initial={false}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                transition={UI_SPRING}
                 className="absolute top-1 left-0 w-3 h-3 bg-white rounded-full shadow-sm"
               />
             </button>
@@ -93,7 +94,7 @@ export function ShareMenu({ project, isMobile }: Props) {
               <button
                 onClick={() => handleCopy('view')}
                 disabled={!isShared}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition-all cursor-pointer text-left group disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition cursor-pointer text-left group disabled:cursor-not-allowed"
               >
                 <div className="flex items-center gap-2 overflow-hidden">
                   <LinkIcon size={12} className="text-blue-400 shrink-0" />
@@ -108,7 +109,7 @@ export function ShareMenu({ project, isMobile }: Props) {
               <button
                 onClick={() => setEmbedOpen(true)}
                 disabled={!isShared}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 hover:border-blue-500/40 transition-all cursor-pointer text-xs font-semibold disabled:cursor-not-allowed border-dashed"
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 hover:border-blue-500/40 transition cursor-pointer text-xs font-semibold disabled:cursor-not-allowed border-dashed"
               >
                 <Code size={12} />
                 <span>Embed Options</span>
@@ -137,7 +138,7 @@ export function ShareMenu({ project, isMobile }: Props) {
                 <button
                   onClick={() => handleCopy('edit')}
                   disabled={!isCollaborative}
-                  className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition-all cursor-pointer text-left group disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) hover:border-blue-500/50 transition cursor-pointer text-left group disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
                     <LinkIcon size={12} className="text-orange-400 shrink-0" />

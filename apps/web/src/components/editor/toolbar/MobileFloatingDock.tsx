@@ -16,6 +16,7 @@ import {
 } from '@/constants/editor'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import type { LineType, ShapeType, ChartType } from '@motionslides/shared'
+import { UI_SPRING } from '@/lib/motionEngine'
 
 /**
  * MobileFloatingDock — Radial tool dock positioned in the bottom-left.
@@ -157,10 +158,10 @@ export const MobileFloatingDock = memo(function MobileFloatingDock() {
             return (
               <motion.button
                 key={tool.id}
-                initial={{ opacity: 0, x: CENTER_OFFSET, y: CENTER_OFFSET, scale: 0.5 }}
+                initial={{ opacity: 0, x: CENTER_OFFSET, y: CENTER_OFFSET, scale: 0.95 }}
                 animate={{ opacity: 1, x: targetX, y: targetY, scale: 1 }}
-                exit={{ opacity: 0, x: CENTER_OFFSET, y: CENTER_OFFSET, scale: 0.5 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 28, delay: i * 0.04 }}
+                exit={{ opacity: 0, x: CENTER_OFFSET, y: CENTER_OFFSET, scale: 0.95 }}
+                transition={{ ...UI_SPRING, delay: i * 0.04 }}
                 onClick={() => {
                   if (['shape', 'line', 'chart'].includes(tool.id)) {
                     setActiveMenu(tool.id as any)
@@ -178,7 +179,7 @@ export const MobileFloatingDock = memo(function MobileFloatingDock() {
 
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-90 border-none cursor-pointer z-10 ${isOpen ? 'bg-(--ms-bg-elevated) text-(--ms-text-primary)' : 'bg-(--ms-accent) text-white'
+          className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition active:scale-90 border-none cursor-pointer z-10 ${isOpen ? 'bg-(--ms-bg-elevated) text-(--ms-text-primary)' : 'bg-(--ms-accent) text-white'
             }`}
         >
           <AnimatePresence mode="wait">
@@ -210,7 +211,7 @@ export const MobileFloatingDock = memo(function MobileFloatingDock() {
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              transition={UI_SPRING}
               className="fixed bottom-0 left-0 right-0 bg-(--ms-bg-elevated) border-t border-(--ms-border) rounded-t-[2.5rem] shadow-2xl z-120 p-6 pb-12"
             >
               <div className="w-12 h-1.5 bg-(--ms-border) rounded-full mx-auto mb-6" />
@@ -232,7 +233,7 @@ export const MobileFloatingDock = memo(function MobileFloatingDock() {
                   <button
                     key={s.value}
                     onClick={() => handleAdd('shape', s.value)}
-                    className="flex flex-col items-center gap-3 p-4 rounded-3xl bg-(--ms-bg-base) hover:bg-(--ms-border) transition-all border-none cursor-pointer group"
+                    className="flex flex-col items-center gap-3 p-4 rounded-3xl bg-(--ms-bg-base) hover:bg-(--ms-border) transition border-none cursor-pointer group"
                   >
                     <div className="w-10 h-10 flex items-center justify-center text-(--ms-text-secondary) group-hover:text-(--ms-accent) transition-colors">
                       {getShapeIcon(s.value)}
@@ -247,7 +248,7 @@ export const MobileFloatingDock = memo(function MobileFloatingDock() {
                   <button
                     key={l.value}
                     onClick={() => handleAdd('line', l.value)}
-                    className="flex flex-col items-center gap-3 p-4 rounded-3xl bg-(--ms-bg-base) hover:bg-(--ms-border) transition-all border-none cursor-pointer group"
+                    className="flex flex-col items-center gap-3 p-4 rounded-3xl bg-(--ms-bg-base) hover:bg-(--ms-border) transition border-none cursor-pointer group"
                   >
                     <div className="w-10 h-10 flex items-center justify-center text-(--ms-text-secondary) group-hover:text-(--ms-accent) transition-colors">
                       {getLineIcon(l.value as any)}
@@ -262,7 +263,7 @@ export const MobileFloatingDock = memo(function MobileFloatingDock() {
                   <button
                     key={c.value}
                     onClick={() => handleAdd('chart', c.value)}
-                    className="flex flex-col items-center gap-3 p-4 rounded-3xl bg-(--ms-bg-base) hover:bg-(--ms-border) transition-all border-none cursor-pointer group"
+                    className="flex flex-col items-center gap-3 p-4 rounded-3xl bg-(--ms-bg-base) hover:bg-(--ms-border) transition border-none cursor-pointer group"
                   >
                     <div className="w-10 h-10 flex items-center justify-center text-(--ms-text-secondary) group-hover:text-(--ms-accent) transition-colors">
                       {getChartIcon(c.value as any)}

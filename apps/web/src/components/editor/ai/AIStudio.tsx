@@ -59,7 +59,7 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
 
   return (
     <div className="p-4 space-y-4">
-      <div className="relative bg-(--ms-bg-elevated) border border-(--ms-border) rounded-2xl transition-all focus-within:border-blue-500/60 shadow-xl group">
+      <div className="relative bg-(--ms-bg-elevated) border border-(--ms-border) rounded-2xl transition focus-within:border-blue-500/60 shadow-xl group">
         <div className="absolute top-3 left-4 pointer-events-none opacity-20">
           <Sparkles size={16} className="text-blue-400" />
         </div>
@@ -81,7 +81,7 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
           <div className="flex items-center gap-1">
             <button 
               onClick={() => fileRef.current?.click()}
-              className="p-2 text-(--ms-text-muted) hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all cursor-pointer border-none bg-transparent"
+              className="p-2 text-(--ms-text-muted) hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition cursor-pointer border-none bg-transparent"
               title="Attach context (README, specs)"
             >
               <Paperclip size={18} />
@@ -93,7 +93,7 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
             <div className="relative" ref={modelMenuRef}>
               <button 
                 onClick={() => setShowModelMenu(!showModelMenu)}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-all cursor-pointer text-[9px] font-black uppercase tracking-widest ${
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition cursor-pointer text-[9px] font-black uppercase tracking-widest ${
                   showModelMenu ? 'bg-purple-600/10 border-purple-500/50 text-purple-400' : 'bg-transparent border-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                 }`}
               >
@@ -113,7 +113,7 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
                           setModel(m.id)
                           setShowModelMenu(false)
                         }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all cursor-pointer border-none ${
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition cursor-pointer border-none ${
                           model === m.id ? 'bg-purple-600/10 text-purple-400' : 'bg-transparent text-(--ms-text-secondary) hover:bg-(--ms-border)/50'
                         }`}
                       >
@@ -133,7 +133,7 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
           <button
             onClick={handleSend}
             disabled={!prompt.trim() || isGenerating}
-            className={`p-2 rounded-xl transition-all cursor-pointer border-none shadow-lg ${
+            className={`p-2 rounded-xl transition cursor-pointer border-none shadow-lg ${
               isGenerating || !prompt.trim()
                 ? 'bg-(--ms-border) text-(--ms-text-muted) cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-500 text-white active:scale-95 hover:shadow-blue-500/25'

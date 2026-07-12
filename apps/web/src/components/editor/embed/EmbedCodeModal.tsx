@@ -64,7 +64,7 @@ export function EmbedCodeModal({ isOpen, onClose, project }: Props) {
             </div>
             <button
               onClick={onClose}
-              className="p-1 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-white/5 transition-all cursor-pointer border-none bg-transparent"
+              className="p-1 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-white/5 transition cursor-pointer border-none bg-transparent"
             >
               <X size={18} />
             </button>

@@ -71,7 +71,7 @@ export function TimelineToolbar({
           <button
             onClick={() => setIsPlaying(!isPlaying)}
             title={isPlaying ? 'Pause' : 'Play'}
-            className={`flex items-center justify-center w-7 h-7 rounded-full transition-all cursor-pointer border-none shadow-lg ${
+            className={`flex items-center justify-center w-7 h-7 rounded-full transition cursor-pointer border-none shadow-lg ${
               isPlaying
                 ? 'bg-white text-black hover:bg-white/90'
                 : 'bg-violet-600 text-white hover:bg-violet-500'
@@ -110,7 +110,7 @@ export function TimelineToolbar({
         <div className="flex items-center gap-2">
           <button
             onClick={toggleLoop}
-            className={`text-[10px] font-semibold px-2.5 py-1 rounded-md border cursor-pointer transition-all ${
+            className={`text-[10px] font-semibold px-2.5 py-1 rounded-md border cursor-pointer transition ${
               playbackSettings.loop
                 ? 'bg-violet-600/20 border-violet-500/50 text-violet-500'
                 : ''
@@ -126,7 +126,7 @@ export function TimelineToolbar({
 
           <button
             onClick={() => setTimelineTracksVisible(!timelineTracksVisible)}
-            className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md border transition-all cursor-pointer bg-transparent"
+            className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md border transition cursor-pointer bg-transparent"
             style={{ borderColor: 'var(--ms-tl-border-strong)', color: 'var(--ms-tl-text-muted)' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--ms-text-primary)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--ms-tl-text-muted)')}

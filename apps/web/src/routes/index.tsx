@@ -97,7 +97,7 @@ function LandingPage() {
           <div className="flex items-center gap-3 flex-wrap justify-center">
             <Link
               to="/dashboard"
-              className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[15px] px-7 py-3.5 rounded-full no-underline transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,255,255,0.15)]"
+              className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[15px] px-7 py-3.5 rounded-full no-underline transition hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,255,255,0.15)]"
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
               Get Started <ChevronRight size={16} />
@@ -106,7 +106,7 @@ function LandingPage() {
               href="https://github.com/Chifez/motion-slides"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 border border-white/12 text-neutral-300 hover:text-white hover:border-white/25 text-[15px] font-medium px-7 py-3.5 rounded-full no-underline transition-all"
+              className="inline-flex items-center gap-2 border border-white/12 text-neutral-300 hover:text-white hover:border-white/25 text-[15px] font-medium px-7 py-3.5 rounded-full no-underline transition"
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
               View on GitHub
@@ -179,7 +179,7 @@ function LandingPage() {
           </p>
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[15px] px-8 py-3.5 rounded-full no-underline hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,255,255,0.15)] transition-all"
+            className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[15px] px-8 py-3.5 rounded-full no-underline hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,255,255,0.15)] transition"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
             Open Dashboard <ChevronRight size={16} />

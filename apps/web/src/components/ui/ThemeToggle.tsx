@@ -18,7 +18,7 @@ export const ThemeToggle = memo(function ThemeToggle({ showLabel = false, classN
   return (
     <button
       onClick={() => toggleTheme()}
-      className={`inline-flex items-center gap-2 p-2 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-all border-none bg-transparent cursor-pointer ${className}`}
+      className={`inline-flex items-center gap-2 p-2 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition border-none bg-transparent cursor-pointer ${className}`}
       title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
     >
       {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}

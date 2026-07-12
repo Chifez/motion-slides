@@ -123,7 +123,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     type="text"
                     required
                     placeholder="John Doe"
-                    className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition"
                   />
                 </div>
               </div>
@@ -138,7 +138,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   type="email"
                   required
                   placeholder="name@company.com"
-                  className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition"
                 />
               </div>
             </div>
@@ -152,7 +152,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   type="password"
                   required
                   placeholder="••••••••"
-                  className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition"
                 />
               </div>
             </div>
@@ -180,7 +180,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <button
                 onClick={() => handleSocialSignIn('github')}
                 type="button"
-                className="w-full bg-(--ms-bg-base) hover:bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-primary) font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-(--ms-bg-base) hover:bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-primary) font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Github size={16} />
                 <span className="text-sm">GitHub</span>
@@ -189,7 +189,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <button
                 onClick={() => handleSocialSignIn('google')}
                 type="button"
-                className="w-full bg-(--ms-bg-base) hover:bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-primary) font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-(--ms-bg-base) hover:bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-primary) font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Chrome size={16} />
                 <span className="text-sm">Google</span>
@@ -233,7 +233,7 @@ function AuthSubmitButton({ mode }: { mode: 'login' | 'signup' }) {
     <button
       disabled={pending}
       type="submit"
-      className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer border-none"
+      className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 mt-2 cursor-pointer border-none"
     >
       {pending ? (
         <Loader2 className="animate-spin" size={20} />

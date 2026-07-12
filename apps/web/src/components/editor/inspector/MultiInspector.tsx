@@ -183,14 +183,14 @@ export const MultiInspector = memo(function MultiInspector({ selectedIds, isMobi
         {allSameGroup ? (
           <button
             onClick={() => ungroupElements(firstGroupId)}
-            className="w-full flex items-center justify-center gap-1.5 bg-white/4 hover:bg-white/8 border border-white/8 text-neutral-300 hover:text-white text-xs font-medium py-2 rounded-md transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 bg-white/4 hover:bg-white/8 border border-white/8 text-neutral-300 hover:text-white text-xs font-medium py-2 rounded-md transition cursor-pointer"
           >
             Ungroup Elements
           </button>
         ) : (
           <button
             onClick={() => groupElements(selectedIds)}
-            className="w-full flex items-center justify-center gap-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 text-blue-300 hover:text-blue-200 text-xs font-medium py-2 rounded-md transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 text-blue-300 hover:text-blue-200 text-xs font-medium py-2 rounded-md transition cursor-pointer"
           >
             Group Elements
           </button>
@@ -198,7 +198,7 @@ export const MultiInspector = memo(function MultiInspector({ selectedIds, isMobi
 
         <button
           onClick={() => selectedIds.forEach(id => deleteElement(id))}
-          className="w-full flex items-center justify-center gap-1.5 bg-red-600/10 hover:bg-red-600/20 border border-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium py-2 rounded-md transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-1.5 bg-red-600/10 hover:bg-red-600/20 border border-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium py-2 rounded-md transition cursor-pointer"
         >
           <Trash2 size={13} /> Delete All
         </button>

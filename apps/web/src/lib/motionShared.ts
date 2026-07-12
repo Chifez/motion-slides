@@ -43,8 +43,8 @@ export const getTransitionStates = (
       }
     case 'zoom':
       return {
-        initial: { opacity: 0, x: 0, y: 0, scale: 0.3 },
-        animate: { opacity: elementOpacity, x: 0, y: 0, scale: 1 },
+        initial: { opacity: 0, x: 0, y: 0, scale: 0.95 },
+        animate: { opacity: 1, x: 0, y: 0, scale: 1 },
         exit: { opacity: 0, x: 0, y: 0, scale: 1.5 },
       }
     case 'flip':

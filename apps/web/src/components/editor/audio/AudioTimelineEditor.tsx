@@ -39,7 +39,7 @@ export function AudioTimelineEditor({ audio, onUpdate }: AudioTimelineEditorProp
         </div>
         <button
           onClick={togglePlay}
-          className="flex items-center justify-center w-6 h-6 rounded-full bg-(--ms-bg-base) hover:bg-(--ms-border) text-(--ms-text-primary) transition-all border border-(--ms-border) cursor-pointer"
+          className="flex items-center justify-center w-6 h-6 rounded-full bg-(--ms-bg-base) hover:bg-(--ms-border) text-(--ms-text-primary) transition border border-(--ms-border) cursor-pointer"
           title={isPlaying ? 'Pause preview' : 'Play preview'}
         >
           {isPlaying ? <Pause size={10} fill="currentColor" /> : <Play size={10} fill="currentColor" className="ml-0.5" />}

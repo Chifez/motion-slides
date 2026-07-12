@@ -41,7 +41,7 @@ export function ReviewOverlay() {
           <div className="flex items-center gap-1 bg-(--ms-bg-base) border border-(--ms-border) rounded-full p-0.5 shrink-0">
             <button
               onClick={() => toggleReviewMode('original')}
-              className={`text-xs font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer border-none whitespace-nowrap ${
+              className={`text-xs font-medium px-3.5 py-1.5 rounded-full transition cursor-pointer border-none whitespace-nowrap ${
                 reviewMode === 'original'
                   ? 'bg-blue-600 text-white shadow-sm font-semibold'
                   : 'text-(--ms-text-muted) hover:text-(--ms-text-primary) bg-transparent'
@@ -51,7 +51,7 @@ export function ReviewOverlay() {
             </button>
             <button
               onClick={() => toggleReviewMode('suggested')}
-              className={`text-xs font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer border-none whitespace-nowrap ${
+              className={`text-xs font-medium px-3.5 py-1.5 rounded-full transition cursor-pointer border-none whitespace-nowrap ${
                 reviewMode === 'suggested'
                   ? 'bg-blue-600 text-white shadow-sm font-semibold'
                   : 'text-(--ms-text-muted) hover:text-(--ms-text-primary) bg-transparent'

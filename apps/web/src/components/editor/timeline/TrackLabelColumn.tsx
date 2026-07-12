@@ -38,7 +38,7 @@ export function TrackLabelColumn({ audioDrawer, setAudioDrawer, liveSlideIndex, 
         <button
           onClick={onAddCaption}
           title="Add caption block at playhead"
-          className="absolute top-1 right-1 w-4 h-4 rounded flex items-center justify-center border cursor-pointer transition-all bg-transparent border-white/15 text-white/30 hover:text-pink-300 hover:border-pink-500 opacity-0 group-hover/captions:opacity-100"
+          className="absolute top-1 right-1 w-4 h-4 rounded flex items-center justify-center border cursor-pointer transition bg-transparent border-white/15 text-white/30 hover:text-pink-300 hover:border-pink-500 opacity-0 group-hover/captions:opacity-100"
         >
           <Plus size={9} />
         </button>
@@ -55,7 +55,7 @@ export function TrackLabelColumn({ audioDrawer, setAudioDrawer, liveSlideIndex, 
         <button
           onClick={() => setAudioDrawer(audioDrawer === AUDIO_DRAWER_VO ? null : AUDIO_DRAWER_VO)}
           title={`Add voiceover to slide ${liveSlideIndex + 1}`}
-          className={`absolute top-1 right-1 w-4 h-4 rounded flex items-center justify-center border cursor-pointer transition-all ${
+          className={`absolute top-1 right-1 w-4 h-4 rounded flex items-center justify-center border cursor-pointer transition ${
             audioDrawer === AUDIO_DRAWER_VO
               ? 'bg-violet-500 border-violet-400 text-white'
               : 'bg-transparent border-white/15 text-white/30 hover:text-violet-300 hover:border-violet-500 opacity-0 group-hover/vo:opacity-100'
@@ -76,7 +76,7 @@ export function TrackLabelColumn({ audioDrawer, setAudioDrawer, liveSlideIndex, 
         <button
           onClick={() => setAudioDrawer(audioDrawer === AUDIO_DRAWER_BGM ? null : AUDIO_DRAWER_BGM)}
           title="Add background music"
-          className={`absolute top-1 right-1 w-4 h-4 rounded flex items-center justify-center border cursor-pointer transition-all ${
+          className={`absolute top-1 right-1 w-4 h-4 rounded flex items-center justify-center border cursor-pointer transition ${
             audioDrawer === AUDIO_DRAWER_BGM
               ? 'bg-sky-500 border-sky-400 text-white'
               : 'bg-transparent border-white/15 text-white/30 hover:text-sky-300 hover:border-sky-500 opacity-0 group-hover/bgm:opacity-100'

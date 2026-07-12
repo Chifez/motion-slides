@@ -342,13 +342,12 @@ export function PresentationOverlay() {
           settings={playbackSettings}
           activeTransition={activeTransition}
         />
+        <CaptionOverlay 
+          captions={project?.captions}
+          currentTime={currentTime}
+          className="absolute bottom-6 left-0 right-0 flex justify-center px-8 pointer-events-none"
+        />
       </div>
-
-      <CaptionOverlay 
-        script={slide.script} 
-        captions={project?.captions}
-        currentTime={currentTime}
-      />
 
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-500"
@@ -356,7 +355,7 @@ export function PresentationOverlay() {
       >
         <button
           onClick={(e) => { e.stopPropagation(); stopPresentation() }}
-          className="pointer-events-auto absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/80 hover:text-white hover:bg-black/80 border border-white/10 transition-all cursor-pointer backdrop-blur-sm"
+          className="pointer-events-auto absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/80 hover:text-white hover:bg-black/80 border border-white/10 transition cursor-pointer backdrop-blur-sm"
         >
           <X size={18} />
         </button>
@@ -377,7 +376,7 @@ export function PresentationOverlay() {
 
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/5 overflow-hidden z-(--z-toast)">
         <div
-          className="h-full bg-blue-500 transition-all duration-300 ease-out"
+          className="h-full bg-blue-500 transition duration-300 ease-out"
           style={{ width: `${((activeSlideIndex + 1) / totalSlides) * 100}%` }}
         />
       </div>

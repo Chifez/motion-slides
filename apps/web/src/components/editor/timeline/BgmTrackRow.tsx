@@ -51,7 +51,7 @@ export function BgmTrackRow({
           <div
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
-            className={`w-full h-full rounded-lg cursor-pointer relative overflow-hidden transition-all ${
+            className={`w-full h-full rounded-lg cursor-pointer relative overflow-hidden transition ${
               isSelected
                 ? 'bg-sky-600/25 border-2 border-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.2)]'
                 : 'bg-sky-900/20 border border-sky-700/30 hover:border-sky-600/50'

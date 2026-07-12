@@ -51,7 +51,7 @@ export function UnsavedChangesModal({ isOpen, onClose, onConfirm, onDiscard }: P
               <div className="flex flex-col gap-2 mt-8">
                 <button
                   onClick={onConfirm}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-black bg-white hover:bg-neutral-200 transition-all border-none cursor-pointer shadow-lg active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-black bg-white hover:bg-neutral-200 transition border-none cursor-pointer shadow-lg active:scale-[0.98]"
                 >
                   <Save size={16} />
                   Save and Leave
@@ -60,14 +60,14 @@ export function UnsavedChangesModal({ isOpen, onClose, onConfirm, onDiscard }: P
                 <div className="flex gap-2">
                   <button
                     onClick={onDiscard}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-white/5 transition-all border border-white/5 cursor-pointer bg-transparent"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-white/5 transition border border-white/5 cursor-pointer bg-transparent"
                   >
                     <LogOut size={16} />
                     Leave Anyway
                   </button>
                   <button
                     onClick={onClose}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-neutral-300 hover:text-white hover:bg-white/5 transition-all border border-white/10 cursor-pointer bg-transparent"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-neutral-300 hover:text-white hover:bg-white/5 transition border border-white/10 cursor-pointer bg-transparent"
                   >
                     Stay
                   </button>

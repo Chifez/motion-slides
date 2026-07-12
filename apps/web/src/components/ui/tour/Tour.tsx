@@ -371,7 +371,7 @@ function TourContent() {
 
             <button
               onClick={nextStep}
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-md shadow-blue-600/15 hover:shadow-blue-600/25 transition-all cursor-pointer border-none"
+              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-md shadow-blue-600/15 hover:shadow-blue-600/25 transition cursor-pointer border-none"
             >
               {isLast ? 'Get Started' : 'Next'} <ChevronRight size={12} />
             </button>

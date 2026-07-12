@@ -63,7 +63,7 @@ function TransitionEdgeComponent({
       />
       <EdgeLabelRenderer>
         <div
-          className={`nodrag nopan absolute px-2 py-1 rounded-md text-[9px] font-medium pointer-events-auto cursor-pointer transition-all ${
+          className={`nodrag nopan absolute px-2 py-1 rounded-md text-[9px] font-medium pointer-events-auto cursor-pointer transition ${
             selected
               ? 'bg-blue-500/20 border border-blue-500 text-blue-300 shadow-lg shadow-blue-500/10'
               : 'bg-[#1a1a1a] border border-white/10 text-neutral-500 hover:text-neutral-300 hover:border-white/20'

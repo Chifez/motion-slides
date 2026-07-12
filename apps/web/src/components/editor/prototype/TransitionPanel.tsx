@@ -47,7 +47,7 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
                   key={a.value}
                   onClick={() => onUpdate({ animation: a.value })}
                   title={a.label}
-                  className={`flex flex-col items-center justify-center gap-1.5 aspect-square rounded-md border transition-all cursor-pointer ${
+                  className={`flex flex-col items-center justify-center gap-1.5 aspect-square rounded-md border transition cursor-pointer ${
                     isActive
                       ? 'border-blue-500 bg-blue-500/10 text-blue-400'
                       : 'border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:border-(--ms-border-strong)'
@@ -92,7 +92,7 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
               <button
                 key={t}
                 onClick={() => onUpdate({ trigger: t })}
-                className={`flex-1 text-[10px] py-2 rounded-md border transition-all cursor-pointer capitalize font-medium ${
+                className={`flex-1 text-[10px] py-2 rounded-md border transition cursor-pointer capitalize font-medium ${
                   transition.trigger === t
                     ? 'border-blue-500 bg-blue-500/10 text-blue-400'
                     : 'border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-muted) hover:text-(--ms-text-primary)'
@@ -125,7 +125,7 @@ export function TransitionPanel({ transition, onUpdate, onDelete, onClose }: Pro
         <div className="pt-2">
           <button
             onClick={onDelete}
-            className="w-full py-2 text-[10px] font-semibold uppercase tracking-wider text-red-400 hover:text-red-300 hover:bg-red-500/5 rounded-md border border-red-500/20 transition-all cursor-pointer bg-transparent"
+            className="w-full py-2 text-[10px] font-semibold uppercase tracking-wider text-red-400 hover:text-red-300 hover:bg-red-500/5 rounded-md border border-red-500/20 transition cursor-pointer bg-transparent"
           >
             Remove Transition
           </button>

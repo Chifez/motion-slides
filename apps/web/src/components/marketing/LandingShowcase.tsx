@@ -339,7 +339,7 @@ export function LandingShowcase() {
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setIsPlaying(!isPlaying)}
-            className="p-2 text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 rounded-xl transition-all cursor-pointer"
+            className="p-2 text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 rounded-xl transition cursor-pointer"
           >
             {isPlaying ? <Pause size={16} /> : <Play size={16} />}
           </button>

@@ -29,7 +29,7 @@ export function EmbedPreviewControls({
             <button
               key={idx}
               onClick={() => onSelectSlide(idx)}
-              className={`w-1.5 h-1.5 rounded-full p-0 border-none cursor-pointer transition-all ${
+              className={`w-1.5 h-1.5 rounded-full p-0 border-none cursor-pointer transition ${
                 idx === activeSlideIndex 
                   ? 'bg-blue-600 scale-125' 
                   : theme === 'light' ? 'bg-zinc-400/80 hover:bg-zinc-600' : 'bg-zinc-600/80 hover:bg-zinc-400'

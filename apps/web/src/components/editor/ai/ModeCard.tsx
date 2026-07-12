@@ -20,7 +20,7 @@ export const ModeCard = memo(function ModeCard({ icon, title, description, onCli
     <button
       disabled={disabled}
       onClick={onClick}
-      className={`w-full text-left p-4 rounded-xl border border-(--ms-border) bg-(--ms-bg-elevated) transition-all group border-none cursor-pointer ${colors[color] || ''}`}
+      className={`w-full text-left p-4 rounded-xl border border-(--ms-border) bg-(--ms-bg-elevated) transition group border-none cursor-pointer ${colors[color] || ''}`}
     >
       <div className="flex items-center gap-3 mb-2">
         <div className="p-2 rounded-lg bg-black/10 group-hover:bg-black/20 transition-colors">

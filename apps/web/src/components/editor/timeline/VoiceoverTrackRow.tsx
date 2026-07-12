@@ -131,7 +131,7 @@ export function VoiceoverClip({
       <div
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
-        className={`w-full h-full rounded-lg cursor-pointer relative overflow-hidden transition-all ${
+        className={`w-full h-full rounded-lg cursor-pointer relative overflow-hidden transition ${
           isSelected
             ? 'bg-violet-600/25 border-2 border-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.2)]'
             : 'bg-violet-900/20 border border-violet-700/30 hover:border-violet-600/50'

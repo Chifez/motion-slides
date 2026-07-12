@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { UI_SPRING } from '@/lib/motionEngine'
 import {
   DndContext,
   DragOverlay,
@@ -120,7 +121,7 @@ export function SlidePanel() {
       <div className="p-2 border-t border-(--ms-border)">
         <button
           onClick={addSlide}
-          className="w-full flex items-center justify-center gap-1.5 bg-(--ms-bg-base) hover:bg-(--ms-border) border border-(--ms-border) text-(--ms-text-secondary) hover:text-(--ms-text-primary) text-xs font-medium py-1.5 rounded-md transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-1.5 bg-(--ms-bg-base) hover:bg-(--ms-border) border border-(--ms-border) text-(--ms-text-secondary) hover:text-(--ms-text-primary) text-xs font-medium py-1.5 rounded-md transition cursor-pointer"
         >
           <Plus size={13} /> Add Slide
         </button>
@@ -144,7 +145,7 @@ export function SlidePanel() {
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              transition={UI_SPRING}
               className="fixed top-0 bottom-0 left-0 w-[280px] z-101 flex flex-col overflow-hidden"
             >
               <div className="flex-1 h-full flex flex-col min-h-0">

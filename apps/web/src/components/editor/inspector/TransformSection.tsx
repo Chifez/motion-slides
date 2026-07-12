@@ -61,7 +61,7 @@ export function TransformSection({ element, onUpdate }: Props) {
                 type="text"
                 value={element.hotspotTitle || ''}
                 onChange={(e) => onUpdate({ hotspotTitle: e.target.value })}
-                className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all"
+                className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition"
                 placeholder="Popover Title"
               />
             </div>
@@ -70,7 +70,7 @@ export function TransformSection({ element, onUpdate }: Props) {
               <textarea
                 value={element.hotspotBody || ''}
                 onChange={(e) => onUpdate({ hotspotBody: e.target.value })}
-                className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all h-20 resize-none leading-relaxed"
+                className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition h-20 resize-none leading-relaxed"
                 placeholder="Write description here..."
               />
             </div>

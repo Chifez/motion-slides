@@ -47,7 +47,7 @@ export function ConnectionAnchors() {
             (content.endConnection?.elementId === shape.id && content.endConnection?.handleId === a.id) ||
             (content.branches?.some(b => b.connection?.elementId === shape.id && b.connection?.handleId === a.id))
 
-          const baseCls = "absolute rounded-full border-2 transition-all duration-150 -translate-x-1/2 -translate-y-1/2"
+          const baseCls = "absolute rounded-full border-2 transition duration-150 -translate-x-1/2 -translate-y-1/2"
           const snappedStyle = "w-4 h-4 bg-emerald-500 border-white shadow-[0_0_14px_rgba(16,185,129,0.9)] z-50 scale-125"
           const normalStyle = "w-3 h-3 bg-blue-500 border-white/80 opacity-80 shadow-[0_0_12px_rgba(59,130,246,0.6)]"
 
@@ -214,7 +214,7 @@ export function BoundingBox({ element }: Props) {
     const isSnappedEnd = !!content.endConnection
 
     const nodeCls = "w-4 h-4 rounded-full border-2 border-blue-500 bg-white shadow-sm group-hover:scale-125 transition-transform"
-    const snappedCls = "w-5 h-5 rounded-full border-2 border-blue-400 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.9)] scale-110 group-hover:scale-125 transition-all"
+    const snappedCls = "w-5 h-5 rounded-full border-2 border-blue-400 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.9)] scale-110 group-hover:scale-125 transition"
     const branchCls = "w-4 h-4 rounded-full border-2 border-emerald-500 bg-white shadow-sm group-hover:scale-125 transition-transform"
 
     return (
@@ -250,7 +250,7 @@ export function BoundingBox({ element }: Props) {
               style={{ left: `${b.x * 100}%`, top: `${b.y * 100}%` }}
               onMouseDown={startNodeDrag('branch', i)}
             >
-              <div className={isSnappedBranch ? "w-5 h-5 rounded-full border-2 border-emerald-400 bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.9)] scale-110 group-hover:scale-125 transition-all" : branchCls} />
+              <div className={isSnappedBranch ? "w-5 h-5 rounded-full border-2 border-emerald-400 bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.9)] scale-110 group-hover:scale-125 transition" : branchCls} />
             </div>
           )
         })}
@@ -312,28 +312,28 @@ export function BoundingBox({ element }: Props) {
       {['shape', 'image', 'code', 'text', 'chart'].includes(element.type) && (
         <>
           <div 
-            className="absolute left-1/2 -top-2.5 -translate-x-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition-all scale-75 hover:scale-100 z-100 group"
+            className="absolute left-1/2 -top-2.5 -translate-x-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition scale-75 hover:scale-100 z-100 group"
             onMouseDown={startConnectionDrag('top')}
             title="Drag to create connection"
           >
             <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
           </div>
           <div 
-            className="absolute left-1/2 -bottom-2.5 -translate-x-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition-all scale-75 hover:scale-100 z-100 group"
+            className="absolute left-1/2 -bottom-2.5 -translate-x-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition scale-75 hover:scale-100 z-100 group"
             onMouseDown={startConnectionDrag('bottom')}
             title="Drag to create connection"
           >
             <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
           </div>
           <div 
-            className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition-all scale-75 hover:scale-100 z-100 group"
+            className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition scale-75 hover:scale-100 z-100 group"
             onMouseDown={startConnectionDrag('left')}
             title="Drag to create connection"
           >
             <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
           </div>
           <div 
-            className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition-all scale-75 hover:scale-100 z-100 group"
+            className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition scale-75 hover:scale-100 z-100 group"
             onMouseDown={startConnectionDrag('right')}
             title="Drag to create connection"
           >

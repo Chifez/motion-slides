@@ -120,7 +120,7 @@ function Dashboard() {
             onClick={handleCreate}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            className="border-[1.5px] border-dashed border-(--ms-border) hover:border-blue-500/50 hover:bg-blue-600/5 rounded-xl min-h-[160px] flex flex-col items-center justify-center gap-2 text-(--ms-text-muted) hover:text-blue-400 text-[13px] font-medium transition-all cursor-pointer bg-transparent"
+            className="border-[1.5px] border-dashed border-(--ms-border) hover:border-blue-500/50 hover:bg-blue-600/5 rounded-xl min-h-[160px] flex flex-col items-center justify-center gap-2 text-(--ms-text-muted) hover:text-blue-400 text-[13px] font-medium transition cursor-pointer bg-transparent"
           >
             <Plus size={24} />
             <span>New Project</span>
@@ -148,16 +148,16 @@ function Dashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 onClick={() => navigate({ to: '/p/$projectId', params: { projectId: project.id } })}
-                className="group bg-(--ms-bg-surface) border border-(--ms-border) hover:border-(--ms-border-strong) rounded-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5"
+                className="group bg-(--ms-bg-surface) border border-(--ms-border) hover:border-(--ms-border-strong) rounded-xl overflow-hidden cursor-pointer transition hover:-translate-y-0.5"
               >
                 <div className="aspect-video bg-(--ms-bg-base) border-b border-(--ms-border) flex items-center justify-center text-(--ms-text-muted) relative">
-                  <Layout size={24} className="opacity-40 group-hover:scale-110 group-hover:opacity-100 transition-all duration-500" />
+                  <Layout size={24} className="opacity-40 group-hover:scale-110 group-hover:opacity-100 transition duration-300" />
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       confirmDelete(project.id, project.name, isGuest)
                     }}
-                    className="absolute top-2 right-2 p-1.5 rounded-md bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-red-500 border border-(--ms-border) opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                    className="absolute top-2 right-2 p-1.5 rounded-md bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-red-500 border border-(--ms-border) opacity-0 group-hover:opacity-100 transition cursor-pointer"
                     title={isGuest ? "Remove from Dashboard" : "Delete Project"}
                   >
                     <Trash2 size={13} />

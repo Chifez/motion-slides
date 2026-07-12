@@ -131,7 +131,7 @@ export function AIChat() {
                 <button
                   key={pill.id}
                   onClick={() => handleRefine(pill.instruction)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-(--ms-bg-elevated) border border-(--ms-border) hover:border-blue-500/50 hover:text-blue-400 text-[10px] font-bold text-(--ms-text-secondary) transition-all cursor-pointer shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-(--ms-bg-elevated) border border-(--ms-border) hover:border-blue-500/50 hover:text-blue-400 text-[10px] font-bold text-(--ms-text-secondary) transition cursor-pointer shadow-sm"
                 >
                   <Icon size={12} />
                   {pill.label}

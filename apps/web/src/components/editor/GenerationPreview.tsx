@@ -30,7 +30,7 @@ export function GenerationPreview({ slides, title, onAccept, onReject, onRefine 
             <div className="absolute -left-1 top-2 w-4 h-4 rounded-full bg-(--ms-bg-elevated) border border-(--ms-border) flex items-center justify-center text-[8px] text-(--ms-text-muted) z-10 font-bold">
               {i + 1}
             </div>
-            <div className="aspect-video bg-(--ms-bg-base) border border-blue-500/30 rounded-lg overflow-hidden shadow-2xl transition-all group-hover:border-blue-500/60 group-hover:scale-[1.01]">
+            <div className="aspect-video bg-(--ms-bg-base) border border-blue-500/30 rounded-lg overflow-hidden shadow-2xl transition group-hover:border-blue-500/60 group-hover:scale-[1.01]">
               <StaticSlidePreview slide={s} />
             </div>
           </div>

@@ -10,7 +10,7 @@ export function ThemeSelector({ theme, onChange }: ThemeSelectorProps) {
       <div className="grid grid-cols-2 gap-2 bg-(--ms-bg-base) p-1 rounded-lg border border-(--ms-border)">
         <button
           onClick={() => onChange('dark')}
-          className={`py-1.5 text-xs font-semibold rounded-md border-none cursor-pointer transition-all ${
+          className={`py-1.5 text-xs font-semibold rounded-md border-none cursor-pointer transition ${
             theme === 'dark'
               ? 'bg-blue-600 text-white shadow-sm'
               : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-secondary)'
@@ -20,7 +20,7 @@ export function ThemeSelector({ theme, onChange }: ThemeSelectorProps) {
         </button>
         <button
           onClick={() => onChange('light')}
-          className={`py-1.5 text-xs font-semibold rounded-md border-none cursor-pointer transition-all ${
+          className={`py-1.5 text-xs font-semibold rounded-md border-none cursor-pointer transition ${
             theme === 'light'
               ? 'bg-blue-600 text-white shadow-sm'
               : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-secondary)'

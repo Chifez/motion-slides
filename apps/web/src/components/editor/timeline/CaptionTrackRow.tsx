@@ -59,7 +59,20 @@ export function CaptionTrackRow({ currentTime, totalDuration }: Props) {
       
       if (e.key === 'Backspace' || e.key === 'Delete') {
         const nextCaptions = captions.filter(c => c.id !== selectedId)
-        updateProject(activeProjectId, { captions: nextCaptions, synced: false })
+        
+        let updatedSlides = undefined
+        if (selectedId.startsWith('slide-script-')) {
+          const slideId = selectedId.replace('slide-script-', '')
+          updatedSlides = project.slides.map(s =>
+            s.id === slideId ? { ...s, script: '' } : s
+          )
+        }
+
+        updateProject(activeProjectId, {
+          captions: nextCaptions,
+          ...(updatedSlides ? { slides: updatedSlides } : {}),
+          synced: false,
+        })
         setSelectedId(null)
       }
     }
@@ -158,10 +171,27 @@ function CaptionClip({
   const saveText = () => {
     setIsEditing(false)
     if (!activeProjectId) return
+    const textVal = editText.trim() || 'Subtitle...'
     const nextCaptions = allCaptions.map(c => 
-      c.id === caption.id ? { ...c, text: editText.trim() || 'Subtitle...' } : c
+      c.id === caption.id ? { ...c, text: textVal } : c
     )
-    updateProject(activeProjectId, { captions: nextCaptions, synced: false })
+
+    let updatedSlides = undefined
+    if (caption.id.startsWith('slide-script-')) {
+      const slideId = caption.id.replace('slide-script-', '')
+      const projectState = useEditorStore.getState().activeProject()
+      if (projectState) {
+        updatedSlides = projectState.slides.map(s =>
+          s.id === slideId ? { ...s, script: textVal } : s
+        )
+      }
+    }
+
+    updateProject(activeProjectId, {
+      captions: nextCaptions,
+      ...(updatedSlides ? { slides: updatedSlides } : {}),
+      synced: false,
+    })
   }
 
   // Snaps coordinates to nearest slide transitions if closer than 100ms (0.1s)
@@ -263,7 +293,23 @@ function CaptionClip({
     e.stopPropagation()
     if (!activeProjectId) return
     const nextCaptions = allCaptions.filter(c => c.id !== caption.id)
-    updateProject(activeProjectId, { captions: nextCaptions, synced: false })
+
+    let updatedSlides = undefined
+    if (caption.id.startsWith('slide-script-')) {
+      const slideId = caption.id.replace('slide-script-', '')
+      const projectState = useEditorStore.getState().activeProject()
+      if (projectState) {
+        updatedSlides = projectState.slides.map(s =>
+          s.id === slideId ? { ...s, script: '' } : s
+        )
+      }
+    }
+
+    updateProject(activeProjectId, {
+      captions: nextCaptions,
+      ...(updatedSlides ? { slides: updatedSlides } : {}),
+      synced: false,
+    })
     onDeselect()
   }
 
@@ -271,7 +317,7 @@ function CaptionClip({
     <div
       onMouseDown={handleDragStart}
       onDoubleClick={(e) => { e.stopPropagation(); setIsEditing(true) }}
-      className={`absolute top-2.5 h-7 flex items-center group/clip rounded-lg border px-2.5 transition-all select-none ${
+      className={`absolute top-2.5 h-7 flex items-center group/clip rounded-lg border px-2.5 transition select-none ${
         selected
           ? 'bg-pink-600/25 border-pink-500 shadow-[0_0_12px_rgba(236,72,153,0.3)] z-20'
           : 'bg-pink-900/10 border-pink-700/30 hover:border-pink-600/60 z-10'
@@ -281,7 +327,7 @@ function CaptionClip({
       {/* Left resize handle */}
       <div
         onMouseDown={handleResizeLeftStart}
-        className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-pink-500/30 active:bg-pink-500/50 rounded-l-lg transition-all"
+        className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-pink-500/30 active:bg-pink-500/50 rounded-l-lg transition"
       />
 
       {isEditing ? (
@@ -320,7 +366,7 @@ function CaptionClip({
       {/* Right resize handle */}
       <div
         onMouseDown={handleResizeRightStart}
-        className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-pink-500/30 active:bg-pink-500/50 rounded-r-lg transition-all"
+        className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-pink-500/30 active:bg-pink-500/50 rounded-r-lg transition"
       />
     </div>
   )

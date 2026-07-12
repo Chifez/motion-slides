@@ -34,13 +34,13 @@ export function ViewerOverlay({ startPresentation }: Props) {
   }
 
   return (
-    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-(--z-overlay) flex items-center gap-4 bg-black/60 backdrop-blur-2xl border border-white/10 p-1.5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-(--z-overlay) flex items-center gap-4 bg-black/60 backdrop-blur-2xl border border-white/10 p-1.5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="flex items-center gap-2 pl-1">
         <ThemeToggle className="hover:bg-white/10" />
         <div className="w-px h-6 bg-white/10 mx-1" />
         <button
           onClick={() => startPresentation({ autoplay: true })}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold px-6 py-2 rounded-full transition-all shadow-lg shadow-blue-600/30 active:scale-95 group"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold px-6 py-2 rounded-full transition shadow-lg shadow-blue-600/30 active:scale-95 group"
         >
           <Play size={14} className="group-hover:scale-110 transition-transform" fill="currentColor" />
           Watch Presentation
@@ -51,7 +51,7 @@ export function ViewerOverlay({ startPresentation }: Props) {
         <button
           onClick={prevSlide}
           disabled={activeSlideIndex === 0}
-          className="p-2 text-white/50 hover:text-white hover:bg-white/5 rounded-full transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+          className="p-2 text-white/50 hover:text-white hover:bg-white/5 rounded-full transition disabled:opacity-20 disabled:cursor-not-allowed"
           title="Previous Slide"
         >
           <ChevronLeft size={18} />
@@ -64,7 +64,7 @@ export function ViewerOverlay({ startPresentation }: Props) {
         <button
           onClick={nextSlide}
           disabled={activeSlideIndex === totalSlides - 1}
-          className="p-2 text-white/50 hover:text-white hover:bg-white/5 rounded-full transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+          className="p-2 text-white/50 hover:text-white hover:bg-white/5 rounded-full transition disabled:opacity-20 disabled:cursor-not-allowed"
           title="Next Slide"
         >
           <ChevronRight size={18} />

@@ -20,7 +20,7 @@ export function ExportProgressToast({ progress }: Props) {
       {showProgress && (
         <div className="w-full bg-white/6 rounded-full h-1.5 overflow-hidden">
           <div
-            className="bg-blue-500 h-full rounded-full transition-all duration-300"
+            className="bg-blue-500 h-full rounded-full transition duration-300"
             style={{ width: `${progress.percent}%` }}
           />
         </div>

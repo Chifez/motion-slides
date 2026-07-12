@@ -109,7 +109,7 @@ export function EditorToolbar({ projectId }: Props) {
           onChange={(event) => updateProjectName(projectId, event.target.value)}
           onBlur={(event) => { if (!event.target.value.trim()) updateProjectName(projectId, 'Untitled Deck') }}
           spellCheck={false}
-          className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-md px-1 md:px-2 py-1 text-[13px] text-(--ms-text-primary) font-medium min-w-[60px] md:min-w-[130px] max-w-[220px] focus:outline-none transition-all truncate hidden md:block"
+          className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-md px-1 md:px-2 py-1 text-[13px] text-(--ms-text-primary) font-medium min-w-[60px] md:min-w-[130px] max-w-[220px] focus:outline-none transition truncate hidden md:block"
         />
 
         <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1 hidden md:block" />
@@ -118,7 +118,7 @@ export function EditorToolbar({ projectId }: Props) {
           <div className="flex items-center bg-(--ms-bg-elevated) border border-(--ms-border) rounded-md p-0.5">
             <button
               onClick={() => setEditorMode('design')}
-              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${editorMode === 'design'
+              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition cursor-pointer border-none ${editorMode === 'design'
                 ? 'bg-(--ms-border-strong) text-(--ms-text-primary) shadow-sm'
                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                 }`}
@@ -127,7 +127,7 @@ export function EditorToolbar({ projectId }: Props) {
             </button>
             <button
               onClick={() => setEditorMode('prototype')}
-              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${editorMode === 'prototype'
+              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition cursor-pointer border-none ${editorMode === 'prototype'
                 ? 'bg-(--ms-border-strong) text-blue-400 shadow-sm'
                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                 }`}
@@ -136,7 +136,7 @@ export function EditorToolbar({ projectId }: Props) {
             </button>
             <button
               onClick={() => setEditorMode('timeline')}
-              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition-all cursor-pointer border-none ${editorMode === 'timeline'
+              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition cursor-pointer border-none ${editorMode === 'timeline'
                 ? 'bg-(--ms-border-strong) text-purple-400 shadow-sm'
                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                 }`}
@@ -224,7 +224,7 @@ export function EditorToolbar({ projectId }: Props) {
               id="tour-ai-chat-button"
               onClick={() => toggleChat()}
               title="AI Design Studio Chat"
-              className={`inline-flex items-center justify-center p-1.5 rounded-md transition-all cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
+              className={`inline-flex items-center justify-center p-1.5 rounded-md transition cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
             >
               <Sparkles size={14} className={isChatOpen ? 'animate-pulse' : ''} />
             </button>

@@ -3,6 +3,7 @@ import type { ToastInfo } from '@/store/slices/uiSlice'
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { UI_SPRING } from '@/lib/motionEngine'
 
 export type ToastPosition =
   | 'bottom-right'
@@ -63,7 +64,7 @@ const getAnimationProps = (position: ToastPosition) => {
     initial: { opacity: 0, x: xOffset, y: xOffset === 0 ? yOffset : 0, scale: 0.95 },
     animate: { opacity: 1, x: 0, y: 0, scale: 1 },
     exit: { opacity: 0, scale: 0.9, y: isTop ? -20 : 20, transition: { duration: 0.15 } },
-    transition: { type: 'spring' as const, damping: 25, stiffness: 350 }
+    transition: UI_SPRING
   }
 }
 

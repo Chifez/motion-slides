@@ -25,7 +25,7 @@ export function CodeOutputPanel({
       <div className="flex border-b border-(--ms-border) gap-4">
         <button
           onClick={() => { setActiveTab('iframe') }}
-          className={`pb-2.5 text-xs font-semibold border-b-2 bg-transparent border-none cursor-pointer transition-all flex items-center gap-1.5 ${
+          className={`pb-2.5 text-xs font-semibold border-b-2 bg-transparent border-none cursor-pointer transition flex items-center gap-1.5 ${
             activeTab === 'iframe'
               ? 'border-blue-600 text-blue-500'
               : 'border-transparent text-(--ms-text-muted) hover:text-(--ms-text-secondary)'
@@ -36,7 +36,7 @@ export function CodeOutputPanel({
         </button>
         <button
           onClick={() => { setActiveTab('markdown') }}
-          className={`pb-2.5 text-xs font-semibold border-b-2 bg-transparent border-none cursor-pointer transition-all flex items-center gap-1.5 ${
+          className={`pb-2.5 text-xs font-semibold border-b-2 bg-transparent border-none cursor-pointer transition flex items-center gap-1.5 ${
             activeTab === 'markdown'
               ? 'border-blue-600 text-blue-500'
               : 'border-transparent text-(--ms-text-muted) hover:text-(--ms-text-secondary)'
@@ -54,7 +54,7 @@ export function CodeOutputPanel({
         </pre>
         <button
           onClick={handleCopy}
-          className={`absolute top-2 right-2 p-2 rounded-lg border-none flex items-center justify-center cursor-pointer transition-all shadow-md ${
+          className={`absolute top-2 right-2 p-2 rounded-lg border-none flex items-center justify-center cursor-pointer transition shadow-md ${
             copied
               ? 'bg-emerald-600 text-white'
               : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white'

@@ -60,7 +60,7 @@ export const EmptyInspector = memo(function EmptyInspector() {
             type="text"
             value={slide.name}
             onChange={(e) => updateSlide({ name: e.target.value })}
-            className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all"
+            className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition"
             placeholder="Slide Name"
           />
         </div>
@@ -74,7 +74,7 @@ export const EmptyInspector = memo(function EmptyInspector() {
           <textarea
             value={slide.script || ''}
             onChange={(e) => updateSlide({ script: e.target.value })}
-            className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition-all resize-none h-20 leading-relaxed font-medium"
+            className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition resize-none h-20 leading-relaxed font-medium"
             placeholder="Type captions for this step here..."
           />
         </div>

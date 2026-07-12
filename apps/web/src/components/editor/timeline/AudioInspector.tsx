@@ -37,7 +37,7 @@ export function AudioInspector({ audioInfo, label, accentColor, onUpdate, onDele
       <div className="flex flex-col gap-4 px-3 py-3">
         <button
           onClick={onDelete}
-          className="w-full flex items-center justify-center gap-1.5 py-2 bg-red-500/8 hover:bg-red-500/18 border border-red-900/40 hover:border-red-700/60 text-red-400/80 hover:text-red-300 text-[10px] font-semibold rounded-lg cursor-pointer transition-all"
+          className="w-full flex items-center justify-center gap-1.5 py-2 bg-red-500/8 hover:bg-red-500/18 border border-red-900/40 hover:border-red-700/60 text-red-400/80 hover:text-red-300 text-[10px] font-semibold rounded-lg cursor-pointer transition"
         >
           <Trash2 size={10} /> Remove clip
         </button>

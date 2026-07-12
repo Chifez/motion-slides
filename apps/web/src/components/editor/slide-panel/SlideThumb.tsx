@@ -70,7 +70,7 @@ export const SlideThumb = memo(function SlideThumb({
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 transition-all group shadow-lg ${
+      className={`relative shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 transition group shadow-lg ${
         isActive ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-(--ms-border) hover:border-(--ms-border-strong) bg-(--ms-bg-base)'
       } ${isDragging ? 'z-50' : ''}`}
       onClick={onSelect}

@@ -1,4 +1,4 @@
-import { useRef, useMemo, useCallback } from 'react'
+import { useRef, useMemo, useCallback, useEffect } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { useShallow } from 'zustand/react/shallow'
 import { usePermissions } from '@/context/PermissionContext'
@@ -53,6 +53,50 @@ export function TimelinePanel() {
     isPlaying: playback.isPlaying,
     currentTime: playback.currentTime,
   })
+
+  // Synchronize slide scripts with timeline captions track row
+  useEffect(() => {
+    if (!project || !activeProjectId) return
+    let needsUpdate = false
+    const currentCaptions = project.captions ? [...project.captions] : []
+
+    // Calculate start/end of each slide based on computed slides timing
+    const slidesWithTiming = timing.slidesWithTiming
+
+    slidesWithTiming.forEach(({ slide, start, end }) => {
+      if (slide.script && slide.script.trim()) {
+        const id = `slide-script-${slide.id}`
+        const existingIndex = currentCaptions.findIndex(c => c.id === id)
+        
+        if (existingIndex !== -1) {
+          // If text changed in inspector, sync to timeline caption clip
+          if (currentCaptions[existingIndex].text !== slide.script) {
+            currentCaptions[existingIndex] = {
+              ...currentCaptions[existingIndex],
+              text: slide.script
+            }
+            needsUpdate = true
+          }
+        } else {
+          // Verify if there is already an overlapping caption clip to avoid duplicate/conflict
+          const overlap = currentCaptions.some(c => c.start >= start - 0.05 && c.start <= end + 0.05)
+          if (!overlap) {
+            currentCaptions.push({
+              id,
+              text: slide.script,
+              start,
+              end,
+            })
+            needsUpdate = true
+          }
+        }
+      }
+    })
+
+    if (needsUpdate) {
+      updateProject(activeProjectId, { captions: currentCaptions, synced: false })
+    }
+  }, [project, timing.slidesWithTiming, activeProjectId, updateProject])
 
   totalDurationRef.current = timing.totalDuration
   slidesWithTimingRef.current = timing.slidesWithTiming

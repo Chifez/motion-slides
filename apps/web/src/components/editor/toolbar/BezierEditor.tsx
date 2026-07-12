@@ -159,7 +159,7 @@ export function BezierEditor({ value: rawValue, onChange }: Props) {
           <button
             key={preset.label}
             onClick={() => onChange({ ...preset.value })}
-            className={`text-[9px] px-2 py-1 rounded-md border transition-all cursor-pointer ${activePreset?.label === preset.label
+            className={`text-[9px] px-2 py-1 rounded-md border transition cursor-pointer ${activePreset?.label === preset.label
                 ? 'border-blue-500 bg-blue-500/10 text-blue-400'
                 : 'border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:border-(--ms-border-strong)'
               }`}

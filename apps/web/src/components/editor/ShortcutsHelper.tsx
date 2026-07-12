@@ -95,7 +95,7 @@ export function ShortcutsHelper({ isOpen, onClose }: ShortcutsHelperProps) {
             <button
               key={idx}
               onClick={() => setActiveTab(idx)}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer border-none bg-transparent ${
+              className={`px-3 py-1 text-xs font-medium rounded-md transition cursor-pointer border-none bg-transparent ${
                 activeTab === idx 
                   ? 'bg-blue-500/25 text-blue-400 border border-blue-500/20' 
                   : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'

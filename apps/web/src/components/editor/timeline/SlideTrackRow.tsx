@@ -32,7 +32,7 @@ export function SlideTrackRow({ slidesWithTiming, liveSlideIndex, onSlideResizeM
             }}
           >
             <div
-              className={`w-full h-full rounded-lg bg-gradient-to-br cursor-pointer relative overflow-hidden transition-all ${gradient} ${
+              className={`w-full h-full rounded-lg bg-gradient-to-br cursor-pointer relative overflow-hidden transition ${gradient} ${
                 isActive
                   ? 'ring-2 ring-violet-500 ring-offset-1 ring-offset-[#0a0a0c] shadow-[0_0_16px_rgba(139,92,246,0.3)]'
                   : 'border border-white/10 hover:border-white/25'

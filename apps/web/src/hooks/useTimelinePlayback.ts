@@ -207,7 +207,12 @@ export function useTimelinePlayback({
       const prevIdx = getSlideIndexAtTime(prevTime)
       const nextIdx = getSlideIndexAtTime(nextTime)
 
-      if (nextIdx !== prevIdx || didLoopOrEnd) {
+      const captions = project?.captions ?? []
+      const activeCaptionPrev = captions.find(c => prevTime >= c.start && prevTime <= c.end)
+      const activeCaptionNext = captions.find(c => nextTime >= c.start && nextTime <= c.end)
+      const captionChanged = activeCaptionPrev?.id !== activeCaptionNext?.id
+
+      if (nextIdx !== prevIdx || didLoopOrEnd || captionChanged) {
         syncAudio(nextTime, true)
         setCurrentTimeState(nextTime)
       } else {

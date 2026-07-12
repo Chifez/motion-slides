@@ -198,7 +198,7 @@ export function AudioRecorder({ existingAudio, onSave }: AudioRecorderProps) {
           </div>
           <button
             onClick={stopRecording}
-            className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium py-1 px-2.5 rounded-md transition-all cursor-pointer border-none"
+            className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium py-1 px-2.5 rounded-md transition cursor-pointer border-none"
           >
             <Square size={12} fill="white" /> Stop
           </button>
@@ -215,7 +215,7 @@ export function AudioRecorder({ existingAudio, onSave }: AudioRecorderProps) {
           </div>
           <button
             onClick={togglePlayback}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-(--ms-accent) hover:bg-(--ms-accent)/90 text-white transition-all cursor-pointer border-none shadow-sm"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-(--ms-accent) hover:bg-(--ms-accent)/90 text-white transition cursor-pointer border-none shadow-sm"
           >
             {isPlaying ? <Pause size={14} fill="white" /> : <Play size={14} fill="white" className="ml-0.5" />}
           </button>
@@ -224,14 +224,14 @@ export function AudioRecorder({ existingAudio, onSave }: AudioRecorderProps) {
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={startRecording}
-            className="flex items-center justify-center gap-1.5 bg-(--ms-bg-elevated) hover:bg-(--ms-border) border border-(--ms-border) text-(--ms-text-primary) text-xs font-medium py-2 rounded-md transition-all cursor-pointer shadow-sm"
+            className="flex items-center justify-center gap-1.5 bg-(--ms-bg-elevated) hover:bg-(--ms-border) border border-(--ms-border) text-(--ms-text-primary) text-xs font-medium py-2 rounded-md transition cursor-pointer shadow-sm"
           >
             <Mic size={14} className="text-red-500" /> Record Voice
           </button>
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center gap-1.5 bg-(--ms-bg-elevated) hover:bg-(--ms-border) border border-(--ms-border) text-(--ms-text-primary) text-xs font-medium py-2 rounded-md transition-all cursor-pointer shadow-sm"
+            className="flex items-center justify-center gap-1.5 bg-(--ms-bg-elevated) hover:bg-(--ms-border) border border-(--ms-border) text-(--ms-text-primary) text-xs font-medium py-2 rounded-md transition cursor-pointer shadow-sm"
           >
             <Upload size={14} className="text-(--ms-accent)" /> Upload File
           </button>

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { UI_SPRING } from '@/lib/motionEngine'
 import { X } from 'lucide-react'
 
 interface Props {
@@ -14,7 +15,7 @@ export function HotspotCard({ title, body, color, onClose }: Props) {
       initial={{ opacity: 0, scale: 0.85, y: 8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.85, y: 8 }}
-      transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+      transition={UI_SPRING}
       className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-72 z-[6000] pointer-events-auto cursor-default"
       onClick={(e) => e.stopPropagation()}
     >

@@ -80,13 +80,6 @@ export function TimelinePreview({
           </div>
         )}
 
-        <CaptionOverlay 
-          script={liveSlide?.script} 
-          captions={project?.captions}
-          currentTime={currentTime}
-          className="absolute bottom-4 left-0 right-0 flex justify-center px-4 pointer-events-none scale-90 origin-bottom" 
-        />
-
         <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-violet-500/40 rounded-tl-xl pointer-events-none" />
         <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-violet-500/40 rounded-tr-xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-violet-500/40 rounded-bl-xl pointer-events-none" />
@@ -95,6 +88,12 @@ export function TimelinePreview({
         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-mono text-white/50 px-2 py-0.5 rounded-md">
           {liveSlideIndex + 1} / {slides.length}
         </div>
+
+        <CaptionOverlay 
+          captions={project?.captions}
+          currentTime={currentTime}
+          className="absolute bottom-3 left-0 right-0 flex justify-center px-4 pointer-events-none scale-90 origin-bottom" 
+        />
       </div>
 
       {slides.length > 0 && (
@@ -106,7 +105,7 @@ export function TimelinePreview({
                 setActiveSlide(idx)
                 setCurrentTime(slidesWithTiming[idx]?.start ?? 0)
               }}
-              className={`rounded-full border-none cursor-pointer transition-all ${
+              className={`rounded-full border-none cursor-pointer transition ${
                 idx === liveSlideIndex
                   ? 'w-5 h-1.5 bg-violet-500'
                   : 'w-1.5 h-1.5 hover:opacity-70'
@@ -121,7 +120,7 @@ export function TimelinePreview({
         <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
           <button
             onClick={toggleLoop}
-            className={`text-[10px] font-semibold px-2.5 py-1 rounded-md border cursor-pointer transition-all ${
+            className={`text-[10px] font-semibold px-2.5 py-1 rounded-md border cursor-pointer transition ${
               playbackSettings.loop
                 ? 'bg-violet-600/20 border-violet-500/50 text-violet-500'
                 : ''
@@ -137,7 +136,7 @@ export function TimelinePreview({
 
           <button
             onClick={() => setTimelineTracksVisible(!timelineTracksVisible)}
-            className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md border transition-all cursor-pointer bg-transparent"
+            className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md border transition cursor-pointer bg-transparent"
             style={{ borderColor: 'var(--ms-tl-border-strong)', color: 'var(--ms-tl-text-muted)' }}
           >
             {timelineTracksVisible ? <ChevronDown size={12} /> : <ChevronUp size={12} />}

@@ -249,6 +249,26 @@ export const BUILD_IN_SPRING = {
 }
 
 /**
+ * Standard UI Spring — Critically damped for general UI interactions (menus, sheets, dialogs).
+ * Maps to Apple's default damping: 1.0, response: 0.4
+ */
+export const UI_SPRING = {
+  type: 'spring' as const,
+  bounce: 0,
+  duration: 0.4,
+}
+
+/**
+ * Momentum Spring — Slightly under-damped for momentum-driven gestures (flicks, throws).
+ * Maps to Apple's flick damping: 0.8, response: 0.4
+ */
+export const MOMENTUM_SPRING = {
+  type: 'spring' as const,
+  bounce: 0.2,
+  duration: 0.4,
+}
+
+/**
  * Phased code animation timing.
  * 
  * Sequence matches animate-code.com's model:

@@ -23,13 +23,13 @@ export function IconLibrarySection({ content, onUpdate }: Props) {
       <div className="flex bg-(--ms-bg-base) p-0.5 rounded-md border border-(--ms-border) transition-colors">
         <button
           onClick={() => setProvider('aws')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1 rounded text-[10px] font-medium transition-all border-none cursor-pointer ${provider === 'aws' ? 'bg-blue-600 text-white shadow-sm' : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1 rounded text-[10px] font-medium transition border-none cursor-pointer ${provider === 'aws' ? 'bg-blue-600 text-white shadow-sm' : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
         >
           AWS
         </button>
         <button
           onClick={() => setProvider('gcp')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1 rounded text-[10px] font-medium transition-all border-none cursor-pointer ${provider === 'gcp' ? 'bg-blue-600 text-white shadow-sm' : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1 rounded text-[10px] font-medium transition border-none cursor-pointer ${provider === 'gcp' ? 'bg-blue-600 text-white shadow-sm' : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
         >
           GCP
         </button>
@@ -65,7 +65,7 @@ export function IconLibrarySection({ content, onUpdate }: Props) {
               label: content.label || icon.label
             })}
             title={icon.label}
-            className={`aspect-square p-1 rounded-md border transition-all cursor-pointer bg-transparent ${content.iconPath === icon.path ? 'border-blue-500 bg-blue-500/10' : 'border-(--ms-border) hover:border-(--ms-border-strong) hover:bg-(--ms-bg-base)'}`}
+            className={`aspect-square p-1 rounded-md border transition cursor-pointer bg-transparent ${content.iconPath === icon.path ? 'border-blue-500 bg-blue-500/10' : 'border-(--ms-border) hover:border-(--ms-border-strong) hover:bg-(--ms-bg-base)'}`}
           >
             <img src={`/${encodeURI(icon.path)}`} alt={icon.label} className="w-full h-full object-contain pointer-events-none" />
           </button>

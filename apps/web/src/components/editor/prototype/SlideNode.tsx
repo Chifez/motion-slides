@@ -15,7 +15,7 @@ function SlideNodeComponent({ data, selected }: NodeProps<SlideNodeType>) {
 
   return (
     <div
-      className={`rounded-lg overflow-hidden border-2 transition-all shadow-xl bg-(--ms-bg-elevated) ${
+      className={`rounded-lg overflow-hidden border-2 transition shadow-xl bg-(--ms-bg-elevated) ${
         selected ? 'border-blue-500 shadow-blue-500/20' : isActive ? 'border-blue-400/50' : 'border-(--ms-border) hover:border-(--ms-border-strong)'
       }`}
       style={{ width: 240 }}

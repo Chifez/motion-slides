@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import { UI_SPRING } from '@/lib/motionEngine'
 import { useEditorStore } from '@/store/editorStore'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 
@@ -84,7 +85,7 @@ export function InspectorPanel() {
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              transition={UI_SPRING}
               className="fixed bottom-0 left-0 right-0 h-[60vh] z-101 overflow-hidden"
             >
               {panelContainer}

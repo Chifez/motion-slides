@@ -67,7 +67,7 @@ export function DeleteConfirmationModal({
               <div className="flex items-center gap-3 mt-8">
                 <button
                   onClick={onClose}
-                  className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) transition-all border border-(--ms-border) cursor-pointer bg-transparent"
+                  className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) transition border border-(--ms-border) cursor-pointer bg-transparent"
                 >
                   Cancel
                 </button>
@@ -76,7 +76,7 @@ export function DeleteConfirmationModal({
                     onConfirm()
                     onClose()
                   }}
-                  className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition-all border-none cursor-pointer shadow-lg shadow-red-600/10 active:scale-95"
+                  className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition border-none cursor-pointer shadow-lg shadow-red-600/10 active:scale-95"
                 >
                   {confirmText}
                 </button>
