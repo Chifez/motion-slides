@@ -20,8 +20,10 @@ import {
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { useEditorStore } from '@/store/editorStore'
 import { SlideThumb } from './slide-panel/SlideThumb'
+import { usePermissions } from '@/context/PermissionContext'
 
 export function SlidePanel() {
+  const { isReadOnly } = usePermissions()
   const slides            = useEditorStore(s => s.activeProject()?.slides || [])
   const activeSlideIndex  = useEditorStore(s => s.activeSlideIndex)
   const mobileSlidesOpen  = useEditorStore(s => s.mobileSlidesOpen)
@@ -47,6 +49,7 @@ export function SlidePanel() {
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveDragId(null)
+    if (isReadOnly) return
     const { active, over } = event
     if (!over || active.id === over.id) return
 
@@ -66,12 +69,14 @@ export function SlidePanel() {
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-(--ms-border) sticky top-0 bg-(--ms-bg-surface) z-10 transition-colors">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted)">Slides & Layers</span>
         <div className="flex items-center gap-1">
-          <button
-            onClick={addSlide}
-            className="p-1 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent"
-          >
-            <Plus size={14} />
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={addSlide}
+              className="p-1 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent"
+            >
+              <Plus size={14} />
+            </button>
+          )}
           {isMobile && (
             <button
               onClick={() => setMobileSlidesOpen(false)}

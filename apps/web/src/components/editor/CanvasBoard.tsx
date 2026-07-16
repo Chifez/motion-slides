@@ -4,6 +4,7 @@ import { GroupBoundingBox } from './GroupBoundingBox'
 import { ConnectionAnchors } from './BoundingBox'
 import { AlignmentGuides } from './AlignmentGuides'
 import { CanvasSpotlightOverlay } from './elements/CanvasSpotlightOverlay'
+import { PRCommentsOverlay } from './git/PRCommentsOverlay'
 
 interface LassoRect { x1: number; y1: number; x2: number; y2: number }
 
@@ -56,6 +57,7 @@ export function CanvasBoard({
             <ConnectionAnchors />
             {isGroupSelection && <GroupBoundingBox elements={selectedElements} />}
             <AlignmentGuides />
+            <PRCommentsOverlay />
 
             {lasso && (
                 <div

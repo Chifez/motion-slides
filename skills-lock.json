@@ -24,6 +24,12 @@
       "sourceType": "github",
       "skillPath": "skills/review-animations/SKILL.md",
       "computedHash": "57c681344448379fbec8c11b45e355b70799998427240662318d017f292571bd"
+    },
+    "useeffect-refactor": {
+      "source": "./.agents/skills/useeffect-refactor",
+      "sourceType": "local",
+      "skillPath": "SKILL.MD",
+      "computedHash": "006c5497ea671535864c794f4759db6f509b6017806795120818c6c6a7dbf461"
     }
   }
 }

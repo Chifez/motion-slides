@@ -296,6 +296,9 @@ export interface Project {
   visibility: 'private' | 'link-shared' | 'collaborative' | 'public'
   parentUpdatedAt?: number
   captions?: TimedCaption[]
+  forkedFromId?: string
+  headCommitId?: string
+  localCommits?: any[]
 }
 
 // ─── Serialized Scene Graph ───────────────────────────────────────────────────

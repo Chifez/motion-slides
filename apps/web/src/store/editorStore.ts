@@ -12,6 +12,7 @@ import { createUISlice, type UISlice } from './slices/uiSlice'
 import { createAuthSlice, type AuthSlice } from './slices/authSlice'
 import { createIdentitySlice, type IdentitySlice } from './slices/identitySlice'
 import { createOnboardingSlice, type OnboardingSlice } from './slices/onboardingSlice'
+import { createGitSlice, type GitSlice } from './slices/gitSlice'
 
 // ─────────────────────────────────────────────
 // Combined Store Type
@@ -29,6 +30,7 @@ export type EditorState =
   & AuthSlice
   & IdentitySlice
   & OnboardingSlice
+  & GitSlice
 
 type PersistedState = Pick<
   EditorState,
@@ -95,6 +97,7 @@ export const useEditorStore = create<EditorState>()(
       ...createAuthSlice(...args),
       ...createIdentitySlice(...args),
       ...createOnboardingSlice(...args),
+      ...createGitSlice(...args),
     }),
     {
       name: 'motionslides-session',

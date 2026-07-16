@@ -116,6 +116,8 @@ export function CanvasStage() {
         />
       )}
 
+      {/* Git/PR Comments Layer */}
+
       {mode === 'edit' && <SlideNavigation />}
       {reviewingSuggestionId && <ReviewOverlay />}
 

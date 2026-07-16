@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
-import { Plus, Layout, Clock, Trash2 } from 'lucide-react'
+import { Plus, Layout, Clock, Trash2, ChevronDown, ChevronUp, GitBranch } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore, storeHydrationPromise } from '@/store/editorStore'
@@ -49,6 +49,17 @@ function Dashboard() {
     projectName: '',
     isGuest: false,
   })
+  const [expandedCardIds, setExpandedCardIds] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    function handleGlobalClick() {
+      setExpandedCardIds({})
+    }
+    window.addEventListener('click', handleGlobalClick)
+    return () => window.removeEventListener('click', handleGlobalClick)
+  }, [])
+
+  const mainProjects = projects.filter(p => !p.forkedFromId)
 
   // Auto-trigger tour if user is logged in, has 0 projects, and hasn't done the tour (configured/bypassed via VITE_FORCE_TOUR)
   useOnboardingTrigger('dashboard')
@@ -139,8 +150,10 @@ function Dashboard() {
             </div>
           ))}
 
-          {projects.map((project, i) => {
+          {mainProjects.map((project, i) => {
             const isGuest = !!project.ownerId && project.ownerId !== user?.id && project.localAuthorId !== localAuthorId
+            const branches = projects.filter(b => b.forkedFromId === project.id)
+
             return (
               <motion.div
                 key={project.id}
@@ -148,9 +161,9 @@ function Dashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 onClick={() => navigate({ to: '/p/$projectId', params: { projectId: project.id } })}
-                className="group bg-(--ms-bg-surface) border border-(--ms-border) hover:border-(--ms-border-strong) rounded-xl overflow-hidden cursor-pointer transition hover:-translate-y-0.5"
+                className={`group bg-(--ms-bg-surface) border border-(--ms-border) hover:border-(--ms-border-strong) rounded-xl cursor-pointer transition hover:-translate-y-0.5 flex flex-col relative ${expandedCardIds[project.id] ? 'z-50' : 'z-10'}`}
               >
-                <div className="aspect-video bg-(--ms-bg-base) border-b border-(--ms-border) flex items-center justify-center text-(--ms-text-muted) relative">
+                <div className="aspect-video bg-(--ms-bg-base) rounded-t-[11px] border-b border-(--ms-border) flex items-center justify-center text-(--ms-text-muted) relative shrink-0">
                   <Layout size={24} className="opacity-40 group-hover:scale-110 group-hover:opacity-100 transition duration-300" />
                   <button
                     onClick={(e) => {
@@ -163,18 +176,69 @@ function Dashboard() {
                     <Trash2 size={13} />
                   </button>
                 </div>
-                <div className="px-3.5 py-3">
-                  <div className="flex items-center justify-between gap-2 overflow-hidden">
-                    <div className="text-[13px] font-semibold text-(--ms-text-primary) truncate group-hover:text-blue-400 transition-colors flex-1">{project.name}</div>
-                    {isGuest && (
-                      <span className="shrink-0 text-[9px] font-medium px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 select-none">
-                        Collaborator
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-(--ms-text-muted) flex items-center gap-1 mt-0.5">
-                    <Clock size={10} />
-                    {project.slides.length} slide{project.slides.length !== 1 ? 's' : ''} · {formatDate(project.updatedAt)}
+                <div className="px-3.5 py-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 overflow-hidden">
+                      <div className="text-[13px] font-semibold text-(--ms-text-primary) truncate group-hover:text-blue-400 transition-colors flex-1">{project.name}</div>
+                      {isGuest && (
+                        <span className="shrink-0 text-[9px] font-medium px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 select-none">
+                          Collaborator
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-(--ms-text-muted) flex items-center justify-between mt-0.5 relative">
+                      <div className="flex items-center gap-1 truncate max-w-[70%]">
+                        <Clock size={10} className="shrink-0" />
+                        <span className="truncate">
+                          {project.slides.length} slide{project.slides.length !== 1 ? 's' : ''} · {formatDate(project.updatedAt)}
+                        </span>
+                      </div>
+                      
+                      {branches.length > 0 && (
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedCardIds(prev => ({ ...prev, [project.id]: !prev[project.id] }))
+                            }}
+                            className="flex items-center gap-1 text-[10px] font-medium text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) px-1.5 py-0.5 rounded transition cursor-pointer border-none bg-transparent select-none shrink-0"
+                          >
+                            <GitBranch size={10} className="text-blue-500" />
+                            <span>{branches.length}</span>
+                            <ChevronDown size={8} className="text-(--ms-text-muted)" />
+                          </button>
+                          
+                          {expandedCardIds[project.id] && (
+                            <div className="absolute right-0 top-full mt-1.5 w-44 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-xl py-1 z-50 flex flex-col gap-0.5 max-h-32 overflow-y-auto custom-scrollbar">
+                              {branches.map(branch => {
+                                const branchIsGuest = !!branch.ownerId && branch.ownerId !== user?.id && branch.localAuthorId !== localAuthorId
+                                return (
+                                  <button
+                                    key={branch.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setExpandedCardIds(prev => ({ ...prev, [project.id]: false }))
+                                      navigate({ to: '/p/$projectId', params: { projectId: branch.id } })
+                                    }}
+                                    className="w-full flex items-center justify-between px-2.5 py-1.5 hover:bg-(--ms-border) text-[11px] text-(--ms-text-secondary) hover:text-(--ms-text-primary) text-left border-none bg-transparent cursor-pointer transition-colors"
+                                  >
+                                    <span className="truncate flex items-center gap-1.5 max-w-[70%]">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500/80 shrink-0" />
+                                      <span className="truncate font-medium">{branch.name}</span>
+                                    </span>
+                                    {branchIsGuest && (
+                                      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/10 scale-90 shrink-0 select-none">
+                                        Collab
+                                      </span>
+                                    )}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>

@@ -15,6 +15,8 @@ import { MobileFloatingDock } from '@/components/editor/toolbar/MobileFloatingDo
 import { Tour } from '@/components/ui/tour/Tour'
 import { useOnboardingTrigger } from '@/hooks/useOnboardingTrigger'
 import { TimelinePanel } from '@/components/editor/TimelinePanel'
+import { GitPanel } from '@/components/editor/git/GitPanel'
+import { PRReviewOverlay } from '@/components/editor/git/PRReviewOverlay'
 
 interface Props {
   projectId: string
@@ -58,6 +60,8 @@ export const EditorShell = memo(function EditorShell({ projectId, blocker }: Pro
       </div>
 
       {showEditorUI && isMobile && <MobileFloatingDock />}
+      {showEditorUI && <GitPanel />}
+      {showEditorUI && <PRReviewOverlay />}
 
       <PresentationOverlay />
       {isViewOnly && !isPresenting && <ViewerOverlay startPresentation={startPresentation} />}

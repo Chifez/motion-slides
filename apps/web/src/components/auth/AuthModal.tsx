@@ -32,18 +32,20 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           : window.location.href
 
         if (mode === 'signup') {
-          await authClient.signUp.email({
+          const { error } = await authClient.signUp.email({
             email,
             password,
             name,
             callbackURL
           })
+          if (error) return { error: error.message || 'Signup failed' }
         } else {
-          await authClient.signIn.email({
+          const { error } = await authClient.signIn.email({
             email,
             password,
             callbackURL
           })
+          if (error) return { error: error.message || 'Login failed' }
         }
 
         await checkSession()

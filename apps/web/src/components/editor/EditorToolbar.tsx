@@ -1,6 +1,6 @@
-import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Play, PenSquare, GitBranch, Film, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users, WifiOff } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, Play, PenSquare, GitBranch, Film, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users, WifiOff, GitFork, ChevronDown } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import type { Project } from '@motionslides/shared'
 import { ElementButtons } from './toolbar/ElementButtons'
@@ -23,7 +23,24 @@ interface Props { projectId: string }
 export function EditorToolbar({ projectId }: Props) {
   const isPrototypeMode = useEditorStore(state => state.isPrototypeMode)
   const mobileSlidesOpen = useEditorStore(state => state.mobileSlidesOpen)
-  const isChatOpen = useEditorStore(state => state.isChatOpen)
+  const isGitPanelOpen = useEditorStore(state => state.isGitPanelOpen)
+  const forkProject = useEditorStore(state => state.forkProject)
+  const navigate = useNavigate()
+
+  const [showBranchMenu, setShowBranchMenu] = useState(false)
+  const [newBranchName, setNewBranchName] = useState('')
+  const [isCreatingBranch, setIsCreatingBranch] = useState(false)
+  const branchMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (branchMenuRef.current && !branchMenuRef.current.contains(event.target as Node)) {
+        setShowBranchMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const updateProjectName = useEditorStore(state => state.updateProjectName)
   const startPresentation = useEditorStore(state => state.startPresentation)
@@ -33,17 +50,29 @@ export function EditorToolbar({ projectId }: Props) {
   const syncProjects = useEditorStore(state => state.syncProjects)
   const setSuggestions = useEditorStore(state => state.setSuggestions)
   const user = useEditorStore(state => state.user)
+  const localAuthorId = useEditorStore(state => state.localAuthorId)
   const editorMode = useEditorStore(state => state.editorMode ?? 'design')
   const setEditorMode = useEditorStore(state => state.setEditorMode)
-  const { mode } = usePermissions()
+  const { mode, canEdit } = usePermissions()
 
   const projectName = useEditorStore(state => state.projects.find(projectItem => projectItem.id === projectId)?.name ?? '')
   const project = useEditorStore(state => state.projects.find(projectItem => projectItem.id === projectId))
 
+  const isOnline = useOnlineStatus()
+
+  const projectsList = useEditorStore(state => state.projects)
+  const mainProject = project ? (project.forkedFromId ? projectsList.find(p => p.id === project.forkedFromId) || project : project) : null
+  const allBranches = mainProject ? projectsList.filter(p => p.id === mainProject.id || p.forkedFromId === mainProject.id) : []
+
+  const isChatOpen = useEditorStore(state => state.isChatOpen)
+
   const { isAuthenticated } = useAccessControl()
+  const parentProject = project?.forkedFromId ? projectsList.find(p => p.id === project.forkedFromId) : null
+  const isBranch = project?.forkedFromId && parentProject && project.ownerId === parentProject.ownerId
+  const canShare = project ? (isAuthenticated && project.ownerId === user?.id && !isBranch) : false
+
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const isMobile = useIsMobile();
-  const isOnline = useOnlineStatus()
 
   useEffect(() => {
     let ignore = false
@@ -106,11 +135,129 @@ export function EditorToolbar({ projectId }: Props) {
 
         <input
           value={projectName}
+          disabled={project.ownerId !== user?.id}
           onChange={(event) => updateProjectName(projectId, event.target.value)}
           onBlur={(event) => { if (!event.target.value.trim()) updateProjectName(projectId, 'Untitled Deck') }}
           spellCheck={false}
-          className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-md px-1 md:px-2 py-1 text-[13px] text-(--ms-text-primary) font-medium min-w-[60px] md:min-w-[130px] max-w-[220px] focus:outline-none transition truncate hidden md:block"
+          className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-md px-1 md:px-2 py-1 text-[13px] text-(--ms-text-primary) font-medium min-w-[60px] md:min-w-[130px] max-w-[220px] focus:outline-none transition truncate hidden md:block disabled:opacity-85"
         />
+
+        {((!!project.forkedFromId) || (!!project.ownerId && !!user)) && (
+          <div className="relative hidden md:block" ref={branchMenuRef}>
+            <button
+              onClick={() => setShowBranchMenu(!showBranchMenu)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition select-none bg-transparent ${
+                showBranchMenu 
+                  ? 'border-blue-500/50 text-blue-400 bg-blue-600/5' 
+                  : 'border-(--ms-border) text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/30'
+              }`}
+            >
+              <GitBranch size={12} className="text-blue-500" />
+              <span className="max-w-[100px] truncate">{project.name}</span>
+              <ChevronDown size={11} className={`transition duration-200 ${showBranchMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showBranchMenu && (
+              <div className="absolute top-full left-0 mt-2 w-72 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-50 p-2 flex flex-col gap-2">
+                <span className="text-[9px] font-black text-(--ms-text-muted) uppercase tracking-wider px-2 pt-1 block">
+                  Switch Branch
+                </span>
+                
+                <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto custom-scrollbar px-1">
+                  {allBranches.map((b) => {
+                    const isCurrent = b.id === project.id
+                    const branchIsGuest = b.ownerId && b.ownerId !== user?.id && b.localAuthorId !== localAuthorId
+                    return (
+                      <button
+                        key={b.id}
+                        disabled={isCurrent}
+                        onClick={() => {
+                          setShowBranchMenu(false)
+                          navigate({ to: '/p/$projectId', params: { projectId: b.id } })
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-xs font-semibold transition border-none bg-transparent cursor-pointer ${
+                          isCurrent 
+                            ? 'text-blue-400 bg-blue-600/5 font-bold cursor-default' 
+                            : 'text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50'
+                        }`}
+                      >
+                        <span className="truncate flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isCurrent ? 'bg-blue-400' : 'bg-(--ms-text-muted)/40'}`} />
+                          <span className="truncate">{b.name}</span>
+                        </span>
+                        {branchIsGuest && (
+                          <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/10 scale-90 shrink-0">
+                            Collaborator Fork
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="h-px bg-(--ms-border) my-0.5" />
+
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault()
+                    if (!newBranchName.trim() || isCreatingBranch) return
+                    setIsCreatingBranch(true)
+                    try {
+                      const res = await forkProject(project.id, newBranchName.trim())
+                      if (res && res.id) {
+                        setNewBranchName('')
+                        setShowBranchMenu(false)
+                        navigate({ to: '/p/$projectId', params: { projectId: res.id } })
+                      }
+                    } catch (err) {
+                      console.error('Failed to create branch:', err)
+                    } finally {
+                      setIsCreatingBranch(false)
+                    }
+                  }}
+                  className="px-1 flex flex-col gap-1.5"
+                >
+                  <span className="text-[9px] font-black text-(--ms-text-muted) uppercase tracking-wider px-1 block">
+                    Create New Branch
+                  </span>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="Branch name..."
+                      value={newBranchName}
+                      disabled={isCreatingBranch}
+                      onChange={(e) => setNewBranchName(e.target.value)}
+                      className="flex-1 bg-(--ms-bg-base) text-(--ms-text-primary) border border-(--ms-border) rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!newBranchName.trim() || isCreatingBranch}
+                      className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-2.5 py-1 rounded-lg border-none cursor-pointer transition disabled:opacity-50"
+                    >
+                      {isCreatingBranch ? '...' : 'Create'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
+
+        {project.ownerId && project.ownerId !== user?.id && (
+          <button
+            onClick={async () => {
+              const res = await forkProject(project.id)
+              if (res && res.id) {
+                navigate({ to: '/p/$projectId', params: { projectId: res.id } })
+              }
+            }}
+            className="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3.5 py-1.5 rounded-md transition-colors cursor-pointer border-none shadow-md ml-2 shrink-0"
+            title="Fork this project to your own dashboard to make changes"
+          >
+            <GitFork size={13} />
+            <span>Fork to Edit</span>
+          </button>
+        )}
 
         <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1 hidden md:block" />
 
@@ -196,7 +343,7 @@ export function EditorToolbar({ projectId }: Props) {
                         <span className="text-sm text-(--ms-text-secondary)">Export</span>
                         <ExportDropdown isMobile />
                       </div>
-                      {isAuthenticated && (
+                      {canShare && (
                         <div className="relative h-10 w-full flex items-center gap-2.5 px-3 rounded-lg hover:bg-(--ms-border) transition-colors">
                           <Users size={16} className="text-(--ms-text-muted)" />
                           <span className="text-sm text-(--ms-text-secondary)">Share</span>
@@ -231,9 +378,23 @@ export function EditorToolbar({ projectId }: Props) {
 
             <ThemeToggle className="hidden md:flex" />
 
+            {((!!project.forkedFromId) || (!!project.ownerId && !!user)) && (
+              <button
+                onClick={() => useEditorStore.getState().toggleGitPanel()}
+                title="Version Control (Git)"
+                className={`inline-flex items-center justify-center p-1.5 rounded-md transition cursor-pointer border-none ${
+                  isGitPanelOpen
+                    ? 'bg-blue-600/20 text-blue-400'
+                    : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'
+                }`}
+              >
+                <GitBranch size={14} />
+              </button>
+            )}
+
             <SettingsDropdown />
             <ExportDropdown />
-            {isAuthenticated && <ShareMenu project={project} />}
+            {canShare && <ShareMenu project={project} />}
 
             {mode !== 'edit' && (
               <button

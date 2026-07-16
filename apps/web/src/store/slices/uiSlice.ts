@@ -33,8 +33,10 @@ export interface UISlice {
   dismissToast: (id: string) => void
   editorMode: 'design' | 'prototype' | 'timeline'
   timelineTracksVisible: boolean
+  isGitPanelOpen: boolean
   setEditorMode: (mode: 'design' | 'prototype' | 'timeline') => void
   setTimelineTracksVisible: (visible: boolean) => void
+  toggleGitPanel: () => void
 }
 
 const getInitialTheme = (): 'dark' | 'light' => {
@@ -66,6 +68,8 @@ export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set, g
   suggestedProjectBackup: null,
   editorMode: 'design',
   timelineTracksVisible: true,
+  isGitPanelOpen: false,
+  toggleGitPanel: () => set((state) => ({ isGitPanelOpen: !state.isGitPanelOpen })),
 
   setTheme: (theme) => {
     set({ theme })
