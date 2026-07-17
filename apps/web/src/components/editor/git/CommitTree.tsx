@@ -89,19 +89,23 @@ export function CommitTree({
   // Calculate diff statistics compared to parent commit
   const getDiffStats = (commit: GitCommit) => {
     const parent = allCommits.find(c => c.id === commit.parentCommitId)
+    const commitSlides = commit.slides || []
     if (!parent) {
       // Root commit
-      const slidesCount = commit.slides.length
-      const elementsCount = commit.slides.reduce((acc, s) => acc + (s.elements?.length || 0), 0)
+      const slidesCount = commitSlides.length
+      const elementsCount = commitSlides.reduce((acc, s) => acc + (s?.elements?.length || 0), 0)
       return { slides: slidesCount, elementsAdded: elementsCount, elementsDeleted: 0 }
     }
+
+    const parentSlides = parent.slides || []
 
     let slidesAddedOrModified = 0
     let elementsAdded = 0
     let elementsDeleted = 0
 
-    commit.slides.forEach(slide => {
-      const parentSlide = parent.slides.find(s => s.id === slide.id)
+    commitSlides.forEach(slide => {
+      if (!slide) return
+      const parentSlide = parentSlides.find(s => s?.id === slide.id)
       if (!parentSlide) {
         slidesAddedOrModified++
         elementsAdded += slide.elements?.length || 0
@@ -120,8 +124,8 @@ export function CommitTree({
     })
 
     // Slides deleted
-    const parentSlideIds = parent.slides.map(s => s.id)
-    const commitSlideIds = commit.slides.map(s => s.id)
+    const parentSlideIds = parentSlides.map(s => s?.id).filter(Boolean)
+    const commitSlideIds = commitSlides.map(s => s?.id).filter(Boolean)
     const slidesDeleted = parentSlideIds.filter(id => !commitSlideIds.includes(id)).length
 
     return {

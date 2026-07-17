@@ -11,6 +11,7 @@ import { DeleteConfirmationModal } from '@/components/ui/DeleteConfirmationModal
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { Tour } from '@/components/ui/tour/Tour'
 import { useOnboardingTrigger } from '@/hooks/useOnboardingTrigger'
+import { Dropdown } from '@/components/ui/core/Dropdown'
 
 export const Route = createFileRoute('/dashboard')({
   loader: async () => {
@@ -21,6 +22,12 @@ export const Route = createFileRoute('/dashboard')({
       store.syncProjects()
     }
   },
+
+  head: () => ({
+    meta: [
+      { title: 'Dashboard - MotionSlides' }
+    ]
+  }),
   pendingComponent: LoadingPage,
   component: Dashboard,
 })
@@ -193,49 +200,46 @@ function Dashboard() {
                           {project.slides.length} slide{project.slides.length !== 1 ? 's' : ''} · {formatDate(project.updatedAt)}
                         </span>
                       </div>
-                      
+
                       {branches.length > 0 && (
                         <div className="relative">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setExpandedCardIds(prev => ({ ...prev, [project.id]: !prev[project.id] }))
-                            }}
-                            className="flex items-center gap-1 text-[10px] font-medium text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) px-1.5 py-0.5 rounded transition cursor-pointer border-none bg-transparent select-none shrink-0"
-                          >
-                            <GitBranch size={10} className="text-blue-500" />
-                            <span>{branches.length}</span>
-                            <ChevronDown size={8} className="text-(--ms-text-muted)" />
-                          </button>
-                          
-                          {expandedCardIds[project.id] && (
-                            <div className="absolute right-0 top-full mt-1.5 w-44 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-xl py-1 z-50 flex flex-col gap-0.5 max-h-32 overflow-y-auto custom-scrollbar">
+                          <Dropdown.Root>
+                            <Dropdown.Trigger asChild>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                }}
+                                className="flex items-center gap-1 text-[10px] font-medium text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) px-1.5 py-0.5 rounded transition cursor-pointer border-none bg-transparent select-none shrink-0"
+                              >
+                                <GitBranch size={10} className="text-blue-500" />
+                                <span>{branches.length}</span>
+                                <ChevronDown size={8} className="text-(--ms-text-muted)" />
+                              </button>
+                            </Dropdown.Trigger>
+
+                            <Dropdown.Content align="end" className="w-44 py-1 flex flex-col gap-0.5 max-h-32 overflow-y-auto custom-scrollbar shadow-xl mt-1.5">
                               {branches.map(branch => {
                                 const branchIsGuest = !!branch.ownerId && branch.ownerId !== user?.id && branch.localAuthorId !== localAuthorId
                                 return (
-                                  <button
+                                  <Dropdown.Item
                                     key={branch.id}
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setExpandedCardIds(prev => ({ ...prev, [project.id]: false }))
-                                      navigate({ to: '/p/$projectId', params: { projectId: branch.id } })
-                                    }}
-                                    className="w-full flex items-center justify-between px-2.5 py-1.5 hover:bg-(--ms-border) text-[11px] text-(--ms-text-secondary) hover:text-(--ms-text-primary) text-left border-none bg-transparent cursor-pointer transition-colors"
+                                    onSelect={() => navigate({ to: '/p/$projectId', params: { projectId: branch.id } })}
+                                    className="justify-between hover:bg-(--ms-border)"
                                   >
                                     <span className="truncate flex items-center gap-1.5 max-w-[70%]">
                                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500/80 shrink-0" />
-                                      <span className="truncate font-medium">{branch.name}</span>
+                                      <span className="truncate font-medium text-[11px]">{branch.name}</span>
                                     </span>
                                     {branchIsGuest && (
                                       <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/10 scale-90 shrink-0 select-none">
                                         Collab
                                       </span>
                                     )}
-                                  </button>
+                                  </Dropdown.Item>
                                 )
                               })}
-                            </div>
-                          )}
+                            </Dropdown.Content>
+                          </Dropdown.Root>
                         </div>
                       )}
                     </div>

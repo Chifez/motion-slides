@@ -14,11 +14,13 @@ interface Props {
  * Allows being cleared during typing but enforces limits on blur.
  */
 export const PropPair = memo(function PropPair({ label, value, onChange, min, max, step }: Props) {
+  const [prevValue, setPrevValue] = useState(value)
   const [localValue, setLocalValue] = useState<string>(value.toString())
 
-  useEffect(() => {
+  if (value !== prevValue) {
+    setPrevValue(value)
     setLocalValue(value.toString())
-  }, [value])
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value

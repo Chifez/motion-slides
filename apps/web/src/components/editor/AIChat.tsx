@@ -8,6 +8,7 @@ import { useAIGeneration } from '@/hooks/useAIGeneration'
 import { AIChatHeader } from './ai/AIChatHeader'
 import { AIGeneratingView } from './ai/AIGeneratingView'
 import { AIStudio } from './ai/AIStudio'
+import { Panel } from '@/components/ui/core/Panel'
 
 import { Briefcase, Wrench, LayoutGrid, Cloud } from 'lucide-react'
 
@@ -28,13 +29,13 @@ export function AIChat() {
   const addSlidesToProject = useEditorStore(s => s.addSlidesToProject)
   const activeProjectId = useEditorStore(s => s.activeProjectId)
 
+  const chatMessages = useEditorStore(s => s.chatMessages)
+
   const { 
     progress, 
     handleGenerate, 
     handleRefine,
   } = useAIGeneration()
-
-  if (!isChatOpen) return null
 
   const handleImport = () => {
     if (pendingSlides && activeProjectId) {
@@ -62,94 +63,94 @@ export function AIChat() {
   }
 
   return (
-    <motion.div
-      initial={{ x: 400 }}
-      animate={{ x: 0 }}
-      exit={{ x: 400 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed top-14 right-0 bottom-0 w-[400px] bg-(--ms-bg-base) border-l border-(--ms-border) z-60 shadow-2xl flex flex-col transition-colors"
+    <Panel.Root 
+      open={isChatOpen} 
+      onOpenChange={(open) => { if (open !== isChatOpen) setChatOpen(false) }} 
+      side="right"
     >
-      <AIChatHeader onClose={() => setChatOpen(false)} />
+      <Panel.Portal>
+        <Panel.Content width="w-[400px]" containerClassName="top-14 flex flex-col h-[calc(100vh-3.5rem)]">
+          <AIChatHeader onClose={() => setChatOpen(false)} />
 
-      <div className="h-[40%] border-b border-(--ms-border) bg-black/10 overflow-hidden relative">
-        <AnimatePresence mode="wait">
-          {isGenerating ? (
-            <motion.div
-              key="generating"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 z-10"
-            >
-              <AIGeneratingView progress={progress} />
-            </motion.div>
-          ) : pendingSlides ? (
-            <motion.div
-              key="preview"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 z-10"
-            >
-              <GenerationPreview
-                slides={pendingSlides}
-                title={pendingTitle}
-                onAccept={handleImport}
-                onReject={handleReject}
-                onRefine={handleRefine}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center mb-4 border border-blue-500/20 shadow-lg shadow-blue-500/5">
-                <Sparkles className="text-blue-400" size={24} />
-              </div>
-              <h3 className="text-sm font-bold text-(--ms-text-primary) mb-2">AI Studio</h3>
-              <p className="text-[11px] text-(--ms-text-muted) leading-relaxed max-w-[220px]">
-                Enter a topic, describe a system, or attach a README to generate professional slides instantly.
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {chatMessages.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center pt-12 text-center"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center mb-4 border border-blue-500/20 shadow-lg shadow-blue-500/5">
+                  <Sparkles className="text-blue-400" size={24} />
+                </div>
+                <h3 className="text-sm font-bold text-(--ms-text-primary) mb-2">AI Studio</h3>
+                <p className="text-[11px] text-(--ms-text-muted) leading-relaxed max-w-[220px]">
+                  Enter a topic, describe a system, or attach a README to generate professional slides instantly.
+                </p>
+              </motion.div>
+            ) : (
+              chatMessages.map(msg => (
+                <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className={`max-w-[95%] rounded-xl px-4 py-3 text-sm ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-(--ms-bg-elevated) text-(--ms-text-primary) border border-(--ms-border)'}`}>
+                    {msg.content && <div className={msg.slides || msg.progress ? "mb-4" : ""}>{msg.content}</div>}
+                    
+                    {msg.progress && (
+                      <div className="w-full min-h-[100px] relative rounded-lg overflow-hidden border border-(--ms-border)">
+                        <AIGeneratingView progress={msg.progress} />
+                      </div>
+                    )}
+                    
+                    {msg.slides && (
+                      <div className="w-full min-h-[220px] relative rounded-lg overflow-hidden border border-(--ms-border) bg-black/20">
+                        <GenerationPreview
+                          slides={msg.slides}
+                          title={pendingTitle}
+                          onAccept={handleImport}
+                          onReject={handleReject}
+                          onRefine={handleRefine}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
 
-      <AnimatePresence>
-        {pendingSlides && !isGenerating && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 border-b border-(--ms-border) bg-blue-600/5 flex flex-wrap gap-2"
-          >
-            {MAGIC_PILLS.map((pill) => {
-              const Icon = pill.icon
-              return (
-                <button
-                  key={pill.id}
-                  onClick={() => handleRefine(pill.instruction)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-(--ms-bg-elevated) border border-(--ms-border) hover:border-blue-500/50 hover:text-blue-400 text-[10px] font-bold text-(--ms-text-secondary) transition cursor-pointer shadow-sm"
+          <div className="shrink-0">
+            <AnimatePresence>
+              {pendingSlides && !isGenerating && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="px-4 py-3 border-t border-(--ms-border) bg-blue-600/5 flex flex-wrap gap-2"
                 >
-                  <Icon size={12} />
-                  {pill.label}
-                </button>
-              )
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  {MAGIC_PILLS.map((pill) => {
+                    const Icon = pill.icon
+                    return (
+                      <button
+                        key={pill.id}
+                        onClick={() => handleRefine(pill.instruction)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-(--ms-bg-elevated) border border-(--ms-border) hover:border-blue-500/50 hover:text-blue-400 text-[10px] font-bold text-(--ms-text-secondary) transition cursor-pointer shadow-sm"
+                      >
+                        <Icon size={12} />
+                        {pill.label}
+                      </button>
+                    )
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-      <div className="flex-1 overflow-y-auto">
-        <AIStudio 
-          isGenerating={isGenerating} 
-          hasPending={!!pendingSlides}
-          onGenerate={onGenerate} 
-          onRefine={handleRefine}
-        />
-      </div>
-    </motion.div>
+            <AIStudio 
+              isGenerating={isGenerating} 
+              hasPending={!!pendingSlides}
+              onGenerate={onGenerate} 
+              onRefine={handleRefine}
+            />
+          </div>
+        </Panel.Content>
+      </Panel.Portal>
+    </Panel.Root>
   )
 }

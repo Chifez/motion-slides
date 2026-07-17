@@ -111,6 +111,7 @@ export const TimelineTracks = memo(function TimelineTracks({
           audioDrawer={audio.audioDrawer}
           liveSlideIndex={liveSlideIndex}
           existingVoiceover={slides[liveSlideIndex]?.audio ?? null}
+          slideScript={slides[liveSlideIndex]?.script ?? ''}
           onSaveVoiceover={audio.saveVoiceover}
           onSaveBgm={audio.saveBgm}
           onClose={() => audio.setAudioDrawer(null)}

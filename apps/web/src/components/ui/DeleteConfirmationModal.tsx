@@ -1,6 +1,7 @@
-import { motion, AnimatePresence } from 'framer-motion'
-import { AlertTriangle, X } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { Modal } from '@/components/ui/core/Modal'
+import { Button } from '@/components/ui/core/Button'
 
 interface Props {
   isOpen: boolean
@@ -12,7 +13,6 @@ interface Props {
   confirmText?: string
 }
 
-
 export function DeleteConfirmationModal({
   isOpen,
   onClose,
@@ -23,68 +23,45 @@ export function DeleteConfirmationModal({
   confirmText = 'Delete Permanently'
 }: Props) {
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-(--z-modal) flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          />
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-md bg-(--ms-bg-surface) border border-(--ms-border) rounded-2xl shadow-2xl overflow-hidden"
-          >
-            <div className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-xl bg-red-500/10 text-red-500">
-                  <AlertTriangle size={24} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-(--ms-text-primary)">{title}</h3>
-                  <p className="text-sm text-(--ms-text-muted) mt-1 leading-relaxed">
-                    {description ?? (
-                      <>
-                        Are you sure you want to delete <span className="text-(--ms-text-primary) font-medium">"{projectName}"</span>?
-                        This action cannot be undone and will permanently remove all slides and prototype data.
-                      </>
-                    )}
-                  </p>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="p-1 text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors border-none bg-transparent cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 mt-8">
-                <button
-                  onClick={onClose}
-                  className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) transition border border-(--ms-border) cursor-pointer bg-transparent"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    onConfirm()
-                    onClose()
-                  }}
-                  className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition border-none cursor-pointer shadow-lg shadow-red-600/10 active:scale-95"
-                >
-                  {confirmText}
-                </button>
-              </div>
+    <Modal.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Modal.Portal>
+        <Modal.Overlay />
+        <Modal.Content>
+          <Modal.Header className="flex-row items-start gap-4">
+            <div className="p-3 rounded-xl bg-red-500/10 text-red-500 shrink-0">
+              <AlertTriangle size={24} />
             </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+            <div className="flex-1">
+              <Modal.Title>{title}</Modal.Title>
+              <Modal.Description className="mt-1 leading-relaxed">
+                {description ?? (
+                  <>
+                    Are you sure you want to delete <span className="text-(--ms-text-primary) font-medium">"{projectName}"</span>?
+                    This action cannot be undone and will permanently remove all slides and prototype data.
+                  </>
+                )}
+              </Modal.Description>
+            </div>
+            <Modal.Close className="relative right-0 top-0" />
+          </Modal.Header>
+          <Modal.Footer className="border-t border-(--ms-border)/40 gap-3">
+            <Button variant="outline" className="flex-1" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button 
+              variant="danger" 
+              className="flex-1" 
+              onClick={() => {
+                onConfirm()
+                onClose()
+              }}
+            >
+              {confirmText}
+            </Button>
+          </Modal.Footer>
+        </Modal.Content>
+      </Modal.Portal>
+    </Modal.Root>
   )
 }
+

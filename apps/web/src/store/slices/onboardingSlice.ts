@@ -113,6 +113,10 @@ export const createOnboardingSlice: StateCreator<
       // Allow guests/locals to also complete and store a guest flag
       setStorageItem(`ms-onboarded-guest-${onboardingTourType}`, 'true')
     }
+    
+    if (typeof window !== 'undefined' && onboardingTourType) {
+      sessionStorage.setItem(`ms-dismissed-${onboardingTourType}`, 'true')
+    }
     set({
       isOnboardingActive: false,
       onboardingStep: 0,

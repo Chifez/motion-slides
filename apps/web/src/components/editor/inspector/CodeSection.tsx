@@ -12,6 +12,13 @@ export function CodeSection({ content, onUpdate }: Props) {
   return (
     <div className="px-3 py-3 border-b border-(--ms-border)">
       <span className={labelCls}>Code</span>
+      <input
+        type="text"
+        placeholder="File name (e.g. index.ts)"
+        value={content.title || ''}
+        onChange={(e) => onUpdate({ ...content, title: e.target.value })}
+        className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1.5 text-[12px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 mb-2 transition-colors"
+      />
       <select
         value={content.language || 'javascript'}
         onChange={(e) => onUpdate({ ...content, language: e.target.value })}

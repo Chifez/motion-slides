@@ -22,6 +22,27 @@ export const Route = createFileRoute('/embed/$projectId')({
     await storeHydrationPromise
     return loadProjectForRoute(params.projectId, deps.key)
   },
+  head: ({ loaderData }) => {
+    const data = loaderData as { project?: any | null }
+    const project = data?.project
+    const title = project ? `Embed: ${project.name} - MotionSlides` : 'Embed - MotionSlides'
+    const desc = project 
+      ? `Embedded presentation player for "${project.name}" on MotionSlides.` 
+      : 'Embedded presentation player on MotionSlides.'
+      
+    return {
+      meta: [
+        { title },
+        { name: 'description', content: desc },
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: desc },
+        { property: 'og:image', content: '/og-image.png' },
+        { name: 'twitter:title', content: title },
+        { name: 'twitter:description', content: desc },
+        { name: 'twitter:image', content: '/og-image.png' },
+      ]
+    }
+  },
   pendingComponent: LoadingPage,
   component: EmbedPage,
 })
@@ -38,8 +59,13 @@ const EMBED_ACCESS = {
 }
 
 function EmbedPage() {
+  const loaderData = Route.useLoaderData() as unknown as { project?: any | null }
+  const project = loaderData?.project
+  const title = project ? `Embed: ${project.name} - MotionSlides` : 'Embed - MotionSlides'
+
   return (
     <HydrationGuard>
+      <title>{title}</title>
       <PermissionProvider value={EMBED_ACCESS}>
         <EmbedContainer />
       </PermissionProvider>

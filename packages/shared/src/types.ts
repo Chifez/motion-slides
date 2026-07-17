@@ -51,6 +51,7 @@ export interface TextContent {
 export interface CodeContent {
   value: string
   language: string
+  title?: string
   fontSize?: number
   fontFamily?: string
   lineHeight?: number

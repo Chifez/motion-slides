@@ -10,18 +10,7 @@ export function useOnboardingTrigger(type: TourType, showEditorUI: boolean = tru
   const projects = useEditorStore((s) => s.projects)
   const isOnboardingActive = useEditorStore((s) => s.isOnboardingActive)
 
-  const wasActiveRef = useRef(false)
 
-  useEffect(() => {
-    if (isOnboardingActive) {
-      wasActiveRef.current = true
-    } else if (wasActiveRef.current && !isOnboardingActive) {
-
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem(`ms-dismissed-${type}`, 'true')
-      }
-    }
-  }, [isOnboardingActive, type])
 
   const hasTriggered = useRef(false)
 

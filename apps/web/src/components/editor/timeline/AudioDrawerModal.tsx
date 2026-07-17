@@ -15,6 +15,7 @@ interface Props {
   audioDrawer: AudioDrawer
   liveSlideIndex: number
   existingVoiceover: SlideAudio | null
+  slideScript?: string
   onSaveVoiceover: (audio: SlideAudio) => void
   onSaveBgm: (audio: SlideAudio) => void
   onClose: () => void
@@ -28,6 +29,7 @@ export function AudioDrawerModal({
   audioDrawer,
   liveSlideIndex,
   existingVoiceover,
+  slideScript,
   onSaveVoiceover,
   onSaveBgm,
   onClose,
@@ -83,11 +85,14 @@ export function AudioDrawerModal({
         <div className="h-px bg-white/[0.06]" />
 
         {audioDrawer === AUDIO_DRAWER_VO && (
-          <VOQuickAdd
-            existingAudio={existingVoiceover}
-            onSave={onSaveVoiceover}
-            onClose={onClose}
-          />
+          <div className="p-4 pt-3 flex flex-col gap-3">
+            <VOQuickAdd
+              existingAudio={existingVoiceover}
+              slideScript={slideScript || ''}
+              onSave={onSaveVoiceover}
+              onClose={onClose}
+            />
+          </div>
         )}
         {audioDrawer === AUDIO_DRAWER_BGM && (
           <BgmUploader onSave={onSaveBgm} onClose={onClose} />

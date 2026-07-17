@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Paperclip, Bot, BrainCircuit, Sparkles, ChevronDown } from 'lucide-react'
+import { Send, Paperclip, Bot, BrainCircuit, Sparkles, ChevronDown, Mic } from 'lucide-react'
+import { transcribeAudioAction } from '@/lib/actions/ai-studio'
 
 interface Props {
   isGenerating: boolean
@@ -13,9 +14,13 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
   const [slideCount, setSlideCount] = useState(8)
   const [model, setModel] = useState('gpt-4o')
   const [showModelMenu, setShowModelMenu] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const modelMenuRef = useRef<HTMLDivElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -48,6 +53,47 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
       textareaRef.current?.focus()
     }
     reader.readAsText(file)
+  }
+
+  const toggleRecording = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop()
+      setIsRecording(false)
+      return
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      audioChunksRef.current = []
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
+      }
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const formData = new FormData()
+        formData.append('audio', new File([audioBlob], 'audio.webm', { type: 'audio/webm' }))
+        
+        try {
+          const { text } = await transcribeAudioAction(formData)
+          if (text) {
+             setPrompt(prev => prev ? `${prev} ${text}` : text)
+          }
+        } catch (error) {
+          console.error(error)
+        }
+        
+        stream.getTracks().forEach(track => track.stop())
+      }
+
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setIsRecording(true)
+    } catch (err) {
+      console.error('Error accessing microphone:', err)
+    }
   }
 
   const models = [
@@ -87,6 +133,14 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
               <Paperclip size={18} />
             </button>
             <input ref={fileRef} type="file" accept=".md,.txt" onChange={handleFileUpload} className="hidden" />
+
+            <button 
+              onClick={toggleRecording}
+              className={`p-2 rounded-lg transition cursor-pointer border-none ${isRecording ? 'text-red-400 bg-red-500/10 animate-pulse' : 'text-(--ms-text-muted) hover:text-blue-400 hover:bg-blue-500/10 bg-transparent'}`}
+              title="Record voice prompt"
+            >
+              <Mic size={18} />
+            </button>
 
             <div className="w-px h-4 bg-(--ms-border)/50 mx-1" />
 

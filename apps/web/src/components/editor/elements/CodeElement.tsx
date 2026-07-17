@@ -228,104 +228,123 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
 
 
   return (
-    <div 
-      className="bg-[#121212] rounded-lg px-3.5 py-3 w-full h-full overflow-auto"
-      style={{ 
+    <div
+      className="bg-[#121212] rounded-lg px-3.5 py-3 w-full h-full overflow-auto flex flex-col"
+      style={{
         fontFamily: content.fontFamily || 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         fontSize: content.fontSize || 12,
         lineHeight: content.lineHeight || 1.5,
       }}
     >
-      <div className="text-[9px] uppercase tracking-wider text-neutral-600 mb-2 select-none">
-        {content.language || 'javascript'}
-      </div>
-
-      <div ref={wrapperRef} style={{ position: 'relative' }}>
-
-        <div
-          ref={ghostRef}
-          aria-hidden="true"
-          style={{ 
-            opacity: 0, 
-            pointerEvents: 'none', 
-            userSelect: 'none', 
-            whiteSpace: 'pre-wrap',
-            fontFamily: content.fontFamily || 'inherit',
-            fontSize: content.fontSize || 'inherit',
-            lineHeight: content.lineHeight || 'inherit',
-          }}
-        >
-          {ghostTokens.map((tok) => (
-            <span key={tok.key} data-tok={tok.key}>{tok.content}</span>
-          ))}
+      <div className="flex items-center justify-between mb-4 select-none shrink-0">
+        <div className="flex items-center gap-1.5 w-16">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
         </div>
 
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, pointerEvents: 'none' }}>
-          <AnimatePresence>
-            {animTokens.map((tok) => {
-              const baseStyle: React.CSSProperties = {
-                position: 'absolute',
-                left: tok.x,
-                top: tok.y,
-                width: tok.width,
-                color: tok.color,
-                whiteSpace: 'pre',
-                fontStyle: tok.fontStyle & 1 ? 'italic' : 'normal',
-                fontWeight: tok.fontStyle & 2 ? 'bold' : 'normal',
-                textDecoration: tok.fontStyle & 4 ? 'underline' : 'none',
-              }
+        <div className="text-[11px] text-neutral-400 font-medium font-sans flex-1 text-center truncate px-2">
+          {content.title || ''}
+        </div>
 
-              if (tok.status === 'removed') {
+        <div className="text-[9px] uppercase tracking-wider text-neutral-600 w-16 text-right">
+          {content.language || 'javascript'}
+        </div>
+      </div>
+
+      <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col text-right pr-4 opacity-40 select-none shrink-0" style={{ minWidth: '2.5rem' }}>
+          {(content.value || '').split('\n').map((_, i) => (
+            <span key={i}>{i + 1}</span>
+          ))}
+        </div>
+        <div ref={wrapperRef} style={{ position: 'relative', flex: 1 }}>
+
+          <div
+            ref={ghostRef}
+            aria-hidden="true"
+            style={{
+              opacity: 0,
+              pointerEvents: 'none',
+              userSelect: 'none',
+              whiteSpace: 'pre-wrap',
+              fontFamily: content.fontFamily || 'inherit',
+              fontSize: content.fontSize || 'inherit',
+              lineHeight: content.lineHeight || 'inherit',
+            }}
+          >
+            {ghostTokens.map((tok) => (
+              <span key={tok.key} data-tok={tok.key}>{tok.content}</span>
+            ))}
+          </div>
+
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, pointerEvents: 'none' }}>
+            <AnimatePresence>
+              {animTokens.map((tok) => {
+                const baseStyle: React.CSSProperties = {
+                  position: 'absolute',
+                  left: tok.x,
+                  top: tok.y,
+                  width: tok.width,
+                  color: tok.color,
+                  whiteSpace: 'pre',
+                  fontStyle: tok.fontStyle & 1 ? 'italic' : 'normal',
+                  fontWeight: tok.fontStyle & 2 ? 'bold' : 'normal',
+                  textDecoration: tok.fontStyle & 4 ? 'underline' : 'none',
+                }
+
+                if (tok.status === 'removed') {
+                  return (
+                    <motion.span
+                      key={`${tok.key}__rm${tok.transitionId}`}
+                      style={baseStyle}
+                      initial={{ opacity: 1 }}
+                      animate={{ opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: exitDur, ease: EASE_IN_OUT }}
+                    >
+                      {tok.content}
+                    </motion.span>
+                  )
+                }
+
+                if (tok.status === 'added') {
+                  return (
+                    <motion.span
+                      key={`${tok.key}__add${tok.transitionId}`}
+                      style={baseStyle}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{
+                        duration: enterDur,
+                        ease: EASE_OUT,
+                        delay: enterDelay + tok.staggerIndex * 0.012,
+                      }}
+                    >
+                      {tok.content}
+                    </motion.span>
+                  )
+                }
+
+                const hasMovement = tok.dx !== 0 || tok.dy !== 0
                 return (
                   <motion.span
-                    key={`${tok.key}__rm${tok.transitionId}`}
+                    key={`${tok.key}__t${tok.transitionId}`}
                     style={baseStyle}
-                    initial={{ opacity: 1 }}
-                    animate={{ opacity: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: exitDur, ease: EASE_IN_OUT }}
-                  >
-                    {tok.content}
-                  </motion.span>
-                )
-              }
-
-              if (tok.status === 'added') {
-                return (
-                  <motion.span
-                    key={`${tok.key}__add${tok.transitionId}`}
-                    style={baseStyle}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={hasMovement ? { x: tok.dx, y: tok.dy, opacity: 1 } : false}
+                    animate={{ x: 0, y: 0, opacity: 1 }}
                     transition={{
-                      duration: enterDur,
-                      ease: EASE_OUT,
-                      delay: enterDelay + tok.staggerIndex * 0.012,
+                      duration: layoutDur,
+                      ease: FLIGHT_EASE,
+                      delay: exitDur,
                     }}
                   >
                     {tok.content}
                   </motion.span>
                 )
-              }
-
-              const hasMovement = tok.dx !== 0 || tok.dy !== 0
-              return (
-                <motion.span
-                  key={`${tok.key}__t${tok.transitionId}`}
-                  style={baseStyle}
-                  initial={hasMovement ? { x: tok.dx, y: tok.dy, opacity: 1 } : false}
-                  animate={{ x: 0, y: 0, opacity: 1 }}
-                  transition={{
-                    duration: layoutDur,
-                    ease: FLIGHT_EASE,
-                    delay: exitDur,
-                  }}
-                >
-                  {tok.content}
-                </motion.span>
-              )
-            })}
-          </AnimatePresence>
+              })}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>

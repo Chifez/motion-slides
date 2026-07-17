@@ -289,7 +289,7 @@ export const createGitSlice: StateCreator<EditorState, [], [], GitSlice> = (set,
         })
         get().showToast('Pushed commits successfully.', 'success')
       } else {
-        throw new Error(res.error || 'Server sync error')
+        throw new Error((res as any).error || 'Server sync error')
       }
     } catch (err) {
       console.error('Failed to push commits:', err)
@@ -471,6 +471,11 @@ export const createGitSlice: StateCreator<EditorState, [], [], GitSlice> = (set,
     try {
       const prs = await listPRsAction({ data: { projectId, type } })
       set({ prsList: prs })
+      
+      const pendingPR = prs.find(pr => pr.status === 'pending')
+      if (pendingPR) {
+        get().loadPRComments(pendingPR.id)
+      }
     } catch (err) {
       console.error('Failed to load PRs:', err)
     }

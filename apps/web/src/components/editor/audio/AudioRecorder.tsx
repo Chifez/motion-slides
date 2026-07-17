@@ -12,7 +12,7 @@ export function AudioRecorder({ existingAudio, onSave }: AudioRecorderProps) {
   const [recordingTime, setRecordingTime] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [audioUrl, setAudioUrl] = useState<string | null>(existingAudio?.url || null)
+  const audioUrl = existingAudio?.url || null
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -25,10 +25,6 @@ export function AudioRecorder({ existingAudio, onSave }: AudioRecorderProps) {
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [])
-
-  useEffect(() => {
-    setAudioUrl(existingAudio?.url || null)
-  }, [existingAudio])
 
   const startRecording = async () => {
     try {

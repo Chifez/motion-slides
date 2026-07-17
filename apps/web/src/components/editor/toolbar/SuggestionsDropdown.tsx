@@ -6,8 +6,26 @@ import { useClickOutside } from '@/hooks/useClickOutside'
 const buttonBaseClass = "inline-flex items-center gap-1.5 text-[10px] text-blue-400 hover:text-blue-300 bg-blue-500/10 backdrop-blur-sm border border-blue-500/30 rounded-md px-2 py-1 cursor-pointer transition-colors whitespace-nowrap"
 const activeButtonBaseClass = "inline-flex items-center gap-1.5 text-[10px] text-white bg-blue-600 border border-blue-500 rounded-md px-2 py-1 cursor-pointer transition-colors whitespace-nowrap"
 
+import { useQuery } from '@tanstack/react-query'
+import { listSuggestionsAction } from '@/lib/actions/suggestions'
+import type { ProjectSuggestion } from '@/lib/actions/suggestions'
+
 export function SuggestionsDropdown() {
-  const suggestions = useEditorStore(state => state.suggestions)
+  const activeProjectId = useEditorStore(state => state.activeProjectId)
+  const user = useEditorStore(state => state.user)
+  const project = useEditorStore(state => state.projects.find(p => p.id === activeProjectId))
+  const shouldFetchSuggestions = !!project && !!user?.id && project.ownerId === user.id
+
+  const { data: suggestions = [] } = useQuery<ProjectSuggestion[]>({
+    queryKey: ['suggestions', activeProjectId],
+    queryFn: async () => {
+      if (!activeProjectId) return []
+      const res = await listSuggestionsAction({ data: { projectId: activeProjectId } })
+      return res as ProjectSuggestion[]
+    },
+    enabled: shouldFetchSuggestions
+  })
+  
   const reviewingSuggestionId = useEditorStore(state => state.reviewingSuggestionId)
   const startReview = useEditorStore(state => state.startReview)
   const cancelReview = useEditorStore(state => state.cancelReview)

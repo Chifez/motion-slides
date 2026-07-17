@@ -1,19 +1,18 @@
 import { useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, LogOut, Cloud, ChevronDown, Download } from 'lucide-react'
+import { User, LogOut, Cloud, ChevronDown, Download, Settings } from 'lucide-react'
 import { AuthModal } from './AuthModal'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
+import { SettingsModal } from '../dashboard/SettingsModal'
 
-/**
- * User account menu with theme-flexible styling.
- * Uses standard CSS variables for consistent behavior across light/dark modes.
- */
-export function UserMenu() {
+
+export function UserMenu({ dashboard }: { dashboard?: boolean }) {
   const user = useEditorStore((s) => s.user)
   const logout = useEditorStore((s) => s.logout)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const { canInstall, promptInstall } = usePWAInstall()
 
   if (!user) {
@@ -39,11 +38,15 @@ export function UserMenu() {
         <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-inner">
           {user.name?.[0] || 'U'}
         </div>
-        <span className="text-[11px] font-medium text-(--ms-text-primary) max-w-[80px] truncate">
-          {user.name}
-        </span>
+        {!dashboard && (
+          <span className="text-[11px] font-medium text-(--ms-text-primary) max-w-[80px] truncate">
+            {user.name}
+          </span>
+        )}
         <ChevronDown size={12} className={`text-(--ms-text-muted) transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
       </button>
+
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
       <AnimatePresence>
         {isDropdownOpen && (
@@ -63,18 +66,19 @@ export function UserMenu() {
                 <p className="text-[11px] font-medium text-(--ms-text-primary) truncate">{user.email}</p>
               </div>
 
-              <button className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) rounded-lg transition cursor-pointer border-none bg-transparent">
-                <User size={14} />
-                <span>Profile Settings</span>
-              </button>
-
-              <button className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) rounded-lg transition cursor-pointer border-none bg-transparent">
-                <Cloud size={14} />
-                <span>Sync Preferences</span>
+              <button
+                onClick={() => {
+                  setIsSettingsOpen(true)
+                  setIsDropdownOpen(false)
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) rounded-lg transition cursor-pointer border-none bg-transparent"
+              >
+                <Settings size={14} />
+                <span>Account Settings</span>
               </button>
 
               {canInstall && (
-                <button 
+                <button
                   onClick={() => {
                     promptInstall()
                     setIsDropdownOpen(false)

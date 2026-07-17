@@ -49,6 +49,7 @@ export function ProjectContainer() {
   if (!project || isDenied) {
     return (
       <div className="flex items-center justify-center h-dvh text-(--ms-text-muted) flex-col gap-3 bg-(--ms-bg-base)">
+        <title>Access Denied - MotionSlides</title>
         <div className="text-[32px]">⚠</div>
         <div className="text-sm">Project not found or access denied.</div>
         <Link to="/dashboard" className="text-blue-400 text-xs underline mt-2">
@@ -59,10 +60,13 @@ export function ProjectContainer() {
   }
 
   return (
-    <EditorShell 
-      projectId={projectId} 
-      blocker={blocker}
-    />
+    <>
+      <title>{`${project.name} - MotionSlides`}</title>
+      <EditorShell 
+        projectId={projectId} 
+        blocker={blocker}
+      />
+    </>
   )
 }
 

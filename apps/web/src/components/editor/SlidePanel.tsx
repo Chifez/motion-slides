@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UI_SPRING } from '@/lib/motionEngine'
+import { Panel } from '@/components/ui/core/Panel'
+import { Button } from '@/components/ui/core/Button'
 import {
   DndContext,
   DragOverlay,
@@ -65,7 +67,7 @@ export function SlidePanel() {
   const activeDragIndex = activeDragSlide ? slides.indexOf(activeDragSlide) : -1
 
   const panelContent = (
-    <div className={`h-full flex flex-col bg-(--ms-bg-surface) ${isMobile ? 'rounded-t-2xl shadow-2xl' : 'border-l border-(--ms-border)'} transition-colors`}>
+    <div className={`h-full flex flex-col bg-(--ms-bg-surface) transition-colors ${!isMobile ? 'border-r border-(--ms-border)' : ''}`}>
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-(--ms-border) sticky top-0 bg-(--ms-bg-surface) z-10 transition-colors">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted)">Slides & Layers</span>
         <div className="flex items-center gap-1">
@@ -124,47 +126,32 @@ export function SlidePanel() {
       </div>
 
       <div className="p-2 border-t border-(--ms-border)">
-        <button
+        <Button
+          variant="outline"
           onClick={addSlide}
-          className="w-full flex items-center justify-center gap-1.5 bg-(--ms-bg-base) hover:bg-(--ms-border) border border-(--ms-border) text-(--ms-text-secondary) hover:text-(--ms-text-primary) text-xs font-medium py-1.5 rounded-md transition cursor-pointer"
+          className="w-full h-8"
         >
-          <Plus size={13} /> Add Slide
-        </button>
+          <Plus size={13} className="mr-1.5" /> Add Slide
+        </Button>
       </div>
     </div>
   )
 
   if (isMobile) {
     return (
-      <AnimatePresence>
-        {mobileSlidesOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileSlidesOpen(false)}
-              className="fixed inset-0 bg-black/60 z-100 backdrop-blur-sm"
-            />
-            <motion.aside
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={UI_SPRING}
-              className="fixed top-0 bottom-0 left-0 w-[280px] z-101 flex flex-col overflow-hidden"
-            >
-              <div className="flex-1 h-full flex flex-col min-h-0">
-                {panelContent}
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+      <Panel.Root open={mobileSlidesOpen} onOpenChange={setMobileSlidesOpen} side="left">
+        <Panel.Portal>
+          <Panel.Overlay />
+          <Panel.Content width="w-[280px]">
+            {panelContent}
+          </Panel.Content>
+        </Panel.Portal>
+      </Panel.Root>
     )
   }
 
   return (
-    <aside id="tour-slide-panel" className="w-[220px] shrink-0 flex flex-col bg-(--ms-bg-surface) overflow-hidden border-r border-(--ms-border) transition-colors">
+    <aside id="tour-slide-panel" className="w-[220px] shrink-0 flex flex-col bg-(--ms-bg-surface) overflow-hidden transition-colors relative z-10">
       {panelContent}
     </aside>
   )

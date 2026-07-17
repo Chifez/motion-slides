@@ -2,11 +2,23 @@ import { useState } from 'react'
 import { useEditorStore } from '@/store/editorStore'
 import { resolveSuggestionAction, listSuggestionsAction } from '@/lib/actions/suggestions'
 import type { ProjectSuggestion } from '@/lib/actions/suggestions'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 export function useReviewResolver() {
+  const queryClient = useQueryClient()
   const activeProjectId = useEditorStore(state => state.activeProjectId)
   const project = useEditorStore(state => state.projects.find(p => p.id === activeProjectId))
-  const suggestions = useEditorStore(state => state.suggestions)
+  
+  const { data: suggestions = [] } = useQuery<ProjectSuggestion[]>({
+    queryKey: ['suggestions', activeProjectId],
+    queryFn: async () => {
+      if (!activeProjectId) return []
+      const res = await listSuggestionsAction({ data: { projectId: activeProjectId } })
+      return res as ProjectSuggestion[]
+    },
+    enabled: !!activeProjectId
+  })
+
   const reviewingSuggestionId = useEditorStore(state => state.reviewingSuggestionId)
   const reviewMode = useEditorStore(state => state.reviewMode)
   
@@ -14,7 +26,6 @@ export function useReviewResolver() {
   const cancelReview = useEditorStore(state => state.cancelReview)
   const finishReview = useEditorStore(state => state.finishReview)
   const updateProject = useEditorStore(state => state.updateProject)
-  const setSuggestions = useEditorStore(state => state.setSuggestions)
 
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,9 +70,7 @@ export function useReviewResolver() {
             synced: true,
           })
           finishReview()
-          
-          const suggestionsList = await listSuggestionsAction({ data: { projectId: project.id } })
-          setSuggestions(suggestionsList as ProjectSuggestion[])
+          queryClient.invalidateQueries({ queryKey: ['suggestions', project.id] })
         }
       } else {
         const response = await resolveSuggestionAction({
@@ -72,9 +81,7 @@ export function useReviewResolver() {
         })
         if (response.success) {
           cancelReview()
-          
-          const suggestionsList = await listSuggestionsAction({ data: { projectId: project.id } })
-          setSuggestions(suggestionsList as ProjectSuggestion[])
+          queryClient.invalidateQueries({ queryKey: ['suggestions', project.id] })
         }
       }
     } catch (err: unknown) {

@@ -40,17 +40,17 @@ async function fetchUpstreamCommits(forkedFromId: string): Promise<GitCommit[]> 
   let currentId: string | null = forkedFromId
 
   while (currentId) {
-    const project = await db.query.projects.findFirst({
+    const projectRecord: any = await db.query.projects.findFirst({
       where: eq(projects.id, currentId),
     })
-    if (!project) break
+    if (!projectRecord) break
 
     const commits = await db.query.projectCommits.findMany({
       where: eq(projectCommits.projectId, currentId),
     })
 
     list.push(...(commits as unknown as GitCommit[]))
-    currentId = project.forkedFromId
+    currentId = projectRecord.forkedFromId
   }
 
   return list

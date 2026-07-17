@@ -120,28 +120,5 @@ export function useAccessControl(): AccessControl {
     }
   }
 
-  useEffect(() => {
-    if (project && !access.isPending) {
-      const needsKeyRewrite = !search.key && isCloudProject && project.ownerId !== userId && project.shareKey
-      const needsModeRewrite = access.mode !== (search.mode ?? 'edit')
-
-      if (needsModeRewrite || needsKeyRewrite) {
-        navigate({
-          search: (prevSearch: Record<string, unknown>) => {
-            const nextSearch = { ...prevSearch }
-            if (needsModeRewrite) {
-              nextSearch.mode = access.mode
-            }
-            if (needsKeyRewrite) {
-              nextSearch.key = project.shareKey
-            }
-            return nextSearch
-          },
-          replace: true,
-        })
-      }
-    }
-  }, [project, access.mode, access.isPending, search.mode, search.key, userId, isCloudProject, navigate])
-
   return access
 }

@@ -69,7 +69,19 @@ export const createUISlice: StateCreator<EditorState, [], [], UISlice> = (set, g
   editorMode: 'design',
   timelineTracksVisible: true,
   isGitPanelOpen: false,
-  toggleGitPanel: () => set((state) => ({ isGitPanelOpen: !state.isGitPanelOpen })),
+  toggleGitPanel: () => {
+    const { isGitPanelOpen, activeProjectId, projects, user } = get()
+    const willOpen = !isGitPanelOpen
+    set({ isGitPanelOpen: willOpen })
+
+    if (willOpen && activeProjectId) {
+      const project = projects.find(p => p.id === activeProjectId)
+      const isBranchOwner = !!project?.forkedFromId && project?.ownerId === user?.id
+
+      get().loadGitHistory(activeProjectId)
+      get().loadPRs(activeProjectId, isBranchOwner ? 'outgoing' : 'incoming')
+    }
+  },
 
   setTheme: (theme) => {
     set({ theme })

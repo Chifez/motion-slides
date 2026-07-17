@@ -10,6 +10,10 @@ export const user = pgTable('user', {
   email:         text('email').notNull().unique(),
   emailVerified: boolean('emailVerified').notNull(),
   image:         text('image'),
+  tokenQuota:    bigint('tokenQuota', { mode: 'number' }).notNull().default(100000),
+  tokenBalance:  bigint('tokenBalance', { mode: 'number' }).notNull().default(100000),
+  encryptedOpenAIKey: text('encryptedOpenAIKey'),
+  encryptedElevenLabsKey: text('encryptedElevenLabsKey'),
   createdAt:     timestamp('createdAt').notNull(),
   updatedAt:     timestamp('updatedAt').notNull(),
 })
