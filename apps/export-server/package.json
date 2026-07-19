@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx watch index.ts",
     "build": "tsc --project tsconfig.json",
-    "start": "node dist/index.js"
+    "start": "node dist/apps/export-server/index.js"
   },
   "dependencies": {
     "@getworkbench/express": "^0.7.0",
