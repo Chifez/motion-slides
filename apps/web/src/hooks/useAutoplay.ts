@@ -17,6 +17,5 @@ export function useAutoplay(
     if (!active) return
     const timer = setTimeout(() => tickRef.current(), delay)
     return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, delay, ...deps])
 }

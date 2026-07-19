@@ -1,53 +1,80 @@
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
-import type { PlaybackSettings } from '@motionslides/shared'
+import type { PlaybackSettings, Slide } from '@motionslides/shared'
 
 interface Props {
   slideIndex: number
   totalSlides: number
   playbackSettings: PlaybackSettings
   autoplayPaused: boolean
+  slides: Slide[]
   onPrev: () => void
   onNext: () => void
   onToggleAutoplay: () => void
+  onJumpToSlide: (index: number) => void
 }
 
 export function PresentationControls({
   slideIndex, totalSlides, playbackSettings,
-  autoplayPaused, onPrev, onNext, onToggleAutoplay,
+  autoplayPaused, slides, onPrev, onNext,
+  onToggleAutoplay, onJumpToSlide,
 }: Props) {
   return (
-    <div className="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/60 border border-white/10 rounded-full px-4 py-2 backdrop-blur-sm">
-      <button
-        onClick={onPrev}
-        disabled={slideIndex === 0}
-        className="p-1 rounded-full text-white/60 hover:text-white disabled:opacity-30 transition-colors cursor-pointer border-none bg-transparent"
-      >
-        <ChevronLeft size={18} />
-      </button>
-
-      <span className="text-sm text-white/70 min-w-[50px] text-center">
-        {slideIndex + 1} / {totalSlides}
-      </span>
-
-      <button
-        onClick={onNext}
-        disabled={slideIndex >= totalSlides - 1 && !playbackSettings.loop}
-        className="p-1 rounded-full text-white/60 hover:text-white disabled:opacity-30 transition-colors cursor-pointer border-none bg-transparent"
-      >
-        <ChevronRight size={18} />
-      </button>
-
-      {playbackSettings.autoplay && (
-        <>
-          <div className="w-px h-4 bg-white/20" />
+    <div className="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2.5 bg-black/75 border border-white/10 rounded-2xl px-5 py-3 backdrop-blur-md min-w-[280px]">
+      
+      {/* Timeline Step Dots */}
+      <div className="flex items-center gap-1.5 justify-center w-full px-2">
+        {slides.map((s, idx) => (
           <button
-            onClick={onToggleAutoplay}
-            className="p-1 rounded-full text-white/60 hover:text-white transition-colors cursor-pointer border-none bg-transparent"
+            key={s.id}
+            onClick={() => onJumpToSlide(idx)}
+            className={`h-1.5 rounded-full transition duration-300 border-none cursor-pointer ${
+              idx === slideIndex 
+                ? 'w-6 bg-blue-500' 
+                : 'w-2 bg-white/20 hover:bg-white/50'
+            }`}
+            title={s.name || `Step ${idx + 1}`}
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between w-full mt-0.5">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onPrev}
+            disabled={slideIndex === 0}
+            className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed transition cursor-pointer border-none bg-transparent"
+            title="Previous Step"
           >
-            {autoplayPaused ? <Play size={16} /> : <Pause size={16} />}
+            <ChevronLeft size={16} />
           </button>
-        </>
-      )}
+
+          <span className="text-[10px] font-black uppercase tracking-wider text-white/40 min-w-[44px] text-center">
+            {slideIndex + 1} / {totalSlides}
+          </span>
+
+          <button
+            onClick={onNext}
+            disabled={slideIndex >= totalSlides - 1 && !playbackSettings.loop}
+            className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed transition cursor-pointer border-none bg-transparent"
+            title="Next Step"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+
+        {playbackSettings.autoplay && (
+          <div className="flex items-center gap-2">
+            <div className="w-px h-4 bg-white/10" />
+            <button
+              onClick={onToggleAutoplay}
+              className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition cursor-pointer border-none bg-transparent"
+              title={autoplayPaused ? 'Play Autoplay' : 'Pause Autoplay'}
+            >
+              {autoplayPaused ? <Play size={14} fill="currentColor" /> : <Pause size={14} fill="currentColor" />}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

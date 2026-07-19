@@ -1,0 +1,11 @@
+# Workspace Agent Rules
+
+Please carefully read and adhere to all the industry-standard rules located in the `.agent/rules/` directory of this workspace before writing code. This is strictly required for maintaining a senior-level codebase.
+
+Read them in this specific order:
+1. `.agent/rules/general-rules.md`
+2. `.agent/rules/react.md`
+3. `.agent/rules/tanstack.md`
+4. `.agent/rules/zustand.md`
+5. `.agent/rules/tailwind.md`
+6. `.agent/rules/motion.md`

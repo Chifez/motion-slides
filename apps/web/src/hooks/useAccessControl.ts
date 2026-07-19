@@ -1,0 +1,124 @@
+import { useEffect } from 'react'
+import { useEditorStore } from '@/store/editorStore'
+import { useShallow } from 'zustand/react/shallow'
+import { useSearch, useNavigate, useParams, useLoaderData } from '@tanstack/react-router'
+import { evaluateProjectAccess } from '@/lib/permissions'
+import type { Project } from '@motionslides/shared'
+
+export type AccessMode = 'edit' | 'view' | 'present'
+
+export interface AccessControl {
+  mode: AccessMode
+  canEdit: boolean
+  isReadOnly: boolean
+  autoplay: boolean | null
+  isAuthenticated: boolean
+  isDenied: boolean
+  isPending: boolean
+}
+
+interface ProjectSearchParams {
+  mode?: AccessMode
+  key?: string
+  autoplay?: string
+}
+
+interface LoaderData {
+  project: Project | null
+  accessDenied?: boolean
+}
+
+/**
+ * useAccessControl — Thin reactive wrapper around the pure Permission Engine.
+ *
+ * Responsibilities:
+ *   - Read URL params (projectId, mode, key)
+ *   - Subscribe to the minimum required store state
+ *   - Delegate all access logic to `evaluateProjectAccess`
+ *   - Silently rewrite the URL when mode is downgraded (edit → view)
+ *
+ * It does NOT contain any business logic. All decisions are in permissions.ts.
+ */
+export function useAccessControl(): AccessControl {
+  const search = useSearch({ from: '/p/$projectId' }) as unknown as ProjectSearchParams
+  const { projectId } = useParams({ from: '/p/$projectId' })
+  const navigate = useNavigate({ from: '/p/$projectId' })
+  const loaderData = useLoaderData({ from: '/p/$projectId' }) as unknown as LoaderData
+  const loaderProject = loaderData?.project
+  const loaderAccessDenied = loaderData?.accessDenied
+
+  const { userId, project, localAuthorId, sessionStatus } = useEditorStore(
+    useShallow((state) => ({
+      userId: state.user?.id ?? null,
+      project: state.projects.find((projectItem) => projectItem.id === projectId) ?? null,
+      localAuthorId: state.localAuthorId,
+      sessionStatus: state.sessionStatus,
+    }))
+  )
+
+  const isLocalProjectCopy = project && project.localAuthorId === localAuthorId
+  const isCloudProject = !!project?.ownerId && !isLocalProjectCopy
+  const isPending = sessionStatus === 'loading' && isCloudProject && (typeof window === 'undefined' || window.navigator.onLine)
+  const requestedMode = search.mode ?? 'edit'
+  const cachedKey = project && project.ownerId !== userId ? project.shareKey : null
+  const requestedKey = search.key ?? cachedKey
+  const autoplayParam = search.autoplay
+  const autoplay = autoplayParam === 'true' ? true : autoplayParam === 'false' ? false : null
+
+  let access: AccessControl
+
+  if (loaderAccessDenied) {
+    access = {
+      mode: requestedMode,
+      canEdit: false,
+      isReadOnly: true,
+      autoplay,
+      isAuthenticated: !!userId,
+      isDenied: true,
+      isPending: false,
+    }
+  } else if (isPending) {
+    access = {
+      mode: requestedMode,
+      canEdit: false,
+      isReadOnly: true,
+      autoplay: null,
+      isAuthenticated: !!userId,
+      isDenied: false,
+      isPending: true,
+    }
+  } else if (!project) {
+    const isHydrating = !!loaderProject
+    access = {
+      mode: requestedMode,
+      canEdit: false,
+      isReadOnly: true,
+      autoplay,
+      isAuthenticated: !!userId,
+      isDenied: !isHydrating,
+      isPending: isHydrating,
+    }
+  } else {
+    const { isDenied, canEdit } = evaluateProjectAccess({
+      project,
+      userId,
+      localAuthorId,
+      requestedKey,
+    })
+
+    const effectiveMode: AccessMode =
+      requestedMode === 'edit' && !canEdit ? 'view' : requestedMode
+
+    access = {
+      mode: effectiveMode,
+      canEdit,
+      isReadOnly: !canEdit,
+      autoplay,
+      isAuthenticated: !!userId,
+      isDenied,
+      isPending: false,
+    }
+  }
+
+  return access
+}

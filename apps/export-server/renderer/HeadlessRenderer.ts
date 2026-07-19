@@ -64,6 +64,7 @@ export class HeadlessRenderer {
         fps:        OUTPUT_FPS,
         width:      resolution.width,
         height:     resolution.height,
+        sceneGraph,
       })
       await this.encoder.start()
 
@@ -123,7 +124,6 @@ export class HeadlessRenderer {
         '--use-gl=angle',
         '--use-angle=swiftshader',
 
-        // Standard headless flags
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
@@ -151,7 +151,6 @@ export class HeadlessRenderer {
       deviceScaleFactor: 1,
     })
 
-    // Open CDP session for BeginFrame
     this.cdp = await this.page.target().createCDPSession()
     await this.cdp.send('HeadlessExperimental.enable')
   }
@@ -174,7 +173,6 @@ export class HeadlessRenderer {
     )
 
     try {
-      // Inject the project and playback settings into the store
       await this.page!.evaluate((data: any) => {
         console.log('[Browser] Starting state injection…')
         const store = (window as any).__motionslides_store__
@@ -217,7 +215,11 @@ export class HeadlessRenderer {
   ): Promise<void> {
     const { playbackSettings, project } = sceneGraph
     const transitionDuration = playbackSettings.transitionDuration ?? 1000
-    const autoplayDelay      = playbackSettings.autoplayDelay      ?? 3000
+    const slide = project.slides[slideIndex]
+    const activeAudioDurationMs = slide?.audio
+      ? ((slide.audio.trimEnd - slide.audio.trimStart) / slide.audio.playbackRate) * 1000
+      : 0
+    const autoplayDelay = Math.max(playbackSettings.autoplayDelay ?? 3000, activeAudioDurationMs)
 
     // ── Activate the slide ───────────────────────────────────────────────────
     await this.page!.evaluate((idx: number) => {
@@ -255,7 +257,6 @@ export class HeadlessRenderer {
     const remainingHoldFrames = Math.max(0, Math.ceil(remainingHoldMs / FRAME_MS))
 
     if (remainingHoldFrames > 0) {
-      // Jump to end of hold
       await this.tickClock(remainingHoldMs)
       await this.captureFrame()
 
@@ -287,7 +288,6 @@ export class HeadlessRenderer {
 
   private async getLastFrame(): Promise<Buffer> {
     if (this.lastFrameBuffer) return this.lastFrameBuffer
-    // Fallback: capture a fresh frame
     const result = await this.cdp!.send('HeadlessExperimental.beginFrame', {
       screenshot: { format: 'jpeg', quality: 95 },
     })

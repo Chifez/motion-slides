@@ -8,6 +8,5 @@ import { useEffect } from 'react'
  */
 export function useFullscreen(_active: boolean, _onExit: () => void) {
   useEffect(() => {
-    // intentionally empty — overlay mode handles presentation viewport
   }, [])
 }

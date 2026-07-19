@@ -2,10 +2,22 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEditorStore } from '@/store/editorStore'
 import { MotionStage } from '@/components/editor/MotionStage'
 import { getCanvasDimensions } from '@motionslides/shared'
+import { PermissionProvider } from '@/context/PermissionContext'
+import type { AccessControl } from '@/hooks/useAccessControl'
 
 export const Route = createFileRoute('/export-view')({
   component: ExportView,
 })
+
+const EXPORT_ACCESS: AccessControl = {
+  mode: 'present',
+  canEdit: false,
+  isReadOnly: true,
+  autoplay: false,
+  isAuthenticated: true,
+  isDenied: false,
+  isPending: false,
+}
 
 /**
  * export-view.tsx
@@ -16,8 +28,20 @@ export const Route = createFileRoute('/export-view')({
  * this page is captured.
  */
 function ExportView() {
-  const activeSlide = useEditorStore(s => s.activeSlide())
+  const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
+  const previousSlideIndex = useEditorStore(s => s.previousSlideIndex)
+  const project = useEditorStore(s => s.activeProject())
   const playbackSettings = useEditorStore(s => s.playbackSettings)
+
+  // Derived state during render (referentially stable)
+  const activeSlide = project?.slides[activeSlideIndex] ?? null
+  const previousSlide = previousSlideIndex !== null ? (project?.slides[previousSlideIndex] ?? null) : null
+
+  const activeTransition = (() => {
+    if (!project || !activeSlide || !previousSlide) return null
+    const transitions = project.transitions ?? []
+    return transitions.find(t => t.fromSlideId === previousSlide.id && t.toSlideId === activeSlide.id) ?? null
+  })()
 
   if (!activeSlide) {
     return (
@@ -25,38 +49,43 @@ function ExportView() {
     )
   }
 
-  const { width: canvasW, height: canvasH } = getCanvasDimensions(playbackSettings.aspectRatio)
+  const defaultDims = getCanvasDimensions(playbackSettings.aspectRatio)
+  const canvasW = activeSlide.customWidth ?? defaultDims.width
+  const canvasH = activeSlide.customHeight ?? defaultDims.height
 
   return (
-    <div
-      style={{
-        width:    '100vw',
-        height:   '100vh',
-        overflow: 'hidden',
-        background: activeSlide.background || '#0a0a0a',
-        transform: 'none',
-        zoom:      1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      data-canvas-board
-    >
+    <PermissionProvider value={EXPORT_ACCESS}>
       <div
         style={{
-          width: canvasW,
-          height: canvasH,
-          position: 'relative',
+          width:    '100vw',
+          height:   '100vh',
           overflow: 'hidden',
+          background: activeSlide.background || '#0a0a0a',
+          transform: 'none',
+          zoom:      1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
+        data-canvas-board
       >
-        <MotionStage
-          mode="presentation"
-          slide={activeSlide}
-          previousSlide={null}
-          settings={playbackSettings}
-        />
+        <div
+          style={{
+            width: canvasW,
+            height: canvasH,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <MotionStage
+            mode="presentation"
+            slide={activeSlide}
+            previousSlide={previousSlide}
+            settings={playbackSettings}
+            activeTransition={activeTransition}
+          />
+        </div>
       </div>
-    </div>
+    </PermissionProvider>
   )
 }

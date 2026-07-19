@@ -1,0 +1,832 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-25T13:04:42.463Z",
+  "totalIcons": 45,
+  "categories": [
+    {
+      "id": "agents",
+      "label": "Agents",
+      "icons": [
+        {
+          "id": "agents-512-color",
+          "label": "Agents 512 Color",
+          "path": "icons/gcp/Agents/SVG/Agents-512-color.svg",
+          "category": "agents",
+          "keywords": [
+            "agents",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ai-machine-learning",
+      "label": "AI _ Machine Learning",
+      "icons": [
+        {
+          "id": "aimachinelearning-512-color",
+          "label": "AIMachineLearning 512 Color",
+          "path": "icons/gcp/AI _ Machine Learning/SVG/AIMachineLearning-512-color.svg",
+          "category": "ai-machine-learning",
+          "keywords": [
+            "aimachinelearning",
+            "512",
+            "color",
+            "ai",
+            "_",
+            "machine",
+            "learning",
+            "aim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ai-hypercomputer",
+      "label": "AI Hypercomputer",
+      "icons": [
+        {
+          "id": "aihypercomputer-512-color",
+          "label": "AIHypercomputer 512 Color",
+          "path": "icons/gcp/AI Hypercomputer/SVG/AIHypercomputer-512-color.svg",
+          "category": "ai-hypercomputer",
+          "keywords": [
+            "aihypercomputer",
+            "512",
+            "color",
+            "ai",
+            "hypercomputer",
+            "aih"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alloydb",
+      "label": "AlloyDB",
+      "icons": [
+        {
+          "id": "alloydb-512-color",
+          "label": "AlloyDB 512 Color",
+          "path": "icons/gcp/AlloyDB/SVG/AlloyDB-512-color.svg",
+          "category": "alloydb",
+          "keywords": [
+            "alloydb",
+            "512",
+            "color",
+            "db"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "anthos",
+      "label": "Anthos",
+      "icons": [
+        {
+          "id": "anthos-512-color",
+          "label": "Anthos 512 Color",
+          "path": "icons/gcp/Anthos/SVG/Anthos-512-color.svg",
+          "category": "anthos",
+          "keywords": [
+            "anthos",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "apigee",
+      "label": "Apigee",
+      "icons": [
+        {
+          "id": "apigee-512-color-rgb",
+          "label": "Apigee 512 Color Rgb",
+          "path": "icons/gcp/Apigee/SVG/Apigee-512-color-rgb.svg",
+          "category": "apigee",
+          "keywords": [
+            "apigee",
+            "512",
+            "color",
+            "rgb"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bigquery",
+      "label": "BigQuery",
+      "icons": [
+        {
+          "id": "bigquery-512-color",
+          "label": "BigQuery 512 Color",
+          "path": "icons/gcp/BigQuery/SVG/BigQuery-512-color.svg",
+          "category": "bigquery",
+          "keywords": [
+            "bigquery",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "business-intelligence",
+      "label": "Business Intelligence",
+      "icons": [
+        {
+          "id": "businessintelligence-512-color",
+          "label": "BusinessIntelligence 512 Color",
+          "path": "icons/gcp/Business Intelligence/SVG/BusinessIntelligence-512-color.svg",
+          "category": "business-intelligence",
+          "keywords": [
+            "businessintelligence",
+            "512",
+            "color",
+            "business",
+            "intelligence"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cloud-run",
+      "label": "Cloud Run",
+      "icons": [
+        {
+          "id": "cloudrun-512-color-rgb",
+          "label": "CloudRun 512 Color Rgb",
+          "path": "icons/gcp/Cloud Run/SVG/CloudRun-512-color-rgb.svg",
+          "category": "cloud-run",
+          "keywords": [
+            "cloudrun",
+            "512",
+            "color",
+            "rgb",
+            "cloud",
+            "run"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cloud-spanner",
+      "label": "Cloud Spanner",
+      "icons": [
+        {
+          "id": "cloudspanner-512-color",
+          "label": "CloudSpanner 512 Color",
+          "path": "icons/gcp/Cloud Spanner/SVG/CloudSpanner-512-color.svg",
+          "category": "cloud-spanner",
+          "keywords": [
+            "cloudspanner",
+            "512",
+            "color",
+            "cloud",
+            "spanner"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cloud-sql",
+      "label": "Cloud SQL",
+      "icons": [
+        {
+          "id": "cloudsql-512-color",
+          "label": "CloudSQL 512 Color",
+          "path": "icons/gcp/Cloud SQL/SVG/CloudSQL-512-color.svg",
+          "category": "cloud-sql",
+          "keywords": [
+            "cloudsql",
+            "512",
+            "color",
+            "cloud",
+            "sql"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cloud-storage",
+      "label": "Cloud Storage",
+      "icons": [
+        {
+          "id": "cloud-storage-512-color",
+          "label": "Cloud Storage 512 Color",
+          "path": "icons/gcp/Cloud Storage/SVG/Cloud_Storage-512-color.svg",
+          "category": "cloud-storage",
+          "keywords": [
+            "cloud",
+            "storage",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collaboration",
+      "label": "Collaboration",
+      "icons": [
+        {
+          "id": "collaboration-512-color",
+          "label": "Collaboration 512 Color",
+          "path": "icons/gcp/Collaboration/SVG/Collaboration-512-color.svg",
+          "category": "collaboration",
+          "keywords": [
+            "collaboration",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "compute",
+      "label": "Compute",
+      "icons": [
+        {
+          "id": "compute-512-color",
+          "label": "Compute 512 Color",
+          "path": "icons/gcp/Compute/SVG/Compute-512-color.svg",
+          "category": "compute",
+          "keywords": [
+            "compute",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "compute-engine",
+      "label": "Compute Engine",
+      "icons": [
+        {
+          "id": "computeengine-512-color-rgb",
+          "label": "ComputeEngine 512 Color Rgb",
+          "path": "icons/gcp/Compute Engine/SVG/ComputeEngine-512-color-rgb.svg",
+          "category": "compute-engine",
+          "keywords": [
+            "computeengine",
+            "512",
+            "color",
+            "rgb",
+            "compute",
+            "engine"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "containers",
+      "label": "Containers",
+      "icons": [
+        {
+          "id": "containers-512-color",
+          "label": "Containers 512 Color",
+          "path": "icons/gcp/Containers/SVG/Containers-512-color.svg",
+          "category": "containers",
+          "keywords": [
+            "containers",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "data-analytics",
+      "label": "Data Analytics",
+      "icons": [
+        {
+          "id": "dataanalytics-512-color",
+          "label": "DataAnalytics 512 Color",
+          "path": "icons/gcp/Data Analytics/SVG/DataAnalytics-512-color.svg",
+          "category": "data-analytics",
+          "keywords": [
+            "dataanalytics",
+            "512",
+            "color",
+            "data",
+            "analytics"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "databases",
+      "label": "Databases",
+      "icons": [
+        {
+          "id": "databases-512-color",
+          "label": "Databases 512 Color",
+          "path": "icons/gcp/Databases/SVG/Databases-512-color.svg",
+          "category": "databases",
+          "keywords": [
+            "databases",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "developer-tools",
+      "label": "Developer Tools",
+      "icons": [
+        {
+          "id": "developer-tools-512-color",
+          "label": "Developer Tools 512 Color",
+          "path": "icons/gcp/Developer Tools/SVG/Developer_Tools-512-color.svg",
+          "category": "developer-tools",
+          "keywords": [
+            "developer",
+            "tools",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "devops",
+      "label": "DevOps",
+      "icons": [
+        {
+          "id": "devops-512-color",
+          "label": "DevOps 512 Color",
+          "path": "icons/gcp/DevOps/SVG/DevOps-512-color.svg",
+          "category": "devops",
+          "keywords": [
+            "devops",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "distributed-cloud",
+      "label": "Distributed Cloud",
+      "icons": [
+        {
+          "id": "distributedcloud-512-color",
+          "label": "DistributedCloud 512 Color",
+          "path": "icons/gcp/Distributed Cloud/SVG/DistributedCloud-512-color.svg",
+          "category": "distributed-cloud",
+          "keywords": [
+            "distributedcloud",
+            "512",
+            "color",
+            "distributed",
+            "cloud"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gke",
+      "label": "GKE",
+      "icons": [
+        {
+          "id": "gke-512-color",
+          "label": "GKE 512 Color",
+          "path": "icons/gcp/GKE/SVG/GKE-512-color.svg",
+          "category": "gke",
+          "keywords": [
+            "gke",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hybrid-multicloud",
+      "label": "Hybrid & Multicloud",
+      "icons": [
+        {
+          "id": "hybridmulticloud-512-color",
+          "label": "HybridMulticloud 512 Color",
+          "path": "icons/gcp/Hybrid & Multicloud/SVG/HybridMulticloud-512-color.svg",
+          "category": "hybrid-multicloud",
+          "keywords": [
+            "hybridmulticloud",
+            "512",
+            "color",
+            "hybrid",
+            "&",
+            "multicloud"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hyperdisk",
+      "label": "Hyperdisk",
+      "icons": [
+        {
+          "id": "hyperdisk-512-color",
+          "label": "Hyperdisk 512 Color",
+          "path": "icons/gcp/Hyperdisk/SVG/Hyperdisk-512-color.svg",
+          "category": "hyperdisk",
+          "keywords": [
+            "hyperdisk",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "integration-services",
+      "label": "Integration Services",
+      "icons": [
+        {
+          "id": "integrationservices-512-color",
+          "label": "IntegrationServices 512 Color",
+          "path": "icons/gcp/Integration Services/SVG/IntegrationServices-512-color.svg",
+          "category": "integration-services",
+          "keywords": [
+            "integrationservices",
+            "512",
+            "color",
+            "integration",
+            "services"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "looker",
+      "label": "Looker",
+      "icons": [
+        {
+          "id": "looker-512-color",
+          "label": "Looker 512 Color",
+          "path": "icons/gcp/Looker/SVG/Looker-512-color.svg",
+          "category": "looker",
+          "keywords": [
+            "looker",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "management-tools",
+      "label": "Management Tools",
+      "icons": [
+        {
+          "id": "managementtools-512-color",
+          "label": "ManagementTools 512 Color",
+          "path": "icons/gcp/Management Tools/SVG/ManagementTools-512-color.svg",
+          "category": "management-tools",
+          "keywords": [
+            "managementtools",
+            "512",
+            "color",
+            "management",
+            "tools"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mandiant",
+      "label": "Mandiant",
+      "icons": [
+        {
+          "id": "mandiant-512-color",
+          "label": "Mandiant 512 Color",
+          "path": "icons/gcp/Mandiant/SVG/Mandiant-512-color.svg",
+          "category": "mandiant",
+          "keywords": [
+            "mandiant",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maps-geospatial",
+      "label": "Maps & Geospatial",
+      "icons": [
+        {
+          "id": "mapsgeospatial-512-color",
+          "label": "MapsGeospatial 512 Color",
+          "path": "icons/gcp/Maps & Geospatial/SVG/MapsGeospatial-512-color.svg",
+          "category": "maps-geospatial",
+          "keywords": [
+            "mapsgeospatial",
+            "512",
+            "color",
+            "maps",
+            "&",
+            "geospatial"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "marketplace",
+      "label": "Marketplace",
+      "icons": [
+        {
+          "id": "marketplace-512-color",
+          "label": "Marketplace 512 Color",
+          "path": "icons/gcp/Marketplace/SVG/Marketplace-512-color.svg",
+          "category": "marketplace",
+          "keywords": [
+            "marketplace",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "media-services",
+      "label": "Media Services",
+      "icons": [
+        {
+          "id": "mediaservices-512-color",
+          "label": "MediaServices 512 Color",
+          "path": "icons/gcp/Media Services/SVG/MediaServices-512-color.svg",
+          "category": "media-services",
+          "keywords": [
+            "mediaservices",
+            "512",
+            "color",
+            "media",
+            "services"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "migration",
+      "label": "Migration",
+      "icons": [
+        {
+          "id": "migration-512-color",
+          "label": "Migration 512 Color",
+          "path": "icons/gcp/Migration/SVG/Migration-512-color.svg",
+          "category": "migration",
+          "keywords": [
+            "migration",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mixed-reality",
+      "label": "Mixed Reality",
+      "icons": [
+        {
+          "id": "mixedreality-512-color",
+          "label": "MixedReality 512 Color",
+          "path": "icons/gcp/Mixed Reality/SVG/MixedReality-512-color.svg",
+          "category": "mixed-reality",
+          "keywords": [
+            "mixedreality",
+            "512",
+            "color",
+            "mixed",
+            "reality"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "networking",
+      "label": "Networking",
+      "icons": [
+        {
+          "id": "networking-512-color-rgb",
+          "label": "Networking 512 Color Rgb",
+          "path": "icons/gcp/Networking/SVG/Networking-512-color-rgb.svg",
+          "category": "networking",
+          "keywords": [
+            "networking",
+            "512",
+            "color",
+            "rgb"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "observability",
+      "label": "Observability",
+      "icons": [
+        {
+          "id": "observability-512-color",
+          "label": "Observability 512 Color",
+          "path": "icons/gcp/Observability/SVG/Observability-512-color.svg",
+          "category": "observability",
+          "keywords": [
+            "observability",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "operations",
+      "label": "Operations",
+      "icons": [
+        {
+          "id": "operations-512-color",
+          "label": "Operations 512 Color",
+          "path": "icons/gcp/Operations/SVG/Operations-512-color.svg",
+          "category": "operations",
+          "keywords": [
+            "operations",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "security-command-center",
+      "label": "Security Command Center",
+      "icons": [
+        {
+          "id": "securitycommandcenter-512-color",
+          "label": "SecurityCommandCenter 512 Color",
+          "path": "icons/gcp/Security Command Center/SVG/SecurityCommandCenter-512-color.svg",
+          "category": "security-command-center",
+          "keywords": [
+            "securitycommandcenter",
+            "512",
+            "color",
+            "security",
+            "command",
+            "center"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "security-identity",
+      "label": "Security Identity",
+      "icons": [
+        {
+          "id": "securityidentity-512-color",
+          "label": "SecurityIdentity 512 Color",
+          "path": "icons/gcp/Security Identity/SVG/SecurityIdentity-512-color.svg",
+          "category": "security-identity",
+          "keywords": [
+            "securityidentity",
+            "512",
+            "color",
+            "security",
+            "identity"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "security-operations",
+      "label": "Security Operations",
+      "icons": [
+        {
+          "id": "secops-512-color-rgb",
+          "label": "SecOps 512 Color Rgb",
+          "path": "icons/gcp/Security Operations/SVG/SecOps-512-color-rgb.svg",
+          "category": "security-operations",
+          "keywords": [
+            "secops",
+            "512",
+            "color",
+            "rgb",
+            "security",
+            "operations"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "serverless-computing",
+      "label": "Serverless Computing",
+      "icons": [
+        {
+          "id": "serverlesscomputing-512-color",
+          "label": "ServerlessComputing 512 Color",
+          "path": "icons/gcp/Serverless Computing/SVG/ServerlessComputing-512-color.svg",
+          "category": "serverless-computing",
+          "keywords": [
+            "serverlesscomputing",
+            "512",
+            "color",
+            "serverless",
+            "computing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "storage",
+      "label": "Storage",
+      "icons": [
+        {
+          "id": "storage-512-color",
+          "label": "Storage 512 Color",
+          "path": "icons/gcp/Storage/SVG/Storage-512-color.svg",
+          "category": "storage",
+          "keywords": [
+            "storage",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "threat-intelligence",
+      "label": "Threat Intelligence",
+      "icons": [
+        {
+          "id": "threatintelligence-512-color",
+          "label": "ThreatIntelligence 512 Color",
+          "path": "icons/gcp/Threat Intelligence/SVG/ThreatIntelligence-512-color.svg",
+          "category": "threat-intelligence",
+          "keywords": [
+            "threatintelligence",
+            "512",
+            "color",
+            "threat",
+            "intelligence"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vertex-ai",
+      "label": "Vertex AI",
+      "icons": [
+        {
+          "id": "vertexai-512-color",
+          "label": "VertexAI 512 Color",
+          "path": "icons/gcp/Vertex AI/SVG/VertexAI-512-color.svg",
+          "category": "vertex-ai",
+          "keywords": [
+            "vertexai",
+            "512",
+            "color",
+            "vertex",
+            "ai"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "web-mobile",
+      "label": "Web & Mobile",
+      "icons": [
+        {
+          "id": "webmobile-512-color",
+          "label": "WebMobile 512 Color",
+          "path": "icons/gcp/Web & Mobile/SVG/WebMobile-512-color.svg",
+          "category": "web-mobile",
+          "keywords": [
+            "webmobile",
+            "512",
+            "color",
+            "web",
+            "&",
+            "mobile"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "web3",
+      "label": "Web3",
+      "icons": [
+        {
+          "id": "web3-512-color",
+          "label": "Web3 512 Color",
+          "path": "icons/gcp/Web3/SVG/Web3-512-color.svg",
+          "category": "web3",
+          "keywords": [
+            "web3",
+            "512",
+            "color"
+          ]
+        }
+      ]
+    }
+  ]
+}

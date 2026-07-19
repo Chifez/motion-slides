@@ -1,24 +1,66 @@
+import { useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import type { ShapeContent, ShapeType } from '@motionslides/shared'
+import type { ShapeContent } from '@motionslides/shared'
 import { useMotionContext } from '@/context/MotionContext'
+import { useEditorStore } from '@/store/editorStore'
 
-interface Props { content: ShapeContent }
-
-// ─────────────────────────────────────────────
-// Shape SVG sub-components
-// Each uses motion.* elements so fill/stroke morph during transitions.
-// ─────────────────────────────────────────────
+interface Props { content: ShapeContent; elementId: string }
 
 interface ShapeProps {
   fill: string
   stroke: string
   transition: object
+  iconPath?: string
 }
 
 function RectangleShape({ fill, stroke, transition }: ShapeProps) {
   return (
     <motion.rect
-      x="2" y="2" width="96" height="96" rx="6"
+      x="1" y="1" width="98" height="98"
+      animate={{ fill, stroke }}
+      transition={transition}
+      strokeWidth="2"
+    />
+  )
+}
+
+function RoundedRectangleShape({ fill, stroke, transition }: ShapeProps) {
+  return (
+    <motion.rect
+      x="1" y="1" width="98" height="98" rx="12"
+      animate={{ fill, stroke }}
+      transition={transition}
+      strokeWidth="2"
+    />
+  )
+}
+
+function CircleShape({ fill, stroke, transition }: ShapeProps) {
+  return (
+    <motion.circle
+      cx="50" cy="50" r="48"
+      animate={{ fill, stroke }}
+      transition={transition}
+      strokeWidth="2"
+    />
+  )
+}
+
+function CylinderShape({ fill, stroke, transition }: ShapeProps) {
+  return (
+    <>
+      <motion.ellipse cx="50" cy="15" rx="48" ry="12" animate={{ fill, stroke }} transition={transition} strokeWidth="2" />
+      <motion.rect x="2" y="15" width="96" height="70" animate={{ fill }} transition={transition} stroke="none" />
+      <motion.path d="M2 15 L2 85 A48 12 0 0 0 98 85 L98 15" fill="none" animate={{ stroke }} transition={transition} strokeWidth="2" />
+      <motion.ellipse cx="50" cy="85" rx="48" ry="12" animate={{ fill, stroke }} transition={transition} strokeWidth="2" />
+    </>
+  )
+}
+
+function HexagonShape({ fill, stroke, transition }: ShapeProps) {
+  return (
+    <motion.polygon
+      points="50,2 95,25 95,75 50,98 5,75 5,25"
       animate={{ fill, stroke }}
       transition={transition}
       strokeWidth="2"
@@ -126,45 +168,143 @@ function DocumentShape({ fill, stroke, transition }: ShapeProps) {
   )
 }
 
-const shapeMap: Record<ShapeType, React.FC<ShapeProps>> = {
-  rectangle: RectangleShape, database: DatabaseShape, server: ServerShape,
-  cloud: CloudShape, client: ClientShape, diamond: DiamondShape,
-  user: UserShape, bucket: BucketShape, queue: QueueShape, document: DocumentShape,
+function AwsIconShape({ iconPath }: { iconPath?: string }) {
+  if (!iconPath) return null
+  return (
+    <foreignObject x="0" y="0" width="100" height="100">
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <img
+          src={`/${encodeURI(iconPath)}`}
+          alt="Icon"
+          style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', pointerEvents: 'none' }}
+        />
+      </div>
+    </foreignObject>
+  )
 }
 
-/**
- * ShapeElement — renders a shape with animated fill/stroke transitions.
- *
- * When a continuing shape changes color across slides, the fill and stroke
- * cross-fade using Phase 1 easing — same timing as position/size morphing.
- * In editor mode (isTransitioning=false), all changes are instant.
- */
-export function ShapeElement({ content }: Props) {
+const shapeMap: Record<string, React.FC<any>> = {
+  rectangle: RectangleShape,
+  'rounded-rectangle': RoundedRectangleShape,
+  circle: CircleShape,
+  cylinder: CylinderShape,
+  hexagon: HexagonShape,
+  database: DatabaseShape, server: ServerShape,
+  cloud: CloudShape, client: ClientShape, diamond: DiamondShape,
+  user: UserShape, bucket: BucketShape, queue: QueueShape, document: DocumentShape,
+  'aws-icon': AwsIconShape,
+  'gcp-icon': AwsIconShape,
+}
+
+export function ShapeElement({ content, elementId }: Props) {
   const { isTransitioning, durationSec } = useMotionContext()
+  const colorTransition = isTransitioning ? { duration: durationSec, ease: [0.37, 0, 0.63, 1] } : { duration: 0 }
+  const ShapeSVG = shapeMap[content.shapeType] || RectangleShape
 
-  const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
+  const isEditingId = useEditorStore(state => state.isEditingId)
+  const setEditingId = useEditorStore(state => state.setEditingId)
+  const updateElement = useEditorStore(state => state.updateElement)
 
-  // Phase 1 transition for color morphing
-  const colorTransition = isTransitioning
-    ? { duration: durationSec, ease: EASE_IN_OUT }
-    : { duration: 0 }
+  const isEditing = isEditingId === elementId
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const ShapeSVG = shapeMap[content.shapeType] ?? RectangleShape
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isEditing])
+
+  const handleBlur = () => {
+    if (inputRef.current) {
+      updateElement(elementId, {
+        content: { ...content, label: inputRef.current.value }
+      })
+    }
+    setEditingId(null)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      inputRef.current?.blur()
+    }
+    if (e.key === 'Escape') {
+      setEditingId(null)
+    }
+  }
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-      <svg viewBox="0 0 100 100" className="shape-svg" style={{ flex: 1 }}>
-        <ShapeSVG
-          fill={content.fill}
-          stroke={content.stroke}
-          transition={colorTransition}
-        />
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: content.label ? 4 : 0 }}>
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio={content.shapeType === 'rectangle' ? 'none' : 'xMidYMid meet'}
+        style={{ flex: 1, overflow: 'hidden', display: 'block', width: '100%', height: '100%' }}
+      >
+        <ClusterWrapper content={content} transition={colorTransition}>
+          <ShapeSVG fill={content.fill} stroke={content.stroke} transition={colorTransition} iconPath={content.iconPath} />
+        </ClusterWrapper>
       </svg>
-      {content.label && (
-        <span style={{ fontSize: 11, color: '#ccc', fontWeight: 500, fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
-          {content.label}
-        </span>
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          defaultValue={content.label ?? ''}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          onClick={e => e.stopPropagation()}
+          style={{
+            fontSize: 11,
+            color: '#fff',
+            background: 'var(--ms-bg-elevated, #222)',
+            border: '1px solid var(--ms-border, #444)',
+            borderRadius: 4,
+            padding: '2px 4px',
+            width: '85%',
+            textAlign: 'center',
+            outline: 'none',
+          }}
+        />
+      ) : (
+        content.label && (
+          <span style={{ fontSize: 11, color: '#ccc', fontWeight: 500, textAlign: 'center', userSelect: 'none' }}>
+            {content.label}
+          </span>
+        )
       )}
     </div>
+  )
+}
+
+function ClusterWrapper({ children, content, transition }: { children: React.ReactNode, content: ShapeContent, transition: any }) {
+  if (!content.isCluster) return <>{children}</>
+  
+  const count = Math.min(content.clusterCount || 3, 3)
+  const offset = 6
+  const dir = content.stackDirection || 'right'
+  
+  return (
+    <>
+      {Array.from({ length: count - 1 }, (_, i) => {
+        const d = count - 1 - i
+        const dx = dir === 'right' ? d * offset : 0
+        const dy = dir === 'down' ? d * offset : 0
+        
+        return (
+          <g key={i} transform={`translate(${dx}, ${dy})`} opacity={0.3 + i * 0.2}>
+            {children}
+          </g>
+        )
+      })}
+      <g transform="translate(0,0)">
+        {children}
+      </g>
+      {content.clusterCount && content.clusterCount > 1 && (
+         <g transform="translate(85, 15)">
+            <circle r="12" fill="var(--ms-accent, #3b82f6)" />
+            <text textAnchor="middle" dy=".3em" fontSize="10" fill="white" fontWeight="bold">
+               {content.clusterCount > 6 ? '7+' : `x${content.clusterCount}`}
+            </text>
+         </g>
+      )}
+    </>
   )
 }

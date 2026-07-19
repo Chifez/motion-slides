@@ -11,9 +11,7 @@ interface Props {
   elementId: string
 }
 
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
+
 
 interface FlatToken {
   key: string
@@ -52,9 +50,7 @@ interface AnimToken extends FlatToken {
   transitionId: number
 }
 
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
+
 
 /**
  * Punctuation chars that Shiki sometimes bundles (e.g. `{}`, `=>`) and sometimes
@@ -103,7 +99,6 @@ async function buildFlatTokens(value: string, language: string): Promise<FlatTok
  */
 function measureGhostRects(ghostEl: HTMLElement, wrapperEl: HTMLElement): Map<string, Rect> {
   const wrapperRect = wrapperEl.getBoundingClientRect()
-  // offsetWidth is CSS px (no transforms). clientRect.width is viewport px (with transforms).
   const scaleX = wrapperRect.width / wrapperEl.offsetWidth
   const scaleY = wrapperRect.height / wrapperEl.offsetHeight
 
@@ -122,9 +117,7 @@ function measureGhostRects(ghostEl: HTMLElement, wrapperEl: HTMLElement): Map<st
   return map
 }
 
-// ─────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────
+
 
 export function CodeElement({ content, elementId: _elementId }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -138,32 +131,23 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
   const transitionIdRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // ── Pull user's transition settings from context ────────────────────────
-  // When used in the editor (not presenting), isTransitioning=false and we
-  // fall back to the CODE_PHASE constants for sane defaults.
   const { durationSec: ctxDuration, ease: ctxEase, isTransitioning } = useMotionContext()
 
-  // Scale phase durations proportionally to the user's configured duration.
-  // Phase 1 (flight) gets the largest share — it's the most perceptible part.
   const totalDur = isTransitioning
     ? ctxDuration
     : CODE_PHASE.EXIT_DUR + CODE_PHASE.LAYOUT_DUR + CODE_PHASE.ENTER_DUR
-  const exitDur = totalDur * 0.20          // Phase 0: removed tokens fade out
-  const layoutDur = totalDur * 0.55          // Phase 1: tokens fly to new positions
-  const enterDur = totalDur * 0.30          // Phase 2: new tokens fade in
-  const enterDelay = exitDur + layoutDur * 0.7 // Phase 2 starts near end of flight
+  const exitDur = totalDur * 0.20
+  const layoutDur = totalDur * 0.55
+  const enterDur = totalDur * 0.30
+  const enterDelay = exitDur + layoutDur * 0.7
 
-  // Use the user's configured easing for the flight phase (Phase 1).
-  // This is the most felt part of the animation — it should honour their setting.
   const FLIGHT_EASE = isTransitioning
     ? ctxEase
     : ([0.37, 0, 0.63, 1] as [number, number, number, number])
   const EASE_IN_OUT: [number, number, number, number] = [0.37, 0, 0.63, 1]
   const EASE_OUT: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
 
-  // ─────────────────────────────────────────────
-  // Step 1 — content changes → tokenize → update ghost
-  // ─────────────────────────────────────────────
+
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
     const isFirst = ghostTokens.length === 0
@@ -171,7 +155,6 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
     timerRef.current = setTimeout(async () => {
       try {
         const flat = await buildFlatTokens(content.value, content.language || 'javascript')
-        // Advance BEFORE setGhostTokens so useLayoutEffect reads the new id.
         transitionIdRef.current += 1
         setGhostTokens(flat)
       } catch {
@@ -187,15 +170,9 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
     }, isFirst ? 0 : CODE_DEBOUNCE_MS)
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content.value, content.language, content.fontSize, content.lineHeight, content.fontFamily])
 
-  // ─────────────────────────────────────────────
-  // Step 2 — ghost renders → measure → build FLIP animTokens
-  //
-  // useLayoutEffect fires synchronously after DOM update, before paint,
-  // so the ghost already shows the new tokens when we measure.
-  // ─────────────────────────────────────────────
+
   useLayoutEffect(() => {
     if (!wrapperRef.current || !ghostRef.current || ghostTokens.length === 0) return
 
@@ -210,17 +187,15 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
     const newAnimTokens: AnimToken[] = []
     let addedIdx = 0
 
-    // ── Unchanged + Added ────────────────────────
+
     for (const tok of ghostTokens) {
       if (tok.key.startsWith('__nl')) continue
       const next = nextPositions.get(tok.key)
       if (!next) continue
 
       if (isFirst) {
-        // First render: snap in place, no animation.
         newAnimTokens.push({ ...tok, ...next, dx: 0, dy: 0, status: 'unchanged', staggerIndex: 0, transitionId: tid })
       } else if (prevKeys.has(tok.key) && prevPos.has(tok.key)) {
-        // In both slides → FLIP from old position to new.
         const prev = prevPos.get(tok.key)!
         newAnimTokens.push({
           ...tok, ...next,
@@ -231,13 +206,10 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
           transitionId: tid,
         })
       } else {
-        // New token → fade in (Phase 2).
         newAnimTokens.push({ ...tok, ...next, dx: 0, dy: 0, status: 'added', staggerIndex: addedIdx++, transitionId: tid })
       }
     }
 
-    // ── Removed ──────────────────────────────────
-    // Placed at OLD pixel position, fades to 0 in Phase 0.
     if (!isFirst) {
       for (const tok of prevTokensRef.current) {
         if (tok.key.startsWith('__nl')) continue
@@ -253,145 +225,126 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
     setAnimTokens(newAnimTokens)
   }, [ghostTokens])
 
-  // ─────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────
+
 
   return (
-    <div 
-      className="bg-[#121212] rounded-lg px-3.5 py-3 w-full h-full overflow-auto"
-      style={{ 
+    <div
+      className="bg-[#121212] rounded-lg px-3.5 py-3 w-full h-full overflow-auto flex flex-col"
+      style={{
         fontFamily: content.fontFamily || 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         fontSize: content.fontSize || 12,
         lineHeight: content.lineHeight || 1.5,
       }}
     >
-      <div className="text-[9px] uppercase tracking-wider text-neutral-600 mb-2 select-none">
-        {content.language || 'javascript'}
-      </div>
-
-      {/* Coordinate origin for all absolute token positions */}
-      <div ref={wrapperRef} style={{ position: 'relative' }}>
-
-        {/*
-          Ghost layer — invisible, in normal text flow.
-          Gives the wrapper its correct height and provides pixel-accurate
-          positions for every token via getBoundingClientRect().
-          Must match font/size/line-height of the visible render exactly.
-        */}
-        <div
-          ref={ghostRef}
-          aria-hidden="true"
-          style={{ 
-            opacity: 0, 
-            pointerEvents: 'none', 
-            userSelect: 'none', 
-            whiteSpace: 'pre-wrap',
-            fontFamily: content.fontFamily || 'inherit',
-            fontSize: content.fontSize || 'inherit',
-            lineHeight: content.lineHeight || 'inherit',
-          }}
-        >
-          {ghostTokens.map((tok) => (
-            <span key={tok.key} data-tok={tok.key}>{tok.content}</span>
-          ))}
+      <div className="flex items-center justify-between mb-4 select-none shrink-0">
+        <div className="flex items-center gap-1.5 w-16">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
         </div>
 
-        {/*
-          Stage layer — absolutely positioned overlay.
+        <div className="text-[11px] text-neutral-400 font-medium font-sans flex-1 text-center truncate px-2">
+          {content.title || ''}
+        </div>
 
-          No `layoutId` on tokens. layoutId causes Framer Motion to briefly
-          remove the element from the DOM during its own FLIP pass, which is
-          what causes the "bracket disappears then reappears" flicker.
-          We do our own FLIP manually via dx/dy offsets instead.
+        <div className="text-[9px] uppercase tracking-wider text-neutral-600 w-16 text-right">
+          {content.language || 'javascript'}
+        </div>
+      </div>
 
-          Phase ordering:
-            0 (immediate):         removed tokens fade to opacity 0
-            1 (delay=exitDur):     unchanged tokens fly via FLIP (x:dx→0, y:dy→0)
-            2 (delay=enterDelay):  new tokens fade in
-        */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, pointerEvents: 'none' }}>
-          <AnimatePresence>
-            {animTokens.map((tok) => {
-              const baseStyle: React.CSSProperties = {
-                position: 'absolute',
-                left: tok.x,
-                top: tok.y,
-                width: tok.width,
-                color: tok.color,
-                whiteSpace: 'pre',
-                fontStyle: tok.fontStyle & 1 ? 'italic' : 'normal',
-                fontWeight: tok.fontStyle & 2 ? 'bold' : 'normal',
-                textDecoration: tok.fontStyle & 4 ? 'underline' : 'none',
-              }
+      <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col text-right pr-4 opacity-40 select-none shrink-0" style={{ minWidth: '2.5rem' }}>
+          {(content.value || '').split('\n').map((_, i) => (
+            <span key={i}>{i + 1}</span>
+          ))}
+        </div>
+        <div ref={wrapperRef} style={{ position: 'relative', flex: 1 }}>
 
-              // Phase 0: removed ────────────────────────────────────────
-              if (tok.status === 'removed') {
+          <div
+            ref={ghostRef}
+            aria-hidden="true"
+            style={{
+              opacity: 0,
+              pointerEvents: 'none',
+              userSelect: 'none',
+              whiteSpace: 'pre-wrap',
+              fontFamily: content.fontFamily || 'inherit',
+              fontSize: content.fontSize || 'inherit',
+              lineHeight: content.lineHeight || 'inherit',
+            }}
+          >
+            {ghostTokens.map((tok) => (
+              <span key={tok.key} data-tok={tok.key}>{tok.content}</span>
+            ))}
+          </div>
+
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, pointerEvents: 'none' }}>
+            <AnimatePresence>
+              {animTokens.map((tok) => {
+                const baseStyle: React.CSSProperties = {
+                  position: 'absolute',
+                  left: tok.x,
+                  top: tok.y,
+                  width: tok.width,
+                  color: tok.color,
+                  whiteSpace: 'pre',
+                  fontStyle: tok.fontStyle & 1 ? 'italic' : 'normal',
+                  fontWeight: tok.fontStyle & 2 ? 'bold' : 'normal',
+                  textDecoration: tok.fontStyle & 4 ? 'underline' : 'none',
+                }
+
+                if (tok.status === 'removed') {
+                  return (
+                    <motion.span
+                      key={`${tok.key}__rm${tok.transitionId}`}
+                      style={baseStyle}
+                      initial={{ opacity: 1 }}
+                      animate={{ opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: exitDur, ease: EASE_IN_OUT }}
+                    >
+                      {tok.content}
+                    </motion.span>
+                  )
+                }
+
+                if (tok.status === 'added') {
+                  return (
+                    <motion.span
+                      key={`${tok.key}__add${tok.transitionId}`}
+                      style={baseStyle}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{
+                        duration: enterDur,
+                        ease: EASE_OUT,
+                        delay: enterDelay + tok.staggerIndex * 0.012,
+                      }}
+                    >
+                      {tok.content}
+                    </motion.span>
+                  )
+                }
+
+                const hasMovement = tok.dx !== 0 || tok.dy !== 0
                 return (
                   <motion.span
-                    // __rm suffix prevents key collision with a same-key entrance
-                    // that might be mounted in the same render pass.
-                    key={`${tok.key}__rm${tok.transitionId}`}
+                    key={`${tok.key}__t${tok.transitionId}`}
                     style={baseStyle}
-                    initial={{ opacity: 1 }}
-                    animate={{ opacity: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: exitDur, ease: EASE_IN_OUT }}
-                  >
-                    {tok.content}
-                  </motion.span>
-                )
-              }
-
-              // Phase 2: added ──────────────────────────────────────────
-              if (tok.status === 'added') {
-                return (
-                  <motion.span
-                    key={`${tok.key}__add${tok.transitionId}`}
-                    style={baseStyle}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={hasMovement ? { x: tok.dx, y: tok.dy, opacity: 1 } : false}
+                    animate={{ x: 0, y: 0, opacity: 1 }}
                     transition={{
-                      duration: enterDur,
-                      ease: EASE_OUT,
-                      delay: enterDelay + tok.staggerIndex * 0.012,
+                      duration: layoutDur,
+                      ease: FLIGHT_EASE,
+                      delay: exitDur,
                     }}
                   >
                     {tok.content}
                   </motion.span>
                 )
-              }
-
-              // Phase 1: unchanged — fly from old position to new ───────
-              //
-              // WHY transitionId IS IN THE KEY:
-              //   Framer Motion's `initial` only fires on component MOUNT.
-              //   Without transitionId in the key, this span stays mounted
-              //   across transitions (stable key), so `initial={{ x:dx, y:dy }}`
-              //   is silently ignored on re-renders — the token snaps.
-              //   transitionId forces a remount on every transition, guaranteeing
-              //   `initial` fires and the FLIP offset is applied correctly.
-              //
-              //   On the first render (isFirst path), dx===0 && dy===0, so
-              //   `initial={false}` skips the entrance — tokens just appear.
-              const hasMovement = tok.dx !== 0 || tok.dy !== 0
-              return (
-                <motion.span
-                  key={`${tok.key}__t${tok.transitionId}`}
-                  style={baseStyle}
-                  initial={hasMovement ? { x: tok.dx, y: tok.dy, opacity: 1 } : false}
-                  animate={{ x: 0, y: 0, opacity: 1 }}
-                  transition={{
-                    duration: layoutDur,
-                    ease: FLIGHT_EASE,
-                    delay: exitDur,  // wait for Phase 0 to finish
-                  }}
-                >
-                  {tok.content}
-                </motion.span>
-              )
-            })}
-          </AnimatePresence>
+              })}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>

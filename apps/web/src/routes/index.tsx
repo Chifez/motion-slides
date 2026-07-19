@@ -1,10 +1,18 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, redirect, Link } from '@tanstack/react-router'
 import { ChevronRight, Zap, LayoutTemplate, Code2, Share2, WifiOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { LandingNavbar } from '@/components/LandingNavbar'
 import { LandingFooter } from '@/components/LandingFooter'
+import { getSessionFn } from '@/lib/auth-actions'
+import { LandingShowcase } from '@/components/marketing/LandingShowcase'
 
 export const Route = createFileRoute('/')({
+  beforeLoad: async () => {
+    const session = await getSessionFn()
+    if (session?.user) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: LandingPage,
 })
 
@@ -22,7 +30,7 @@ const features = [
   {
     icon: <Share2 size={18} />,
     title: 'Architecture Diagrams',
-    desc: 'Ten semantic shapes, drag-to-connect, and smooth SVG path morphing — built for technical storytelling.',
+    desc: 'Ten semantic shapes, drag-to-connect, and SVG path morphing — built for technical storytelling.',
   },
   {
     icon: <WifiOff size={18} />,
@@ -89,7 +97,7 @@ function LandingPage() {
           <div className="flex items-center gap-3 flex-wrap justify-center">
             <Link
               to="/dashboard"
-              className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[15px] px-7 py-3.5 rounded-full no-underline transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,255,255,0.15)]"
+              className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[15px] px-7 py-3.5 rounded-full no-underline transition hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,255,255,0.15)]"
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
               Get Started <ChevronRight size={16} />
@@ -98,13 +106,18 @@ function LandingPage() {
               href="https://github.com/Chifez/motion-slides"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 border border-white/12 text-neutral-300 hover:text-white hover:border-white/25 text-[15px] font-medium px-7 py-3.5 rounded-full no-underline transition-all"
+              className="inline-flex items-center gap-2 border border-white/12 text-neutral-300 hover:text-white hover:border-white/25 text-[15px] font-medium px-7 py-3.5 rounded-full no-underline transition"
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
               View on GitHub
             </a>
           </div>
         </motion.div>
+      </section>
+
+      {/* ── Interactive Canvas Showcase ── */}
+      <section className="px-6 pb-12 relative z-10">
+        <LandingShowcase />
       </section>
 
       {/* ── Features ── */}
@@ -166,7 +179,7 @@ function LandingPage() {
           </p>
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[15px] px-8 py-3.5 rounded-full no-underline hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,255,255,0.15)] transition-all"
+            className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[15px] px-8 py-3.5 rounded-full no-underline hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,255,255,0.15)] transition"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
             Open Dashboard <ChevronRight size={16} />

@@ -72,7 +72,6 @@ export function getVirtualClockScript(): string {
   function tick(ms) {
     virtualNow += (ms || 0);
 
-    // Fire due setTimeout/setInterval callbacks
     const due = timerQueue.filter(t => t.fireAt <= virtualNow);
     due.forEach(t => {
       const idx = timerQueue.indexOf(t);
@@ -80,16 +79,13 @@ export function getVirtualClockScript(): string {
     });
     due.forEach(t => { try { t.cb(); } catch(e) {} });
 
-    // Fire all queued rAF callbacks
     const pending = Array.from(rafQueue.entries());
     rafQueue.clear();
     pending.forEach(([, cb]) => { try { cb(virtualNow); } catch(e) {} });
   }
 
-  // Expose on window for HeadlessRenderer to call via page.evaluate
   window.__virtualClock = { tick, getCurrentTime: () => virtualNow };
 
-  // Expose "real" versions for internal coordination
   window.__realSetTimeout = _realSetTimeout;
   window.__realClearTimeout = _realClearTimeout;
   window.__realPerformanceNow = _realPerfNow;

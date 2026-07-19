@@ -1,8 +1,3 @@
-Here’s your PRD converted into clean, structured **Markdown** you can drop directly into Cursor / Notion / GitHub.
-
----
-
-````markdown
 # 📄 Product Requirements Document (PRD)
 
 ## 🧭 Product Name
@@ -490,5 +485,5 @@ Build a vertical slice:
 
 If this works smoothly → scale the system
 
-```
+
 

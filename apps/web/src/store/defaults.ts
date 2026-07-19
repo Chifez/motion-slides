@@ -1,11 +1,11 @@
-import { type Slide } from '@motionslides/shared'
-import { nanoid } from '@/lib/nanoid'
-import { CANVAS_BG } from '@/constants/export'
+import { type Slide, type Project } from '@motionslides/shared'
+import { uuid } from '@/lib/uuid'
+import { CANVAS_BG, DEFAULT_PLAYBACK_SETTINGS } from '@/constants/export'
 
 /** Creates an empty slide with optional overrides */
 export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
   return {
-    id: nanoid(),
+    id: uuid(),
     name: '',
     elements: [],
     background: CANVAS_BG,
@@ -14,52 +14,76 @@ export function createDefaultSlide(overrides?: Partial<Slide>): Slide {
 }
 
 /** Creates a seeded demo project with two slides */
-export function createDefaultProject(name = 'Untitled Deck') {
+export function createDefaultProject(name = 'Untitled Deck', isFirst = false, ownerId?: string, localAuthorId?: string): Project {
+  const common = {
+    name,
+    description: isFirst ? 'A sample project demonstrating Magic Move.' : '',
+    prototypeLayout: {},
+    playbackSettings: { ...DEFAULT_PLAYBACK_SETTINGS },
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    synced: false,
+    shareKey: uuid(),
+    visibility: 'private' as const,
+    ownerId,
+    localAuthorId,
+  }
+
+  if (!isFirst) {
+    const blankSlide = createDefaultSlide({ name: 'Slide 1' })
+    return {
+      ...common,
+      id: uuid(),
+      slides: [blankSlide],
+      transitions: [],
+    }
+  }
+
   const slide1 = createDefaultSlide({
-    name: 'Slide 1',
+    name: 'Introduction',
     elements: [
       {
-        id: 'el-title', type: 'text',
-        position: { x: 80, y: 80 }, size: { width: 640, height: 80 },
-        rotation: 0, opacity: 1, zIndex: 1,
-        content: { value: 'My First Slide', fontSize: 48, fontWeight: 'bold', fontFamily: 'Inter', fontStyle: 'normal', color: '#ffffff', align: 'left' },
-      },
-      {
-        id: 'el-code', type: 'code',
-        position: { x: 80, y: 200 }, size: { width: 640, height: 120 },
-        rotation: 0, opacity: 1, zIndex: 1,
-        content: { value: `const greet = () => {\n}`, language: 'javascript' },
+        id: 'demo-title', type: 'text',
+        position: { x: 80, y: 310 }, size: { width: 575, height: 100 },
+        rotation: 0, opacity: 1, zIndex: 10,
+        content: { value: 'Welcome to MotionSlides', fontSize: 48, fontWeight: 'bold', fontFamily: 'Outfit', fontStyle: 'normal', color: '#ffffff', align: 'center' },
       },
     ],
   })
 
   const slide2 = createDefaultSlide({
-    name: 'Slide 2',
+    name: 'Magic Move Demo',
     elements: [
       {
-        id: 'el-title2', type: 'text',
-        position: { x: 80, y: 40 }, size: { width: 640, height: 80 },
-        rotation: 0, opacity: 1, zIndex: 1,
-        content: { value: 'My First Slide', fontSize: 48, fontWeight: 'bold', fontFamily: 'Inter', fontStyle: 'normal', color: '#ffffff', align: 'left' },
+        id: 'demo-title', type: 'text',
+        position: { x: 80, y: 310 }, size: { width: 575, height: 100 },
+        rotation: 0, opacity: 1, zIndex: 10,
+        content: { value: 'Welcome to MotionSlides', fontSize: 48, fontWeight: 'bold', fontFamily: 'Outfit', fontStyle: 'normal', color: '#ffffff', align: 'center' },
       },
       {
-        id: 'el-code2', type: 'code',
-        position: { x: 80, y: 160 }, size: { width: 640, height: 160 },
-        rotation: 0, opacity: 1, zIndex: 1,
-        content: { value: `const greet = () => {\n  console.log('Hello, World!')\n  return true\n}`, language: 'javascript' },
+        id: 'demo-subtitle', type: 'text',
+        position: { x: 160, y: 404 }, size: { width: 400, height: 70 },
+        rotation: 0, opacity: 1, zIndex: 10,
+        content: { value: 'High-fidelity presentations with Magic Move', fontSize: 24, fontWeight: 'medium', fontFamily: 'Inter', fontStyle: 'normal', color: '#888888', align: 'center' },
       },
     ],
   })
 
+  const transition: any = {
+    id: uuid(),
+    fromSlideId: slide1.id,
+    toSlideId: slide2.id,
+    animation: 'magic-move',
+    duration: 800,
+    ease: { x1: 0.25, y1: 0.1, x2: 0.25, y2: 1 },
+    trigger: 'click'
+  }
+
   return {
-    id: nanoid(),
-    name,
-    description: '',
+    ...common,
+    id: uuid(),
     slides: [slide1, slide2],
-    transitions: [],
-    prototypeLayout: {},
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    synced: false,
+    transitions: [transition],
   }
 }
+

@@ -9,7 +9,7 @@
  *   - The transition animation direction (slide-left, zoom, fade, etc.)
  */
 
-import { createContext, useContext, useMemo } from 'react'
+import { createContext, useContext } from 'react'
 import type { Transition } from 'framer-motion'
 import type { PlaybackSettings, Slide, SlideTransition, TransitionAnimation } from '@motionslides/shared'
 import {
@@ -18,6 +18,7 @@ import {
   msToSec,
   getContinuingIds,
   getNewElementIds,
+  getHeuristicMatchingMap,
   MAGIC_SPRING,
   BUILD_IN_SPRING,
   staggerDelay,
@@ -45,16 +46,22 @@ export interface MotionContextValue {
   newElementCount: number
   /** Get the stagger delay (in seconds) for a new element */
   getStaggerDelay: (staggerIndex: number) => number
+  /** Matches target IDs to source IDs for heuristic Magic Move */
+  matchingIdMap: Record<string, string>
   /**
    * The transition animation style from the prototype SlideTransition.
    * Drives enter/exit direction for new/removed elements.
    * Defaults to 'fade' when no prototype transition is defined.
    */
   transitionAnimation: TransitionAnimation
+  previousSlide: Slide | null
+  /** True when rendering inside the Timeline panel preview (not full-screen presentation) */
+  isTimelinePreview: boolean
 }
 
 /** Default context when no provider is present (editor mode) */
 const EMPTY_SET = new Set<string>()
+const EMPTY_MAP = {}
 const defaultValue: MotionContextValue = {
   isTransitioning: false,
   transition: {
@@ -70,7 +77,10 @@ const defaultValue: MotionContextValue = {
   newElementIds: EMPTY_SET,
   newElementCount: 0,
   getStaggerDelay: () => 0,
-  transitionAnimation: 'fade',
+  matchingIdMap: EMPTY_MAP,
+  transitionAnimation: 'magic-move',
+  previousSlide: null,
+  isTimelinePreview: false,
 }
 
 const MotionCtx = createContext<MotionContextValue>(defaultValue)
@@ -91,41 +101,42 @@ interface ProviderProps {
    */
   activeTransition?: SlideTransition | null
   children: React.ReactNode
+  /** Pass true when this provider wraps the timeline panel preview */
+  isTimelinePreview?: boolean
 }
 
-export function MotionProvider({ settings, previousSlide, currentSlide, activeTransition, children }: ProviderProps) {
-  const value = useMemo<MotionContextValue>(() => {
-    // Per-transition settings override global playback settings when defined
-    const durationMs = activeTransition?.duration ?? settings.transitionDuration
-    const easeBezier = activeTransition?.ease ?? settings.transitionEase
+export function MotionProvider({ settings, previousSlide, currentSlide, activeTransition, children, isTimelinePreview = false }: ProviderProps) {
+  // Per-transition settings override global playback settings when defined
+  const durationMs = activeTransition?.duration ?? settings.transitionDuration
+  const easeBezier = activeTransition?.ease ?? settings.transitionEase
 
-    const transition = buildTransition({ ...settings, transitionDuration: durationMs, transitionEase: easeBezier })
-    const durationSec = msToSec(durationMs)
-    const ease = cubicBezierToArray(easeBezier)
-    const continuing = getContinuingIds(previousSlide, currentSlide)
-    const newIds = getNewElementIds(previousSlide, currentSlide)
+  const transition = buildTransition({ ...settings, transitionDuration: durationMs, transitionEase: easeBezier })
+  const durationSec = msToSec(durationMs)
+  const ease = cubicBezierToArray(easeBezier)
+  const continuing = getContinuingIds(previousSlide, currentSlide)
+  const newIds = getNewElementIds(previousSlide, currentSlide)
+  const matchingIdMap = getHeuristicMatchingMap(previousSlide, currentSlide)
 
-    return {
-      isTransitioning: !!previousSlide,
-      transition,
-      durationSec,
-      ease,
-      magicSpring: MAGIC_SPRING,
-      buildInSpring: BUILD_IN_SPRING,
-      continuingIds: continuing,
-      newElementIds: newIds,
-      newElementCount: newIds.size,
-      getStaggerDelay: (staggerIndex: number) =>
-        staggerDelay(staggerIndex, newIds.size, durationSec),
-      transitionAnimation: activeTransition?.animation ?? 'fade',
-    }
-  }, [
-    settings.transitionDuration,
-    settings.transitionEase.x1, settings.transitionEase.y1,
-    settings.transitionEase.x2, settings.transitionEase.y2,
-    activeTransition,
-    previousSlide, currentSlide,
-  ])
+  // React Compiler handles memoization of this value automatically.
+  // The previous manual useMemo had a fragile 10-item dependency array that
+  // required updating whenever PlaybackSettings changed.
+  const value: MotionContextValue = {
+    isTransitioning: !!previousSlide,
+    transition,
+    durationSec,
+    ease,
+    magicSpring: MAGIC_SPRING,
+    buildInSpring: BUILD_IN_SPRING,
+    continuingIds: continuing,
+    newElementIds: newIds,
+    newElementCount: newIds.size,
+    getStaggerDelay: (staggerIndex: number) =>
+      staggerDelay(staggerIndex, newIds.size, durationSec),
+    matchingIdMap,
+    transitionAnimation: activeTransition?.animation ?? 'magic-move',
+    previousSlide,
+    isTimelinePreview,
+  }
 
   return <MotionCtx value={value}>{children}</MotionCtx>
 }

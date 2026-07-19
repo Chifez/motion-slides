@@ -4,21 +4,28 @@
 
 export type ShapeType =
   | 'rectangle'
+  | 'rounded-rectangle'
+  | 'circle'
+  | 'cylinder'
+  | 'diamond'
+  | 'hexagon'
   | 'database'
   | 'server'
   | 'cloud'
   | 'client'
-  | 'diamond'
   | 'user'
   | 'bucket'
   | 'queue'
   | 'document'
+  | 'aws-icon'
+  | 'gcp-icon'
+  | 'icon'
 
 export type LineType = 'straight' | 'elbow' | 'curved' | 'step-after' | 'step-before' | 'branching'
 
-export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line' | 'chart'
+export type ElementType = 'text' | 'code' | 'shape' | 'image' | 'line' | 'chart' | 'section' | 'hotspot'
 
-export type AspectRatioKey = '16:9' | '9:16' | '1:1' | '4:3'
+export type AspectRatioKey = '16:9' | '9:16' | '1:1' | '4:3' | 'custom'
 
 export interface Position {
   x: number
@@ -38,11 +45,13 @@ export interface TextContent {
   fontStyle: 'normal' | 'italic'
   color: string
   align: 'left' | 'center' | 'right'
+  listStyle?: 'none' | 'bullet' | 'numbered'
 }
 
 export interface CodeContent {
   value: string
   language: string
+  title?: string
   fontSize?: number
   fontFamily?: string
   lineHeight?: number
@@ -73,6 +82,29 @@ export interface ShapeContent {
   fill: string
   stroke: string
   label?: string
+  iconPath?:     string
+  iconCategory?: string
+  iconLabel?:    string
+  strokeWidth?: number
+  sublabel?: string
+  // Cluster support
+  isCluster?: boolean
+  clusterCount?: number
+  stackDirection?: 'right' | 'down' | 'behind'
+}
+
+/**
+ * SectionContent — visual grouping container for diagram tiers and boundary boxes.
+ * Phase 1: Visual wrapper only (no parent/child ownership).
+ */
+export interface SectionContent {
+  label?: string
+  sectionRole?: 'layer-bg' | 'cluster-bg' | 'security-perimeter' | 'vpc-boundary'
+  backgroundColor: string
+  borderColor: string
+  borderStyle: 'solid' | 'dashed' | 'dotted' | 'none'
+  borderWidth: number
+  cornerRadius: number
 }
 
 export interface Connection {
@@ -107,6 +139,17 @@ export interface LineContent {
   strokeWidth: number
   label?: string
   labelFontSize?: number
+  /** For AI-generated semantic routing paths */
+  customPath?: string
+}
+
+export type AnimationType = 'fade-in' | 'slide-up' | 'slide-left' | 'zoom-in' | 'pop' | 'draw' | 'none'
+
+export interface HotspotContent {
+  title: string
+  body: string
+  iconType: 'info' | 'question' | 'warning' | 'star'
+  color: string
 }
 
 export interface SceneElement {
@@ -119,7 +162,31 @@ export interface SceneElement {
   zIndex: number
   locked?: boolean
   groupId?: string
-  content: TextContent | CodeContent | ShapeContent | LineContent | ChartContent
+  layer?: string // For architectural diagrams auto-grouping
+  animation?: AnimationType
+  animationDelay?: number
+  autoWidth?: boolean
+  autoHeight?: boolean
+  pulseEffect?: boolean
+  isFocal?: boolean
+  isHotspot?: boolean
+  hotspotTitle?: string
+  hotspotBody?: string
+  hotspotIconType?: 'info' | 'question' | 'warning' | 'star'
+  hotspotColor?: string
+  content: TextContent | CodeContent | ShapeContent | LineContent | ChartContent | SectionContent | HotspotContent
+}
+
+export interface SlideAudio {
+  id: string
+  url: string            // Storage URL or data URI
+  fileName: string
+  duration: number       // duration in seconds
+  volume: number         // 0.0 to 1.0
+  loop: boolean
+  playbackRate: number   // speed
+  trimStart: number      // trim start point (seconds)
+  trimEnd: number        // trim end point (seconds)
 }
 
 export interface Slide {
@@ -127,6 +194,27 @@ export interface Slide {
   name: string
   elements: SceneElement[]
   background: string
+  audio?: SlideAudio | null
+  customWidth?: number
+  customHeight?: number
+  script?: string | null
+}
+
+// ── AI Chat ───────────────────────────────────────────────────────────────────
+
+export interface AIChatMessage {
+  id:        string
+  role:      'user' | 'assistant'
+  content:   string
+  timestamp: number
+  /** Present when the message contains generated slides ready to preview */
+  slides?:   Slide[]
+  /** Present when stage is in progress */
+  progress?: {
+    stage:   'preparing' | 'capturing' | 'encoding' | 'done' | 'error'
+    percent: number
+    message: string
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -150,8 +238,13 @@ export interface PlaybackSettings {
   loop: boolean
   transitionDuration: number
   transitionEase: CubicBezier
-  aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
+  aspectRatio: AspectRatioKey
   exportResolution: { width: number; height: number; label: string }
+  clipContent?: boolean
+  backgroundMusic?: SlideAudio | null
+  duckBackgroundMusic?: boolean
+  customWidth?: number
+  customHeight?: number
 }
 
 // ─────────────────────────────────────────────
@@ -166,6 +259,7 @@ export type TransitionAnimation =
   | 'fade'
   | 'zoom'
   | 'flip'
+  | 'magic-move'
 
 export interface SlideTransition {
   id: string
@@ -178,6 +272,13 @@ export interface SlideTransition {
   autoDelay?: number
 }
 
+export interface TimedCaption {
+  id: string
+  text: string
+  start: number // absolute start timestamp in seconds from the beginning of the entire presentation
+  end: number   // absolute end timestamp in seconds from the beginning of the entire presentation
+}
+
 export interface Project {
   id: string
   name: string
@@ -185,9 +286,20 @@ export interface Project {
   slides: Slide[]
   transitions: SlideTransition[]
   prototypeLayout: Record<string, { x: number; y: number }>
+  playbackSettings?: PlaybackSettings
   createdAt: number
   updatedAt: number
   synced: boolean
+  /** Metadata for sharing and future database sync */
+  shareKey: string
+  ownerId?: string
+  localAuthorId?: string
+  visibility: 'private' | 'link-shared' | 'collaborative' | 'public'
+  parentUpdatedAt?: number
+  captions?: TimedCaption[]
+  forkedFromId?: string
+  headCommitId?: string
+  localCommits?: any[]
 }
 
 // ─── Serialized Scene Graph ───────────────────────────────────────────────────
@@ -208,6 +320,7 @@ export interface SerializedSlide {
   id:         string
   elements:   SerializedElement[]
   background: string
+  audio?:     SlideAudio | null
   transition?: {
     type:      string
     duration:  number
@@ -237,6 +350,8 @@ export interface SerializedPlaybackSettings {
   aspectRatio:        string
   transitionType?:    string
   transitionEasing?:  string
+  backgroundMusic?:   SlideAudio | null
+  duckBackgroundMusic?: boolean
 }
 
 // ─── Export Engine Types ──────────────────────────────────────────────────────
@@ -251,3 +366,12 @@ export interface ExportProgressEvent {
   currentSlide?: number
   totalSlides?:  number
 }
+
+// ─── Storage Abstraction Types ────────────────────────────────────────────────
+
+export interface StorageProvider {
+  uploadFile(data: Uint8Array, filename: string, mimeType: string): Promise<{ url: string; key: string }>
+  getDownloadUrl(key: string): Promise<string>
+  deleteFile(key: string): Promise<void>
+}
+

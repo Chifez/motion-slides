@@ -19,7 +19,7 @@ export function LandingNavbar() {
 
       <Link
         to="/dashboard"
-        className="inline-flex items-center gap-1.5 bg-white text-black text-[13px] font-semibold px-4 py-2 rounded-full no-underline hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] transition-all"
+        className="inline-flex items-center gap-1.5 bg-white text-black text-[13px] font-semibold px-4 py-2 rounded-full no-underline hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] transition active:scale-[0.97]"
       >
         Open App
       </Link>

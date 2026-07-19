@@ -1,19 +1,5 @@
-/**
- * 🎬 Motion Engine — Core Animation Logic
- *
- * Implements the architecture from MOTION.md:
- *   Match → Diff → Measure → Invert → Animate → Render
- *
- * This module is framework-agnostic logic. React/Framer Motion integration
- * lives in the components and MotionContext.
- */
-
 import type { SceneElement, Slide, CubicBezier, PlaybackSettings } from '@motionslides/shared'
 import type { Transition } from 'framer-motion'
-
-// ─────────────────────────────────────────────
-// 1. Element Matching & Diff Engine
-// ─────────────────────────────────────────────
 
 export interface DiffResult {
   /** Elements present in both slides (matched by ID) */
@@ -27,39 +13,174 @@ export interface DiffResult {
 }
 
 /**
- * Diff two slides by matching elements strictly by ID.
- * This is the heart of Magic Move — it tells us which elements
- * should morph vs. enter/exit.
+ * Levenshtein distance for text label similarity checking.
+ */
+function levenshteinDistance(a: string, b: string): number {
+  const matrix = []
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i]
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          Math.min(
+            matrix[i][j - 1] + 1, // insertion
+            matrix[i - 1][j] + 1 // deletion
+          )
+        )
+      }
+    }
+  }
+  return matrix[b.length][a.length]
+}
+
+function getElementTextLabel(el: SceneElement): string | null {
+  if (el.type === 'text') {
+    return (el.content as any).value || null
+  }
+  if (el.type === 'shape') {
+    return (el.content as any).label || (el.content as any).iconLabel || null
+  }
+  return null
+}
+
+function calculateSimilarityScore(elA: SceneElement, elB: SceneElement): number {
+  if (elA.type !== elB.type) return 0
+
+  let score = 0
+
+  // 1. Label/Content match (weight: 50)
+  const labelA = getElementTextLabel(elA)
+  const labelB = getElementTextLabel(elB)
+  
+  if (labelA && labelB) {
+    if (labelA.toLowerCase() === labelB.toLowerCase()) {
+      score += 50
+    } else {
+      const editDistance = levenshteinDistance(labelA.toLowerCase(), labelB.toLowerCase())
+      const maxLen = Math.max(labelA.length, labelB.length)
+      if (maxLen > 0) {
+        const similarity = 1 - editDistance / maxLen
+        score += Math.round(similarity * 35)
+      }
+    }
+  }
+
+  // 2. Icon / shape properties match (weight: 30)
+  if (elA.type === 'shape' && elB.type === 'shape') {
+    const contentA = elA.content as any
+    const contentB = elB.content as any
+    if (contentA.shapeType === contentB.shapeType) {
+      score += 10
+      if (contentA.iconPath && contentB.iconPath && contentA.iconPath === contentB.iconPath) {
+        score += 20
+      }
+    }
+  }
+
+  // 3. Proximity match (weight: 20)
+  const dx = elA.position.x - elB.position.x
+  const dy = elA.position.y - elB.position.y
+  const distance = Math.sqrt(dx * dx + dy * dy)
+  if (distance < 500) {
+    score += Math.round((1 - distance / 500) * 20)
+  }
+
+  return score
+}
+
+/**
+ * Calculates a map of target element ID -> source element ID.
+ * Uses strict ID matches first, then falls back to semantic heuristics.
+ */
+export function getHeuristicMatchingMap(from: Slide | null, to: Slide | null): Record<string, string> {
+  const matchingMap: Record<string, string> = {}
+  if (!from || !to) return matchingMap
+
+  const fromElements = [...from.elements]
+  const toElements = [...to.elements]
+
+  const matchedFromIds = new Set<string>()
+  const matchedToIds = new Set<string>()
+
+  // 1. Strict ID Match Pass
+  for (const toEl of toElements) {
+    const fromEl = fromElements.find(e => e.id === toEl.id)
+    if (fromEl) {
+      matchingMap[toEl.id] = fromEl.id
+      matchedFromIds.add(fromEl.id)
+      matchedToIds.add(toEl.id)
+    }
+  }
+
+  // 2. Heuristic Match Pass
+  const unmatchedTo = toElements.filter(e => !matchedToIds.has(e.id))
+  const unmatchedFrom = fromElements.filter(e => !matchedFromIds.has(e.id))
+
+  for (const toEl of unmatchedTo) {
+    let bestCandidate: SceneElement | null = null
+    let highestScore = 0
+
+    for (const fromEl of unmatchedFrom) {
+      if (matchedFromIds.has(fromEl.id)) continue
+      
+      const score = calculateSimilarityScore(fromEl, toEl)
+      if (score > highestScore && score >= 75) {
+        highestScore = score
+        bestCandidate = fromEl
+      }
+    }
+
+    if (bestCandidate) {
+      matchingMap[toEl.id] = bestCandidate.id
+      matchedFromIds.add(bestCandidate.id)
+      matchedToIds.add(toEl.id)
+    }
+  }
+
+  return matchingMap
+}
+
+/**
+ * Diff two slides by matching elements using strict ID + heuristic fallback.
+ * Tells us which elements should morph vs. enter/exit.
  */
 export function diffSlides(from: Slide | null, to: Slide | null): DiffResult {
   const fromElements = from?.elements ?? []
   const toElements = to?.elements ?? []
 
-  const fromMap = new Map(fromElements.map((el) => [el.id, el]))
-  const toMap = new Map(toElements.map((el) => [el.id, el]))
+  const matchingMap = getHeuristicMatchingMap(from, to)
+  const continuingFromIds = new Set(Object.values(matchingMap))
 
   const updated: DiffResult['updated'] = []
   const unchanged: SceneElement[] = []
   const added: SceneElement[] = []
   const removed: SceneElement[] = []
 
-  // Walk the destination slide — find matches and additions
+  const fromMap = new Map(fromElements.map((el) => [el.id, el]))
+
   for (const toEl of toElements) {
-    const fromEl = fromMap.get(toEl.id)
-    if (fromEl) {
-      if (hasElementChanged(fromEl, toEl)) {
-        updated.push({ from: fromEl, to: toEl })
-      } else {
-        unchanged.push(toEl)
+    const fromId = matchingMap[toEl.id]
+    if (fromId) {
+      const fromEl = fromMap.get(fromId)
+      if (fromEl) {
+        if (hasElementChanged(fromEl, toEl)) {
+          updated.push({ from: fromEl, to: toEl })
+        } else {
+          unchanged.push(toEl)
+        }
       }
     } else {
       added.push(toEl)
     }
   }
 
-  // Walk the source slide — find removals
   for (const fromEl of fromElements) {
-    if (!toMap.has(fromEl.id)) {
+    if (!continuingFromIds.has(fromEl.id)) {
       removed.push(fromEl)
     }
   }
@@ -68,34 +189,36 @@ export function diffSlides(from: Slide | null, to: Slide | null): DiffResult {
 }
 
 /**
- * Returns the Set of element IDs that exist in BOTH slides.
- * These are "continuing" elements — they should Magic Move
- * (no fade in/out, just smooth position/size interpolation).
+ * Returns the Set of element IDs that exist in BOTH slides (strict ID or heuristic).
+ * These elements should morph without fade in/out.
  */
 export function getContinuingIds(from: Slide | null, to: Slide | null): Set<string> {
-  const fromIds = new Set((from?.elements ?? []).map((el) => el.id))
-  const toIds = (to?.elements ?? []).map((el) => el.id)
   const continuing = new Set<string>()
-  for (const id of toIds) {
-    if (fromIds.has(id)) continuing.add(id)
+  if (!to) return continuing
+  
+  const map = getHeuristicMatchingMap(from, to)
+  for (const toId of Object.keys(map)) {
+    continuing.add(toId)
   }
   return continuing
 }
 
 /**
- * Returns the Set of element IDs that are NEW in the target slide
- * (not present in the source slide). Used for staggered build-in.
+ * Returns the Set of element IDs that are NEW in the target slide (no matching element in source).
  */
 export function getNewElementIds(from: Slide | null, to: Slide | null): Set<string> {
-  const fromIds = new Set((from?.elements ?? []).map((el) => el.id))
   const newIds = new Set<string>()
-  for (const el of to?.elements ?? []) {
-    if (!fromIds.has(el.id)) newIds.add(el.id)
+  if (!to) return newIds
+
+  const map = getHeuristicMatchingMap(from, to)
+  for (const el of to.elements) {
+    if (!map[el.id]) {
+      newIds.add(el.id)
+    }
   }
   return newIds
 }
 
-/** Check if any animatable property has changed between two element states */
 function hasElementChanged(a: SceneElement, b: SceneElement): boolean {
   return (
     a.position.x !== b.position.x ||
@@ -107,16 +230,9 @@ function hasElementChanged(a: SceneElement, b: SceneElement): boolean {
   )
 }
 
-// ─────────────────────────────────────────────
-// 2. Transition Builder
-// ─────────────────────────────────────────────
-
 /**
  * Magic Move easing — critically damped (zero bounce).
- *
  * Critical damping condition: damping >= 2 * sqrt(stiffness * mass)
- * At stiffness=280, mass=1: critical = 2*sqrt(280) ≈ 33.5
- * We use 34 for a touch of snap without any oscillation.
  */
 export const MAGIC_SPRING = {
   type: 'spring' as const,
@@ -125,10 +241,6 @@ export const MAGIC_SPRING = {
   mass: 1,
 }
 
-/**
- * Build-in spring — slightly softer, still no bounce.
- * Used for new elements appearing after layout has settled.
- */
 export const BUILD_IN_SPRING = {
   type: 'spring' as const,
   stiffness: 240,
@@ -137,49 +249,47 @@ export const BUILD_IN_SPRING = {
 }
 
 /**
+ * Standard UI Spring — Critically damped for general UI interactions (menus, sheets, dialogs).
+ * Maps to Apple's default damping: 1.0, response: 0.4
+ */
+export const UI_SPRING = {
+  type: 'spring' as const,
+  bounce: 0,
+  duration: 0.4,
+}
+
+/**
+ * Momentum Spring — Slightly under-damped for momentum-driven gestures (flicks, throws).
+ * Maps to Apple's flick damping: 0.8, response: 0.4
+ */
+export const MOMENTUM_SPRING = {
+  type: 'spring' as const,
+  bounce: 0.2,
+  duration: 0.4,
+}
+
+/**
  * Phased code animation timing.
- *
- * The sequence matches animate-code.com's model:
- *   Phase 0 (0ms):       Removed lines exit (height → 0, opacity → 0)
- *   Phase 1 (EXIT_DUR):  Layout settles — container resizes, unchanged lines reflow
- *   Phase 2 (ENTER_DELAY): New lines fade/slide in to fill the created space
- *
- * All durations are in seconds.
+ * 
+ * Sequence matches animate-code.com's model:
+ * 1. EXIT: Removed lines fade/height out
+ * 2. LAYOUT: Container resizes
+ * 3. ENTER: New lines fade/slide in
  */
 export const CODE_PHASE = {
-  /** How long removed lines/tokens take to exit */
   EXIT_DUR: 0.18,
-  /** How long the layout reflow (container resize + line shift) takes */
   LAYOUT_DUR: 0.32,
-  /**
-   * When new lines/tokens start entering.
-   * = EXIT_DUR + LAYOUT_DUR (0.18 + 0.32 = 0.50s)
-   * New elements only appear once the container resize is 100% complete.
-   */
+  /** EXIT_DUR + LAYOUT_DUR: ensure new elements wait for reflow */
   ENTER_DELAY: 0.50,
-  /** How long each new line/token takes to fade/slide in */
   ENTER_DUR: 0.22,
-  /** Per-line stagger between new lines cascading in */
   LINE_STAGGER: 0.05,
 } as const
 
-/**
- * Phase 1 total duration (morph / fly phase).
- * Shared by CanvasElement for new-element entrance delay.
- * = EXIT_DUR + LAYOUT_DUR
- */
 export const PHASE_1_DURATION = CODE_PHASE.EXIT_DUR + CODE_PHASE.LAYOUT_DUR
-
-/**
- * Phase 2 start delay — when NEW shapes/text/lines/code-tokens should begin
- * appearing. Equals PHASE_1_DURATION so all morphs complete before any
- * new element is revealed.
- */
 export const PHASE_2_DELAY = PHASE_1_DURATION
 
 /**
  * Build a framer-motion Transition object from the user's playback settings.
- * This is the single source of truth for how fast and smooth animations feel.
  */
 export function buildTransition(settings: PlaybackSettings): Transition {
   const durationSec = settings.transitionDuration / 1000
@@ -203,7 +313,6 @@ export function buildTransition(settings: PlaybackSettings): Transition {
 
 /**
  * Build the entrance animation for newly added elements.
- * Subtle slide-up + fade, consistent with Keynote's "build in" feel.
  */
 export function buildEntranceVariants(durationSec: number, ease: number[]) {
   return {
@@ -219,48 +328,34 @@ export function buildEntranceVariants(durationSec: number, ease: number[]) {
 
 /**
  * Build per-element stagger delay for entrance animations.
- * Elements enter sequentially with a subtle cascade.
  */
 export function staggerDelay(index: number, total: number, baseDuration: number): number {
   if (total <= 1) return 0
-  const maxStagger = baseDuration * 0.3 // stagger spans 30% of total duration
+  const maxStagger = baseDuration * 0.3
   return (index / (total - 1)) * maxStagger
 }
 
-// ─────────────────────────────────────────────
-// 3. Token Key Generation
-// ─────────────────────────────────────────────
-
 /**
  * Generate a stable key for a token.
- * Format: `tk-{contentHash}-{occurrenceIndex}`
- * Two tokens with identical text get distinct keys via occurrence index,
- * enabling cross-line FLIP identity tracking.
+ * Occurrence index enables cross-line FLIP identity tracking.
  */
 export function tokenKey(content: string, occurrence: number): string {
   return `tk-${stableHash(content)}-${occurrence}`
 }
 
-/** Produce a short deterministic hash from a string for stable keys */
 function stableHash(text: string): string {
-  let h = 0x811c9dc5 // FNV offset basis
+  let h = 0x811c9dc5
   for (let i = 0; i < text.length; i++) {
     h ^= text.charCodeAt(i)
-    h = Math.imul(h, 0x01000193) // FNV prime
+    h = Math.imul(h, 0x01000193)
   }
   return (h >>> 0).toString(36)
 }
 
-// ─────────────────────────────────────────────
-// 4. Utility Helpers
-// ─────────────────────────────────────────────
-
-/** Convert our CubicBezier type to framer-motion's [x1, y1, x2, y2] array */
 export function cubicBezierToArray(bezier: CubicBezier): [number, number, number, number] {
   return [bezier.x1, bezier.y1, bezier.x2, bezier.y2]
 }
 
-/** Convert milliseconds to seconds for framer-motion */
 export function msToSec(ms: number): number {
   return ms / 1000
 }

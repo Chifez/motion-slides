@@ -20,10 +20,10 @@ export function Logo({ expanded = false, size = 28 }: LogoProps) {
       />
       {expanded && (
         <span
-          className="font-semibold tracking-tight text-white"
+          className="font-semibold tracking-tight text-[var(--ms-text-primary)]"
           style={{ fontSize: size * 0.6 }}
         >
-          Motion<span className="text-neutral-400">Slides</span>
+          Motion<span className="text-[var(--ms-text-secondary)]">Slides</span>
         </span>
       )}
     </span>

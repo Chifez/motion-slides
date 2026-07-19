@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -16,7 +16,7 @@ import {
 import '@xyflow/react/dist/style.css'
 
 import { useEditorStore } from '@/store/editorStore'
-import { nanoid } from '@/lib/nanoid'
+import { uuid } from '@/lib/uuid'
 import { SlideNode } from './SlideNode'
 import { TransitionEdge } from './TransitionEdge'
 import { TransitionPanel } from './TransitionPanel'
@@ -38,96 +38,109 @@ export function PrototypeCanvas() {
 
   const { slides, transitions, prototypeLayout } = project
 
-  // ── Nodes: built from slides, re-derived on every render ──
-  const initialNodes: Node[] = useMemo(() =>
-    slides.map((slide, i) => ({
-      id: slide.id,
-      type: 'slideNode',
-      position: prototypeLayout[slide.id] || { x: i * 320, y: 100 },
-      data: { slide, index: i, isActive: i === activeSlideIndex },
-    })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  )
+  const initialNodes: Node[] = slides.map((slide, i) => ({
+    id: slide.id,
+    type: 'slideNode',
+    position: prototypeLayout[slide.id] || { x: i * 320, y: 100 },
+    data: { slide, index: i, isActive: i === activeSlideIndex },
+  }))
 
-  const [nodes, , onNodesChange] = useNodesState(initialNodes)
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
+  const [prevData, setPrevData] = useState({ slides, activeSlideIndex, prototypeLayout })
 
-  // ── Edges: derived DIRECTLY from store transitions every render ──
-  // This is the source of truth — no parallel local edge state needed.
-  const edges: Edge[] = useMemo(() =>
-    transitions.map((t) => ({
-      id: t.id,          // edge.id === transition.id, always in sync
-      source: t.fromSlideId,
-      target: t.toSlideId,
-      type: 'transitionEdge',
-      animated: true,
-      selected: t.id === selectedTransitionId,
-      data: {
-        animation: t.animation,
-        duration: t.duration,
-        ease: t.ease,
-        trigger: t.trigger,
-        transitionId: t.id,
-      },
-    })),
-    [transitions, selectedTransitionId],
-  )
+  if (
+    slides !== prevData.slides ||
+    activeSlideIndex !== prevData.activeSlideIndex ||
+    prototypeLayout !== prevData.prototypeLayout
+  ) {
+    setPrevData({ slides, activeSlideIndex, prototypeLayout })
+    const nodePosMap = new Map<string, { x: number; y: number }>()
+    for (const node of nodes) {
+      nodePosMap.set(node.id, node.position)
+    }
 
-  // ── Node position changes → persist to store ──
-  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    setNodes(
+      slides.map((slide, i) => {
+        const currentPos = nodePosMap.get(slide.id)
+        const storePos = prototypeLayout[slide.id]
+        const position = currentPos || storePos || { x: i * 320, y: 100 }
+
+        return {
+          id: slide.id,
+          type: 'slideNode',
+          position,
+          data: { slide, index: i, isActive: i === activeSlideIndex },
+        }
+      })
+    )
+  }
+
+  const edges: Edge[] = transitions.map((t) => ({
+    id: t.id,
+    source: t.fromSlideId,
+    target: t.toSlideId,
+    type: 'transitionEdge',
+    animated: true,
+    selected: t.id === selectedTransitionId,
+    data: {
+      animation: t.animation,
+      duration: t.duration,
+      ease: t.ease,
+      trigger: t.trigger,
+      transitionId: t.id,
+    },
+  }))
+
+  function handleNodesChange(changes: NodeChange[]) {
     onNodesChange(changes)
     for (const change of changes) {
       if (change.type === 'position' && change.position && !change.dragging) {
         updateSlidePosition(change.id, change.position)
       }
     }
-  }, [onNodesChange, updateSlidePosition])
+  }
 
-  // ── Edge changes: only handle deletion (no local state needed) ──
-  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+  function handleEdgesChange(changes: EdgeChange[]) {
     for (const change of changes) {
       if (change.type === 'remove') {
         deleteTransition(change.id)
       }
     }
-  }, [deleteTransition])
+  }
 
-  // ── Connect: generate ID upfront so edge.id === transition.id ──
-  const handleConnect = useCallback((connection: RFConnection) => {
+  function handleConnect(connection: RFConnection) {
     if (!connection.source || !connection.target) return
 
-    // Prevent duplicate transitions between same pair
     const exists = transitions.some(
       (t) => t.fromSlideId === connection.source && t.toSlideId === connection.target,
     )
     if (exists) return
 
-    // Generate the ID here so ReactFlow edge and store transition share it
-    const id = nanoid()
-    addTransition({
+    const id = uuid()
+    const transition: any = {
       id,
       fromSlideId: connection.source,
       toSlideId: connection.target,
       animation: 'slide-left',
-      duration: 500,
-      ease: { ...DEFAULT_PLAYBACK_SETTINGS.transitionEase },
-      trigger: 'click',
-    })
-    // Edges are derived from store, so ReactFlow will auto-reflect the new one
-  }, [transitions, addTransition])
+      duration: 600,
+      ease: { x1: 0.16, y1: 1, x2: 0.3, y2: 1 },
+      trigger: 'click'
+    }
+    addTransition(transition)
+  }
 
-  const handleEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
-    setSelectedTransition(edge.id) // edge.id === transition.id now
-  }, [setSelectedTransition])
+  function handleEdgeClick(_: React.MouseEvent, edge: Edge) {
+    setSelectedTransition(edge.id)
+  }
 
-  const handlePaneClick = useCallback(() => {
+  function handlePaneClick() {
     setSelectedTransition(null)
-  }, [setSelectedTransition])
+  }
 
   const selectedTransition = transitions.find((t) => t.id === selectedTransitionId)
 
   return (
-    <div className="flex-1 relative" style={{ background: '#0d0d0d' }}>
+    <div className="flex-1 relative bg-(--ms-bg-base) transition-colors">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -141,21 +154,20 @@ export function PrototypeCanvas() {
         fitView
         defaultEdgeOptions={{ type: 'transitionEdge', animated: true }}
         proOptions={{ hideAttribution: true }}
-        style={{ background: '#0d0d0d' }}
+        className="bg-(--ms-bg-base) transition-colors"
       >
-        <Background color="#222" gap={20} size={1} />
+        <Background color="var(--ms-border-strong)" gap={20} size={1} />
         <Controls
           showInteractive={false}
-          className="bg-[#1a1a1a]! border-white/8! rounded-lg! shadow-xl! [&>button]:bg-[#1c1c1c]! [&>button]:border-white/8! [&>button]:text-neutral-400! [&>button:hover]:bg-white/6!"
+          className="bg-(--ms-bg-elevated)! border-(--ms-border)! rounded-lg! shadow-xl! [&>button]:bg-(--ms-bg-base)! [&>button]:border-(--ms-border)! [&>button]:text-(--ms-text-muted)! [&>button:hover]:bg-(--ms-border)! transition-colors"
         />
         <MiniMap
-          nodeColor="#1e3a5f"
-          maskColor="rgba(0,0,0,0.7)"
-          className="bg-[#111]! border-white/8! rounded-lg!"
+          nodeColor="var(--ms-accent)"
+          maskColor="var(--ms-bg-base)"
+          className="bg-(--ms-bg-elevated)! border-(--ms-border)! rounded-lg! opacity-80"
         />
       </ReactFlow>
 
-      {/* Transition settings panel — shown when an edge is selected */}
       {selectedTransition && (
         <TransitionPanel
           transition={selectedTransition}

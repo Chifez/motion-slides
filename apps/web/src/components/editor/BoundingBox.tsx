@@ -1,10 +1,12 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { RotateCw } from 'lucide-react'
 import { useEditorStore } from '@/store/editorStore'
-import { getConnectionPos } from '@/store/slices/elementSlice'
 import { MIN_ELEMENT_WIDTH, MIN_ELEMENT_HEIGHT } from '@/constants/animation'
 import { RESIZE_HANDLES } from '@/constants/editor'
-import type { SceneElement, Position, LineContent } from '@motionslides/shared'
+import type { SceneElement, LineContent } from '@motionslides/shared'
+import { useAccessControl } from '@/hooks/useAccessControl'
+import { useLineDrag } from '@/hooks/useLineDrag'
+import { useConnectionDrag } from '@/hooks/useConnectionDrag'
 
 interface Props { element: SceneElement }
 
@@ -15,12 +17,15 @@ function getCanvasScale(): number {
 }
 
 export function ConnectionAnchors() {
-  const { activeSlide, selectedElementIds } = useEditorStore()
+  const { isReadOnly } = useAccessControl()
+  const activeSlide = useEditorStore(s => s.activeSlide)
+  const selectedElementIds = useEditorStore(s => s.selectedElementIds)
   const slide = activeSlide()
-  if (!slide || selectedElementIds.length !== 1) return null
+  if (isReadOnly || !slide || selectedElementIds.length !== 1) return null
 
   const element = slide.elements.find(el => el.id === selectedElementIds[0])
   if (element?.type !== 'line') return null
+  const content = element.content as LineContent
 
   const shapes = slide.elements.filter(el => el.type === 'shape' || el.type === 'image' || el.type === 'code')
 
@@ -30,30 +35,53 @@ export function ConnectionAnchors() {
         const { x, y } = shape.position
         const { width: w, height: h } = shape.size
         const anchors = [
-          { x: x + w / 2, y },
-          { x: x + w / 2, y: y + h },
-          { x, y: y + h / 2 },
-          { x: x + w, y: y + h / 2 },
-          { x: x + w / 2, y: y + h / 2 },
+          { id: 'top' as const, x: x + w / 2, y },
+          { id: 'bottom' as const, x: x + w / 2, y: y + h },
+          { id: 'left' as const, x, y: y + h / 2 },
+          { id: 'right' as const, x: x + w, y: y + h / 2 },
+          { id: 'center' as const, x: x + w / 2, y: y + h / 2 },
         ]
-        return anchors.map((a, i) => (
-          <div
-            key={`${shape.id}-${i}`}
-            className="absolute w-3 h-3 bg-blue-500 rounded-full border-2 border-white/80 -translate-x-1/2 -translate-y-1/2 opacity-80 shadow-[0_0_12px_rgba(59,130,246,0.6)]"
-            style={{ left: a.x, top: a.y }}
-          />
-        ))
+        return anchors.map((a, i) => {
+          const isSnapped =
+            (content.startConnection?.elementId === shape.id && content.startConnection?.handleId === a.id) ||
+            (content.endConnection?.elementId === shape.id && content.endConnection?.handleId === a.id) ||
+            (content.branches?.some(b => b.connection?.elementId === shape.id && b.connection?.handleId === a.id))
+
+          const baseCls = "absolute rounded-full border-2 transition duration-150 -translate-x-1/2 -translate-y-1/2"
+          const snappedStyle = "w-4 h-4 bg-emerald-500 border-white shadow-[0_0_14px_rgba(16,185,129,0.9)] z-50 scale-125"
+          const normalStyle = "w-3 h-3 bg-blue-500 border-white/80 opacity-80 shadow-[0_0_12px_rgba(59,130,246,0.6)]"
+
+          return (
+            <div
+              key={`${shape.id}-${i}`}
+              className={`${baseCls} ${isSnapped ? snappedStyle : normalStyle}`}
+              style={{ left: a.x, top: a.y }}
+            />
+          )
+        })
       })}
     </div>
   )
 }
 
 export function BoundingBox({ element }: Props) {
-  const { updateElement } = useEditorStore()
+  const { isReadOnly } = useAccessControl()
+  const updateElement = useEditorStore(s => s.updateElement)
+  const isDragging = useEditorStore(s => s.isDragging)
+
+  const [isResizing, setIsResizing] = useState(false)
+  const [isRotating, setIsRotating] = useState(false)
+
+  if (isReadOnly) return null
 
   const startRotate = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    setIsRotating(true)
+
+    // Apply custom rotate cursor globally to prevent cursor flickering
+    document.body.style.cursor = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2318a0fb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 8.5C6 5.5 9 3.5 12.5 3.5c4.5 0 8 3.5 8 8s-3.5 8-8 8c-3.5 0-6.5-2-8-5'/%3E%3Cpath d='M8 9H4V5'/%3E%3Cpath d='M4 19v-4h4'/%3E%3C/svg%3E\") 12 12, pointer"
+
     const board = document.querySelector('[data-canvas-board]')
     if (!board) return
     const boardRect = board.getBoundingClientRect()
@@ -68,6 +96,8 @@ export function BoundingBox({ element }: Props) {
     const onUp = () => {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
+      setIsRotating(false)
+      document.body.style.cursor = ''
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
@@ -76,6 +106,16 @@ export function BoundingBox({ element }: Props) {
   const startResize = useCallback((corner: string) => (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    setIsResizing(true)
+
+    // Set cursor lock globally
+    let cursor = 'pointer'
+    if (corner === 'tl' || corner === 'br') cursor = 'nwse-resize'
+    else if (corner === 'tr' || corner === 'bl') cursor = 'nesw-resize'
+    else if (corner === 'tm' || corner === 'bm') cursor = 'ns-resize'
+    else if (corner === 'ml' || corner === 'mr') cursor = 'ew-resize'
+    document.body.style.cursor = cursor
+
     const startX = e.clientX
     const startY = e.clientY
     const scale = getCanvasScale()
@@ -85,168 +125,97 @@ export function BoundingBox({ element }: Props) {
     const onMove = (ev: MouseEvent) => {
       const dx = (ev.clientX - startX) / scale
       const dy = (ev.clientY - startY) / scale
-      let newX = x, newY = y, newW = width, newH = height
-
-      if (corner.includes('r')) newW = Math.max(MIN_ELEMENT_WIDTH, width + dx)
-      if (corner.includes('l')) { newX = x + dx; newW = Math.max(MIN_ELEMENT_WIDTH, width - dx) }
-      if (corner.includes('b')) newH = Math.max(MIN_ELEMENT_HEIGHT, height + dy)
-      if (corner.includes('t')) { newY = y + dy; newH = Math.max(MIN_ELEMENT_HEIGHT, height - dy) }
-
-      updateElement(element.id, { position: { x: newX, y: newY }, size: { width: newW, height: newH } })
-    }
-    const onUp = () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-  }, [element, updateElement])
-
-  const startNodeDrag = useCallback((nodeType: 'start' | 'end' | 'branch', branchIndex?: number) => (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const content = element.content as LineContent
-    const scale = getCanvasScale()
-    
-    let absStart = { x: element.position.x + content.x1 * element.size.width, y: element.position.y + content.y1 * element.size.height }
-    let absEnd = { x: element.position.x + content.x2 * element.size.width, y: element.position.y + content.y2 * element.size.height }
-
-    const board = document.querySelector('[data-canvas-board]')
-    if (!board) return
-    const boardRect = board.getBoundingClientRect()
-
-    const onMove = (ev: MouseEvent) => {
-      let currentAbsX = (ev.clientX - boardRect.left) / scale
-      let currentAbsY = (ev.clientY - boardRect.top) / scale
       
-      const slide = useEditorStore.getState().activeSlide()
-      type SnapTarget = { elementId: string, handleId: 'top' | 'bottom' | 'left' | 'right' | 'center', pos: Position }
-      let snapped: SnapTarget | null = null
+      let newX = x, newY = y, newW = width, newH = height
+      const cx = x + width / 2
+      const cy = y + height / 2
 
-      if (slide) {
-        for (const other of slide.elements) {
-          if (other.id === element.id || other.type === 'line') continue
-          const { x: ox, y: oy } = other.position
-          const { width: ow, height: oh } = other.size
-          const anchors: { id: SnapTarget['handleId'], p: Position }[] = [
-            { id: 'top', p: { x: ox + ow / 2, y: oy } },
-            { id: 'bottom', p: { x: ox + ow / 2, y: oy + oh } },
-            { id: 'left', p: { x: ox, y: oy + oh / 2 } },
-            { id: 'right', p: { x: ox + ow, y: oy + oh / 2 } },
-            { id: 'center', p: { x: ox + ow / 2, y: oy + oh / 2 } },
-          ]
-          for (const a of anchors) {
-            const dist = Math.hypot(a.p.x - currentAbsX, a.p.y - currentAbsY)
-            if (dist < 15) {
-              snapped = { elementId: other.id, handleId: a.id, pos: a.p }
-              break
-            }
-          }
-          if (snapped) break
+      if (ev.altKey) {
+        // Alt-key center resizing
+        const factorX = corner.includes('r') ? 2 : corner.includes('l') ? -2 : 0
+        const factorY = corner.includes('b') ? 2 : corner.includes('t') ? -2 : 0
+        
+        if (factorX !== 0) newW = Math.max(MIN_ELEMENT_WIDTH, width + factorX * dx)
+        if (factorY !== 0) newH = Math.max(MIN_ELEMENT_HEIGHT, height + factorY * dy)
+        
+        if (ev.shiftKey && corner.length === 2) {
+          // Alt + Shift constraint
+          const scaleFactor = Math.max(newW / width, newH / height)
+          newW = width * scaleFactor
+          newH = height * scaleFactor
+        }
+        
+        if (factorX !== 0) newX = cx - newW / 2
+        if (factorY !== 0) newY = cy - newH / 2
+      } else if (ev.shiftKey && corner.length === 2) {
+        // Shift-key proportional aspect ratio resize
+        let tempW = width
+        let tempH = height
+        if (corner.includes('r')) tempW = Math.max(MIN_ELEMENT_WIDTH, width + dx)
+        if (corner.includes('l')) tempW = Math.max(MIN_ELEMENT_WIDTH, width - dx)
+        if (corner.includes('b')) tempH = Math.max(MIN_ELEMENT_HEIGHT, height + dy)
+        if (corner.includes('t')) tempH = Math.max(MIN_ELEMENT_HEIGHT, height - dy)
+        
+        const scaleFactor = Math.max(tempW / width, tempH / height)
+        newW = width * scaleFactor
+        newH = height * scaleFactor
+        
+        if (corner === 'br') {
+          newX = x
+          newY = y
+        } else if (corner === 'bl') {
+          newX = x + (width - newW)
+          newY = y
+        } else if (corner === 'tr') {
+          newX = x
+          newY = y + (height - newH)
+        } else if (corner === 'tl') {
+          newX = x + (width - newW)
+          newY = y + (height - newH)
+        }
+      } else {
+        // Standard drag resizing
+        if (corner.includes('r')) newW = Math.max(MIN_ELEMENT_WIDTH, width + dx)
+        if (corner.includes('l')) { newX = x + dx; newW = Math.max(MIN_ELEMENT_WIDTH, width - dx) }
+        if (corner.includes('b')) newH = Math.max(MIN_ELEMENT_HEIGHT, height + dy)
+        if (corner.includes('t')) { newY = y + dy; newH = Math.max(MIN_ELEMENT_HEIGHT, height - dy) }
+      }
+
+      const updates: Partial<SceneElement> = { 
+        position: { x: newX, y: newY }, 
+        size: { width: newW, height: newH } 
+      }
+
+      if (element.type === 'text') {
+        const affectsHeight = corner.includes('t') || corner.includes('b')
+        if (affectsHeight) {
+          updates.autoHeight = false
         }
       }
 
-      if (snapped) {
-        currentAbsX = snapped.pos.x
-        currentAbsY = snapped.pos.y
-      }
-
-      if (nodeType === 'start') {
-        absStart = { x: currentAbsX, y: currentAbsY }
-      } else if (nodeType === 'end') {
-        absEnd = { x: currentAbsX, y: currentAbsY }
-      }
-
-      // For branching lines, absEnd is not rendered as a node and must not
-      // influence the bounding box — only start + branch endpoints matter.
-      const isBranching = (element.content as LineContent).lineType === 'branching'
-      const bboxPoints = [absStart]
-      if (!isBranching) bboxPoints.push(absEnd)
-
-      const minX = Math.min(...bboxPoints.map((p) => p.x))
-      const minY = Math.min(...bboxPoints.map((p) => p.y))
-      const maxX = Math.max(...bboxPoints.map((p) => p.x))
-      const maxY = Math.max(...bboxPoints.map((p) => p.y))
-      
-      const newWidth = Math.max(1, maxX - minX)
-      const newHeight = Math.max(1, maxY - minY)
-
-      const nx1 = (absStart.x - minX) / newWidth
-      const ny1 = (absStart.y - minY) / newHeight
-      const nx2 = (absEnd.x - minX) / newWidth
-      const ny2 = (absEnd.y - minY) / newHeight
-      
-      const newBranches = content.branches?.map((b, i) => {
-         const isTarget = nodeType === 'branch' && branchIndex === i
-         const conn = isTarget 
-          ? (snapped ? { elementId: snapped.elementId, handleId: snapped.handleId } : undefined)
-          : b.connection
-
-         if (isTarget) {
-           return {
-             ...b,
-             x: (currentAbsX - minX) / newWidth,
-             y: (currentAbsY - minY) / newHeight,
-             connection: conn
-           }
-         }
-
-         const oldAbs = b.connection
-           ? getConnectionPos(b.connection, slide?.elements || [])
-           : null
-         // Fall back to the branch's stored (pre-drag) absolute position if
-         // the connection target no longer exists in the slide.
-         const resolvedOldAbs = oldAbs ?? {
-           x: element.position.x + b.x * element.size.width,
-           y: element.position.y + b.y * element.size.height,
-         }
-         
-         return {
-           ...b,
-           x: (resolvedOldAbs.x - minX) / newWidth,
-           y: (resolvedOldAbs.y - minY) / newHeight,
-           connection: conn
-         }
-      })
-
-      let newStartConn = content.startConnection
-      let newEndConn = content.endConnection
-
-      if (nodeType === 'start') {
-        newStartConn = snapped ? { elementId: snapped.elementId, handleId: snapped.handleId } : undefined
-      } else if (nodeType === 'end') {
-        newEndConn = snapped ? { elementId: snapped.elementId, handleId: snapped.handleId } : undefined
-      }
-
-      updateElement(element.id, { 
-        position: { x: minX, y: minY }, 
-        size: { width: newWidth, height: newHeight },
-        content: { 
-          ...content, 
-          x1: nx1, y1: ny1, 
-          x2: nx2, y2: ny2,
-          branches: content.branches ? newBranches : undefined,
-          startConnection: newStartConn,
-          endConnection: newEndConn
-        } 
-      })
+      updateElement(element.id, updates)
     }
-
     const onUp = () => {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
+      setIsResizing(false)
+      document.body.style.cursor = ''
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }, [element, updateElement])
+
+  const { startNodeDrag } = useLineDrag(element, updateElement)
+  const { startConnectionDrag } = useConnectionDrag(element)
 
   if (element.type === 'line') {
     const content = element.content as LineContent
     const isSnappedStart = !!content.startConnection
     const isSnappedEnd = !!content.endConnection
 
-    const nodeCls = "absolute w-4 h-4 rounded-full border-2 border-blue-500 bg-white -translate-x-1/2 -translate-y-1/2 cursor-pointer shadow-sm hover:scale-125 transition-transform z-30"
-    const snappedCls = "absolute w-5 h-5 rounded-full border-2 border-blue-400 bg-blue-500 -translate-x-1/2 -translate-y-1/2 cursor-pointer shadow-[0_0_12px_rgba(59,130,246,0.9)] z-50 transition-all scale-110"
+    const nodeCls = "w-4 h-4 rounded-full border-2 border-blue-500 bg-white shadow-sm group-hover:scale-125 transition-transform"
+    const snappedCls = "w-5 h-5 rounded-full border-2 border-blue-400 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.9)] scale-110 group-hover:scale-125 transition"
+    const branchCls = "w-4 h-4 rounded-full border-2 border-emerald-500 bg-white shadow-sm group-hover:scale-125 transition-transform"
 
     return (
       <div
@@ -257,25 +226,34 @@ export function BoundingBox({ element }: Props) {
         }}
       >
         <div 
-          className={isSnappedStart ? snappedCls : nodeCls} 
-          style={{ left: `${content.x1 * 100}%`, top: `${content.y1 * 100}%`, pointerEvents: 'auto' }}
+          className="absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center cursor-pointer pointer-events-auto z-30 group"
+          style={{ left: `${content.x1 * 100}%`, top: `${content.y1 * 100}%` }}
           onMouseDown={startNodeDrag('start')}
-        />
+        >
+          <div className={isSnappedStart ? snappedCls : nodeCls} />
+        </div>
         {content.lineType !== 'branching' && (
           <div 
-            className={isSnappedEnd ? snappedCls : nodeCls} 
-            style={{ left: `${content.x2 * 100}%`, top: `${content.y2 * 100}%`, pointerEvents: 'auto' }}
+            className="absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center cursor-pointer pointer-events-auto z-30 group"
+            style={{ left: `${content.x2 * 100}%`, top: `${content.y2 * 100}%` }}
             onMouseDown={startNodeDrag('end')}
-          />
+          >
+            <div className={isSnappedEnd ? snappedCls : nodeCls} />
+          </div>
         )}
-        {content.branches?.map((b, i) => (
-          <div 
-            key={b.id ?? i}
-            className={nodeCls} 
-            style={{ left: `${b.x * 100}%`, top: `${b.y * 100}%`, pointerEvents: 'auto', borderColor: '#10b981' }}
-            onMouseDown={startNodeDrag('branch', i)}
-          />
-        ))}
+        {content.branches?.map((b, i) => {
+          const isSnappedBranch = !!b.connection
+          return (
+            <div 
+              key={b.id ?? i}
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center cursor-pointer pointer-events-auto z-30 group"
+              style={{ left: `${b.x * 100}%`, top: `${b.y * 100}%` }}
+              onMouseDown={startNodeDrag('branch', i)}
+            >
+              <div className={isSnappedBranch ? "w-5 h-5 rounded-full border-2 border-emerald-400 bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.9)] scale-110 group-hover:scale-125 transition" : branchCls} />
+            </div>
+          )
+        })}
       </div>
     )
   }
@@ -292,9 +270,77 @@ export function BoundingBox({ element }: Props) {
       <div className="rotate-handle" onMouseDown={startRotate}>
         <RotateCw size={9} color="#fff" />
       </div>
+
+      {/* Rotate zones just outside the corners */}
+      <div className="rotate-zone tl" onMouseDown={startRotate} />
+      <div className="rotate-zone tr" onMouseDown={startRotate} />
+      <div className="rotate-zone bl" onMouseDown={startRotate} />
+      <div className="rotate-zone br" onMouseDown={startRotate} />
+
       {RESIZE_HANDLES.map((h) => (
         <div key={h} className={`resize-handle ${h}`} onMouseDown={startResize(h)} />
       ))}
+
+      {/* Figma-style Dimension Badge */}
+      {(isDragging || isResizing || isRotating) && (
+        <div
+          className="absolute left-1/2 -bottom-8 -translate-x-1/2 bg-neutral-900/90 text-white font-mono text-[10px] px-2 py-0.5 rounded shadow-lg border border-white/10 z-[300] select-none whitespace-nowrap flex items-center gap-1.5 pointer-events-none"
+        >
+          {isDragging ? (
+            <>
+              <span className="text-neutral-400">X:</span>
+              <span>{Math.round(element.position.x)}</span>
+              <span className="text-neutral-400">Y:</span>
+              <span>{Math.round(element.position.y)}</span>
+            </>
+          ) : isRotating ? (
+            <>
+              <span className="text-neutral-400">Angle:</span>
+              <span>{Math.round(element.rotation)}°</span>
+            </>
+          ) : (
+            <>
+              <span className="text-neutral-400">W:</span>
+              <span>{Math.round(element.size.width)}</span>
+              <span className="text-neutral-400">H:</span>
+              <span>{Math.round(element.size.height)}</span>
+            </>
+          )}
+        </div>
+      )}
+
+      {['shape', 'image', 'code', 'text', 'chart'].includes(element.type) && (
+        <>
+          <div 
+            className="absolute left-1/2 -top-2.5 -translate-x-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition scale-75 hover:scale-100 z-100 group"
+            onMouseDown={startConnectionDrag('top')}
+            title="Drag to create connection"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          </div>
+          <div 
+            className="absolute left-1/2 -bottom-2.5 -translate-x-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition scale-75 hover:scale-100 z-100 group"
+            onMouseDown={startConnectionDrag('bottom')}
+            title="Drag to create connection"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          </div>
+          <div 
+            className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition scale-75 hover:scale-100 z-100 group"
+            onMouseDown={startConnectionDrag('left')}
+            title="Drag to create connection"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          </div>
+          <div 
+            className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border border-blue-500 bg-white hover:bg-blue-100 flex items-center justify-center cursor-pointer pointer-events-auto shadow-md transition scale-75 hover:scale-100 z-100 group"
+            onMouseDown={startConnectionDrag('right')}
+            title="Drag to create connection"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -24,6 +24,7 @@ export const CODE_LANGUAGES = [
 /** Shape type options for the inspector dropdown */
 export const SHAPE_OPTIONS: { value: ShapeType; label: string }[] = [
   { value: 'rectangle', label: 'Rectangle' },
+  { value: 'circle', label: 'Circle / Cycle' },
   { value: 'database', label: 'Database' },
   { value: 'server', label: 'Server' },
   { value: 'cloud', label: 'Cloud' },
@@ -33,6 +34,8 @@ export const SHAPE_OPTIONS: { value: ShapeType; label: string }[] = [
   { value: 'bucket', label: 'Storage / Bucket' },
   { value: 'queue', label: 'Queue' },
   { value: 'document', label: 'Document' },
+  { value: 'aws-icon', label: 'AWS Icon' },
+  { value: 'gcp-icon', label: 'GCP Icon' },
 ]
 
 /** Font weight mapping for text elements */
@@ -63,7 +66,7 @@ export const RESIZE_HANDLES = ['tl', 'tm', 'tr', 'ml', 'mr', 'bl', 'bm', 'br'] a
 export const DEFAULT_TEXT_ELEMENT = {
   type: 'text' as const,
   position: { x: 100, y: 100 },
-  size: { width: 300, height: 60 },
+  size: { width: 200, height: 60 },
   rotation: 0,
   opacity: 1,
   zIndex: 10,
@@ -75,7 +78,9 @@ export const DEFAULT_TEXT_ELEMENT = {
     fontStyle: 'normal' as const,
     color: '#ffffff',
     align: 'left' as const,
+    listStyle: 'none' as const,
   },
+  autoHeight: true,
 }
 
 export const DEFAULT_CODE_ELEMENT = {

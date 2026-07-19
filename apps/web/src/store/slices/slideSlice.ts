@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand'
 import type { Slide } from '@motionslides/shared'
-import { nanoid } from '@/lib/nanoid'
+import { uuid } from '@/lib/uuid'
 import { createDefaultSlide } from '@/store/defaults'
 import type { EditorState } from '@/store/editorStore'
 
@@ -8,25 +8,17 @@ export interface SlideSlice {
   activeSlideIndex: number
   addSlide: () => void
   deleteSlide: (index: number) => void
-  /**
-   * Duplicate a slide with NEW element IDs.
-   * Elements will NOT Magic Move between the original and the clone.
-   * Use this when you want a fully independent slide.
-   */
   duplicateSlide: (index: number) => void
-  /**
-   * Duplicate a slide PRESERVING all element IDs.
-   * Elements will Magic Move between the original and the clone —
-   * ideal for creating a "before/after" animation where items shift/morph.
-   */
-  duplicateSlideKeepIds: (index: number) => void
+  reorderSlides: (fromIndex: number, toIndex: number) => void
   setActiveSlide: (index: number) => void
-  updateSlide: (updates: Partial<Pick<Slide, 'name' | 'background'>>) => void
+  updateSlide: (updates: Partial<Pick<Slide, 'name' | 'background' | 'audio' | 'script'>>) => void
   activeSlide: () => Slide | null
+  previousSlideIndex: number | null
 }
 
 export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (set, get) => ({
   activeSlideIndex: 0,
+  previousSlideIndex: null,
 
   activeSlide: () => {
     const { activeSlideIndex } = get()
@@ -45,10 +37,39 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
       projects: s.projects.map((p) =>
         p.id !== activeProjectId
           ? p
-          : { ...p, slides: [...p.slides, newSlide], updatedAt: Date.now() },
+          : { ...p, slides: [...p.slides, newSlide], updatedAt: Date.now(), synced: false },
       ),
       activeSlideIndex: get().activeProject()!.slides.length,
     }))
+  },
+
+  reorderSlides: (fromIndex, toIndex) => {
+    const { activeProjectId, activeSlideIndex } = get()
+    if (!activeProjectId || fromIndex === toIndex) return
+    set((s) => {
+      const project = s.projects.find(p => p.id === activeProjectId)
+      if (!project) return s
+      const slides = [...project.slides]
+      const [moved] = slides.splice(fromIndex, 1)
+      slides.splice(toIndex, 0, moved)
+
+      // Track activeSlideIndex to follow the moved slide
+      let newActiveIndex = activeSlideIndex
+      if (activeSlideIndex === fromIndex) {
+        newActiveIndex = toIndex
+      } else if (fromIndex < activeSlideIndex && toIndex >= activeSlideIndex) {
+        newActiveIndex = activeSlideIndex - 1
+      } else if (fromIndex > activeSlideIndex && toIndex <= activeSlideIndex) {
+        newActiveIndex = activeSlideIndex + 1
+      }
+
+      return {
+        projects: s.projects.map(p =>
+          p.id !== activeProjectId ? p : { ...p, slides, updatedAt: Date.now(), synced: false }
+        ),
+        activeSlideIndex: newActiveIndex,
+      }
+    })
   },
 
   deleteSlide: (index) => {
@@ -59,7 +80,7 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
       const newSlides = project.slides.filter((_, i) => i !== index)
       return {
         projects: s.projects.map((p) =>
-          p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now() },
+          p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now(), synced: false },
         ),
         activeSlideIndex: Math.min(s.activeSlideIndex, newSlides.length - 1),
       }
@@ -69,54 +90,39 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
   duplicateSlide: (index) => {
     const { activeProjectId } = get()
     if (!activeProjectId) return
-    set((s) => {
-      const project = s.projects.find((p) => p.id === activeProjectId)!
-      const original = project.slides[index]
-      const clone: Slide = {
-        ...original,
-        id: nanoid(),
-        name: `${original.name || 'Slide'} copy`,
-        // NEW IDs — no Magic Move between original and clone
-        elements: original.elements.map((el) => ({ ...el, id: nanoid() })),
-      }
-      const newSlides = [
-        ...project.slides.slice(0, index + 1),
-        clone,
-        ...project.slides.slice(index + 1),
-      ]
-      return {
-        projects: s.projects.map((p) =>
-          p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now() },
-        ),
-        activeSlideIndex: index + 1,
-      }
-    })
-  },
+    
+    const project = get().projects.find((p) => p.id === activeProjectId)!
+    const original = project.slides[index]
+    const newSlideId = uuid()
 
-  duplicateSlideKeepIds: (index) => {
-    const { activeProjectId } = get()
-    if (!activeProjectId) return
-    set((s) => {
-      const project = s.projects.find((p) => p.id === activeProjectId)!
-      const original = project.slides[index]
-      const clone: Slide = {
-        ...original,
-        id: nanoid(),
-        name: `${original.name || 'Slide'} (Magic Move)`,
-        // SAME element IDs — enables Magic Move morphing between slides
-        elements: original.elements.map((el) => ({ ...el })),
-      }
-      const newSlides = [
-        ...project.slides.slice(0, index + 1),
-        clone,
-        ...project.slides.slice(index + 1),
-      ]
-      return {
-        projects: s.projects.map((p) =>
-          p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now() },
-        ),
-        activeSlideIndex: index + 1,
-      }
+    const clone: Slide = {
+      ...original,
+      id: newSlideId,
+      name: `${original.name || 'Slide'} (Copy)`,
+      // SAME element IDs — enables Magic Move morphing between slides
+      elements: original.elements.map((el) => ({ ...el, id: el.id || uuid() })),
+    }
+
+    const newSlides = [
+      ...project.slides.slice(0, index + 1),
+      clone,
+      ...project.slides.slice(index + 1),
+    ]
+
+    set((s) => ({
+      projects: s.projects.map((p) =>
+        p.id !== activeProjectId ? p : { ...p, slides: newSlides, updatedAt: Date.now(), synced: false },
+      ),
+      activeSlideIndex: index + 1,
+    }))
+
+    get().addTransition({
+      fromSlideId: original.id,
+      toSlideId: newSlideId,
+      animation: 'magic-move',
+      duration: 0.8,
+      ease: { x1: 0.4, y1: 0, x2: 0.2, y2: 1 },
+      trigger: 'click'
     })
   },
 
@@ -130,12 +136,22 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
           if (i !== activeSlideIndex) return sl
           return { ...sl, ...updates }
         })
-        return { ...p, slides, updatedAt: Date.now() }
+        return { ...p, slides, updatedAt: Date.now(), synced: false }
       }),
     }))
   },
 
   setActiveSlide: (index) => {
-    set({ activeSlideIndex: index, selectedElementIds: [] })
+    const current = get().activeSlideIndex
+    if (current === index) return
+    const project = get().activeProject()
+    const targetSlide = project?.slides[index]
+    set({
+      previousSlideIndex: current,
+      activeSlideIndex: index,
+      selectedElementIds: [],
+      customCanvasWidth: targetSlide?.customWidth ?? null,
+      customCanvasHeight: targetSlide?.customHeight ?? null,
+    })
   },
 })

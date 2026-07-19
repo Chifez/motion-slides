@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type { SceneElement, LineContent, Position } from '@motionslides/shared'
 import type { EditorState } from '@/store/editorStore'
+import { updateActiveSlideElements } from '@/store/storeHelpers'
 
 export interface ElementSlice {
   selectedElementIds: string[]
@@ -9,18 +10,18 @@ export interface ElementSlice {
   addElement: (element: SceneElement) => void
   updateElement: (id: string, updates: Partial<SceneElement>) => void
   updateElements: (ids: string[], updates: Partial<SceneElement>) => void
-  updateElementsBatch: (updates: { id: string; changes: Partial<SceneElement> }[]) => void
+  updateElementsBatch: (
+    updates: { id: string; changes: Partial<SceneElement> }[],
+    options?: { silent?: boolean }
+  ) => void
   deleteElement: (id: string) => void
   toggleElementLock: (id: string) => void
   duplicateElement: (id: string) => void
   groupElements: (ids: string[]) => void
   ungroupElements: (groupId: string) => void
+  addSection: () => void
   recalculateLines: () => void
 }
-
-// ─────────────────────────────────────────────
-// Internal helpers
-// ─────────────────────────────────────────────
 
 /**
  * Given a connection descriptor { elementId, handleId } and the current element
@@ -49,7 +50,6 @@ export function getConnectionPos(
 /**
  * Walk every line element on a slide and recompute its bounding box +
  * normalised x1/y1/x2/y2 from whatever connections are currently set.
- * Returns the element array unchanged if nothing needed updating.
  */
 function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
   let changed = false
@@ -60,16 +60,13 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
     const content = el.content as LineContent
     const isFork = content.lineType === 'branching'
 
-    // 1. Collect all absolute points for this line
     const points: Position[] = []
 
-    // Start point
     const startPos = content.startConnection
       ? getConnectionPos(content.startConnection, elements)
       : { x: el.position.x + content.x1 * el.size.width, y: el.position.y + content.y1 * el.size.height }
     if (startPos) points.push(startPos)
 
-    // End point (Only if not a fork)
     const endPos = !isFork || content.endConnection
       ? (content.endConnection
           ? getConnectionPos(content.endConnection, elements)
@@ -77,7 +74,6 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
       : null
     if (endPos && !isFork) points.push(endPos)
 
-    // Branches
     const branchPositions: (Position | null)[] = (content.branches || []).map(b => {
       if (b.connection) return getConnectionPos(b.connection, elements)
       return { x: el.position.x + b.x * el.size.width, y: el.position.y + b.y * el.size.height }
@@ -86,7 +82,6 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
 
     if (points.length < 2) return el
 
-    // 2. Calculate new bounding box
     const minX = Math.min(...points.map(p => p.x))
     const minY = Math.min(...points.map(p => p.y))
     const maxX = Math.max(...points.map(p => p.x))
@@ -94,9 +89,9 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
     const newW = Math.max(1, maxX - minX)
     const newH = Math.max(1, maxY - minY)
 
-    // 3. Normalized coordinates
     const nx1 = startPos ? (startPos.x - minX) / newW : content.x1
     const ny1 = startPos ? (startPos.y - minY) / newH : content.y1
+    
     // For branching lines the end-point is not part of the bbox, so we must
     // leave x2/y2 unchanged to avoid overwriting them with stale values.
     const nx2 = (!isFork && endPos) ? (endPos.x - minX) / newW : content.x2
@@ -108,7 +103,6 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
       return { ...b, x: (p.x - minX) / newW, y: (p.y - minY) / newH }
     })
 
-    // Skip update if nothing changed
     const hasBranchesChanged = JSON.stringify(content.branches) !== JSON.stringify(nBranches)
     if (
       el.position.x === minX && el.position.y === minY &&
@@ -127,7 +121,8 @@ function recalcLinesOnSlide(elements: SceneElement[]): SceneElement[] {
         ...content, 
         x1: nx1, y1: ny1, 
         x2: nx2, y2: ny2,
-        branches: nBranches
+        branches: nBranches,
+        customPath: undefined
       },
     }
   })
@@ -169,14 +164,8 @@ function cleanupConnectionsForDeletedElement(
   })
 }
 
-// ─────────────────────────────────────────────
-// Slice
-// ─────────────────────────────────────────────
-
 export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice> = (set, get) => ({
   selectedElementIds: [],
-
-  // ── Selection ─────────────────────────────────────────────────────────────
 
   setSelectedElement: (id, multi = false) => {
     set((s) => {
@@ -192,13 +181,10 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
 
   setSelectedElements: (ids) => set({ selectedElementIds: ids }),
 
-  // ── Recalculate connected lines ───────────────────────────────────────────
-  //
-  // Called after every mutation that can move an element (updateElement,
-  // updateElements, updateElementsBatch). Safe to call after deletions too —
-  // cleanupConnectionsForDeletedElement already strips dangling refs before
-  // this runs, so getConnectionPos will never return null for a live line.
-
+  /**
+   * Safe to call after deletions too — cleanupConnectionsForDeletedElement 
+   * already strips dangling refs before this runs.
+   */
   recalculateLines: () => {
     const { activeProjectId, activeSlideIndex } = get()
     if (!activeProjectId) return
@@ -211,7 +197,6 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
           slides: p.slides.map((sl, i) => {
             if (i !== activeSlideIndex) return sl
             const next = recalcLinesOnSlide(sl.elements)
-            // Avoid a new object reference if nothing changed
             return next === sl.elements ? sl : { ...sl, elements: next }
           }),
         }
@@ -219,144 +204,69 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
     }))
   },
 
-  // ── CRUD ──────────────────────────────────────────────────────────────────
-
   addElement: (element) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId) return
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) =>
-          i !== activeSlideIndex
-            ? sl
-            : { ...sl, elements: [...sl.elements, element] }
-        )
-        return { ...p, slides, updatedAt: Date.now() }
-      }),
-    }))
+    if (!get().activeProjectId) return
+    set((s) => updateActiveSlideElements(s, (elements) => [...elements, element]))
   },
 
   updateElement: (id, updates) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId) return
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) =>
-              el.id === id ? ({ ...el, ...updates } as SceneElement) : el
-            ),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now() }
-      }),
-    }))
+    if (!get().activeProjectId) return
+    set((s) => updateActiveSlideElements(s, (elements) =>
+      elements.map((el) => el.id === id ? ({ ...el, ...updates } as SceneElement) : el)
+    ))
+    
     // Only propagate when a shape moves — line updates already carry their own
-    // final geometry (especially during node-drag), so calling recalculateLines
-    // here would cause a redundant second render pass on every mousemove.
+    // final geometry, so calling recalculateLines here would cause a redundant render.
     const project = get().projects.find((p) => p.id === get().activeProjectId)
     const updatedEl = project?.slides[get().activeSlideIndex]?.elements.find((e) => e.id === id)
     if (updatedEl?.type !== 'line') get().recalculateLines()
   },
 
   updateElements: (ids, updates) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId || ids.length === 0) return
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) =>
-              ids.includes(el.id) ? ({ ...el, ...updates } as SceneElement) : el
-            ),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now() }
-      }),
-    }))
+    if (!get().activeProjectId || ids.length === 0) return
+    set((s) => updateActiveSlideElements(s, (elements) =>
+      elements.map((el) => ids.includes(el.id) ? ({ ...el, ...updates } as SceneElement) : el)
+    ))
     get().recalculateLines()
   },
 
-  updateElementsBatch: (updates) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId || updates.length === 0) return
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) => {
-              const update = updates.find((u) => u.id === el.id)
-              return update ? ({ ...el, ...update.changes } as SceneElement) : el
-            }),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now() }
+  updateElementsBatch: (updates, options = {}) => {
+    if (!get().activeProjectId || updates.length === 0) return
+
+    const updateMap = new Map(updates.map(u => [u.id, u.changes]))
+
+    set((s) => updateActiveSlideElements(
+      s,
+      (elements) => elements.map((el) => {
+        const changes = updateMap.get(el.id)
+        return changes ? ({ ...el, ...changes } as SceneElement) : el
       }),
-    }))
-    get().recalculateLines()
+      { silent: options.silent },
+    ))
+
+    // Line recalculation is expensive; only run if not silent or specifically needed
+    if (!options.silent) {
+      get().recalculateLines()
+    }
   },
 
-  /**
-   * Delete an element and automatically:
-   *   1. Strip any line startConnection / endConnection pointing at it
-   *   2. Recompute all remaining line geometries
-   *   3. Remove the id from the selection
-   */
   deleteElement: (id) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId) return
+    if (!get().activeProjectId) return
     set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-
-          // Remove the element itself
-          const withoutDeleted = sl.elements.filter((el) => el.id !== id)
-
-          // Strip dangling connection refs from any lines
-          const cleaned = cleanupConnectionsForDeletedElement(withoutDeleted, id)
-
-          return { ...sl, elements: cleaned }
-        })
-        return { ...p, slides, updatedAt: Date.now() }
+      ...updateActiveSlideElements(s, (elements) => {
+        const withoutDeleted = elements.filter((el) => el.id !== id)
+        return cleanupConnectionsForDeletedElement(withoutDeleted, id)
       }),
       selectedElementIds: s.selectedElementIds.filter((x) => x !== id),
     }))
-    // Recalculate geometries now that connections are clean
     get().recalculateLines()
   },
 
-  // ── Misc ──────────────────────────────────────────────────────────────────
-
   toggleElementLock: (id) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId) return
-    set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) =>
-              el.id === id ? { ...el, locked: !el.locked } : el
-            ),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now() }
-      }),
-    }))
+    if (!get().activeProjectId) return
+    set((s) => updateActiveSlideElements(s, (elements) =>
+      elements.map((el) => el.id === id ? { ...el, locked: !el.locked } : el)
+    ))
   },
 
   duplicateElement: (id) => {
@@ -393,46 +303,97 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
   },
 
   groupElements: (ids) => {
-    const { activeProjectId, activeSlideIndex } = get()
-    if (!activeProjectId || ids.length < 2) return
+    if (!get().activeProjectId || ids.length < 2) return
     const groupId = `group-${Math.random().toString(36).substr(2, 9)}`
     set((s) => ({
-      projects: s.projects.map((p) => {
-        if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) =>
-              ids.includes(el.id) ? { ...el, groupId } : el
-            ),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now() }
-      }),
+      ...updateActiveSlideElements(s, (elements) =>
+        elements.map((el) => ids.includes(el.id) ? { ...el, groupId } : el)
+      ),
       selectedElementIds: ids,
     }))
   },
 
   ungroupElements: (groupId) => {
-    const { activeProjectId, activeSlideIndex } = get()
+    if (!get().activeProjectId) return
+    set((s) => updateActiveSlideElements(s, (elements) =>
+      elements.map((el) => {
+        if (el.groupId !== groupId) return el
+        const { groupId: _, ...rest } = el
+        return rest as SceneElement
+      })
+    ))
+  },
+
+  addSection: () => {
+    const { activeProjectId, activeSlideIndex, selectedElementIds, activeProject, setEditingId, setSelectedElement } = get()
     if (!activeProjectId) return
+    const project = activeProject()
+    if (!project) return
+    const slide = project.slides[activeSlideIndex]
+    if (!slide) return
+
+    let x, y, width, height
+    const PADDING = 30
+
+    if (selectedElementIds.length > 0) {
+      // Pattern: Magic Wrap
+      const selectedElements = slide.elements.filter(el => selectedElementIds.includes(el.id))
+      const minX = Math.min(...selectedElements.map(el => el.position.x))
+      const minY = Math.min(...selectedElements.map(el => el.position.y))
+      const maxX = Math.max(...selectedElements.map(el => el.position.x + el.size.width))
+      const maxY = Math.max(...selectedElements.map(el => el.position.y + el.size.height))
+
+      x = minX - PADDING
+      y = minY - PADDING
+      width = (maxX - minX) + (PADDING * 2)
+      height = (maxY - minY) + (PADDING * 2)
+    } else {
+      // Pattern: Viewport Drop (using slide center as proxy for now)
+      width = 400
+      height = 300
+      x = 1280 / 2 - width / 2
+      y = 720 / 2 - height / 2
+    }
+
+    const newSection: SceneElement = {
+      id: `section-${Math.random().toString(36).substr(2, 9)}`,
+      type: 'section',
+      position: { x, y },
+      size: { width, height },
+      rotation: 0,
+      opacity: 1,
+      zIndex: 1, // Sections always stay at the bottom
+      animation: 'fade-in',
+      animationDelay: 0,
+      content: {
+        label: 'Section',
+        backgroundColor: 'color-mix(in srgb, var(--ms-accent), transparent 95%)',
+        borderColor: 'color-mix(in srgb, var(--ms-accent), transparent 70%)',
+        borderStyle: 'dashed',
+        borderWidth: 2,
+        cornerRadius: 12,
+      } as any
+    }
+
     set((s) => ({
       projects: s.projects.map((p) => {
         if (p.id !== activeProjectId) return p
-        const slides = p.slides.map((sl, i) => {
-          if (i !== activeSlideIndex) return sl
-          return {
-            ...sl,
-            elements: sl.elements.map((el) => {
-              if (el.groupId !== groupId) return el
-              const { groupId: _, ...rest } = el
-              return rest as SceneElement
-            }),
-          }
-        })
-        return { ...p, slides, updatedAt: Date.now() }
+        return {
+          ...p,
+          slides: p.slides.map((sl, i) =>
+            i !== activeSlideIndex
+              ? sl
+              : { ...sl, elements: [newSection, ...sl.elements] } // Section inserted at the bottom (index 0)
+          ),
+          updatedAt: Date.now(),
+          synced: false
+        }
       }),
+      activeTool: 'select' // Reset tool after use
     }))
+
+    // Immediate focus for labeling
+    setSelectedElement(newSection.id)
+    setEditingId(newSection.id)
   },
 })

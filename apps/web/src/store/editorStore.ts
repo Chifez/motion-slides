@@ -1,11 +1,18 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware'
+import { get, set, del } from 'idb-keyval'
 import { createProjectSlice, type ProjectSlice } from './slices/projectSlice'
 import { createSlideSlice, type SlideSlice } from './slices/slideSlice'
 import { createElementSlice, type ElementSlice } from './slices/elementSlice'
 import { createPresentationSlice, type PresentationSlice } from './slices/presentationSlice'
 import { createPrototypeSlice, type PrototypeSlice } from './slices/prototypeSlice'
 import { createCanvasSlice, type CanvasSlice } from './slices/canvasSlice'
+import { createAISlice, type AISlice } from './slices/aiSlice'
+import { createUISlice, type UISlice } from './slices/uiSlice'
+import { createAuthSlice, type AuthSlice } from './slices/authSlice'
+import { createIdentitySlice, type IdentitySlice } from './slices/identitySlice'
+import { createOnboardingSlice, type OnboardingSlice } from './slices/onboardingSlice'
+import { createGitSlice, type GitSlice } from './slices/gitSlice'
 
 // ─────────────────────────────────────────────
 // Combined Store Type
@@ -18,29 +25,91 @@ export type EditorState =
   & PresentationSlice
   & PrototypeSlice
   & CanvasSlice
+  & AISlice
+  & UISlice
+  & AuthSlice
+  & IdentitySlice
+  & OnboardingSlice
+  & GitSlice
+
+type PersistedState = Pick<
+  EditorState,
+  'projects' | 'activeProjectId' | 'activeSlideIndex' | 'playbackSettings' | 'localAuthorId'
+>
 
 // ─────────────────────────────────────────────
-// Zustand Store with SessionStorage persistence
+// Zustand Store with Optimized IndexedDB persistence
 // ─────────────────────────────────────────────
+
+/**
+ * Optimized Storage Wrapper
+ * 
+ * Version-2 Smoothness Replicator:
+ * Instead of serializing the state on every frame (which blocks the main thread),
+ * we debounce the serialization itself. During a drag, we skip all persistence
+ * overhead.
+ */
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+const optimizedStorage: PersistStorage<PersistedState> = {
+  getItem: async (name: string): Promise<StorageValue<PersistedState> | null> => {
+    const raw = await get(name)
+    if (!raw) return null
+
+    return JSON.parse(raw) as StorageValue<PersistedState>
+  },
+  setItem: async (name: string, value: StorageValue<PersistedState>): Promise<void> => {
+
+    if (useEditorStore.getState()?.isDragging) return
+
+
+    if (debounceTimer) clearTimeout(debounceTimer)
+
+
+    debounceTimer = setTimeout(async () => {
+      try {
+
+        const serialized = JSON.stringify(value)
+        await set(name, serialized)
+      } catch (error) {
+        console.error('[Storage] Failed to persist state:', error)
+      } finally {
+        debounceTimer = null
+      }
+    }, 500)
+  },
+  removeItem: async (name: string): Promise<void> => {
+    await del(name)
+  },
+}
 
 export const useEditorStore = create<EditorState>()(
-  persist(
-    (...a) => ({
-      ...createProjectSlice(...a),
-      ...createSlideSlice(...a),
-      ...createElementSlice(...a),
-      ...createPresentationSlice(...a),
-      ...createPrototypeSlice(...a),
-      ...createCanvasSlice(...a),
+  persist<EditorState, [], [], PersistedState>(
+    (...args) => ({
+      ...createProjectSlice(...args),
+      ...createSlideSlice(...args),
+      ...createElementSlice(...args),
+      ...createPresentationSlice(...args),
+      ...createPrototypeSlice(...args),
+      ...createCanvasSlice(...args),
+      ...createAISlice(...args),
+      ...createUISlice(...args),
+      ...createAuthSlice(...args),
+      ...createIdentitySlice(...args),
+      ...createOnboardingSlice(...args),
+      ...createGitSlice(...args),
     }),
     {
       name: 'motionslides-session',
-      storage: createJSONStorage(() => sessionStorage),
+      // We don't use createJSONStorage here because we want the raw object 
+      // in setItem to debounce the serialization itself.
+      storage: typeof window !== 'undefined' ? optimizedStorage : undefined,
       partialize: (state) => ({
         projects: state.projects,
         activeProjectId: state.activeProjectId,
         activeSlideIndex: state.activeSlideIndex,
         playbackSettings: state.playbackSettings,
+        localAuthorId: state.localAuthorId,
       }),
     },
   ),
@@ -48,5 +117,24 @@ export const useEditorStore = create<EditorState>()(
 
 // Expose store for headless renderer injection (export pipeline only)
 if (typeof window !== 'undefined') {
-  (window as any).__motionslides_store__ = useEditorStore
+  (window as unknown as { __motionslides_store__: typeof useEditorStore }).__motionslides_store__ = useEditorStore
 }
+
+// ─────────────────────────────────────────────
+// Async Hydration Helper
+// ─────────────────────────────────────────────
+export const storeHydrationPromise = new Promise<void>((resolve) => {
+  if (typeof window === 'undefined') {
+    resolve()
+    return
+  }
+  
+  if (useEditorStore.persist.hasHydrated()) {
+    resolve()
+  } else {
+    const unsubscribe = useEditorStore.persist.onFinishHydration(() => {
+      resolve()
+      if (unsubscribe) unsubscribe()
+    })
+  }
+})

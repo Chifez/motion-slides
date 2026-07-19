@@ -45,7 +45,6 @@ function normalizeBezier(v: unknown): CubicBezier {
 }
 
 export function BezierEditor({ value: rawValue, onChange }: Props) {
-  // Guard against legacy string values (e.g. 'ease-out') still in session storage
   const value = normalizeBezier(rawValue)
 
   const svgRef = useRef<SVGSVGElement>(null)
@@ -56,7 +55,6 @@ export function BezierEditor({ value: rawValue, onChange }: Props) {
   const start = toCanvas(0, 0)
   const end = toCanvas(1, 1)
 
-  // Build the curve path by sampling
   const curvePath = (() => {
     const points: string[] = []
     for (let i = 0; i <= 50; i++) {
@@ -94,7 +92,6 @@ export function BezierEditor({ value: rawValue, onChange }: Props) {
     setDragging(null)
   }, [])
 
-  // Find active preset
   const activePreset = BEZIER_PRESETS.find(
     (p) =>
       Math.abs(p.value.x1 - value.x1) < 0.01 &&
@@ -105,8 +102,7 @@ export function BezierEditor({ value: rawValue, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* SVG Canvas */}
-      <div className="bg-[#0d0d0d] rounded-lg border border-white/6 p-1">
+      <div className="bg-(--ms-bg-base) rounded-lg border border-(--ms-border) p-1 transition-colors">
         <svg
           ref={svgRef}
           width={W}
@@ -115,22 +111,17 @@ export function BezierEditor({ value: rawValue, onChange }: Props) {
           onPointerUp={handlePointerUp}
           style={{ cursor: dragging ? 'grabbing' : 'default', touchAction: 'none' }}
         >
-          {/* Grid */}
-          <rect x={PAD} y={PAD} width={SIZE} height={SIZE} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={1} />
-          <line x1={PAD} y1={PAD + SIZE / 2} x2={PAD + SIZE} y2={PAD + SIZE / 2} stroke="rgba(255,255,255,0.04)" />
-          <line x1={PAD + SIZE / 2} y1={PAD} x2={PAD + SIZE / 2} y2={PAD + SIZE} stroke="rgba(255,255,255,0.04)" />
+          <rect x={PAD} y={PAD} width={SIZE} height={SIZE} fill="none" stroke="var(--ms-border-strong)" strokeWidth={1} opacity={0.3} />
+          <line x1={PAD} y1={PAD + SIZE / 2} x2={PAD + SIZE} y2={PAD + SIZE / 2} stroke="var(--ms-border-strong)" opacity={0.2} />
+          <line x1={PAD + SIZE / 2} y1={PAD} x2={PAD + SIZE / 2} y2={PAD + SIZE} stroke="var(--ms-border-strong)" opacity={0.2} />
 
-          {/* Diagonal reference (linear) */}
-          <line x1={start.cx} y1={start.cy} x2={end.cx} y2={end.cy} stroke="rgba(255,255,255,0.08)" strokeWidth={1} strokeDasharray="4 3" />
+          <line x1={start.cx} y1={start.cy} x2={end.cx} y2={end.cy} stroke="var(--ms-border-strong)" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />
 
-          {/* Control lines */}
           <line x1={start.cx} y1={start.cy} x2={p1.cx} y2={p1.cy} stroke="#3b82f6" strokeWidth={1} opacity={0.5} />
           <line x1={end.cx} y1={end.cy} x2={p2.cx} y2={p2.cy} stroke="#8b5cf6" strokeWidth={1} opacity={0.5} />
 
-          {/* Curve */}
           <path d={curvePath} fill="none" stroke="url(#bezier-grad)" strokeWidth={2.5} strokeLinecap="round" />
 
-          {/* Gradient */}
           <defs>
             <linearGradient id="bezier-grad" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#3b82f6" />
@@ -138,11 +129,9 @@ export function BezierEditor({ value: rawValue, onChange }: Props) {
             </linearGradient>
           </defs>
 
-          {/* Start / End points */}
-          <circle cx={start.cx} cy={start.cy} r={3} fill="#333" stroke="#555" strokeWidth={1} />
-          <circle cx={end.cx} cy={end.cy} r={3} fill="#333" stroke="#555" strokeWidth={1} />
+          <circle cx={start.cx} cy={start.cy} r={3} fill="var(--ms-bg-elevated)" stroke="var(--ms-border-strong)" strokeWidth={1} />
+          <circle cx={end.cx} cy={end.cy} r={3} fill="var(--ms-bg-elevated)" stroke="var(--ms-border-strong)" strokeWidth={1} />
 
-          {/* Control point 1 */}
           <circle
             cx={p1.cx} cy={p1.cy} r={6}
             fill={dragging === 'p1' ? '#3b82f6' : '#1e3a5f'}
@@ -151,7 +140,6 @@ export function BezierEditor({ value: rawValue, onChange }: Props) {
             onPointerDown={handlePointerDown('p1')}
           />
 
-          {/* Control point 2 */}
           <circle
             cx={p2.cx} cy={p2.cy} r={6}
             fill={dragging === 'p2' ? '#8b5cf6' : '#3b1e5f'}
@@ -162,20 +150,18 @@ export function BezierEditor({ value: rawValue, onChange }: Props) {
         </svg>
       </div>
 
-      {/* Value display */}
-      <div className="text-[9px] text-neutral-600 font-mono text-center">
+      <div className="text-[9px] text-(--ms-text-muted) font-mono text-center">
         cubic-bezier({value.x1.toFixed(2)}, {value.y1.toFixed(2)}, {value.x2.toFixed(2)}, {value.y2.toFixed(2)})
       </div>
 
-      {/* Presets */}
       <div className="flex flex-wrap gap-1">
         {BEZIER_PRESETS.map((preset) => (
           <button
             key={preset.label}
             onClick={() => onChange({ ...preset.value })}
-            className={`text-[9px] px-2 py-1 rounded-md border transition-colors cursor-pointer ${activePreset?.label === preset.label
-                ? 'border-blue-500 bg-blue-500/15 text-blue-400'
-                : 'border-white/8 bg-[#1c1c1c] text-neutral-500 hover:text-neutral-200'
+            className={`text-[9px] px-2 py-1 rounded-md border transition cursor-pointer ${activePreset?.label === preset.label
+                ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+                : 'border-(--ms-border) bg-(--ms-bg-base) text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:border-(--ms-border-strong)'
               }`}
           >
             {preset.label}
