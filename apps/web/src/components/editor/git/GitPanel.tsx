@@ -25,6 +25,7 @@ export function GitPanel() {
   const gitUpstreamHistory = useEditorStore(state => state.gitUpstreamHistory)
   const isSyncingGit = useEditorStore(state => state.isSyncingGit)
   const hasUnstagedChanges = useEditorStore(state => state.hasUnstagedChanges)
+  const getUncommittedChanges = useEditorStore(state => state.getUncommittedChanges)
   
   // PR list and actions
   const prsList = useEditorStore(state => state.prsList)
@@ -40,14 +41,19 @@ export function GitPanel() {
   const { isReadOnly } = usePermissions()
   const user = useEditorStore(state => state.user)
   const isBranchOwner = !!project?.forkedFromId && project?.ownerId === user?.id
-
-  const activePR = isBranchOwner ? prsList.find(pr => pr.status === 'pending') : null
+  const activePR = isBranchOwner ? (prsList || []).find(pr => pr.status === 'open') : null
   const hasActivePR = !!activePR
+
+  // PR is creatable when the branch has any commits persisted to the server (pushed)
+  // — i.e. gitHistory contains commits beyond the inherited base commit.
+  const hasPushedBranchCommits = gitHistory.some(c => c.projectId === project?.id)
 
   if (!project) return null
 
   const unpushedCount = project.localCommits?.length || 0
   const hasUnstaged = hasUnstagedChanges()
+  const uncommittedChanges = getUncommittedChanges()
+  const hasLocalCommits = gitHistory.length > 0 && gitHistory[0].id !== project.forkedFromId
 
   const handleCommit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -152,6 +158,33 @@ export function GitPanel() {
                   </div>
                 </form>
 
+                {hasUnstaged && uncommittedChanges.length > 0 && (
+                  <div className="flex flex-col gap-1 mt-1">
+                    <span className="text-[10px] font-bold text-(--ms-text-muted) uppercase tracking-wider mb-1">
+                      Changes ({uncommittedChanges.length})
+                    </span>
+                    <div className="flex flex-col gap-0.5 border border-(--ms-border) rounded-lg overflow-hidden bg-(--ms-bg-surface)/20">
+                      {uncommittedChanges.map((change) => (
+                        <div key={change.id} className="flex items-center gap-2 px-2.5 py-1.5 text-[11px] font-medium border-b border-(--ms-border)/50 last:border-0 hover:bg-(--ms-border)/30 transition cursor-default">
+                          <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${
+                            change.type === 'added' ? 'bg-emerald-400' :
+                            change.type === 'deleted' ? 'bg-red-400' :
+                            'bg-amber-400'
+                          }`} />
+                          <span className="text-(--ms-text-primary) truncate flex-1">{change.name}</span>
+                          <span className={`shrink-0 text-[9px] uppercase tracking-wider font-bold ${
+                            change.type === 'added' ? 'text-emerald-500' :
+                            change.type === 'deleted' ? 'text-red-500' :
+                            'text-amber-500'
+                          }`}>
+                            {change.type.charAt(0)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   <Button
                     variant="secondary"
@@ -178,8 +211,9 @@ export function GitPanel() {
                     <Button
                       variant="primary"
                       onClick={() => setIsPRModalOpen(true)}
-                      disabled={hasActivePR}
+                      disabled={hasActivePR || !hasPushedBranchCommits}
                       className="flex gap-2 shadow-md shadow-blue-500/10"
+                      title={!hasPushedBranchCommits ? "Push your commits before creating a pull request." : ""}
                     >
                       <GitPullRequest size={13} />
                       <span>{hasActivePR ? 'Pull Request Open' : 'Submit Pull Request'}</span>
@@ -227,9 +261,9 @@ export function GitPanel() {
                             <span className="text-xs font-semibold text-(--ms-text-primary) truncate">
                               {pr.title}
                             </span>
-                            <span className="text-[10px] text-(--ms-text-muted) truncate">
-                              from fork: {pr.projectName}
-                            </span>
+                            <div className="text-[9px] text-(--ms-text-muted) flex items-center gap-1 mt-0.5">
+                              from branch: {pr.projectName}
+                            </div>
                           </div>
                           <Button
                             size="sm"

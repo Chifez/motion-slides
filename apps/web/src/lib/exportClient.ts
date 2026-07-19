@@ -46,6 +46,7 @@ export async function startExport(
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ sceneGraph, format }),
+      credentials: 'include',
     })
   } catch (err) {
     onProgress({ stage: 'error', percent: 0, message: 'Could not reach export server. Is it running?' })
@@ -89,7 +90,9 @@ export async function startExport(
 
   let sseResponse: Response
   try {
-    sseResponse = await fetch(`${serverUrl}/api/export/status/${jobId}/stream`)
+    sseResponse = await fetch(`${serverUrl}/api/export/status/${jobId}/stream`, {
+      credentials: 'include',
+    })
   } catch (err) {
     onProgress({ stage: 'error', percent: 0, message: 'Failed to connect to export status stream.' })
     return null

@@ -3,7 +3,7 @@ import type { EditorState } from '@/store/editorStore'
 import type { Project, Slide, SlideTransition } from '@motionslides/shared'
 import type { GitCommit } from '@/lib/actions/git'
 import {
-  forkProjectAction,
+  createBranchAction,
   pushCommitsAction,
   pullCommitsAction,
   createPRAction,
@@ -37,12 +37,13 @@ export interface GitSlice {
   pushCommits: () => Promise<void>
   pullCommits: () => Promise<void>
   checkoutCommit: (commitId: string | null) => void
-  forkProject: (projectId: string, name?: string) => Promise<Project>
+  createBranch: (projectId: string, name?: string) => Promise<Project>
   createPR: (targetProjectId: string, title: string, description: string) => Promise<string>
   loadPRs: (projectId: string, type: 'incoming' | 'outgoing') => Promise<void>
   resolvePR: (prId: string, status: 'merged' | 'rejected') => Promise<void>
   resolveConflict: (slideId: string, keep: 'local' | 'incoming') => void
   hasUnstagedChanges: () => boolean
+  getUncommittedChanges: () => { id: string; name: string; type: 'added' | 'deleted' | 'modified' }[]
 
   prComments: any[]
   isCommentToolActive: boolean
@@ -256,7 +257,7 @@ export const createGitSlice: StateCreator<EditorState, [], [], GitSlice> = (set,
     get().updateProject(project.id, {
       headCommitId: commitId,
       localCommits,
-      synced: false,
+      synced: true, // We are about to sync it
     })
 
     set((state) => ({
@@ -264,6 +265,7 @@ export const createGitSlice: StateCreator<EditorState, [], [], GitSlice> = (set,
     }))
 
     get().showToast('Committed changes locally.', 'success')
+    get().syncProjects() // Immediately sync project metadata so "Save" button doesn't appear
   },
 
   pushCommits: async () => {
@@ -307,8 +309,15 @@ export const createGitSlice: StateCreator<EditorState, [], [], GitSlice> = (set,
     try {
       // 1. Fetch remote history
       const res = await pullCommitsAction({ data: { projectId: project.id } })
+
+      // Merge server commits with any local unpushed commits so they aren't wiped
+      const localCommits = project.localCommits ?? []
+      const mergedHistory = [
+        ...localCommits,
+        ...res.projectCommits.filter(rc => !localCommits.some(lc => lc.id === rc.id)),
+      ]
       set({
-        gitHistory: res.projectCommits,
+        gitHistory: mergedHistory,
         gitUpstreamHistory: res.upstreamCommits,
       })
 
@@ -319,14 +328,16 @@ export const createGitSlice: StateCreator<EditorState, [], [], GitSlice> = (set,
         return
       }
 
-      if (remoteHead.id === project.headCommitId) {
+      // Only short-circuit if there are no local commits pending — otherwise our
+      // local headCommitId points to an unpushed commit, not a server one.
+      const hasLocalCommits = project.localCommits && project.localCommits.length > 0
+      if (!hasLocalCommits && remoteHead.id === project.headCommitId) {
         get().showToast('Already up-to-date.', 'info')
         set({ isSyncingGit: false })
         return
       }
 
       // If we have no local changes, we can perform a clean Fast-Forward
-      const hasLocalCommits = project.localCommits && project.localCommits.length > 0
       const hasUnstaged = get().hasUnstagedChanges()
 
       if (!hasLocalCommits && !hasUnstaged) {
@@ -418,21 +429,21 @@ export const createGitSlice: StateCreator<EditorState, [], [], GitSlice> = (set,
     }
   },
 
-  forkProject: async (projectId, name) => {
+  createBranch: async (projectId, name) => {
     set({ isSyncingGit: true })
     try {
-      const res = await forkProjectAction({ data: { projectId, name } })
+      const res = await createBranchAction({ data: { projectId, name } })
       if (res.success && res.project) {
         set((state) => ({
-          projects: [...state.projects, res.project],
+          projects: [...state.projects, { ...res.project, localAuthorId: get().localAuthorId }],
         }))
-        get().showToast('Project forked successfully!', 'success')
+        get().showToast('Branch created successfully!', 'success')
         return res.project
       }
-      throw new Error('Fork failed')
+      throw new Error('Branch creation failed')
     } catch (err) {
       console.error(err)
-      get().showToast('Failed to fork project.', 'error')
+      get().showToast('Failed to create branch.', 'error')
       throw err
     } finally {
       set({ isSyncingGit: false })
@@ -470,9 +481,9 @@ export const createGitSlice: StateCreator<EditorState, [], [], GitSlice> = (set,
   loadPRs: async (projectId, type) => {
     try {
       const prs = await listPRsAction({ data: { projectId, type } })
-      set({ prsList: prs })
+      set({ prsList: prs || [] })
       
-      const pendingPR = prs.find(pr => pr.status === 'pending')
+      const pendingPR = (prs || []).find(pr => pr.status === 'open')
       if (pendingPR) {
         get().loadPRComments(pendingPR.id)
       }
@@ -573,5 +584,36 @@ export const createGitSlice: StateCreator<EditorState, [], [], GitSlice> = (set,
     })
 
     return currentStr !== headStr
+  },
+
+  getUncommittedChanges: () => {
+    const project = get().activeProject()
+    if (!project) return []
+
+    const { gitHistory, gitUpstreamHistory } = get()
+    const headCommit = [...gitHistory, ...gitUpstreamHistory].find(c => c.id === project.headCommitId)
+    const headSlides = headCommit ? headCommit.slides : []
+    const currentSlides = project.slides
+
+    const diffs: { id: string; name: string; type: 'added' | 'deleted' | 'modified' }[] = []
+
+    // Check added/modified
+    currentSlides.forEach(slide => {
+      const headSlide = headSlides.find(s => s.id === slide.id)
+      if (!headSlide) {
+        diffs.push({ id: slide.id, name: slide.name || 'Untitled Slide', type: 'added' })
+      } else if (JSON.stringify(slide) !== JSON.stringify(headSlide)) {
+        diffs.push({ id: slide.id, name: slide.name || 'Untitled Slide', type: 'modified' })
+      }
+    })
+
+    // Check deleted
+    headSlides.forEach(slide => {
+      if (!currentSlides.find(s => s.id === slide.id)) {
+        diffs.push({ id: slide.id, name: slide.name || 'Untitled Slide', type: 'deleted' })
+      }
+    })
+
+    return diffs
   },
 })

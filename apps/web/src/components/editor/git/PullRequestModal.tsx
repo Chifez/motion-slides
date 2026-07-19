@@ -28,7 +28,12 @@ export function PullRequestModal({ isOpen, onClose }: PullRequestModalProps) {
     // Load upstream project to display target info and calculate diffs
     const loadUpstream = async () => {
       try {
-        const upstream = await getRemoteProjectAction({ data: { projectId: project.forkedFromId! } })
+        const upstream = await getRemoteProjectAction({ 
+          data: { 
+            projectId: project.forkedFromId!,
+            shareKey: project.shareKey 
+          } 
+        })
         if (upstream) {
           setTargetProject(upstream as unknown as Project)
           calculateDiffs(project, upstream as unknown as Project)
@@ -119,7 +124,7 @@ export function PullRequestModal({ isOpen, onClose }: PullRequestModalProps) {
           {/* Merge branches mapping banner */}
           <div className="flex items-center justify-between gap-4 p-3 bg-(--ms-bg-base) border border-(--ms-border) rounded-xl text-xs font-semibold text-(--ms-text-secondary)">
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] text-(--ms-text-muted) font-medium">SOURCE (FORK/BRANCH)</span>
+              <span className="text-[10px] text-(--ms-text-muted) font-medium">SOURCE (BRANCH)</span>
               <span className="truncate text-(--ms-text-primary)">{project.name}</span>
             </div>
             <div className="shrink-0 px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
@@ -162,7 +167,7 @@ export function PullRequestModal({ isOpen, onClose }: PullRequestModalProps) {
             </span>
             {slideDiffs.length === 0 ? (
               <div className="text-xs text-(--ms-text-muted) italic bg-(--ms-bg-surface)/40 border border-(--ms-border) rounded-xl p-4 text-center">
-                No slide content changes detected between fork and upstream base.
+                No slide content changes detected between branch and upstream base.
               </div>
             ) : (
               <div className="border border-(--ms-border) rounded-xl divide-y divide-(--ms-border) overflow-hidden max-h-48 overflow-y-auto bg-(--ms-bg-surface)/20">

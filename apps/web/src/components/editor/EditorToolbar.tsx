@@ -27,7 +27,7 @@ export function EditorToolbar({ projectId }: Props) {
   const isPrototypeMode = useEditorStore(state => state.isPrototypeMode)
   const mobileSlidesOpen = useEditorStore(state => state.mobileSlidesOpen)
   const isGitPanelOpen = useEditorStore(state => state.isGitPanelOpen)
-  const forkProject = useEditorStore(state => state.forkProject)
+  const createBranch = useEditorStore(state => state.createBranch)
   const navigate = useNavigate()
 
   const [showBranchMenu, setShowBranchMenu] = useState(false)
@@ -163,7 +163,7 @@ export function EditorToolbar({ projectId }: Props) {
                         </span>
                         {branchIsGuest && (
                           <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/10 scale-90 shrink-0">
-                            Collaborator Fork
+                            Collaborator Branch
                           </span>
                         )}
                       </button>
@@ -179,7 +179,7 @@ export function EditorToolbar({ projectId }: Props) {
                     if (!newBranchName.trim() || isCreatingBranch) return
                     setIsCreatingBranch(true)
                     try {
-                      const res = await forkProject(project.id, newBranchName.trim())
+                      const res = await createBranch(project.id, newBranchName.trim())
                       if (res && res.id) {
                         setNewBranchName('')
                         setShowBranchMenu(false)
@@ -219,22 +219,7 @@ export function EditorToolbar({ projectId }: Props) {
           </div>
         )}
 
-        {project.ownerId && project.ownerId !== user?.id && (
-          <Button
-            onClick={async () => {
-              const res = await forkProject(project.id)
-              if (res && res.id) {
-                navigate({ to: '/p/$projectId', params: { projectId: res.id } })
-              }
-            }}
-            variant="primary"
-            className="ml-2"
-            title="Fork this project to your own dashboard to make changes"
-          >
-            <GitFork size={13} className="mr-1.5" />
-            Fork
-          </Button>
-        )}
+
 
         <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1 hidden md:block" />
 

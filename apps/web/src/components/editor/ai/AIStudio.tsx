@@ -77,7 +77,7 @@ export function AIStudio({ isGenerating, hasPending, onGenerate, onRefine }: Pro
         formData.append('audio', new File([audioBlob], 'audio.webm', { type: 'audio/webm' }))
         
         try {
-          const { text } = await transcribeAudioAction(formData)
+          const { text } = await transcribeAudioAction({ data: formData })
           if (text) {
              setPrompt(prev => prev ? `${prev} ${text}` : text)
           }

@@ -40,12 +40,71 @@ fs.mkdirSync(OUTPUT_DIR, { recursive: true })
 app.use(cors({
   origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
   methods: ['GET', 'POST'],
+  credentials: true,
 }))
 app.use(express.json({ limit: '50mb' }))  // Safe limit for large base64 images
+
+const basicAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const authHeader = req.headers.authorization
+  if (!authHeader) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Workbench"')
+    return res.status(401).send('Authentication required')
+  }
+
+  try {
+    const authParts = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':')
+    const user = authParts[0]
+    const pass = authParts[1]
+
+    const adminUser = process.env.ADMIN_USER ?? 'admin'
+    const adminPass = process.env.ADMIN_PASS ?? 'admin'
+
+    if (user === adminUser && pass === adminPass) {
+      return next()
+    }
+  } catch (err) {
+    // Fail silently
+  }
+
+  res.setHeader('WWW-Authenticate', 'Basic realm="Workbench"')
+  return res.status(401).send('Authentication required')
+}
+
+async function verifySession(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const cookie = req.headers.cookie
+  const authorization = req.headers.authorization
+
+  const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000'
+
+  try {
+    const response = await fetch(`${frontendUrl}/api/auth/get-session`, {
+      headers: {
+        ...(cookie ? { cookie } : {}),
+        ...(authorization ? { authorization } : {}),
+      }
+    })
+
+    if (!response.ok) {
+      return res.status(401).json({ error: 'Unauthorized: Session check failed' })
+    }
+
+    const data: any = await response.json()
+    if (!data || !data.user) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid or expired session' })
+    }
+
+    (req as any).user = data.user
+    return next()
+  } catch (err: any) {
+    console.error('[ExportServer Auth Error]:', err?.message || err)
+    return res.status(401).json({ error: 'Unauthorized: Authentication service unavailable' })
+  }
+}
 
 // ─── BullMQ Workbench Dashboard ───────────────────────────────────────────────
 app.use(
   '/admin/jobs',
+  basicAuth,
   workbench({
     queues: [exportQueue],
   })
@@ -53,7 +112,7 @@ app.use(
 
 // ─── POST /api/export ─────────────────────────────────────────────────────────
 
-app.post('/api/export', async (req: Request, res: Response) => {
+app.post('/api/export', verifySession, async (req: Request, res: Response) => {
   const { sceneGraph, format = 'mp4' } = req.body
 
   if (!['mp4', 'webm', 'gif', 'pdf'].includes(format)) {
@@ -117,7 +176,7 @@ app.post('/api/export', async (req: Request, res: Response) => {
 
 // ─── GET /api/export/status/:jobId/stream ─────────────────────────────────────
 
-app.get('/api/export/status/:jobId/stream', async (req: Request, res: Response) => {
+app.get('/api/export/status/:jobId/stream', verifySession, async (req: Request, res: Response) => {
   const { jobId } = req.params
 
   // Validate — only allow UUID format to prevent path traversal
@@ -252,7 +311,14 @@ startDiskCleanupTimer()
 
 // ─── Environment Variables Validation ─────────────────────────────────────────
 if (!process.env.FRONTEND_URL) {
-  console.warn('[Warning] Environment variable FRONTEND_URL is not set. Defaulting to http://localhost:3000')
+  console.warn('[Warning] FRONTEND_URL is not set. Defaulting to http://localhost:3000')
+}
+
+if (!process.env.ADMIN_USER || !process.env.ADMIN_PASS) {
+  throw new Error(
+    '[ExportServer] ADMIN_USER and ADMIN_PASS environment variables must be set. ' +
+    'The /admin/jobs dashboard cannot be secured without them.'
+  )
 }
 
 app.listen(PORT, () => {

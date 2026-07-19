@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '../db'
 import { projects } from '../db/schema'
-import { eq, and, or, sql } from 'drizzle-orm'
+import { eq, and, or, sql, inArray } from 'drizzle-orm'
 import { auth } from '../auth'
 import { z } from 'zod'
 import { getRequest } from '@tanstack/react-start/server'
@@ -163,8 +163,18 @@ export const listRemoteProjectsAction = createServerFn({ method: 'GET' })
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) return []
 
+    const userProjects = await db.query.projects.findMany({
+      where: eq(projects.ownerId, session.user.id),
+      columns: { id: true }
+    })
+    
+    const userProjectIds = userProjects.map(p => p.id)
+    
     const results = await db.query.projects.findMany({
-      where: eq(projects.ownerId, session.user.id)
+      where: or(
+        eq(projects.ownerId, session.user.id),
+        userProjectIds.length > 0 ? inArray(projects.forkedFromId, userProjectIds) : undefined
+      )
     })
     return results as unknown as Project[]
   })

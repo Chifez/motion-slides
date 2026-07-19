@@ -34,6 +34,47 @@ const commitSchema = z.object({
   createdAt: z.number(),
 })
 
+async function verifyProjectAccess(projectId: string, userId: string): Promise<any> {
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId),
+  })
+
+  if (!project) throw new Error('Project not found')
+
+  const isOwner = project.ownerId === userId
+  const isPublic = project.visibility === 'public' || project.visibility === 'collaborative'
+  
+  if (!isOwner && !isPublic) {
+    throw new Error('Access Denied: You do not have permission to access this project.')
+  }
+  return project
+}
+
+async function verifyPRAccess(prId: string, userId: string) {
+  const pr = await db.query.pullRequests.findFirst({
+    where: eq(pullRequests.id, prId),
+  })
+  if (!pr) throw new Error('Pull Request not found')
+
+  const source = await db.query.projects.findFirst({
+    where: eq(projects.id, pr.sourceProjectId),
+  })
+  const target = await db.query.projects.findFirst({
+    where: eq(projects.id, pr.targetProjectId),
+  })
+
+  if (!source || !target) throw new Error('Projects associated with PR not found')
+
+  const hasSourceAccess = source.ownerId === userId || source.visibility === 'public' || source.visibility === 'collaborative'
+  const hasTargetAccess = target.ownerId === userId || target.visibility === 'public' || target.visibility === 'collaborative'
+
+  if (!hasSourceAccess && !hasTargetAccess) {
+    throw new Error('Access Denied: You do not have permission to access this pull request.')
+  }
+
+  return { pr, source, target }
+}
+
 // Recursive helper to fetch all upstream ancestor commits
 async function fetchUpstreamCommits(forkedFromId: string): Promise<GitCommit[]> {
   const list: GitCommit[] = []
@@ -88,8 +129,8 @@ async function ensureBaselineCommit(projectId: string, userId: string, userName:
   return commitId
 }
 
-// 1. Fork Project or Create Branch
-export const forkProjectAction = createServerFn({ method: 'POST' })
+// 1. Create Branch (replaces Fork Project)
+export const createBranchAction = createServerFn({ method: 'POST' })
   .inputValidator(z.object({
     projectId: z.string(),
     name: z.string().optional(),
@@ -117,26 +158,26 @@ export const forkProjectAction = createServerFn({ method: 'POST' })
     const forkId = uuid()
     const now = Date.now()
 
-    const forkData = {
+    const branchData = {
       id: forkId,
-      ownerId: session.user.id,
-      name: name || `${parentProject.name} (Fork)`,
+      ownerId: session.user.id, // Branch is owned by the user who creates it
+      name: name || `${parentProject.name} (Branch)`,
       description: parentProject.description || '',
       slides: parentProject.slides,
       transitions: parentProject.transitions,
       prototypeLayout: parentProject.prototypeLayout,
       playbackSettings: parentProject.playbackSettings,
-      shareKey: uuid(),
-      visibility: 'private' as const,
+      shareKey: parentProject.shareKey, // Inherit shareKey
+      visibility: parentProject.visibility, // Inherit visibility
       createdAt: now,
       updatedAt: now,
       forkedFromId: parentProject.id,
       headCommitId,
     }
 
-    await db.insert(projects).values(forkData)
+    await db.insert(projects).values(branchData)
 
-    return { success: true, project: forkData as unknown as Project }
+    return { success: true, project: branchData as unknown as Project }
   })
 
 // 2. Push Local Commits to Server
@@ -208,11 +249,7 @@ export const pullCommitsAction = createServerFn({ method: 'GET' })
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) throw new Error('Unauthorized')
 
-    const project = await db.query.projects.findFirst({
-      where: eq(projects.id, projectId),
-    })
-
-    if (!project) throw new Error('Project not found')
+    const project = await verifyProjectAccess(projectId, session.user.id)
 
     const projectCommitsList = await db.query.projectCommits.findMany({
       where: eq(projectCommits.projectId, projectId),
@@ -253,12 +290,34 @@ export const createPRAction = createServerFn({ method: 'POST' })
     if (!source || !target) throw new Error('Source or Target project not found')
     if (source.ownerId !== session.user.id) throw new Error('Access Denied: You do not own the source project.')
 
-    // Ensure they both have baseline commits if needed
-    const sourceCommitId = await ensureBaselineCommit(source.id, session.user.id, session.user.name || 'Author')
+    const isTargetOwner = target.ownerId === session.user.id
+    const isTargetPublic = target.visibility === 'public' || target.visibility === 'collaborative'
+    if (!isTargetOwner && !isTargetPublic) {
+      throw new Error('Access Denied: You do not have permission to propose a Pull Request to this target project.')
+    }
+
+    const now = Date.now()
+
+    // Auto-commit on PR creation: inject a new commit matching the exact current state of the source branch.
+    const sourceCommitId = uuid()
+    await db.insert(projectCommits).values({
+      id: sourceCommitId,
+      projectId: source.id,
+      parentCommitId: source.headCommitId,
+      authorId: session.user.id,
+      authorName: session.user.name || 'Author',
+      message: title,
+      slides: source.slides,
+      transitions: source.transitions,
+      prototypeLayout: source.prototypeLayout,
+      createdAt: now,
+    })
+    await db.update(projects).set({ headCommitId: sourceCommitId }).where(eq(projects.id, source.id))
+
+    // Ensure the target has a baseline commit if it doesn't already
     const targetCommitId = await ensureBaselineCommit(target.id, target.ownerId, 'Owner')
 
     const prId = uuid()
-    const now = Date.now()
 
     await db.insert(pullRequests).values({
       id: prId,
@@ -277,7 +336,7 @@ export const createPRAction = createServerFn({ method: 'POST' })
   })
 
 // 5. List Pull Requests
-export const listPRsAction = createServerFn({ method: 'GET' })
+export const listPRsAction = createServerFn({ method: 'POST' })
   .inputValidator(z.object({
     projectId: z.string(),
     type: z.enum(['incoming', 'outgoing']),
@@ -286,6 +345,8 @@ export const listPRsAction = createServerFn({ method: 'GET' })
     const request = getRequest()
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) throw new Error('Unauthorized')
+
+    await verifyProjectAccess(projectId, session.user.id)
 
     let prsList
     if (type === 'incoming') {
@@ -325,11 +386,7 @@ export const getPRDetailsAction = createServerFn({ method: 'GET' })
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) throw new Error('Unauthorized')
 
-    const pr = await db.query.pullRequests.findFirst({
-      where: eq(pullRequests.id, prId),
-    })
-
-    if (!pr) throw new Error('Pull Request not found')
+    const { pr } = await verifyPRAccess(prId, session.user.id)
 
     const sourceCommit = await db.query.projectCommits.findFirst({
       where: eq(projectCommits.id, pr.sourceCommitId),
@@ -473,11 +530,7 @@ export const getCommitHistoryAction = createServerFn({ method: 'GET' })
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) throw new Error('Unauthorized')
 
-    const project = await db.query.projects.findFirst({
-      where: eq(projects.id, projectId),
-    })
-
-    if (!project) throw new Error('Project not found')
+    const project = await verifyProjectAccess(projectId, session.user.id)
 
     const commits = await db.query.projectCommits.findMany({
       where: eq(projectCommits.projectId, projectId),
@@ -510,11 +563,7 @@ export const createPRCommentAction = createServerFn({ method: 'POST' })
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) throw new Error('Unauthorized')
 
-    const pr = await db.query.pullRequests.findFirst({
-      where: eq(pullRequests.id, prId),
-    })
-
-    if (!pr) throw new Error('Pull Request not found')
+    await verifyPRAccess(prId, session.user.id)
 
     const commentId = uuid()
     const now = Date.now()
@@ -544,6 +593,8 @@ export const listPRCommentsAction = createServerFn({ method: 'GET' })
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) throw new Error('Unauthorized')
 
+    await verifyPRAccess(prId, session.user.id)
+
     const comments = await db.query.pullRequestComments.findMany({
       where: eq(pullRequestComments.prId, prId),
       orderBy: (table, { asc }) => [asc(table.createdAt)],
@@ -562,6 +613,13 @@ export const resolvePRCommentAction = createServerFn({ method: 'POST' })
     const request = getRequest()
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) throw new Error('Unauthorized')
+
+    const comment = await db.query.pullRequestComments.findFirst({
+      where: eq(pullRequestComments.id, commentId)
+    })
+    if (!comment) throw new Error('Comment not found')
+
+    await verifyPRAccess(comment.prId, session.user.id)
 
     await db.update(pullRequestComments)
       .set({ resolved })

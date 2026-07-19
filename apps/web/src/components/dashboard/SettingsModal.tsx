@@ -19,15 +19,21 @@ export function SettingsModal({ isOpen, onClose }: Props) {
   const user = useEditorStore(s => s.user)
 
   useEffect(() => {
-    if (isOpen && activeTab === 'quota') {
-      getUserQuotaAction().then(res => setQuota(res)).catch(console.error)
-    }
+    if (!isOpen || activeTab !== 'quota') return
+
+    let ignore = false
+
+    getUserQuotaAction()
+      .then(res => { if (!ignore) setQuota(res) })
+      .catch(console.error)
+
+    return () => { ignore = true }
   }, [isOpen, activeTab])
 
   const handleSaveKeys = async () => {
     setIsSaving(true)
     try {
-      await updateAPIKeysAction({ openAIKey, elevenLabsKey })
+      await updateAPIKeysAction({ data: { openAIKey, elevenLabsKey } })
       // In a real app we'd show a success toast here
     } catch (e) {
       alert('Failed to save API keys')

@@ -133,7 +133,7 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
     if (!aiText.trim()) return
     setMode('generating')
     try {
-      const result = await generateVoiceoverAction(aiText, voiceId, {})
+      const result = await generateVoiceoverAction({ data: { text: aiText, voiceId, settings: {} } })
       onSave({
         id: Math.random().toString(36).substring(7),
         url: result.audioUrl || '/placeholder-audio.mp3',

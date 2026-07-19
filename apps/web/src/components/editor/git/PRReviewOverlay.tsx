@@ -20,7 +20,7 @@ export function PRReviewOverlay() {
 
   // We are reviewing a PR if reviewingSuggestionId matches an open PR in the prsList
   const prsList = useEditorStore(state => state.prsList)
-  const pr = prsList.find(p => p.id === reviewingPrId)
+  const pr = (prsList || []).find(p => p.id === reviewingPrId)
 
   // If there's no active project or PR being reviewed, don't show the overlay
   if (!project || !reviewingPrId || !pr) return null
@@ -99,21 +99,21 @@ export function PRReviewOverlay() {
             </div>
           )}
           
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex flex-col min-w-0 flex-1">
-              <p className="text-[11px] text-(--ms-text-muted) leading-relaxed max-w-sm hidden sm:block">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col min-w-0">
+              <p className="text-[12px] text-(--ms-text-muted) leading-relaxed">
                 {reviewMode === 'suggested' 
-                  ? "You are viewing the proposed changes from the collaborator's fork. Inspect slides and layers, then merge them." 
+                  ? "You are viewing the proposed changes from the collaborator's branch. Inspect slides and layers, then merge them." 
                   : "You are viewing your current project base. Switch to Proposed to inspect what changes will be applied."}
               </p>
               {pr.description && (
-                <p className="text-[10px] text-(--ms-text-muted) italic mt-1 truncate">
+                <p className="text-[11px] text-(--ms-text-muted) italic mt-1 truncate">
                   Description: {pr.description}
                 </p>
               )}
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+            <div className="flex flex-wrap items-center gap-2 w-full justify-start md:justify-end shrink-0">
               <button
                 disabled={isPending}
                 onClick={cancelReview}

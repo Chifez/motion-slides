@@ -47,12 +47,53 @@ export function CommitTree({
   // Sort chronologically descending
   allCommits.sort((a, b) => b.createdAt - a.createdAt)
 
-  // Map each unique project ID to a lane index
-  const uniqueProjectIds = Array.from(new Set(allCommits.map(c => c.projectId)))
-  const projectLaneMap = new Map<string, number>()
-  uniqueProjectIds.forEach((id, index) => {
-    projectLaneMap.set(id, index)
+  // --- Strand-based lane assignment ---
+  // Instead of grouping by projectId (which causes the inherited base commit from a parent
+  // to land in a different lane than the branch's own commits), we walk each commit's
+  // parentCommitId chain and assign lanes based on continuous strands of ancestry.
+  //
+  // Algorithm:
+  // 1. Build a lookup map: commitId → commit
+  // 2. Find all "strand heads" — commits that are not referenced as a parent by any other commit
+  //    (i.e., the latest commit on each diverged line).
+  // 3. Walk each strand head down its parent chain, assigning it to the current lane.
+  //    When we reach a commit that is already assigned a lane (shared ancestor / merge point),
+  //    we stop — it keeps its already-assigned lane.
+
+  const commitById = new Map<string, GitCommit>()
+  allCommits.forEach(c => commitById.set(c.id, c))
+
+  // Set of all commit IDs that are someone else's parent
+  const isParentOf = new Set<string>()
+  allCommits.forEach(c => { if (c.parentCommitId) isParentOf.add(c.parentCommitId) })
+
+  // Strand heads = commits that are NOT a parent of any other commit in the visible set
+  const strandHeads = allCommits.filter(c => !isParentOf.has(c.id))
+
+  // Sort strand heads so that "own branch" commits come first (deterministic order)
+  strandHeads.sort((a, b) => b.createdAt - a.createdAt)
+
+  const commitLaneMap = new Map<string, number>()
+  let nextLane = 0
+
+  for (const head of strandHeads) {
+    let curr: GitCommit | undefined = head
+    while (curr) {
+      if (commitLaneMap.has(curr.id)) break // already assigned (shared ancestor)
+      commitLaneMap.set(curr.id, nextLane)
+      curr = curr.parentCommitId ? commitById.get(curr.parentCommitId) : undefined
+    }
+    nextLane++
+  }
+
+  // Any commits not reached by the strand walk (orphans) get their own lane
+  allCommits.forEach(c => {
+    if (!commitLaneMap.has(c.id)) {
+      commitLaneMap.set(c.id, nextLane++)
+    }
   })
+
+  const numLanes = nextLane
 
   // Lane colors matching the reference image aesthetics
   const laneColors = [
@@ -63,8 +104,8 @@ export function CommitTree({
     '#8b5cf6', // Violet
   ]
 
-  const getLaneColor = (projectId: string) => {
-    const idx = projectLaneMap.get(projectId) ?? 0
+  const getLaneColor = (commitId: string) => {
+    const idx = commitLaneMap.get(commitId) ?? 0
     return laneColors[idx % laneColors.length]
   }
 
@@ -77,8 +118,7 @@ export function CommitTree({
     const index = allCommits.findIndex(c => c.id === commitId)
     if (index === -1) return null
 
-    const commit = allCommits[index]
-    const lane = projectLaneMap.get(commit.projectId) ?? 0
+    const lane = commitLaneMap.get(commitId) ?? 0
 
     return {
       x: lane * laneWidth + leftOffset,
@@ -166,7 +206,7 @@ export function CommitTree({
       {/* SVG Connection Layer */}
       <svg
         className="absolute top-0 left-0 pointer-events-none"
-        style={{ width: uniqueProjectIds.length * laneWidth + 50, height: svgHeight }}
+        style={{ width: numLanes * laneWidth + 50, height: svgHeight }}
       >
         <g>
           {allCommits.map(commit => {
@@ -175,14 +215,27 @@ export function CommitTree({
             const end = getNodeCoords(commit.parentCommitId)
             if (!start || !end) return null
 
-            // Smooth cubic bezier S-curve representing branches diverging and merging
-            const controlY = (start.y + end.y) / 2
-            const laneColor = getLaneColor(commit.projectId)
+            // Same lane: just a straight line
+            const laneColor = getLaneColor(commit.id)
+            if (start.x === end.x) {
+              return (
+                <path
+                  key={`line-${commit.id}`}
+                  d={`M ${start.x} ${start.y} L ${end.x} ${end.y}`}
+                  fill="none"
+                  stroke={laneColor}
+                  strokeWidth="2"
+                  strokeOpacity="0.65"
+                />
+              )
+            }
 
+            // Different lane: GitHub style tight curve
+            const controlOffset = 30
             return (
               <path
                 key={`line-${commit.id}`}
-                d={`M ${start.x} ${start.y} C ${start.x} ${controlY}, ${end.x} ${controlY}, ${end.x} ${end.y}`}
+                d={`M ${start.x} ${start.y} C ${start.x} ${start.y + controlOffset}, ${end.x} ${end.y - controlOffset}, ${end.x} ${end.y}`}
                 fill="none"
                 stroke={laneColor}
                 strokeWidth="2"
@@ -198,7 +251,7 @@ export function CommitTree({
         {allCommits.map((commit, index) => {
           const coords = getNodeCoords(commit.id)
           const isCheckout = activeCommitId === commit.id
-          const laneColor = getLaneColor(commit.projectId)
+          const laneColor = getLaneColor(commit.id)
 
           return (
             <div
@@ -218,7 +271,7 @@ export function CommitTree({
                   className="absolute pointer-events-none flex items-center justify-center transition duration-150"
                   style={{
                     left: coords.x - 6,
-                    top: coords.y - 6,
+                    top: rowHeight / 2 - 6,
                     width: 12,
                     height: 12,
                   }}
