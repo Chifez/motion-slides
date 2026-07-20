@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite dev --port 3000",
+    "start": "node .output/server/index.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run"
