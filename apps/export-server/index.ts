@@ -32,7 +32,7 @@ import { workbench } from '@getworkbench/express'
 
 const app        = express()
 const PORT       = process.env.PORT ?? 3001
-const OUTPUT_DIR = process.env.OUTPUT_DIR ?? path.join(getStorageDir(), 'exports')
+const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(getStorageDir(), 'exports')
 const EXPORT_TIMEOUT = parseInt(process.env.EXPORT_TIMEOUT_MS ?? '300000')
 
 fs.mkdirSync(OUTPUT_DIR, { recursive: true })
