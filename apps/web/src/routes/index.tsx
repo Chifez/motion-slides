@@ -53,7 +53,7 @@ function LandingPage() {
       <LandingNavbar />
 
       {/* ── Hero ── */}
-      <section className="relative flex flex-col items-center justify-center min-h-screen pt-16 px-6 text-center overflow-hidden">
+      <section className="relative flex flex-col items-center justify-center pt-32 pb-16 md:min-h-screen md:py-16 px-6 text-center overflow-hidden">
         {/* Ambient glows */}
         <div className="absolute top-[-80px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full blur-[100px] bg-blue-600/15 pointer-events-none" />
         <div className="absolute bottom-[10%] right-[5%] w-[400px] h-[300px] rounded-full blur-[80px] bg-purple-600/10 pointer-events-none" />
@@ -65,13 +65,13 @@ function LandingPage() {
           className="relative z-10 flex flex-col items-center max-w-4xl w-full"
         >
           {/* Badge */}
-          <div className="inline-flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full px-3.5 py-1 text-xs text-blue-400 font-medium mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <div className="inline-flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full px-3.5 py-1 text-xs text-blue-400 font-medium mb-6 md:mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
             <Zap size={11} />
             Motion-First Presentation Engine
           </div>
 
           {/* Heading — split typography */}
-          <h1 className="leading-none mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <h1 className="leading-none mb-5 md:mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
             {/* Line 1: serif italic — editorial feel */}
             <span
               className="block text-[clamp(52px,8vw,96px)] text-neutral-200 font-normal italic mb-1"
@@ -89,7 +89,7 @@ function LandingPage() {
             </span>
           </h1>
 
-          <p className="text-[17px] text-neutral-500 max-w-xl leading-relaxed mb-10" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-[16px] sm:text-[17px] text-neutral-500 max-w-xl leading-relaxed mb-8 md:mb-10" style={{ fontFamily: 'Inter, sans-serif' }}>
             MotionSlides is a cinematic presentation engine for developers and designers.
             Transitions are computed, not preset. Code animations are first-class citizens.
           </p>

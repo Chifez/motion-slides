@@ -118,7 +118,7 @@ export function EditorToolbar({ projectId }: Props) {
           onChange={(event) => updateProjectName(projectId, event.target.value)}
           onBlur={(event) => { if (!event.target.value.trim()) updateProjectName(projectId, 'Untitled Deck') }}
           spellCheck={false}
-          className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-md px-1 md:px-2 py-1 text-[13px] text-(--ms-text-primary) font-medium min-w-[60px] md:min-w-[130px] max-w-[220px] focus:outline-none transition truncate hidden md:block disabled:opacity-85"
+          className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-md px-1 md:px-2 py-1 text-[13px] text-(--ms-text-primary) font-medium w-[100px] sm:w-auto sm:min-w-[130px] max-w-[140px] md:max-w-[220px] focus:outline-none transition truncate disabled:opacity-85"
         />
 
         {((!!project.forkedFromId) || (!!project.ownerId && !!user)) && (

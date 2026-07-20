@@ -329,14 +329,14 @@ export function LandingShowcase() {
   return (
     <div className="w-full max-w-4xl mx-auto bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl p-6 relative select-none">
       {/* Title Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4 mb-4">
-        <div>
-          <h3 className="text-white font-bold text-lg tracking-tight">{activeSlide.title}</h3>
-          <p className="text-zinc-400 text-xs mt-0.5">{activeSlide.subtitle}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-800/80 pb-4 mb-4 gap-4 sm:gap-2">
+        <div className="min-w-0 pr-2">
+          <h3 className="text-white font-bold text-lg tracking-tight truncate">{activeSlide.title}</h3>
+          <p className="text-zinc-400 text-xs mt-0.5 line-clamp-2">{activeSlide.subtitle}</p>
         </div>
         
         {/* Playback Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button 
             onClick={() => setIsPlaying(!isPlaying)}
             className="p-2 text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 rounded-xl transition cursor-pointer"
@@ -344,14 +344,14 @@ export function LandingShowcase() {
             {isPlaying ? <Pause size={16} /> : <Play size={16} />}
           </button>
           
-          <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1">
-            <button onClick={handlePrev} className="p-1.5 text-zinc-400 hover:text-white border-none bg-transparent cursor-pointer">
+          <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1 shrink-0">
+            <button onClick={handlePrev} className="p-1.5 text-zinc-400 hover:text-white border-none bg-transparent cursor-pointer shrink-0">
               <ChevronLeft size={16} />
             </button>
-            <span className="text-[10px] font-bold text-zinc-500 px-2 min-w-8 text-center">
+            <span className="text-[10px] font-bold text-zinc-500 px-2 min-w-[2.5rem] text-center whitespace-nowrap">
               {slideIndex + 1} / {MOCK_SLIDES.length}
             </span>
-            <button onClick={handleNext} className="p-1.5 text-zinc-400 hover:text-white border-none bg-transparent cursor-pointer">
+            <button onClick={handleNext} className="p-1.5 text-zinc-400 hover:text-white border-none bg-transparent cursor-pointer shrink-0">
               <ChevronRight size={16} />
             </button>
           </div>

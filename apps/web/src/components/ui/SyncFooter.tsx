@@ -18,7 +18,7 @@ export function SyncFooter() {
   if (!user || location.pathname === '/' || location.pathname.startsWith('/embed')) return null
 
   return (
-    <div className="fixed bottom-4 right-4 bg-(--ms-bg-surface) border border-(--ms-border) rounded-full px-3 py-1.5 shadow-lg z-999 pointer-events-none transition-colors">
+    <div className={`fixed bottom-4 ${isProject ? 'right-[4.5rem]' : 'right-4'} z-[999] pointer-events-none transition-all`}>
       <AnimatePresence mode="wait">
         {isSyncing ? (
           <motion.div
@@ -26,7 +26,7 @@ export function SyncFooter() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="flex items-center gap-2 text-[10px] text-blue-500 font-medium"
+            className="flex items-center gap-2 text-[10px] text-blue-500 font-medium bg-(--ms-bg-surface) border border-(--ms-border) rounded-full px-3 py-1.5 shadow-lg"
           >
             <RefreshCw size={10} className="animate-spin" />
             <span>Syncing database...</span>
@@ -36,7 +36,7 @@ export function SyncFooter() {
             key="error"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-2 text-[10px] text-red-400 font-semibold"
+            className="flex items-center gap-2 text-[10px] text-red-400 font-semibold bg-(--ms-bg-surface) border border-(--ms-border) rounded-full px-3 py-1.5 shadow-lg"
           >
             <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
             <span>Sync failed (Offline)</span>
@@ -46,7 +46,7 @@ export function SyncFooter() {
             key="synced"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-2 text-[10px] text-(--ms-text-muted)"
+            className="hidden md:flex items-center gap-2 text-[10px] text-(--ms-text-muted) bg-(--ms-bg-surface) border border-(--ms-border) rounded-full px-3 py-1.5 shadow-lg"
           >
             <CloudCheck size={10} />
             <span>{isProject ? 'synced' : 'All projects synced'}</span>

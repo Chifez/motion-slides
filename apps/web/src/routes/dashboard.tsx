@@ -89,7 +89,7 @@ function Dashboard() {
   ) : undefined
 
   return (
-    <div className="h-screen flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors">
+    <div className="h-dvh flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors">
       <Tour.Root />
       <DeleteConfirmationModal
         isOpen={deleteModal.isOpen}
@@ -107,22 +107,22 @@ function Dashboard() {
         }}
       />
 
-      <header className="h-14 shrink-0 flex items-center gap-4 px-6 bg-(--ms-bg-surface) border-b border-(--ms-border)">
-        <Link to="/" className="flex items-center gap-2 no-underline">
+      <header className="h-14 shrink-0 flex items-center gap-2 sm:gap-4 px-4 sm:px-6 bg-(--ms-bg-surface) border-b border-(--ms-border)">
+        <Link to="/" className="flex items-center gap-2 no-underline shrink-0">
           <Logo expanded size={30} />
         </Link>
-        <div className="flex-1" />
+        <div className="flex-1 min-w-0" />
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <ThemeToggle />
           <div className="w-px h-6 bg-(--ms-border)" />
           <UserMenu />
-          <div className="w-px h-6 bg-(--ms-border)" />
+          <div className="w-px h-6 bg-(--ms-border) hidden sm:block" />
           <button
             onClick={handleCreate}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
+            className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 rounded-md transition-colors cursor-pointer border-none"
           >
-            <Plus size={14} /> New Project
+            <Plus size={14} className="shrink-0" /> <span className="hidden sm:inline">New Project</span>
           </button>
         </div>
       </header>

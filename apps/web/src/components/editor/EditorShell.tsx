@@ -42,7 +42,7 @@ export const EditorShell = memo(function EditorShell({ projectId, blocker }: Pro
   useOnboardingTrigger('editor', showEditorUI)
 
   return (
-    <div className="h-screen flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors relative">
+    <div className="h-dvh flex flex-col bg-(--ms-bg-base) overflow-hidden transition-colors relative">
       <Tour.Root />
       {showEditorUI && <EditorToolbar projectId={projectId} />}
 

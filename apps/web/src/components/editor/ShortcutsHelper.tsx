@@ -70,6 +70,7 @@ export function ShortcutsHelper({ isOpen, onClose }: ShortcutsHelperProps) {
     <div 
       className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-end justify-center z-[9999] select-none"
       onClick={onClose}
+      onPointerDown={(e) => e.stopPropagation()}
     >
       <div 
         className="w-full max-w-2xl bg-neutral-900/95 border border-white/10 rounded-t-2xl shadow-2xl p-6 flex flex-col h-[320px] backdrop-blur-md text-white animate-in slide-in-from-bottom duration-200"

@@ -15,7 +15,10 @@ export const SlideNavigation = memo(function SlideNavigation() {
   if (totalSlides === 0) return null
 
   return (
-    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-(--ms-bg-surface)/90 border border-(--ms-border) rounded-full px-3 py-1.5 backdrop-blur-md z-40">
+    <div 
+      className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-(--ms-bg-surface)/90 border border-(--ms-border) rounded-full px-3 py-1.5 backdrop-blur-md z-40"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       <button
         onClick={() => setActiveSlide(activeSlideIndex - 1)}
         disabled={activeSlideIndex === 0}
