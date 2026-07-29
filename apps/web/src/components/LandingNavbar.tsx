@@ -9,10 +9,17 @@ export function LandingNavbar() {
         <Logo expanded size={28} />
       </Link>
 
-      <nav className="hidden md:flex items-center gap-7 text-[13px] text-neutral-400 font-medium">
+      <nav className="hidden md:flex items-center gap-7 text-[13px] text-neutral-400 font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>
         <a href="#features" className="hover:text-white transition-colors">Features</a>
-        <a href="https://github.com/Chifez/motion-slides" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Docs</a>
-        <a href="https://github.com/Chifez/motion-slides" target="_blank" rel="noreferrer" className="hover:text-white transition-colors flex items-center gap-1.5">
+        <a href="#ai-studio" className="hover:text-white transition-colors">AI Studio</a>
+        <a href="#git-diffs" className="hover:text-white transition-colors">Git & Code</a>
+        <a href="#comparison" className="hover:text-white transition-colors">Compare</a>
+        <a
+          href="https://github.com/Chifez/motion-slides"
+          target="_blank"
+          rel="noreferrer"
+          className="hover:text-white transition-colors flex items-center gap-1.5"
+        >
           <Github size={14} /> GitHub
         </a>
       </nav>

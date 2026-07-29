@@ -14,6 +14,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PProjectIdRouteImport } from './routes/p.$projectId'
 import { Route as EmbedProjectIdRouteImport } from './routes/embed.$projectId'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiUploadsFilenameRouteImport } from './routes/api/uploads/$filename'
 import { Route as ApiUploadAudioRouteImport } from './routes/api/upload/audio'
 import { Route as ApiGenerateReadmeRouteImport } from './routes/api/generate/readme'
@@ -43,6 +44,11 @@ const PProjectIdRoute = PProjectIdRouteImport.update({
 const EmbedProjectIdRoute = EmbedProjectIdRouteImport.update({
   id: '/embed/$projectId',
   path: '/embed/$projectId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiUploadsFilenameRoute = ApiUploadsFilenameRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
+  '/api/chat': typeof ApiChatRoute
   '/embed/$projectId': typeof EmbedProjectIdRoute
   '/p/$projectId': typeof PProjectIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
+  '/api/chat': typeof ApiChatRoute
   '/embed/$projectId': typeof EmbedProjectIdRoute
   '/p/$projectId': typeof PProjectIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
+  '/api/chat': typeof ApiChatRoute
   '/embed/$projectId': typeof EmbedProjectIdRoute
   '/p/$projectId': typeof PProjectIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/export-view'
+    | '/api/chat'
     | '/embed/$projectId'
     | '/p/$projectId'
     | '/api/auth/$'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/export-view'
+    | '/api/chat'
     | '/embed/$projectId'
     | '/p/$projectId'
     | '/api/auth/$'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/export-view'
+    | '/api/chat'
     | '/embed/$projectId'
     | '/p/$projectId'
     | '/api/auth/$'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   ExportViewRoute: typeof ExportViewRoute
+  ApiChatRoute: typeof ApiChatRoute
   EmbedProjectIdRoute: typeof EmbedProjectIdRoute
   PProjectIdRoute: typeof PProjectIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -197,6 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmbedProjectIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/uploads/$filename': {
       id: '/api/uploads/$filename'
       path: '/api/uploads/$filename'
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   ExportViewRoute: ExportViewRoute,
+  ApiChatRoute: ApiChatRoute,
   EmbedProjectIdRoute: EmbedProjectIdRoute,
   PProjectIdRoute: PProjectIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
