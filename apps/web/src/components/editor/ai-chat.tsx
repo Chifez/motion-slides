@@ -19,6 +19,7 @@ export function AIChat() {
 
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const currentSnapshotRef = useRef<string | null>(null)
 
   const { messages, sendMessage, status, stop, addToolOutput } = useChat({
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
@@ -45,6 +46,16 @@ export function AIChat() {
     },
     onError: (err) => {
       console.error('[MotionSlide Agent] Chat error:', err)
+      if (currentSnapshotRef.current) {
+        useEditorStore.getState().restoreSnapshot(currentSnapshotRef.current)
+        currentSnapshotRef.current = null
+      }
+    },
+    onFinish: () => {
+      if (currentSnapshotRef.current) {
+        useEditorStore.getState().discardSnapshot(currentSnapshotRef.current)
+        currentSnapshotRef.current = null
+      }
     },
   })
 
@@ -54,6 +65,7 @@ export function AIChat() {
     if (!text.trim() || isLoading) return
     const content = text
     setInput('')
+    currentSnapshotRef.current = useEditorStore.getState().pushSnapshot()
     await sendMessage({ text: content, body: { model: selectedModel } })
   }
 

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { streamText, convertToModelMessages, stepCountIs } from 'ai'
+import { streamText, convertToModelMessages, stepCountIs, NoSuchToolError, InvalidToolInputError } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { db } from '@/lib/db'
@@ -20,14 +20,15 @@ Your role is to help users design, build, and refine their presentations and arc
 
 ## Guidelines
 
-1. **Always read context first** — Before making sweeping changes, use the \`getProjectContext\` tool to understand the current slide structure.
-2. **Be proactive** — Complete the user's intent fully. When creating a diagram or slide, add title headers, section boundaries, shape nodes, and line connectors together in a logical sequence.
-3. **Density & Multi-Slide Breakdown** — To maintain high visual quality (Eraser.io & MotionSlides standard), enforce a maximum of **6–8 nodes per slide**. If a system request is complex (more than 8 nodes), break it into a progressive multi-slide deck:
+1. **Context Hierarchy** — Use \`getProjectContext\` for a lightweight macro overview of the deck. Use \`getSlideContext\` to get detailed elements and properties of a specific slide before making complex edits to it.
+2. **Editing Existing Text** — When the user asks to edit/change/replace existing text, use \`updateElementText\` with \`matchText\` — do NOT call \`addTextElement\` to edit existing content.
+3. **Be proactive** — Complete the user's intent fully. When creating a diagram or slide, add title headers, section boundaries, shape nodes, and line connectors together in a logical sequence.
+4. **Density & Multi-Slide Breakdown** — To maintain high visual quality (Eraser.io & MotionSlides standard), enforce a maximum of **6–8 nodes per slide**. If a system request is complex (more than 8 nodes), break it into a progressive multi-slide deck:
    - **Slide 1 (Macro Overview)**: High-level system overview with 3–5 primary tier blocks.
    - **Slide 2..N (Subsystem Focus)**: Deep dive into specific layers (e.g. Auth/Ingestion, Event Pipeline, Data Tier).
    - **Final Slide (Integrated System)**: Full connected topology.
-4. **Node ID Stability for Magic-Move** — When creating multi-slide walkthroughs, pass identical \`id\` strings for shared nodes across slides so MotionSlides can automatically morph them using \`magic-move\` transitions.
-5. **Canvas Coordinate System (1280×720 Canvas)**:
+5. **Node ID Stability for Magic-Move** — When creating multi-slide walkthroughs, pass identical \`id\` strings for shared nodes across slides so MotionSlides can automatically morph them using \`magic-move\` transitions.
+6. **Canvas Coordinate System (1280×720 Canvas)**:
    - Header / Title text: y ≈ 40–80, x ≈ 80, fontSize ≈ 36–48
    - Tier 1 (Client / Edge Ingestion): y ≈ 120–200
    - Tier 2 (Gateway / Logic / Microservices): y ≈ 280–380
@@ -131,7 +132,17 @@ export const Route = createFileRoute('/api/chat')({
           stopWhen: stepCountIs(5),
         })
 
-        return result.toUIMessageStreamResponse()
+        return result.toUIMessageStreamResponse({
+          onError: (error) => {
+            if (NoSuchToolError.isInstance(error)) {
+              return "The model tried to call a tool that doesn't exist. Smaller/local models often struggle with this — try a larger model like GPT-4o or Claude for complex editing tasks."
+            }
+            if (InvalidToolInputError.isInstance(error)) {
+              return 'The model produced malformed tool arguments. This usually means the model is too small for this task — try switching models.'
+            }
+            return 'Something went wrong processing that request.'
+          }
+        })
       },
     },
   },

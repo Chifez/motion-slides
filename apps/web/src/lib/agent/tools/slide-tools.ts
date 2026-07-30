@@ -9,7 +9,7 @@ export const slideToolSchemas = {
     description: 'Add a new blank slide to the presentation. Supports optional targetIndex for non-sequential additions.',
     inputSchema: z.object({
       name: z.string().optional().describe('A short descriptive name for the new slide'),
-      background: z.string().optional().describe('CSS color or gradient for the slide background'),
+      background: z.string().optional().describe("Hex background color for the slide. Omit to inherit the presentation's existing dark theme."),
       targetIndex: z.number().optional().describe('Optional 0-based index target (e.g. 7 for Slide 8). Automatically creates intermediate slides if higher than current deck length.'),
     }),
   }),
@@ -34,8 +34,14 @@ export const slideToolSchemas = {
     }),
   }),
   getProjectContext: tool({
-    description: 'Get a full summary of the current presentation — slides, elements, and transitions. Use before complex edits.',
+    description: 'Get a lightweight summary of the whole deck: slide count, and per-slide a short title/summary + element count. Does NOT include full element detail — call getSlideContext(slideIndex) for a specific slide before editing it.',
     inputSchema: z.object({}),
+  }),
+  getSlideContext: tool({
+    description: 'Get full detail (all elements, positions, styles) for one specific slide.',
+    inputSchema: z.object({
+      slideIndex: z.number().describe('0-based slide index'),
+    }),
   }),
 }
 
@@ -63,44 +69,53 @@ export async function executeSlideTool(toolName: string, args: Record<string, un
       const { activeProjectId } = store
       if (!activeProjectId) return { success: false, error: 'No active project.' }
 
-      const project = store.activeProject()
-      const currentCount = project?.slides.length ?? 0
-      const defaultBg = project?.slides[0]?.background ?? '#0d0d14'
-      const bg = background ?? defaultBg
+      let createdCount = 0
+      let newActiveIndex = 0
+      let targetSlideId = ''
+      let targetSlideName = ''
 
-      const requiredIndex = targetIndex !== undefined && targetIndex >= currentCount ? targetIndex : currentCount
-      const createdSlides = []
+      useEditorStore.setState((s) => {
+        const p = s.projects.find(proj => proj.id === activeProjectId)
+        if (!p) return s
+        const currentCount = p.slides.length
+        const defaultBg = p.slides[0]?.background ?? '#0d0d14'
+        const bg = background ?? defaultBg
 
-      for (let i = currentCount; i <= requiredIndex; i++) {
-        const isTarget = i === requiredIndex
-        const slideNum = i + 1
-        const slideName = isTarget ? (name || `Slide ${slideNum}`) : `Slide ${slideNum}`
-        createdSlides.push({
-          id: uuid(),
-          name: slideName,
-          elements: [] as SceneElement[],
-          background: bg,
-        })
-      }
+        const requiredIndex = targetIndex !== undefined && targetIndex >= currentCount ? targetIndex : currentCount
+        const createdSlides = []
 
-      const finalSlides = [...(project?.slides ?? []), ...createdSlides]
-      const newActiveIndex = requiredIndex
+        for (let i = currentCount; i <= requiredIndex; i++) {
+          const isTarget = i === requiredIndex
+          const slideNum = i + 1
+          const slideName = isTarget ? (name || `Slide ${slideNum}`) : `Slide ${slideNum}`
+          createdSlides.push({
+            id: uuid(),
+            name: slideName,
+            elements: [] as SceneElement[],
+            background: bg,
+          })
+        }
 
-      useEditorStore.setState((s) => ({
-        projects: s.projects.map((p) =>
-          p.id !== activeProjectId
-            ? p
-            : { ...p, slides: finalSlides, updatedAt: Date.now(), synced: false },
-        ),
-        activeSlideIndex: newActiveIndex,
-      }))
+        createdCount = createdSlides.length
+        newActiveIndex = requiredIndex
+        targetSlideId = createdSlides[createdSlides.length - 1].id
+        targetSlideName = createdSlides[createdSlides.length - 1].name
 
-      const targetSlide = createdSlides[createdSlides.length - 1]
+        return {
+          projects: s.projects.map((proj) =>
+            proj.id !== activeProjectId
+              ? proj
+              : { ...proj, slides: [...proj.slides, ...createdSlides], updatedAt: Date.now(), synced: false },
+          ),
+          activeSlideIndex: newActiveIndex,
+        }
+      })
+
       return {
         success: true,
-        createdCount: createdSlides.length,
-        slideId: targetSlide.id,
-        slideName: targetSlide.name,
+        createdCount,
+        slideId: targetSlideId,
+        slideName: targetSlideName,
         activeSlideIndex: newActiveIndex,
       }
     }
@@ -126,10 +141,11 @@ export async function executeSlideTool(toolName: string, args: Record<string, un
 
     case 'setSlideBackground': {
       const { background, slideIndex } = args as { background: string; slideIndex?: number }
+      const activeProjectId = store.activeProjectId
+      
       const slide = getTargetSlide(store, slideIndex)
       if (!slide) return { success: false, error: `Slide ${slideIndex ?? 'active'} not found.` }
 
-      const activeProjectId = store.activeProjectId
       useEditorStore.setState((s) => ({
         projects: s.projects.map((p) =>
           p.id !== activeProjectId
@@ -154,18 +170,40 @@ export async function executeSlideTool(toolName: string, args: Record<string, un
         projectName: project.name,
         slideCount: project.slides.length,
         activeSlideIndex: store.activeSlideIndex,
-        slides: project.slides.map((s, i) => ({
-          index: i, id: s.id, name: s.name, elementCount: s.elements.length,
-          elements: s.elements.map((el) => ({
-            id: el.id, type: el.type, animation: el.animation,
-            preview: el.type === 'text' ? String((el.content as unknown as Record<string, unknown>).value ?? '').slice(0, 50) : el.type,
-          })),
-        })),
+        slides: project.slides.map((s, i) => {
+          const firstText = s.elements.find(el => el.type === 'text')
+          const snippet = firstText ? String((firstText.content as any).value ?? '').slice(0, 50) : null
+          return {
+            index: i,
+            id: s.id,
+            name: s.name,
+            elementCount: s.elements.length,
+            firstTextSnippet: snippet
+          }
+        }),
         transitions: project.transitions.map((t) => {
           const from = project.slides.find((s) => s.id === t.fromSlideId)
           const to = project.slides.find((s) => s.id === t.toSlideId)
           return { id: t.id, from: from?.name, to: to?.name, animation: t.animation, trigger: t.trigger }
         }),
+      }
+    }
+
+    case 'getSlideContext': {
+      const { slideIndex } = args as { slideIndex: number }
+      const project = store.activeProject()
+      if (!project) return { success: false, error: 'No active project.' }
+      const slide = project.slides[slideIndex]
+      if (!slide) return { success: false, error: `Slide index ${slideIndex} out of range.` }
+
+      return {
+        success: true,
+        slideName: slide.name,
+        background: slide.background,
+        elements: slide.elements.map((el) => ({
+          id: el.id, type: el.type, animation: el.animation,
+          content: el.content, position: el.position, size: el.size,
+        })),
       }
     }
 

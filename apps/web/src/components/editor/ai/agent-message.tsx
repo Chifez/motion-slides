@@ -34,12 +34,9 @@ const TOOL_META: Record<string, ToolMeta> = {
 // ── Tool call card ────────────────────────────────────────────────
 
 function ToolCallCard({ toolPart }: { toolPart: Record<string, unknown> }) {
-  // In AI SDK v6 UIMessage format, tool-invocation parts nest data under `toolInvocation`.
-  // Fall back to the flat structure for forward compatibility.
-  const invocation = (toolPart.toolInvocation ?? toolPart) as Record<string, unknown>
-
   const type = String(toolPart.type ?? '')
-  const toolName = String(invocation.toolName ?? type.replace(/^tool-/, ''))
+  const toolName = String(toolPart.toolName ?? type.replace(/^tool-/, ''))
+  
   const meta = TOOL_META[toolName] ?? {
     activeLabel: toolName,
     completedLabel: `${toolName} completed`,
@@ -48,17 +45,17 @@ function ToolCallCard({ toolPart }: { toolPart: Record<string, unknown> }) {
   }
   const Icon = meta.icon
 
-  // State lives on the invocation object in v6
-  const state = String(invocation.state ?? '')
-  const hasResult = state === 'result'
+  const state = String(toolPart.state ?? '')
+  const hasResult = state === 'output-available'
+  const isSdkOutputError = state === 'output-error'
 
-  // Result can be at invocation.result or invocation.output (older shape)
   const res = hasResult
-    ? ((invocation.result ?? invocation.output) as Record<string, unknown> | undefined)
+    ? (toolPart.output as Record<string, unknown> | undefined)
     : undefined
 
-  const isSuccess = hasResult && res?.success !== false
-  const isError = hasResult && res?.success === false
+  const isLogicalError = hasResult && res?.success === false
+  const isError = isSdkOutputError || isLogicalError
+  const isSuccess = hasResult && !isError
 
   const labelText = isError
     ? `${meta.activeLabel} failed`
@@ -86,7 +83,7 @@ function ToolCallCard({ toolPart }: { toolPart: Record<string, unknown> }) {
       {isError && (
         <span className="flex items-center gap-1 text-red-400 shrink-0">
           <XCircle size={13} />
-          <span className="text-[10px]">{String(res?.error ?? '')}</span>
+          <span className="text-[10px]">{String(res?.error ?? toolPart.errorText ?? '')}</span>
         </span>
       )}
     </motion.div>
