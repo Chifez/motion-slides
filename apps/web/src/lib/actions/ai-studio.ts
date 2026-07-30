@@ -68,8 +68,9 @@ async function interceptAIAction(actionFn: (keys: { openai: string; elevenlabs: 
 }
 
 export const transcribeAudioAction = createServerFn({ method: 'POST' })
-  .handler(async ({ request }) => {
-    const formData = await request.formData()
+  .inputValidator(z.instanceof(FormData))
+  .handler(async ({ data }: { data: FormData }) => {
+    const formData = data
     return interceptAIAction(async (keys) => {
       const file = formData.get('audio') as File
       if (!file) throw new Error('No audio file provided')

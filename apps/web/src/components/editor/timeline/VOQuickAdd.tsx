@@ -136,7 +136,7 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
       const result = await generateVoiceoverAction({ data: { text: aiText, voiceId, settings: {} } })
       onSave({
         id: Math.random().toString(36).substring(7),
-        url: result.audioUrl || '/placeholder-audio.mp3',
+        url: (result as { audioUrl?: string })?.audioUrl || '/placeholder-audio.mp3',
         fileName: `AI Voice (${voiceId})`,
         duration: 3.5,
         volume: 1,

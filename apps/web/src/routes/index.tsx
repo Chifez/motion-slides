@@ -1,10 +1,15 @@
 import { createFileRoute, redirect, Link } from '@tanstack/react-router'
-import { ChevronRight, Zap, LayoutTemplate, Code2, Share2, WifiOff } from 'lucide-react'
+import { ChevronRight, Zap } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { LandingNavbar } from '@/components/LandingNavbar'
 import { LandingFooter } from '@/components/LandingFooter'
 import { getSessionFn } from '@/lib/auth-actions'
 import { LandingShowcase } from '@/components/marketing/LandingShowcase'
+import { LandingPillars } from '@/components/marketing/LandingPillars'
+import { LandingGitDiffFeature } from '@/components/marketing/LandingGitDiffFeature'
+import { LandingAIStudioFeature } from '@/components/marketing/LandingAIStudioFeature'
+import { LandingComparison } from '@/components/marketing/LandingComparison'
+import { LandingExportOffline } from '@/components/marketing/LandingExportOffline'
 
 export const Route = createFileRoute('/')({
   beforeLoad: async () => {
@@ -16,32 +21,10 @@ export const Route = createFileRoute('/')({
   component: LandingPage,
 })
 
-const features = [
-  {
-    icon: <LayoutTemplate size={18} />,
-    title: 'State-Based Slides',
-    desc: 'Slides are scene states, not pages. Every transition is computed from element identity — not presets.',
-  },
-  {
-    icon: <Code2 size={18} />,
-    title: 'Code-Aware Diffs',
-    desc: 'Insert a line of code and watch it animate into existence. LCS diffing makes every character count.',
-  },
-  {
-    icon: <Share2 size={18} />,
-    title: 'Architecture Diagrams',
-    desc: 'Ten semantic shapes, drag-to-connect, and SVG path morphing — built for technical storytelling.',
-  },
-  {
-    icon: <WifiOff size={18} />,
-    title: 'Offline First',
-    desc: 'Works without a login. Everything lives in IndexedDB. Export to PDF, PNG, or HTML anytime.',
-  },
-]
 
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-black text-white overflow-y-auto">
+    <div className="min-h-screen text-white overflow-y-auto" style={{ background: '#050507' }}>
       {/* Google Fonts */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -50,14 +33,71 @@ function LandingPage() {
         rel="stylesheet"
       />
 
+      {/* ── Animated background orbs ─────────────────────────────────────── */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        {/* Primary blue orb - top center */}
+        <motion.div
+          animate={{
+            scale: [1, 1.15, 1],
+            opacity: [0.12, 0.2, 0.12],
+            x: ['-50%', '-45%', '-55%', '-50%'],
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute"
+          style={{
+            top: '-80px',
+            left: '50%',
+            width: 800,
+            height: 600,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(59,130,246,1) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+            transform: 'translateX(-50%)',
+          }}
+        />
+        {/* Purple orb - bottom right */}
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 0.9, 1],
+            opacity: [0.08, 0.14, 0.08],
+          }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+          className="absolute"
+          style={{
+            bottom: '5%',
+            right: '-5%',
+            width: 600,
+            height: 500,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(139,92,246,1) 0%, transparent 70%)',
+            filter: 'blur(90px)',
+          }}
+        />
+        {/* Emerald orb - mid left */}
+        <motion.div
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.05, 0.1, 0.05],
+            y: [0, -30, 0],
+          }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 6 }}
+          className="absolute"
+          style={{
+            top: '40%',
+            left: '-8%',
+            width: 500,
+            height: 400,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(16,185,129,1) 0%, transparent 70%)',
+            filter: 'blur(100px)',
+          }}
+        />
+      </div>
+
       <LandingNavbar />
 
-      {/* ── Hero ── */}
-      <section className="relative flex flex-col items-center justify-center pt-32 pb-16 md:min-h-screen md:py-16 px-6 text-center overflow-hidden">
-        {/* Ambient glows */}
-        <div className="absolute top-[-80px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full blur-[100px] bg-blue-600/15 pointer-events-none" />
-        <div className="absolute bottom-[10%] right-[5%] w-[400px] h-[300px] rounded-full blur-[80px] bg-purple-600/10 pointer-events-none" />
-
+      {/* ── Hero ───────────────────────────────────────────────────────────── */}
+      <section className="relative flex flex-col items-center justify-center pt-36 pb-16 md:min-h-screen md:py-20 px-6 text-center overflow-hidden z-10">
         <motion.div
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
@@ -65,21 +105,22 @@ function LandingPage() {
           className="relative z-10 flex flex-col items-center max-w-4xl w-full"
         >
           {/* Badge */}
-          <div className="inline-flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full px-3.5 py-1 text-xs text-blue-400 font-medium mb-6 md:mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <div
+            className="inline-flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full px-3.5 py-1 text-xs text-blue-400 font-medium mb-6 md:mb-8"
+            style={{ fontFamily: 'Inter, sans-serif' }}
+          >
             <Zap size={11} />
             Motion-First Presentation Engine
           </div>
 
-          {/* Heading — split typography */}
+          {/* Heading */}
           <h1 className="leading-none mb-5 md:mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-            {/* Line 1: serif italic — editorial feel */}
             <span
               className="block text-[clamp(52px,8vw,96px)] text-neutral-200 font-normal italic mb-1"
               style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
             >
               Slides that move.
             </span>
-            {/* Line 2: sans-serif bold — technical precision */}
             <span
               className="block text-[clamp(36px,5vw,64px)] font-bold tracking-[-2px] text-white"
               style={{ fontFamily: 'Inter, sans-serif' }}
@@ -89,7 +130,10 @@ function LandingPage() {
             </span>
           </h1>
 
-          <p className="text-[16px] sm:text-[17px] text-neutral-500 max-w-xl leading-relaxed mb-8 md:mb-10" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p
+            className="text-[16px] sm:text-[17px] text-neutral-500 max-w-xl leading-relaxed mb-8 md:mb-10"
+            style={{ fontFamily: 'Inter, sans-serif' }}
+          >
             MotionSlides is a cinematic presentation engine for developers and designers.
             Transitions are computed, not preset. Code animations are first-class citizens.
           </p>
@@ -115,52 +159,49 @@ function LandingPage() {
         </motion.div>
       </section>
 
-      {/* ── Interactive Canvas Showcase ── */}
-      <section className="px-6 pb-12 relative z-10">
+      {/* ── Interactive Editor Showcase ────────────────────────────────────── */}
+      <section className="px-4 sm:px-6 pb-12 relative z-10">
         <LandingShowcase />
       </section>
 
-      {/* ── Features ── */}
-      <section id="features" className="px-6 pb-24 pt-6 max-w-5xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <p className="text-[11px] uppercase tracking-widest text-neutral-600 font-semibold text-center mb-3" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Everything you need
-          </p>
-          <h2
-            className="text-[clamp(28px,4vw,44px)] font-bold tracking-tight text-white text-center mb-12"
-            style={{ fontFamily: 'Inter, sans-serif' }}
-          >
-            Built different
-          </h2>
+      {/* ── Subtle section divider ─────────────────────────────────────────── */}
+      <div className="relative z-10 h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-zinc-800 to-transparent my-4" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {features.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-white/3 border border-white/7 rounded-2xl p-6 hover:border-white/12 transition-colors"
-              >
-                <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-blue-400 mb-4">
-                  {f.icon}
-                </div>
-                <div className="text-[15px] font-semibold text-neutral-100 mb-1.5" style={{ fontFamily: 'Inter, sans-serif' }}>{f.title}</div>
-                <div className="text-[13px] text-neutral-500 leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>{f.desc}</div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
+      {/* ── Feature Pillars ───────────────────────────────────────────────── */}
+      <div className="relative z-10">
+        <LandingPillars />
+      </div>
 
-      {/* ── CTA ── */}
-      <section className="px-6 pb-24 flex flex-col items-center text-center">
+      <div className="relative z-10 h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
+
+      {/* ── Git & Code Intelligence ────────────────────────────────────────── */}
+      <div className="relative z-10">
+        <LandingGitDiffFeature />
+      </div>
+
+      <div className="relative z-10 h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
+
+      {/* ── AI Presentation Studio ────────────────────────────────────────── */}
+      <div className="relative z-10">
+        <LandingAIStudioFeature />
+      </div>
+
+      <div className="relative z-10 h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
+
+      {/* ── Export & Offline ──────────────────────────────────────────────── */}
+      <div className="relative z-10">
+        <LandingExportOffline />
+      </div>
+
+      <div className="relative z-10 h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
+
+      {/* ── Comparison ────────────────────────────────────────────────────── */}
+      <div className="relative z-10">
+        <LandingComparison />
+      </div>
+
+      {/* ── CTA ──────────────────────────────────────────────────────────── */}
+      <section className="px-6 py-24 flex flex-col items-center text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -168,13 +209,27 @@ function LandingPage() {
           transition={{ duration: 0.6 }}
           className="max-w-2xl"
         >
+          {/* Glow ring */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
+              filter: 'blur(40px)',
+            }}
+          />
           <h2
-            className="text-[clamp(28px,4vw,52px)] font-bold tracking-tight text-white mb-4"
+            className="text-[clamp(28px,4vw,52px)] font-bold tracking-tight text-white mb-4 relative"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
-            Ready to present differently?
+            Ready to present{' '}
+            <span className="italic font-normal" style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}>
+              differently?
+            </span>
           </h2>
-          <p className="text-neutral-500 text-[16px] mb-8 leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p
+            className="text-neutral-500 text-[16px] mb-8 leading-relaxed"
+            style={{ fontFamily: 'Inter, sans-serif' }}
+          >
             No account needed. Open the dashboard and start building in seconds.
           </p>
           <Link

@@ -244,11 +244,11 @@ export const AISlideStrictSchema = AISlideBaseSchema.superRefine((slide, ctx) =>
   }
 
   if (slide.role === 'diagram') {
-    const nodeCount = slide.logicalNodes?.length ?? 0
+    const nodeCount = (slide.logicalNodes?.length ?? 0) || (slide.elements?.length ?? 0)
     if (nodeCount < 3) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `Diagram slide "${slide.id}" has ${nodeCount} logicalNodes — minimum 3 required.`,
+        message: `Diagram slide "${slide.id}" has ${nodeCount} nodes — minimum 3 required.`,
         path: ['logicalNodes'],
       })
     }

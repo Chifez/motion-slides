@@ -1,19 +1,24 @@
 import crypto from 'crypto'
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
-if (!ENCRYPTION_KEY || ENCRYPTION_KEY.length !== 32) {
-  throw new Error(
-    '[encryption] ENCRYPTION_KEY environment variable must be set and exactly 32 characters (256-bit AES key). ' +
-    'Generate one with: openssl rand -hex 16'
-  )
+function getEncryptionKey(): string | null {
+  const key = process.env.ENCRYPTION_KEY
+  if (!key || key.length !== 32) {
+    return null
+  }
+  return key
 }
 
 const IV_LENGTH = 16 // For AES, this is always 16
 
 export function encrypt(text: string): string {
   if (!text) return text
+  const key = getEncryptionKey()
+  if (!key) {
+    console.warn('[encryption] ENCRYPTION_KEY not configured (must be 32 chars). Returning raw text.')
+    return text
+  }
   const iv = crypto.randomBytes(IV_LENGTH)
-  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY!), iv)
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key), iv)
   let encrypted = cipher.update(text)
   encrypted = Buffer.concat([encrypted, cipher.final()])
   return iv.toString('hex') + ':' + encrypted.toString('hex')
@@ -21,11 +26,20 @@ export function encrypt(text: string): string {
 
 export function decrypt(text: string): string {
   if (!text) return text
-  const textParts = text.split(':')
-  const iv = Buffer.from(textParts.shift()!, 'hex')
-  const encryptedText = Buffer.from(textParts.join(':'), 'hex')
-  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY!), iv)
-  let decrypted = decipher.update(encryptedText)
-  decrypted = Buffer.concat([decrypted, decipher.final()])
-  return decrypted.toString()
+  const key = getEncryptionKey()
+  if (!key) {
+    return text
+  }
+  try {
+    const textParts = text.split(':')
+    if (textParts.length < 2) return text
+    const iv = Buffer.from(textParts.shift()!, 'hex')
+    const encryptedText = Buffer.from(textParts.join(':'), 'hex')
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv)
+    let decrypted = decipher.update(encryptedText)
+    decrypted = Buffer.concat([decrypted, decipher.final()])
+    return decrypted.toString()
+  } catch {
+    return text
+  }
 }

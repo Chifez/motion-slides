@@ -40,7 +40,27 @@ describe('AI Schema Decoupling (Lax vs Strict)', () => {
               position: { x: 0.1, y: 0.2, w: 0.08, h: 0.08 },
               animation: null,
               animationDelay: null,
-            }
+            },
+            {
+              id: 'node-server',
+              type: 'icon' as const,
+              iconPath: 'aws-ec2',
+              label: 'App Server',
+              layer: 'Logic Layer',
+              position: { x: 0.4, y: 0.5, w: 0.08, h: 0.08 },
+              animation: null,
+              animationDelay: null,
+            },
+            {
+              id: 'node-db',
+              type: 'icon' as const,
+              iconPath: 'aws-rds',
+              label: 'Main Database',
+              layer: 'Data Layer',
+              position: { x: 0.7, y: 0.7, w: 0.08, h: 0.08 },
+              animation: null,
+              animationDelay: null,
+            },
           ],
           connections: []
         }
