@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
+import { lastAssistantMessageIsCompleteWithToolCalls } from 'ai'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEditorStore } from '@/store/editor-store'
 import { executeAgentTool } from '@/lib/agent/tools'
@@ -19,15 +20,27 @@ export function AIChat() {
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { messages, sendMessage, status, stop } = useChat({
+  const { messages, sendMessage, status, stop, addToolOutput } = useChat({
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+    body: {
+      model: selectedModel,
+    },
     onToolCall: async ({ toolCall }) => {
-      const tc = toolCall as unknown as { toolName: string; input?: Record<string, unknown>; args?: Record<string, unknown> }
+      console.log('[MotionSlide Agent] Received toolCall:', toolCall)
+      
+      const tc = toolCall as unknown as { toolCallId: string; toolName: string; input?: Record<string, unknown>; args?: Record<string, unknown> }
       const toolName = tc.toolName
       const toolArgs = tc.input ?? tc.args ?? {}
+      
       try {
-        await executeAgentTool(toolName, toolArgs)
+        console.log(`[MotionSlide Agent] Executing tool "${toolName}" with args:`, toolArgs)
+        const res = await executeAgentTool(toolName, toolArgs)
+        console.log(`[MotionSlide Agent] Tool "${toolName}" executed successfully. Result:`, res)
+        addToolOutput({ toolCallId: tc.toolCallId, result: res })
+        console.log(`[MotionSlide Agent] Called addToolOutput for "${toolName}"`)
       } catch (err) {
         console.error(`[MotionSlide Agent] Tool "${toolName}" execution failed:`, err)
+        addToolOutput({ toolCallId: tc.toolCallId, result: { success: false, error: String(err) } })
       }
     },
     onError: (err) => {
@@ -41,7 +54,7 @@ export function AIChat() {
     if (!text.trim() || isLoading) return
     const content = text
     setInput('')
-    await sendMessage({ text: content })
+    await sendMessage({ text: content, body: { model: selectedModel } })
   }
 
   // Auto-scroll to latest message

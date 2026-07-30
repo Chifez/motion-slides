@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { streamText } from 'ai'
+import { streamText, convertToModelMessages, stepCountIs } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { db } from '@/lib/db'
@@ -73,46 +73,6 @@ function resolveProvider(modelId: string, openaiKey: string, anthropicKey: strin
   return openaiProvider(modelId as Parameters<ReturnType<typeof createOpenAI>>[0])
 }
 
-function normalizeMessagesForStreamText(rawMessages: unknown[]): Array<{ role: 'user' | 'assistant' | 'system'; content: string }> {
-  if (!Array.isArray(rawMessages)) return []
-
-  const result: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = []
-
-  for (const m of rawMessages) {
-    if (!m || typeof m !== 'object') continue
-
-    const msg = m as Record<string, unknown>
-    const role = msg.role === 'assistant' ? 'assistant' : msg.role === 'system' ? 'system' : 'user'
-
-    let textContent = ''
-
-    if (typeof msg.content === 'string') {
-      textContent = msg.content
-    } else if (Array.isArray(msg.content)) {
-      textContent = (msg.content as Array<Record<string, unknown>>)
-        .filter((c) => c && typeof c === 'object' && c.type === 'text')
-        .map((c) => String(c.text ?? ''))
-        .join('\n')
-    } else if (Array.isArray(msg.parts)) {
-      textContent = (msg.parts as Array<Record<string, unknown>>)
-        .filter((p) => p && typeof p === 'object' && (p.type === 'text' || p.text))
-        .map((p) => String(p.text ?? ''))
-        .join('\n')
-    } else if (typeof msg.text === 'string') {
-      textContent = msg.text
-    }
-
-    if (textContent.trim() || role === 'user') {
-      result.push({
-        role,
-        content: textContent,
-      })
-    }
-  }
-
-  return result
-}
-
 export const Route = createFileRoute('/api/chat')({
   server: {
     handlers: {
@@ -141,8 +101,12 @@ export const Route = createFileRoute('/api/chat')({
         const rawMessages = Array.isArray(raw.messages) ? raw.messages : []
         const model = typeof raw.model === 'string' ? raw.model : 'gpt-4o'
 
-        // Robustly normalize messages for streamText
-        const modelMessages = normalizeMessagesForStreamText(rawMessages)
+        // Convert UIMessages (AI SDK v6 format with parts arrays that include
+        // tool call/result parts) into CoreMessages that streamText expects.
+        // This is critical for multi-step agentic loops: the old hand-rolled
+        // normalizer was stripping all non-text parts, so tool results were
+        // never delivered back to the model, causing infinite "reading project" hangs.
+        const modelMessages = await convertToModelMessages(rawMessages)
 
         // For Ollama models, no server-side auth is required
         const isOllamaModel = OLLAMA_MODELS.has(model)
@@ -164,9 +128,10 @@ export const Route = createFileRoute('/api/chat')({
           system: SYSTEM_PROMPT,
           messages: modelMessages,
           tools: agentToolSchemas,
+          stopWhen: stepCountIs(5),
         })
 
-        return result.toTextStreamResponse()
+        return result.toUIMessageStreamResponse()
       },
     },
   },
