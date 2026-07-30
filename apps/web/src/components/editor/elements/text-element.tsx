@@ -1,12 +1,12 @@
 import { useLayoutEffect, useRef, useEffect } from 'react'
 import type { SceneElement, TextContent } from '@motionslides/shared'
 import { FONT_WEIGHT_MAP } from '@/constants/editor'
-import { useEditorStore } from '@/store/editorStore'
-import { usePermissions } from '@/context/PermissionContext'
-import { useMotionContext } from '@/context/MotionContext'
-import { tokenizeText } from './text/charTokenizer'
-import { useTextMagicMove } from './text/useTextMagicMove'
-import { TextAnimationLayer } from './text/TextAnimationLayer'
+import { useEditorStore } from '@/store/editor-store'
+import { usePermissions } from '@/context/permission-context'
+import { useMotionContext } from '@/context/motion-context'
+import { tokenizeText } from './text/char-tokenizer'
+import { useTextMagicMove } from './text/use-text-magic-move'
+import { TextAnimationLayer } from './text/text-animation-layer'
 
 interface Props {
   element: SceneElement

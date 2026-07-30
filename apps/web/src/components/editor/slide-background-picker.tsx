@@ -1,6 +1,6 @@
 import { memo, useState } from 'react'
 import { Palette } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 const PRESET_COLORS = [
   '#0a0a0a', '#111827', '#1e1b4b', '#0c4a6e', 

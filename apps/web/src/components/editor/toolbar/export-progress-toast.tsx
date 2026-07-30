@@ -1,4 +1,4 @@
-import type { ExportProgressEvent } from '@/lib/exportClient'
+import type { ExportProgressEvent } from '@/lib/export-client'
 
 interface Props {
   progress: ExportProgressEvent | null

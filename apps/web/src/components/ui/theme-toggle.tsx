@@ -1,5 +1,5 @@
 import { Sun, Moon } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { memo } from 'react'
 
 interface Props {

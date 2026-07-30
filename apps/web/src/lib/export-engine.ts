@@ -5,7 +5,7 @@
  * browser's MediaRecorder API.
  */
 
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { EXPORT_BITRATE, EXPORT_MIME_TYPE_VP9, EXPORT_MIME_TYPE_FALLBACK, getCanvasDimensions } from '@/constants/export'
 
 import * as htmlToImage from 'html-to-image'

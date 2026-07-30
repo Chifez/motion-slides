@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback } from 'react'
 import { Download, Film, FileText, Share2 } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
-import { useClickOutside } from '@/hooks/useClickOutside'
-import { startExport, type ExportProgressEvent } from '@/lib/exportClient'
-import { downloadBlob } from '@/lib/exportEngine'
-import { SOCIAL_PRESETS, type SocialPreset } from '@/lib/socialExport'
-import { ExportProgressToast } from './ExportProgressToast'
-import { useIsMobile } from '@/hooks/useMediaQuery'
+import { useEditorStore } from '@/store/editor-store'
+import { useClickOutside } from '@/hooks/use-click-outside'
+import { startExport, type ExportProgressEvent } from '@/lib/export-client'
+import { downloadBlob } from '@/lib/export-engine'
+import { SOCIAL_PRESETS, type SocialPreset } from '@/lib/social-export'
+import { ExportProgressToast } from './export-progress-toast'
+import { useIsMobile } from '@/hooks/use-media-query'
 
 const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-(--ms-border) bg-(--ms-bg-elevated) text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)"
 

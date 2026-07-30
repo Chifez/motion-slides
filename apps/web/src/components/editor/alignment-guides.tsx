@@ -1,4 +1,4 @@
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 export function AlignmentGuides() {
   const alignmentGuides = useEditorStore(s => s.alignmentGuides ?? [])

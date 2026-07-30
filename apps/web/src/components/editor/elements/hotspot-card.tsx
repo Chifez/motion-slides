@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { UI_SPRING } from '@/lib/motionEngine'
+import { UI_SPRING } from '@/lib/motion-engine'
 import { X } from 'lucide-react'
 
 interface Props {

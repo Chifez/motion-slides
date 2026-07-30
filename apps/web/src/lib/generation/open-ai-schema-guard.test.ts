@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import { GeneratedPresentationLaxSchema } from './slideGenerationSchema'
-import { findOpenAiSchemaViolations } from './openAiSchemaGuard'
+import { GeneratedPresentationLaxSchema } from './slide-generation-schema'
+import { findOpenAiSchemaViolations } from './open-ai-schema-guard'
 
 describe('OpenAI structured output schema compatibility', () => {
   it('should have every object property listed in required (OpenAI strict mode)', () => {

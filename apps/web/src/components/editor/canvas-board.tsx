@@ -1,10 +1,10 @@
-import { useEditorStore } from '@/store/editorStore'
-import { MotionStage } from './MotionStage'
-import { GroupBoundingBox } from './GroupBoundingBox'
-import { ConnectionAnchors } from './BoundingBox'
-import { AlignmentGuides } from './AlignmentGuides'
-import { CanvasSpotlightOverlay } from './elements/CanvasSpotlightOverlay'
-import { PRCommentsOverlay } from './git/PRCommentsOverlay'
+import { useEditorStore } from '@/store/editor-store'
+import { MotionStage } from './motion-stage'
+import { GroupBoundingBox } from './group-bounding-box'
+import { ConnectionAnchors } from './bounding-box'
+import { AlignmentGuides } from './alignment-guides'
+import { CanvasSpotlightOverlay } from './elements/canvas-spotlight-overlay'
+import { PRCommentsOverlay } from './git/pr-comments-overlay'
 
 interface LassoRect { x1: number; y1: number; x2: number; y2: number }
 

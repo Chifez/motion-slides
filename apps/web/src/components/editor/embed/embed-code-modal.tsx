@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Eye, Settings } from 'lucide-react'
 import type { Project } from '@motionslides/shared'
-import { useEmbedCode } from '@/hooks/useEmbedCode'
-import { ThemeSelector } from './ThemeSelector'
-import { EmbedToggle } from './EmbedToggle'
-import { CodeOutputPanel } from './CodeOutputPanel'
-import { EmbedContainer } from './EmbedContainer'
+import { useEmbedCode } from '@/hooks/use-embed-code'
+import { ThemeSelector } from './theme-selector'
+import { EmbedToggle } from './embed-toggle'
+import { CodeOutputPanel } from './code-output-panel'
+import { EmbedContainer } from './embed-container'
 
 interface Props {
   isOpen: boolean

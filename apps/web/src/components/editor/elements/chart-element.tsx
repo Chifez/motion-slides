@@ -5,7 +5,7 @@ import {
   AreaChart, Area
 } from 'recharts'
 import type { ChartContent } from '@motionslides/shared'
-import { useMotionContext } from '@/context/MotionContext'
+import { useMotionContext } from '@/context/motion-context'
 
 interface Props {
   content: ChartContent

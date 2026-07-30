@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { MotionStage } from '@/components/editor/MotionStage'
+import { MotionStage } from '@/components/editor/motion-stage'
 import { getCanvasDimensions } from '@motionslides/shared'
 import type { Slide, PlaybackSettings, SlideTransition } from '@motionslides/shared'
 

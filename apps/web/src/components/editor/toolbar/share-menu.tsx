@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react'
 import { Share2, Copy, Lock, Check, Link as LinkIcon, Eye, Unlock, Code } from 'lucide-react'
 import type { Project } from '@motionslides/shared'
-import { useClickOutside } from '@/hooks/useClickOutside'
+import { useClickOutside } from '@/hooks/use-click-outside'
 import { motion } from 'framer-motion'
-import { useShareMenu } from '@/hooks/useShareMenu'
-import { EmbedCodeModal } from '../embed/EmbedCodeModal'
-import { UI_SPRING } from '@/lib/motionEngine'
+import { useShareMenu } from '@/hooks/use-share-menu'
+import { EmbedCodeModal } from '../embed/embed-code-modal'
+import { UI_SPRING } from '@/lib/motion-engine'
 
 interface Props {
   project: Project

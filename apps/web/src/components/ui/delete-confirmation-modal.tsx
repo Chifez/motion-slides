@@ -1,7 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Modal } from '@/components/ui/core/Modal'
-import { Button } from '@/components/ui/core/Button'
+import { Modal } from '@/components/ui/core/modal'
+import { Button } from '@/components/ui/core/button'
 
 interface Props {
   isOpen: boolean

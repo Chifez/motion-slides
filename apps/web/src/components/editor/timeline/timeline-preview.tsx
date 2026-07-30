@@ -1,9 +1,9 @@
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { Slide, PlaybackSettings, SlideTransition, Project } from '@motionslides/shared'
-import { ScaledStage } from './ScaledStage'
+import { ScaledStage } from './scaled-stage'
 import type { SlideWithTiming } from './types'
-import { CaptionOverlay } from '../presentation/CaptionOverlay'
-import { useEditorStore } from '@/store/editorStore'
+import { CaptionOverlay } from '../presentation/caption-overlay'
+import { useEditorStore } from '@/store/editor-store'
 
 interface Props {
   liveSlide: Slide | null

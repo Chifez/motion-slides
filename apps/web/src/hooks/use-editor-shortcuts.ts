@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
-import { useEditorStore } from '@/store/editorStore'
-import { usePermissions } from '@/context/PermissionContext'
+import { useEditorStore } from '@/store/editor-store'
+import { usePermissions } from '@/context/permission-context'
 
 /**
  * Global keyboard shortcuts for the editor (Duplicate, Delete, etc.)

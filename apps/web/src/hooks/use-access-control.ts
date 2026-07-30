@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { useShallow } from 'zustand/react/shallow'
 import { useSearch, useNavigate, useParams, useLoaderData } from '@tanstack/react-router'
 import { evaluateProjectAccess } from '@/lib/permissions'

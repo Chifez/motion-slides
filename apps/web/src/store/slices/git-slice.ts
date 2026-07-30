@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand'
-import type { EditorState } from '@/store/editorStore'
+import type { EditorState } from '@/store/editor-store'
 import type { Project, Slide, SlideTransition } from '@motionslides/shared'
 import type { GitCommit } from '@/lib/actions/git'
 import {

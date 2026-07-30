@@ -1,10 +1,10 @@
 import { memo } from 'react'
 import { motion } from 'framer-motion'
-import { useMotionContext } from '@/context/MotionContext'
-import { useEditorStore } from '@/store/editorStore'
+import { useMotionContext } from '@/context/motion-context'
+import { useEditorStore } from '@/store/editor-store'
 import { SELECTED_Z_INDEX } from '@/constants/export'
 import type { SceneElement } from '@motionslides/shared'
-import { EASE_IN_OUT, getTransitionStates } from '@/lib/motionShared'
+import { EASE_IN_OUT, getTransitionStates } from '@/lib/motion-shared'
 
 interface Props {
   element: SceneElement

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Key, Database, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { updateAPIKeysAction, getUserQuotaAction } from '@/lib/actions/ai-studio'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 interface Props {
   isOpen: boolean

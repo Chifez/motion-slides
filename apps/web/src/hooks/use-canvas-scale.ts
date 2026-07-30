@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from 'react'
 import { CANVAS_PADDING, CANVAS_PADDING_MOBILE } from '@motionslides/shared'
-import { useIsMobile } from './useMediaQuery'
+import { useIsMobile } from './use-media-query'
 
 /**
  * Computes the CSS scale factor for the canvas to fit inside a container

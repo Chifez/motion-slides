@@ -1,6 +1,6 @@
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import type { SceneElement } from '@motionslides/shared'
-import { computeElementDiffStatus } from '@/lib/elementDiff'
+import { computeElementDiffStatus } from '@/lib/element-diff'
 
 export function useElementDiffStatus(elementId: string, currentElement: SceneElement | undefined): 'added' | 'modified' | null {
   const reviewingSuggestionId = useEditorStore(state => state.reviewingSuggestionId)

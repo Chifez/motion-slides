@@ -1,13 +1,13 @@
 import { useState, useRef } from 'react'
 import { Type, Code2, Shapes, Minus, ChevronDown, BarChart3, Layout } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { uuid } from '@/lib/uuid'
 import { 
   DEFAULT_TEXT_ELEMENT, DEFAULT_CODE_ELEMENT, DEFAULT_SHAPE_ELEMENT, 
   DEFAULT_LINE_ELEMENT, DEFAULT_CHART_ELEMENT, LINE_TYPE_OPTIONS, 
   SHAPE_OPTIONS, CHART_TYPE_OPTIONS 
 } from '@/constants/editor'
-import { useClickOutside } from '@/hooks/useClickOutside'
+import { useClickOutside } from '@/hooks/use-click-outside'
 import type { LineType, ShapeType, ChartType } from '@motionslides/shared'
 
 const btnBase = "inline-flex items-center gap-1 text-xs font-medium p-1.5 rounded-md transition-colors cursor-pointer border border-(--ms-border) bg-(--ms-bg-elevated) text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border) shrink-0"

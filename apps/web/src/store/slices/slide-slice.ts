@@ -2,7 +2,7 @@ import type { StateCreator } from 'zustand'
 import type { Slide } from '@motionslides/shared'
 import { uuid } from '@/lib/uuid'
 import { createDefaultSlide } from '@/store/defaults'
-import type { EditorState } from '@/store/editorStore'
+import type { EditorState } from '@/store/editor-store'
 
 export interface SlideSlice {
   activeSlideIndex: number

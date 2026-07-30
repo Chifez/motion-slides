@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { Info, HelpCircle, AlertTriangle, Star } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
-import { HotspotCard } from './HotspotCard'
+import { HotspotCard } from './hotspot-card'
 import type { HotspotContent } from '@motionslides/shared'
-import { usePermissions } from '@/context/PermissionContext'
+import { usePermissions } from '@/context/permission-context'
 
 interface Props {
   content: HotspotContent

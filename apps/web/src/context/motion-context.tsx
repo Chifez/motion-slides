@@ -22,7 +22,7 @@ import {
   MAGIC_SPRING,
   BUILD_IN_SPRING,
   staggerDelay,
-} from '@/lib/motionEngine'
+} from '@/lib/motion-engine'
 import { LAYOUT_DURATION, LAYOUT_EASE } from '@/constants/animation'
 
 export interface MotionContextValue {

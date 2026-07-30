@@ -1,8 +1,8 @@
 import { useCallback, useRef, useEffect } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { uuid } from '@/lib/uuid'
 import type { SceneElement, Position } from '@motionslides/shared'
-import { getConnectionPos } from '@/store/slices/elementSlice'
+import { getConnectionPos } from '@/store/slices/element-slice'
 
 const SNAP_THRESHOLD = 30
 type HandleId = 'top' | 'bottom' | 'left' | 'right' | 'center'

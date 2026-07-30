@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { Trash2, X } from 'lucide-react'
 import type { SceneElement } from '@motionslides/shared'
-import { TransformSection } from './TransformSection'
+import { TransformSection } from './transform-section'
 import { INSPECTOR_REGISTRY } from './registry'
 
 const sectionCls = "px-3 py-3 border-b border-(--ms-border)"

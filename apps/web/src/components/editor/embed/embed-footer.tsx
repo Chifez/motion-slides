@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { Play, Pause, ChevronRight, ChevronLeft } from 'lucide-react'
-import { Logo } from '@/components/ui/Logo'
+import { Logo } from '@/components/ui/logo'
 
 interface EmbedFooterProps {
   theme: 'dark' | 'light'

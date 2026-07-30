@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import type { Project } from '@motionslides/shared'
 import { updateProjectVisibilityAction, rotateShareKeyAction } from '@/lib/actions/project'
-import { getWindowOrigin } from '@/lib/safeStorage'
+import { getWindowOrigin } from '@/lib/safe-storage'
 
 export type ShareState = 
   | { status: 'unsynced' } 

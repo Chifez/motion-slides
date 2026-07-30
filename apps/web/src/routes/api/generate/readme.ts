@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { parseReadme, buildReadmeBriefing } from '@/lib/generation/markdownParser'
-import { generateFromReadme } from '@/lib/generation/generationClient'
-import { assembleSlides } from '@/lib/generation/slideAssembler'
+import { parseReadme, buildReadmeBriefing } from '@/lib/generation/markdown-parser'
+import { generateFromReadme } from '@/lib/generation/generation-client'
+import { assembleSlides } from '@/lib/generation/slide-assembler'
 
 const rateLimits = new Map<string, { count: number, resetAt: number }>()
 
@@ -52,7 +52,7 @@ export const Route = createFileRoute('/api/generate/readme')({
               if (body.refinementPrompt && body.previousPresentation) {
                 const cleanPrompt = body.refinementPrompt.replace(/<[^>]*>?/gm, '').trim()
                 send({ stage: 'capturing', percent: 20, message: 'Applying refinements…' })
-                const { refinePresentation } = await import('@/lib/generation/generationClient')
+                const { refinePresentation } = await import('@/lib/generation/generation-client')
                 generated = await refinePresentation({
                   instruction: cleanPrompt,
                   previousPresentation: body.previousPresentation,

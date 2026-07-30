@@ -1,7 +1,7 @@
 import { Trash2, X, Palette } from 'lucide-react'
 import type { BranchContent, LineContent, LineType } from '@motionslides/shared'
 import { LINE_TYPE_OPTIONS } from '@/constants/editor'
-import { PropPair } from '@/components/ui/PropPair'
+import { PropPair } from '@/components/ui/prop-pair'
 
 const labelCls = "text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted) mb-2.5 block"
 const selectCls = "w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-md px-2 py-1.5 text-[12px] text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition-colors"

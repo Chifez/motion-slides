@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import type { TimedCaption } from '@motionslides/shared'
-import { UI_SPRING } from '@/lib/motionEngine'
+import { UI_SPRING } from '@/lib/motion-engine'
 interface Props {
   script?: string | null | undefined
   className?: string

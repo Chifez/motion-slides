@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { submitSuggestionAction } from '@/lib/actions/suggestions'
-import { getStorageItem, setStorageItem } from '@/lib/safeStorage'
+import { getStorageItem, setStorageItem } from '@/lib/safe-storage'
 import { toast } from '@/lib/toast'
 import type { Project } from '@motionslides/shared'
 

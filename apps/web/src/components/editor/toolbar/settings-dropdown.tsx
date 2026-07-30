@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Settings, X, Sun, Moon } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
-import { useClickOutside } from '@/hooks/useClickOutside'
+import { useEditorStore } from '@/store/editor-store'
+import { useClickOutside } from '@/hooks/use-click-outside'
 import {
   EXPORT_RESOLUTIONS,
   ASPECT_RATIO_OPTIONS,
@@ -9,7 +9,7 @@ import {
   TRANSITION_DURATION_OPTIONS,
 } from '@/constants/export'
 import type { AspectRatioKey } from '@motionslides/shared'
-import { BezierEditor } from './BezierEditor'
+import { BezierEditor } from './bezier-editor'
 
 const btnBase = "inline-flex items-center gap-1.5 text-xs font-medium px-2 md:px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-(--ms-border) bg-(--ms-bg-elevated) text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)"
 const labelCls = "text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1"

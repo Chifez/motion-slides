@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { GitPullRequest, X } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
-import { useClickOutside } from '@/hooks/useClickOutside'
+import { useEditorStore } from '@/store/editor-store'
+import { useClickOutside } from '@/hooks/use-click-outside'
 
 const buttonBaseClass = "inline-flex items-center gap-1.5 text-[10px] text-blue-400 hover:text-blue-300 bg-blue-500/10 backdrop-blur-sm border border-blue-500/30 rounded-md px-2 py-1 cursor-pointer transition-colors whitespace-nowrap"
 const activeButtonBaseClass = "inline-flex items-center gap-1.5 text-[10px] text-white bg-blue-600 border border-blue-500 rounded-md px-2 py-1 cursor-pointer transition-colors whitespace-nowrap"

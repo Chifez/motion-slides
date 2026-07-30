@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { assembleSlides } from './slideAssembler'
-import type { GeneratedPresentation } from './slideGenerationSchema'
+import { assembleSlides } from './slide-assembler'
+import type { GeneratedPresentation } from './slide-generation-schema'
 
 describe('Dagre Diagram Layout In Slide Assembler', () => {
   it('should auto-layout nodes on diagram slides and generate layer boundaries', () => {

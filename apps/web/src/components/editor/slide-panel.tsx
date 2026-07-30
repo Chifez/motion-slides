@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UI_SPRING } from '@/lib/motionEngine'
-import { Panel } from '@/components/ui/core/Panel'
-import { Button } from '@/components/ui/core/Button'
+import { UI_SPRING } from '@/lib/motion-engine'
+import { Panel } from '@/components/ui/core/panel'
+import { Button } from '@/components/ui/core/button'
 import {
   DndContext,
   DragOverlay,
@@ -19,10 +19,10 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { useIsMobile } from '@/hooks/useMediaQuery'
-import { useEditorStore } from '@/store/editorStore'
-import { SlideThumb } from './slide-panel/SlideThumb'
-import { usePermissions } from '@/context/PermissionContext'
+import { useIsMobile } from '@/hooks/use-media-query'
+import { useEditorStore } from '@/store/editor-store'
+import { SlideThumb } from './slide-panel/slide-thumb'
+import { usePermissions } from '@/context/permission-context'
 
 export function SlidePanel() {
   const { isReadOnly } = usePermissions()

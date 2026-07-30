@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageSquare, X, CheckCircle2 } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { useShallow } from 'zustand/react/shallow'
 
 export function PRCommentsOverlay() {

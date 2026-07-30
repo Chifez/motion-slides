@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { tool } from 'ai'
-import { useEditorStore } from '../../../store/editorStore'
+import { useEditorStore } from '../../../store/editor-store'
 import type { AnimationType, TransitionAnimation } from '@motionslides/shared'
 
 export const animationToolSchemas = {

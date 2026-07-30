@@ -2,7 +2,7 @@ import { Volume2 } from 'lucide-react'
 import type { Slide, Project } from '@motionslides/shared'
 import { PX_PER_SEC, VO_TRACK_H, AUDIO_TYPE_VOICEOVER } from './constants'
 import type { AudioKey, SlideWithTiming } from './types'
-import { WaveformDecoration } from './WaveformDecoration'
+import { WaveformDecoration } from './waveform-decoration'
 
 interface Props {
   slidesWithTiming: SlideWithTiming[]

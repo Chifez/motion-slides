@@ -1,6 +1,6 @@
 import { useCallback, useRef, useEffect } from 'react'
-import { useEditorStore } from '@/store/editorStore'
-import { getConnectionPos } from '@/store/slices/elementSlice'
+import { useEditorStore } from '@/store/editor-store'
+import { getConnectionPos } from '@/store/slices/element-slice'
 import type { SceneElement, LineContent, Position } from '@motionslides/shared'
 
 /**

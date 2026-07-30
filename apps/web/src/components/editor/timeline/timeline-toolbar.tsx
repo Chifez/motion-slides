@@ -1,7 +1,7 @@
 import { Layers, SkipBack, Play, Pause, SkipForward, ChevronDown, ChevronUp } from 'lucide-react'
 import type { PlaybackSettings, Project } from '@motionslides/shared'
 import { formatTime } from './constants'
-import { useTimelineRefs } from './TimelineRefsContext'
+import { useTimelineRefs } from './timeline-refs-context'
 
 interface Props {
   isPlaying: boolean

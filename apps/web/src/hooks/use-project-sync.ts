@@ -1,5 +1,5 @@
 import { useBlocker } from '@tanstack/react-router'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 interface Options {
   isPending: boolean

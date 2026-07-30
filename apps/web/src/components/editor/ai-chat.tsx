@@ -3,13 +3,13 @@
 import { useRef, useEffect, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { executeAgentTool } from '@/lib/agent/tools'
-import { AgentChatHeader } from './ai/AgentChatHeader'
-import { AgentInput } from './ai/AgentInput'
-import { AgentMessage } from './ai/AgentMessage'
-import { AgentWelcome } from './ai/AgentWelcome'
-import { Panel } from '@/components/ui/core/Panel'
+import { AgentChatHeader } from './ai/agent-chat-header'
+import { AgentInput } from './ai/agent-input'
+import { AgentMessage } from './ai/agent-message'
+import { AgentWelcome } from './ai/agent-welcome'
+import { Panel } from '@/components/ui/core/panel'
 
 export function AIChat() {
   const isChatOpen = useEditorStore((s) => s.isChatOpen)

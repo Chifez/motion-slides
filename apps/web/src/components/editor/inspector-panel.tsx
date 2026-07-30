@@ -1,12 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { UI_SPRING } from '@/lib/motionEngine'
-import { useEditorStore } from '@/store/editorStore'
-import { useIsMobile } from '@/hooks/useMediaQuery'
-import { Panel } from '@/components/ui/core/Panel'
+import { UI_SPRING } from '@/lib/motion-engine'
+import { useEditorStore } from '@/store/editor-store'
+import { useIsMobile } from '@/hooks/use-media-query'
+import { Panel } from '@/components/ui/core/panel'
 
-import { EmptyInspector } from './inspector/EmptyInspector'
-import { MultiInspector } from './inspector/MultiInspector'
-import { SingleInspector } from './inspector/SingleInspector'
+import { EmptyInspector } from './inspector/empty-inspector'
+import { MultiInspector } from './inspector/multi-inspector'
+import { SingleInspector } from './inspector/single-inspector'
 
 export function InspectorPanel() {
   const selectedElementIds = useEditorStore(s => s.selectedElementIds)

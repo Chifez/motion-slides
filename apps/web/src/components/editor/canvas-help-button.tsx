@@ -1,6 +1,6 @@
 
 import { Keyboard } from 'lucide-react'
-import { ShortcutsHelper } from './ShortcutsHelper'
+import { ShortcutsHelper } from './shortcuts-helper'
 
 interface Props {
     isOpen: boolean

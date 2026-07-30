@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type RefObject } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 export function useBoardTransform(
     stageRef: RefObject<HTMLDivElement | null>,

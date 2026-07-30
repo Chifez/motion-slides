@@ -1,7 +1,7 @@
 import { Volume2, Gauge, RotateCw, Play, Pause, Loader2, Scissors } from 'lucide-react'
 import type { SlideAudio } from '@motionslides/shared'
-import { useAudioPreview } from '@/hooks/useAudioPreview'
-import { TrimWaveformCanvas } from './TrimWaveformCanvas'
+import { useAudioPreview } from '@/hooks/use-audio-preview'
+import { TrimWaveformCanvas } from './trim-waveform-canvas'
 
 interface AudioTimelineEditorProps {
   audio: SlideAudio

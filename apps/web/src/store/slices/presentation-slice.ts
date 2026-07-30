@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand'
 import { type PlaybackSettings, type AspectRatioKey, getCanvasDimensions } from '@motionslides/shared'
 import { DEFAULT_PLAYBACK_SETTINGS } from '@/constants/export'
-import type { EditorState } from '@/store/editorStore'
+import type { EditorState } from '@/store/editor-store'
 
 export interface PresentationSlice {
   isPresenting: boolean

@@ -1,4 +1,4 @@
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloudCheck, RefreshCw } from 'lucide-react'
 import { useLocation } from '@tanstack/react-router'

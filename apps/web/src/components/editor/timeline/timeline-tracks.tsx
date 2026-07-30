@@ -16,16 +16,16 @@ import {
 } from './constants'
 
 import type { AudioKey, AudioDrawer, SlideWithTiming } from './types'
-import { useEditorStore } from '@/store/editorStore'
-import { AudioInspector } from './AudioInspector'
-import { AudioDrawerModal } from './AudioDrawerModal'
-import { TrackLabelColumn } from './TrackLabelColumn'
-import { RulerRow } from './RulerRow'
-import { SlideTrackRow } from './SlideTrackRow'
-import { CaptionTrackRow } from './CaptionTrackRow'
-import { VoiceoverTrackRow } from './VoiceoverTrackRow'
-import { BgmTrackRow } from './BgmTrackRow'
-import { useTimelineRefs } from './TimelineRefsContext'
+import { useEditorStore } from '@/store/editor-store'
+import { AudioInspector } from './audio-inspector'
+import { AudioDrawerModal } from './audio-drawer-modal'
+import { TrackLabelColumn } from './track-label-column'
+import { RulerRow } from './ruler-row'
+import { SlideTrackRow } from './slide-track-row'
+import { CaptionTrackRow } from './caption-track-row'
+import { VoiceoverTrackRow } from './voiceover-track-row'
+import { BgmTrackRow } from './bgm-track-row'
+import { useTimelineRefs } from './timeline-refs-context'
 
 interface AudioState {
   selectedAudioKey: AudioKey | null

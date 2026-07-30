@@ -5,7 +5,7 @@
  * from the same POST response body (no separate progress endpoint).
  */
 
-import { generateSceneGraph } from './sceneGraph'
+import { generateSceneGraph } from './scene-graph'
 import type { ExportFormat, ExportProgressEvent } from '@motionslides/shared'
 
 export type { ExportProgressEvent }

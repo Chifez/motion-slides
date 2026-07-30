@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEditorStore } from '@/store/editorStore'
-import { MotionStage } from '@/components/editor/MotionStage'
+import { useEditorStore } from '@/store/editor-store'
+import { MotionStage } from '@/components/editor/motion-stage'
 import { getCanvasDimensions } from '@motionslides/shared'
-import { PermissionProvider } from '@/context/PermissionContext'
-import type { AccessControl } from '@/hooks/useAccessControl'
+import { PermissionProvider } from '@/context/permission-context'
+import type { AccessControl } from '@/hooks/use-access-control'
 
 export const Route = createFileRoute('/export-view')({
   component: ExportView,

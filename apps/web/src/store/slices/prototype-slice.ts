@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type { SlideTransition } from '@motionslides/shared'
 import { uuid } from '@/lib/uuid'
-import type { EditorState } from '@/store/editorStore'
+import type { EditorState } from '@/store/editor-store'
 
 export interface PrototypeSlice {
   isPrototypeMode: boolean

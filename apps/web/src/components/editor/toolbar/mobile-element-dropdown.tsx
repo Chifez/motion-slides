@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Plus, Type, Code2, Shapes, Minus, BarChart3, ChevronRight } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { uuid } from '@/lib/uuid'
 import {
   DEFAULT_TEXT_ELEMENT,
@@ -10,7 +10,7 @@ import {
   DEFAULT_CHART_ELEMENT,
   LINE_TYPE_OPTIONS
 } from '@/constants/editor'
-import { useClickOutside } from '@/hooks/useClickOutside'
+import { useClickOutside } from '@/hooks/use-click-outside'
 import type { LineType } from '@motionslides/shared'
 
 export function MobileElementDropdown() {

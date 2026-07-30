@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 /**
  * useSyncManager — Intentional Synchronization Manager.

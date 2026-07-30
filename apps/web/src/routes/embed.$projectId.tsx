@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { storeHydrationPromise } from '@/store/editorStore'
-import { HydrationGuard } from '@/components/editor/HydrationGuard'
-import { PermissionProvider } from '@/context/PermissionContext'
-import { LoadingPage } from '@/components/ui/LoadingPage'
-import { loadProjectForRoute } from '@/lib/loaders/projectLoader'
-import { EmbedContainer } from '@/components/editor/embed/EmbedContainer'
+import { storeHydrationPromise } from '@/store/editor-store'
+import { HydrationGuard } from '@/components/editor/hydration-guard'
+import { PermissionProvider } from '@/context/permission-context'
+import { LoadingPage } from '@/components/ui/loading-page'
+import { loadProjectForRoute } from '@/lib/loaders/project-loader'
+import { EmbedContainer } from '@/components/editor/embed/embed-container'
 
 const embedSearchSchema = z.object({
   theme: z.enum(['dark', 'light']).optional().catch('dark'),

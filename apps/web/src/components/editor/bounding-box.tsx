@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react'
 import { RotateCw } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { MIN_ELEMENT_WIDTH, MIN_ELEMENT_HEIGHT } from '@/constants/animation'
 import { RESIZE_HANDLES } from '@/constants/editor'
 import type { SceneElement, LineContent } from '@motionslides/shared'
-import { useAccessControl } from '@/hooks/useAccessControl'
-import { useLineDrag } from '@/hooks/useLineDrag'
-import { useConnectionDrag } from '@/hooks/useConnectionDrag'
+import { useAccessControl } from '@/hooks/use-access-control'
+import { useLineDrag } from '@/hooks/use-line-drag'
+import { useConnectionDrag } from '@/hooks/use-connection-drag'
 
 interface Props { element: SceneElement }
 

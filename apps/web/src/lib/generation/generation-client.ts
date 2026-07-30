@@ -11,17 +11,17 @@ import {
   formatZodIssues,
   type GeneratedPresentation,
   type AISlideType,
-} from './slideGenerationSchema';
+} from './slide-generation-schema';
 import {
   SYSTEM_PROMPT,
   buildArchitecturePrompt,
   buildRefinementPrompt,
   buildReadmePrompt,
-} from './promptBuilder';
-import { buildIconHotlist } from './iconResolver';
-import { detectBlueprint } from './diagramBlueprints';
-import { computeLayerReflow, formatReflowInstructions } from './reflowEngine';
-import { parseStyleTokens, type StyleGuideTokens } from './styleTokenParser';
+} from './prompt-builder';
+import { buildIconHotlist } from './icon-resolver';
+import { detectBlueprint } from './diagram-blueprints';
+import { computeLayerReflow, formatReflowInstructions } from './reflow-engine';
+import { parseStyleTokens, type StyleGuideTokens } from './style-token-parser';
 
 // ─── Provider Factory ─────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import { getArrow } from 'perfect-arrows'
 import type { LineContent } from '@motionslides/shared'
-import { buildRoundedPath } from '@/lib/generation/routingResolver'
+import { buildRoundedPath } from '@/lib/generation/routing-resolver'
 export { buildRoundedPath }
 
 /**

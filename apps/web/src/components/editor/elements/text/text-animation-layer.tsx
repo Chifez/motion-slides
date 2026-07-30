@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import type { AnimToken } from './charTokenizer';
+import type { AnimToken } from './char-tokenizer';
 
 interface Props {
   tokens: AnimToken[];

@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Trash2, X } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { useShallow } from 'zustand/react/shallow'
 
 const sectionCls = "px-3 py-3 border-b border-(--ms-border)"

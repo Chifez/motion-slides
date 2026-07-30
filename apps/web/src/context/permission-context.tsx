@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react'
-import { useAccessControl, type AccessControl } from '@/hooks/useAccessControl'
+import { useAccessControl, type AccessControl } from '@/hooks/use-access-control'
 
 const PermissionContext = createContext<AccessControl | null>(null)
 

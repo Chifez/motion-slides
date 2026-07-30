@@ -2,7 +2,7 @@ import { Music } from 'lucide-react'
 import type { SlideAudio } from '@motionslides/shared'
 import { PX_PER_SEC, BGM_TRACK_H, AUDIO_TYPE_BGM } from './constants'
 import type { AudioKey } from './types'
-import { WaveformDecoration } from './WaveformDecoration'
+import { WaveformDecoration } from './waveform-decoration'
 
 interface Props {
   backgroundMusic: SlideAudio | null

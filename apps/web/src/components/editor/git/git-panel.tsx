@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { GitBranch, GitCommit, GitPullRequest, ArrowUp, ArrowDown, X, Play, RefreshCw, AlertCircle, FilePlus, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
-import { CommitTree } from './CommitTree'
-import { PullRequestModal } from './PullRequestModal'
+import { useEditorStore } from '@/store/editor-store'
+import { CommitTree } from './commit-tree'
+import { PullRequestModal } from './pull-request-modal'
 import { getPRDetailsAction } from '@/lib/actions/git'
-import { usePermissions } from '@/context/PermissionContext'
-import { Panel } from '@/components/ui/core/Panel'
-import { Button } from '@/components/ui/core/Button'
-import { Input } from '@/components/ui/core/Input'
+import { usePermissions } from '@/context/permission-context'
+import { Panel } from '@/components/ui/core/panel'
+import { Button } from '@/components/ui/core/button'
+import { Input } from '@/components/ui/core/input'
 
 export function GitPanel() {
   const activeProjectId = useEditorStore(state => state.activeProjectId)

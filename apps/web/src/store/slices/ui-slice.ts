@@ -1,8 +1,8 @@
 import type { StateCreator } from 'zustand'
-import type { EditorState } from '@/store/editorStore'
+import type { EditorState } from '@/store/editor-store'
 import type { Slide, SlideTransition } from '@motionslides/shared'
 import type { ProjectSuggestion } from '@/lib/actions/suggestions'
-import { getStorageItem, setStorageItem } from '@/lib/safeStorage'
+import { getStorageItem, setStorageItem } from '@/lib/safe-storage'
 
 export interface ToastInfo {
   id: string

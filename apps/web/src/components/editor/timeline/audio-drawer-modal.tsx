@@ -1,8 +1,8 @@
 import { X, Mic, Music } from 'lucide-react'
 import type { SlideAudio } from '@motionslides/shared'
 import type { AudioDrawer } from './types'
-import { VOQuickAdd } from './VOQuickAdd'
-import { BgmUploader } from './BgmUploader'
+import { VOQuickAdd } from './vo-quick-add'
+import { BgmUploader } from './bgm-uploader'
 import {
   AUDIO_DRAWER_VO,
   AUDIO_DRAWER_BGM,

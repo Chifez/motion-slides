@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Search, X, Cloud, Globe } from 'lucide-react'
-import { useIconLibrary } from '@/hooks/useIconLibrary'
+import { useIconLibrary } from '@/hooks/use-icon-library'
 import type { ShapeContent } from '@motionslides/shared'
 
 interface Props {

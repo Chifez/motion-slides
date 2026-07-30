@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { LoadingPage } from '@/components/ui/LoadingPage'
+import { LoadingPage } from '@/components/ui/loading-page'
 
 interface Props {
   children: React.ReactNode

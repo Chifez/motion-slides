@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import type { Slide, SlideTransition, PlaybackSettings, Project } from '@motionslides/shared'
 import { PX_PER_SEC } from '@/components/editor/timeline/constants'
 import type { SlideWithTiming } from '@/components/editor/timeline/types'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 interface Params {
   totalDuration: number

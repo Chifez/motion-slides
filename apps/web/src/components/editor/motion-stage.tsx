@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
-import { MotionProvider } from '@/context/MotionContext'
-import { CanvasElement } from './CanvasElement'
+import { MotionProvider } from '@/context/motion-context'
+import { CanvasElement } from './canvas-element'
 import type { Slide, PlaybackSettings, SlideTransition, SceneElement } from '@motionslides/shared'
-import { useEditorStore } from '@/store/editorStore'
-import { ElementRenderer } from './ElementRenderer'
+import { useEditorStore } from '@/store/editor-store'
+import { ElementRenderer } from './element-renderer'
 import { getCanvasDimensions } from '@motionslides/shared'
-import { cubicBezierToArray } from '@/lib/motionEngine'
-import { CanvasSpotlightOverlay } from './elements/CanvasSpotlightOverlay'
+import { cubicBezierToArray } from '@/lib/motion-engine'
+import { CanvasSpotlightOverlay } from './elements/canvas-spotlight-overlay'
 import { Info } from 'lucide-react'
-import { HotspotCard } from './elements/HotspotCard'
+import { HotspotCard } from './elements/hotspot-card'
 
 interface Props {
   slide: Slide | null

@@ -1,4 +1,4 @@
-import { useReviewResolver } from '@/hooks/useReviewResolver'
+import { useReviewResolver } from '@/hooks/use-review-resolver'
 import { Check, X, AlertTriangle, RotateCcw } from 'lucide-react'
 
 export function ReviewOverlay() {

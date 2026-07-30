@@ -1,15 +1,15 @@
 import { createFileRoute, redirect, Link } from '@tanstack/react-router'
 import { ChevronRight, Zap } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { LandingNavbar } from '@/components/LandingNavbar'
-import { LandingFooter } from '@/components/LandingFooter'
+import { LandingNavbar } from '@/components/landing-navbar'
+import { LandingFooter } from '@/components/landing-footer'
 import { getSessionFn } from '@/lib/auth-actions'
-import { LandingShowcase } from '@/components/marketing/LandingShowcase'
-import { LandingPillars } from '@/components/marketing/LandingPillars'
-import { LandingGitDiffFeature } from '@/components/marketing/LandingGitDiffFeature'
-import { LandingAIStudioFeature } from '@/components/marketing/LandingAIStudioFeature'
-import { LandingComparison } from '@/components/marketing/LandingComparison'
-import { LandingExportOffline } from '@/components/marketing/LandingExportOffline'
+import { LandingShowcase } from '@/components/marketing/landing-showcase'
+import { LandingPillars } from '@/components/marketing/landing-pillars'
+import { LandingGitDiffFeature } from '@/components/marketing/landing-git-diff-feature'
+import { LandingAIStudioFeature } from '@/components/marketing/landing-ai-studio-feature'
+import { LandingComparison } from '@/components/marketing/landing-comparison'
+import { LandingExportOffline } from '@/components/marketing/landing-export-offline'
 
 export const Route = createFileRoute('/')({
   beforeLoad: async () => {

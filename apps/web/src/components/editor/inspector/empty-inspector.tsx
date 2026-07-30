@@ -1,7 +1,7 @@
 import { memo } from 'react'
-import { useEditorStore } from '@/store/editorStore'
-import { AudioRecorder } from '../audio/AudioRecorder'
-import { AudioTimelineEditor } from '../audio/AudioTimelineEditor'
+import { useEditorStore } from '@/store/editor-store'
+import { AudioRecorder } from '../audio/audio-recorder'
+import { AudioTimelineEditor } from '../audio/audio-timeline-editor'
 import { Music, Presentation, CheckSquare, Square } from 'lucide-react'
 
 const sectionCls = "px-3 py-3 border-b border-(--ms-border)"

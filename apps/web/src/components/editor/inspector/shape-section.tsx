@@ -1,6 +1,6 @@
 import type { ShapeContent, ShapeType } from '@motionslides/shared'
 import { SHAPE_OPTIONS } from '@/constants/editor'
-import { IconLibrarySection } from './IconLibrarySection'
+import { IconLibrarySection } from './icon-library-section'
 
 const labelCls = "text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted) mb-2.5 block"
 

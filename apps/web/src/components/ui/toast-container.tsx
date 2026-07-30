@@ -1,9 +1,9 @@
-import { useEditorStore } from '@/store/editorStore'
-import type { ToastInfo } from '@/store/slices/uiSlice'
+import { useEditorStore } from '@/store/editor-store'
+import type { ToastInfo } from '@/store/slices/ui-slice'
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UI_SPRING } from '@/lib/motionEngine'
+import { UI_SPRING } from '@/lib/motion-engine'
 
 export type ToastPosition =
   | 'bottom-right'

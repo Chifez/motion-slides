@@ -5,7 +5,7 @@
  * and ensure they fit within canvas boundaries.
  */
 
-import type { AISlideType } from './slideGenerationSchema';
+import type { AISlideType } from './slide-generation-schema';
 
 export interface ReflowInstruction {
   layerName: string;

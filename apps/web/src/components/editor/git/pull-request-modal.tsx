@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Send, GitPullRequest, Layout, AlertCircle, Plus, Check } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { getRemoteProjectAction } from '@/lib/actions/project'
 import type { Project, Slide } from '@motionslides/shared'
 

@@ -1,6 +1,6 @@
 import { X, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Eye, Maximize2, RefreshCcw, Sparkles } from 'lucide-react'
 import type { SlideTransition, TransitionAnimation } from '@motionslides/shared'
-import { BezierEditor } from '../toolbar/BezierEditor'
+import { BezierEditor } from '../toolbar/bezier-editor'
 
 const labelCls = "text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-1.5"
 

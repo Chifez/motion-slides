@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { resolveRoute, buildRoundedPath } from './routingResolver'
+import { resolveRoute, buildRoundedPath } from './routing-resolver'
 
-describe('routingResolver', () => {
+describe('routing-resolver', () => {
   it('should generate a straight line for straight routing hint', () => {
     const path = resolveRoute('straight', { x: 0.1, y: 0.1 }, { x: 0.5, y: 0.5 }, 1000, 1000)
     expect(path).toBe('M 100.0 100.0 L 500.0 500.0')

@@ -1,11 +1,11 @@
 import type { TextContent, CodeContent, ShapeContent, LineContent, ChartContent, SectionContent, SceneElement, HotspotContent } from '@motionslides/shared'
-import { TextSection } from './TextSection'
-import { CodeSection } from './CodeSection'
-import { ShapeSection } from './ShapeSection'
-import { LineSection } from './LineSection'
-import { ChartSection } from './ChartSection'
-import { SectionSection } from './SectionSection'
-import { HotspotSection } from './HotspotSection'
+import { TextSection } from './text-section'
+import { CodeSection } from './code-section'
+import { ShapeSection } from './shape-section'
+import { LineSection } from './line-section'
+import { ChartSection } from './chart-section'
+import { SectionSection } from './section-section'
+import { HotspotSection } from './hotspot-section'
 
 export interface InspectorSectionProps {
   element: SceneElement

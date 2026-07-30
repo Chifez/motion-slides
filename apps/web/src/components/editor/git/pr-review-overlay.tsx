@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { Check, X, AlertTriangle, RotateCcw, GitPullRequest, MessageSquarePlus } from 'lucide-react'
 
 export function PRReviewOverlay() {

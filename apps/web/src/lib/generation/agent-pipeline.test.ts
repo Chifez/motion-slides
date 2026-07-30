@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hydrateLogicalSlides } from './generationClient'
+import { hydrateLogicalSlides } from './generation-client'
 
 describe('agentPipeline Logical Hydration', () => {
   it('should convert logicalNodes and logicalConnections to standard elements and connections on diagram slides', () => {

@@ -1,10 +1,10 @@
 import type { Slide, SceneElement, TextContent, ShapeContent, CodeContent, AnimationType, SectionContent, LineContent } from '@motionslides/shared'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../../constants/export'
 import { uuid } from '../uuid'
-import type { GeneratedPresentation, AISlideType, AIElementType, AIConnectionType } from './slideGenerationSchema'
-import { resolveIconPath } from './iconResolver'
-import { resolveRoute } from './routingResolver'
-import { DIAGRAM_BLUEPRINTS, detectBlueprint } from './diagramBlueprints'
+import type { GeneratedPresentation, AISlideType, AIElementType, AIConnectionType } from './slide-generation-schema'
+import { resolveIconPath } from './icon-resolver'
+import { resolveRoute } from './routing-resolver'
+import { DIAGRAM_BLUEPRINTS, detectBlueprint } from './diagram-blueprints'
 import dagre from 'dagre'
 
 // ─── Coordinate Conversion ────────────────────────────────────────────────────

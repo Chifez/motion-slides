@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import type { LineContent } from '@motionslides/shared'
 
 export function useLineEditing(elementId: string, content: LineContent) {

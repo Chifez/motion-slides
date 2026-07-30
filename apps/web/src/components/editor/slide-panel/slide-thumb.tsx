@@ -2,8 +2,8 @@ import { useState, memo } from 'react'
 import { Sparkles, Trash2, GripVertical } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useEditorStore } from '@/store/editorStore'
-import { LayerList } from './LayerList'
+import { useEditorStore } from '@/store/editor-store'
+import { LayerList } from './layer-list'
 
 interface SlideThumbProps {
   slideId: string

@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { storeHydrationPromise } from '@/store/editorStore'
-import { HydrationGuard } from '@/components/editor/HydrationGuard'
-import { PermissionProvider } from '@/context/PermissionContext'
-import { LoadingPage } from '@/components/ui/LoadingPage'
-import { loadProjectForRoute } from '@/lib/loaders/projectLoader'
-import { ProjectContainer } from '@/components/editor/ProjectContainer'
+import { storeHydrationPromise } from '@/store/editor-store'
+import { HydrationGuard } from '@/components/editor/hydration-guard'
+import { PermissionProvider } from '@/context/permission-context'
+import { LoadingPage } from '@/components/ui/loading-page'
+import { loadProjectForRoute } from '@/lib/loaders/project-loader'
+import { ProjectContainer } from '@/components/editor/project-container'
 import { z } from 'zod'
 
 const projectSearchSchema = z.object({

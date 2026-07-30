@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { X, Type } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { PX_PER_SEC, CAPTION_TRACK_H } from './constants'
 import type { SlideWithTiming } from './types'
 

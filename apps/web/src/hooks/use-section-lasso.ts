@@ -1,5 +1,5 @@
 import { useState, type RefObject, type PointerEvent } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import type { SceneElement } from '@motionslides/shared'
 
 interface SectionLassoArgs {

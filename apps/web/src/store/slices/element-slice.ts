@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type { SceneElement, LineContent, Position } from '@motionslides/shared'
-import type { EditorState } from '@/store/editorStore'
-import { updateActiveSlideElements } from '@/store/storeHelpers'
+import type { EditorState } from '@/store/editor-store'
+import { updateActiveSlideElements } from '@/store/store-helpers'
 
 export interface ElementSlice {
   selectedElementIds: string[]

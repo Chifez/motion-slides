@@ -1,11 +1,11 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import type { LineContent, SceneElement } from '@motionslides/shared'
-import { useMotionContext } from '@/context/MotionContext'
-import { CODE_PHASE } from '@/lib/motionEngine'
-import { useLineEditing } from '@/hooks/useLineEditing'
-import { LineMarkers } from './LineMarkers'
-import { LabelGroup } from './LabelGroup'
+import { useMotionContext } from '@/context/motion-context'
+import { CODE_PHASE } from '@/lib/motion-engine'
+import { useLineEditing } from '@/hooks/use-line-editing'
+import { LineMarkers } from './line-markers'
+import { LabelGroup } from './label-group'
 import {
   toSafeNum,
   hasValidCoordinates,
@@ -14,7 +14,7 @@ import {
   getLabelPosition,
   buildLinePath,
   buildRoundedPath,
-} from './lineHelpers'
+} from './line-helpers'
 
 interface Props { 
   element: SceneElement 

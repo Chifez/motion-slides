@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand'
-import type { EditorState } from '../editorStore'
+import type { EditorState } from '../editor-store'
 import type { Project } from '@motionslides/shared'
 import { authClient } from '@/lib/auth-client'
 import { syncProjectsAction, listRemoteProjectsAction } from '@/lib/actions/project'

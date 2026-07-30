@@ -1,5 +1,5 @@
 import type { SceneElement } from '@motionslides/shared'
-import { PropPair } from '@/components/ui/PropPair'
+import { PropPair } from '@/components/ui/prop-pair'
 
 const labelCls = "text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted) mb-2.5 block"
 

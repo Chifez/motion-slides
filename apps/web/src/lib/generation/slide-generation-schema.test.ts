@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { GeneratedPresentationLaxSchema, GeneratedPresentationSchema } from './slideGenerationSchema'
+import { GeneratedPresentationLaxSchema, GeneratedPresentationSchema } from './slide-generation-schema'
 
 describe('AI Schema Decoupling (Lax vs Strict)', () => {
   const mockValidBase = {

@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand'
-import type { EditorState } from '../editorStore'
+import type { EditorState } from '../editor-store'
 import { uuid } from '@/lib/uuid'
 
 export interface IdentitySlice {

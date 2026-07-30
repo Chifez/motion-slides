@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent, type ChangeEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Square, Mic, ChevronDown, BrainCircuit, Bot, Cpu } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { transcribeAudioAction } from '@/lib/actions/ai-studio'
 
 interface ModelDef {

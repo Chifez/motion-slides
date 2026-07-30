@@ -1,4 +1,4 @@
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { getRemoteProjectAction } from '@/lib/actions/project'
 import type { Project } from '@motionslides/shared'
 

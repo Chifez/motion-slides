@@ -2,7 +2,7 @@ import { useState, useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { authClient } from '@/lib/auth-client'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { X, Mail, Lock, User, Loader2, Github, Chrome } from 'lucide-react'
 
 interface AuthModalProps {

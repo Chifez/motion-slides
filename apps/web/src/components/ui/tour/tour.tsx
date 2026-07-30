@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, createContext, useContext, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronRight, ChevronLeft, X, Sparkles } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
-import { DASHBOARD_STEPS, EDITOR_STEPS, type TourStep } from '@/store/slices/onboardingSlice'
+import { useEditorStore } from '@/store/editor-store'
+import { DASHBOARD_STEPS, EDITOR_STEPS, type TourStep } from '@/store/slices/onboarding-slice'
 
 const isSSR = typeof window === 'undefined'
 

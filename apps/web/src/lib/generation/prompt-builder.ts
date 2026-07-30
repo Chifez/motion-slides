@@ -7,7 +7,7 @@
  * a high-quality reference diagram to pattern-match against.
  */
 
-import { buildIconHotlistString } from './iconResolver'
+import { buildIconHotlistString } from './icon-resolver'
 
 // ─── Full Icon Reference (static, built once) ─────────────────────────────────
 const FULL_ICON_REFERENCE = buildIconHotlistString()

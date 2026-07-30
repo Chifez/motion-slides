@@ -1,7 +1,7 @@
-import { slideToolSchemas, executeSlideTool } from './tools/slideTools'
-import { elementToolSchemas, executeElementTool } from './tools/elementTools'
-import { diagramToolSchemas, executeDiagramTool } from './tools/diagramTools'
-import { animationToolSchemas, executeAnimationTool } from './tools/animationTools'
+import { slideToolSchemas, executeSlideTool } from './tools/slide-tools'
+import { elementToolSchemas, executeElementTool } from './tools/element-tools'
+import { diagramToolSchemas, executeDiagramTool } from './tools/diagram-tools'
+import { animationToolSchemas, executeAnimationTool } from './tools/animation-tools'
 
 // ─────────────────────────────────────────────────────────────────
 // Aggregated Tool Schemas (sent to server / streamText)

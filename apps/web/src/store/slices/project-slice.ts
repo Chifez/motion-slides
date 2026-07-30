@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type { Project, Slide } from '@motionslides/shared'
 import { createDefaultProject } from '@/store/defaults'
-import type { EditorState } from '@/store/editorStore'
+import type { EditorState } from '@/store/editor-store'
 import { deleteRemoteProjectAction } from '@/lib/actions/project'
 import { DEFAULT_PLAYBACK_SETTINGS } from '@/constants/export'
 

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
-import { useEditorStore } from '@/store/editorStore'
-import { useElementDrag } from '@/hooks/useElementDrag'
+import { useEditorStore } from '@/store/editor-store'
+import { useElementDrag } from '@/hooks/use-element-drag'
 import { MIN_ELEMENT_WIDTH, MIN_ELEMENT_HEIGHT } from '@/constants/animation'
 import { RESIZE_HANDLES } from '@/constants/editor'
 import type { SceneElement } from '@motionslides/shared'

@@ -15,11 +15,11 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { uuid } from '@/lib/uuid'
-import { SlideNode } from './SlideNode'
-import { TransitionEdge } from './TransitionEdge'
-import { TransitionPanel } from './TransitionPanel'
+import { SlideNode } from './slide-node'
+import { TransitionEdge } from './transition-edge'
+import { TransitionPanel } from './transition-panel'
 import { DEFAULT_PLAYBACK_SETTINGS } from '@/constants/export'
 
 const nodeTypes: NodeTypes = { slideNode: SlideNode }

@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 /**
  * 🧭 SlideNavigation — Bottom navigation bar

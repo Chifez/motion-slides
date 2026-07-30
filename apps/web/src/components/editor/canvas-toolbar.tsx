@@ -1,6 +1,6 @@
-import { useEditorStore } from '@/store/editorStore'
-import { SlideBackgroundPicker } from './SlideBackgroundPicker'
-import { SyncStatusButton } from './SyncStatusButton'
+import { useEditorStore } from '@/store/editor-store'
+import { SlideBackgroundPicker } from './slide-background-picker'
+import { SyncStatusButton } from './sync-status-button'
 
 interface Props {
     slideName: string

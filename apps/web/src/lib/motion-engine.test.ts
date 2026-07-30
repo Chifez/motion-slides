@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getHeuristicMatchingMap } from './motionEngine'
+import { getHeuristicMatchingMap } from './motion-engine'
 import type { Slide, SceneElement } from '@motionslides/shared'
 
 describe('Heuristic Magic Move Matching', () => {

@@ -1,11 +1,11 @@
 import { useParams, useLoaderData, Link } from '@tanstack/react-router'
-import { EditorShell } from '@/components/editor/EditorShell'
-import { usePermissions } from '@/context/PermissionContext'
-import { useEditorShortcuts } from '@/hooks/useEditorShortcuts'
-import { LoadingPage } from '@/components/ui/LoadingPage'
-import { useProjectHydration } from '@/hooks/useProjectHydration'
-import { usePresentationAutostart } from '@/hooks/usePresentationAutostart'
-import { useProjectSync } from '@/hooks/useProjectSync'
+import { EditorShell } from '@/components/editor/editor-shell'
+import { usePermissions } from '@/context/permission-context'
+import { useEditorShortcuts } from '@/hooks/use-editor-shortcuts'
+import { LoadingPage } from '@/components/ui/loading-page'
+import { useProjectHydration } from '@/hooks/use-project-hydration'
+import { usePresentationAutostart } from '@/hooks/use-presentation-autostart'
+import { useProjectSync } from '@/hooks/use-project-sync'
 import type { Project } from '@motionslides/shared'
 
 interface LoaderData {

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { Github, Twitter, ExternalLink } from 'lucide-react'
-import { Logo } from '@/components/ui/Logo'
+import { Logo } from '@/components/ui/logo'
 
 const FOOTER_LINKS = {
   Product: [

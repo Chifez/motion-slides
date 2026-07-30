@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Slide } from '@motionslides/shared'
 import { Send, Check, X, RefreshCw } from 'lucide-react'
 
-import { StaticSlidePreview } from './ai/StaticSlidePreview'
+import { StaticSlidePreview } from './ai/static-slide-preview'
 
 interface Props {
   slides: Slide[]

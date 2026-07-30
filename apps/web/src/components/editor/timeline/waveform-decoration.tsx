@@ -1,6 +1,6 @@
 import { useEffect, useRef, memo } from 'react'
 import { WAVE_PATTERN } from './constants'
-import { useAudioWaveform } from '@/hooks/useAudioWaveform'
+import { useAudioWaveform } from '@/hooks/use-audio-waveform'
 
 interface Props {
   color?: string

@@ -1,4 +1,4 @@
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 /**
  * Programmatic toast helper. Accesses store dynamically to allow

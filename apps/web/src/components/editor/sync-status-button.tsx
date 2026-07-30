@@ -1,9 +1,9 @@
 import { Cloud, GitCommit, Send, RefreshCw } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
-import { useSuggestionSubmit } from '@/hooks/useSuggestionSubmit'
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { useEditorStore } from '@/store/editor-store'
+import { useSuggestionSubmit } from '@/hooks/use-suggestion-submit'
+import { useOnlineStatus } from '@/hooks/use-online-status'
 import type { Project } from '@motionslides/shared'
-import { SuggestionsDropdown } from './toolbar/SuggestionsDropdown'
+import { SuggestionsDropdown } from './toolbar/suggestions-dropdown'
 
 interface Props {
   isAuthenticated: boolean

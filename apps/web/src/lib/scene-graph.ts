@@ -6,7 +6,7 @@
  * data URLs so the headless browser never makes external network requests.
  */
 
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import type { ExportProject, SerializedProject, SerializedPlaybackSettings } from '@motionslides/shared'
 
 /**

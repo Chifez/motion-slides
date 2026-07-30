@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand'
-import type { EditorState } from '@/store/editorStore'
+import type { EditorState } from '@/store/editor-store'
 
 export interface Camera {
   x: number

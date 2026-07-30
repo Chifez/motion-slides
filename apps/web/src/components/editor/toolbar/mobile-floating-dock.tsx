@@ -7,16 +7,16 @@ import {
   LineChart, BarChart, AreaChart, PieChart,
   MoveRight, CornerDownRight, Trello, GitCommit
 } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { uuid } from '@/lib/uuid'
 import {
   DEFAULT_TEXT_ELEMENT, DEFAULT_CODE_ELEMENT, DEFAULT_SHAPE_ELEMENT,
   DEFAULT_LINE_ELEMENT, DEFAULT_CHART_ELEMENT, LINE_TYPE_OPTIONS,
   SHAPE_OPTIONS, CHART_TYPE_OPTIONS
 } from '@/constants/editor'
-import { useClickOutside } from '@/hooks/useClickOutside'
+import { useClickOutside } from '@/hooks/use-click-outside'
 import type { LineType, ShapeType, ChartType } from '@motionslides/shared'
-import { UI_SPRING } from '@/lib/motionEngine'
+import { UI_SPRING } from '@/lib/motion-engine'
 
 /**
  * MobileFloatingDock — Radial tool dock positioned in the bottom-left.

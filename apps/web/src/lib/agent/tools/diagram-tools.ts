@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { tool } from 'ai'
-import { useEditorStore } from '../../../store/editorStore'
+import { useEditorStore } from '../../../store/editor-store'
 import { uuid } from '../../uuid'
 import type { SceneElement, ShapeType, LineType, SectionContent, LineContent, ShapeContent } from '@motionslides/shared'
 

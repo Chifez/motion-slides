@@ -1,10 +1,10 @@
 import { useLayoutEffect, useEffect, useRef, useState, useCallback } from 'react';
 import type { RefObject } from 'react';
-import { useMotionContext } from '@/context/MotionContext';
-import { useEditorStore } from '@/store/editorStore';
-import { usePermissions } from '@/context/PermissionContext';
-import { lcsDiffTokens, tokenizeText } from './charTokenizer';
-import type { AnimToken, CharLayout, CharToken, SteadyStateRecord } from './charTokenizer';
+import { useMotionContext } from '@/context/motion-context';
+import { useEditorStore } from '@/store/editor-store';
+import { usePermissions } from '@/context/permission-context';
+import { lcsDiffTokens, tokenizeText } from './char-tokenizer';
+import type { AnimToken, CharLayout, CharToken, SteadyStateRecord } from './char-tokenizer';
 
 
 
@@ -254,4 +254,4 @@ export function useTextMagicMove({
   };
 }
 
-export type { CharToken } from './charTokenizer';
+export type { CharToken } from './char-tokenizer';

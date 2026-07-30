@@ -1,5 +1,5 @@
 import type { SceneElement, Slide, Project } from '@motionslides/shared'
-import type { EditorState } from './editorStore'
+import type { EditorState } from './editor-store'
 
 /**
  * Shared Store Update Helpers

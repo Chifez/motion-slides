@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 export type TourType = 'dashboard' | 'editor'
 

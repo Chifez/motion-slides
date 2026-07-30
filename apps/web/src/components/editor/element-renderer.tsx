@@ -1,11 +1,11 @@
 import { memo } from 'react'
-import { TextElement } from './elements/TextElement'
-import { CodeElement } from './elements/CodeElement'
-import { ShapeElement } from './elements/ShapeElement'
-import { LineElement } from './elements/LineElement'
-import { ChartElement } from './elements/ChartElement'
-import { SectionElement } from './elements/SectionElement'
-import { HotspotElement } from './elements/HotspotElement'
+import { TextElement } from './elements/text-element'
+import { CodeElement } from './elements/code-element'
+import { ShapeElement } from './elements/shape-element'
+import { LineElement } from './elements/line-element'
+import { ChartElement } from './elements/chart-element'
+import { SectionElement } from './elements/section-element'
+import { HotspotElement } from './elements/hotspot-element'
 
 import type { HotspotContent, CodeContent, ShapeContent, ChartContent, SectionContent } from '@motionslides/shared'
 

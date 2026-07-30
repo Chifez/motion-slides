@@ -1,9 +1,9 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import appCss from '../styles.css?url'
 import { useEffect } from 'react'
-import { useEditorStore } from '@/store/editorStore'
-import { SyncFooter } from '@/components/ui/SyncFooter'
-import { useSyncManager } from '@/hooks/useSyncManager'
+import { useEditorStore } from '@/store/editor-store'
+import { SyncFooter } from '@/components/ui/sync-footer'
+import { useSyncManager } from '@/hooks/use-sync-manager'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const queryClient = new QueryClient({
@@ -66,7 +66,7 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 })
 
-import { ToastContainer } from '@/components/ui/ToastContainer'
+import { ToastContainer } from '@/components/ui/toast-container'
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const checkSession = useEditorStore((s) => s.checkSession)

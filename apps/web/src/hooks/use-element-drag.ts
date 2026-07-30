@@ -1,8 +1,8 @@
 import { useRef, useCallback, useEffect } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { DRAG_THRESHOLD_PX, DRAG_RESET_DELAY_MS } from '@/constants/animation'
 import { type SceneElement, type LineContent, getCanvasDimensions } from '@motionslides/shared'
-import type { AlignmentGuide } from '@/store/slices/canvasSlice'
+import type { AlignmentGuide } from '@/store/slices/canvas-slice'
 
 interface UseElementDragOptions {
   element: SceneElement | undefined

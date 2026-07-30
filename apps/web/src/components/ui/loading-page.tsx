@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Logo } from './Logo'
+import { Logo } from './logo'
 import { Loader2 } from 'lucide-react'
 
 /**

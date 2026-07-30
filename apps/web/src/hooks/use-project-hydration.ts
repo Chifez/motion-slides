@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import type { Project } from '@motionslides/shared'
 
 interface Options {

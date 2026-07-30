@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { resolveSuggestionAction, listSuggestionsAction } from '@/lib/actions/suggestions'
 import type { ProjectSuggestion } from '@/lib/actions/suggestions'
 import { useQuery, useQueryClient } from '@tanstack/react-query'

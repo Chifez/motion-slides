@@ -1,5 +1,5 @@
 import { MousePointer, Hand } from 'lucide-react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 export function ToolSelector() {
   const activeTool = useEditorStore((state) => state.activeTool)

@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand'
-import type { EditorState } from '../editorStore'
-import { getStorageItem, setStorageItem } from '@/lib/safeStorage'
+import type { EditorState } from '../editor-store'
+import { getStorageItem, setStorageItem } from '@/lib/safe-storage'
 
 export interface TourStep {
   selector: string | null

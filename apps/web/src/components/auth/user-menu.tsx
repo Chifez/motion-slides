@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User, LogOut, Cloud, ChevronDown, Download, Settings } from 'lucide-react'
-import { AuthModal } from './AuthModal'
-import { usePWAInstall } from '@/hooks/usePWAInstall'
-import { SettingsModal } from '../dashboard/SettingsModal'
+import { AuthModal } from './auth-modal'
+import { usePWAInstall } from '@/hooks/use-pwainstall'
+import { SettingsModal } from '../dashboard/settings-modal'
 
 
 export function UserMenu({ dashboard }: { dashboard?: boolean }) {

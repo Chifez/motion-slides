@@ -1,8 +1,8 @@
 import { useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import type { ShapeContent } from '@motionslides/shared'
-import { useMotionContext } from '@/context/MotionContext'
-import { useEditorStore } from '@/store/editorStore'
+import { useMotionContext } from '@/context/motion-context'
+import { useEditorStore } from '@/store/editor-store'
 
 interface Props { content: ShapeContent; elementId: string }
 

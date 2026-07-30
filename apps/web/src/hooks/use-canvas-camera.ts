@@ -1,5 +1,5 @@
 import { useEffect, useState, type RefObject } from 'react'
-import { useEditorStore } from '@/store/editorStore'
+import { useEditorStore } from '@/store/editor-store'
 
 /**
  * useCanvasCamera — Handles zoom and pan interactions.

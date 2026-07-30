@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Type, Code2, Square, Minus, BarChart3, Lock, Unlock, Trash2, Combine, ChevronDown, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEditorStore } from '@/store/editorStore'
-import { useIsMobile } from '@/hooks/useMediaQuery'
+import { useEditorStore } from '@/store/editor-store'
+import { useIsMobile } from '@/hooks/use-media-query'
 import type { SceneElement } from '@motionslides/shared'
 
 interface LayerListProps {

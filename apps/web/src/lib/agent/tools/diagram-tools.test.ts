@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useEditorStore } from '../../../store/editorStore'
+import { useEditorStore } from '../../../store/editor-store'
 import { executeAgentTool, agentToolSchemas } from '../tools'
 
 describe('Agent Granular Diagram Tools', () => {

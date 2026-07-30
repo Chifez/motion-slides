@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { parseArchitecture, buildArchitectureBriefing } from '@/lib/generation/architectureParser'
-import { generateFromArchitecture } from '@/lib/generation/generationClient'
-import { assembleSlides } from '@/lib/generation/slideAssembler'
+import { parseArchitecture, buildArchitectureBriefing } from '@/lib/generation/architecture-parser'
+import { generateFromArchitecture } from '@/lib/generation/generation-client'
+import { assembleSlides } from '@/lib/generation/slide-assembler'
 
 // In-memory rate limiting (IP/Session based) for protection against API abuse
 const rateLimits = new Map<string, { count: number, resetAt: number }>()
@@ -54,7 +54,7 @@ export const Route = createFileRoute("/api/generate/architecture")({
                 // Sanitize user refinement prompt
                 const cleanPrompt = body.refinementPrompt.replace(/<[^>]*>?/gm, '').trim()
                 send({ stage: 'capturing', percent: 20, message: 'Applying refinements…' })
-                const { refinePresentation } = await import('@/lib/generation/generationClient')
+                const { refinePresentation } = await import('@/lib/generation/generation-client')
                 generated = await refinePresentation({
                   instruction: cleanPrompt,
                   previousPresentation: body.previousPresentation,

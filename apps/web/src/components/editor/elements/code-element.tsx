@@ -2,9 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { CodeContent } from '@motionslides/shared'
 import { CODE_DEBOUNCE_MS } from '@/constants/animation'
-import { getTokenizedLines } from '@/lib/shikiHighlighter'
-import { tokenKey, CODE_PHASE } from '@/lib/motionEngine'
-import { useMotionContext } from '@/context/MotionContext'
+import { getTokenizedLines } from '@/lib/shiki-highlighter'
+import { tokenKey, CODE_PHASE } from '@/lib/motion-engine'
+import { useMotionContext } from '@/context/motion-context'
 
 interface Props {
   content: CodeContent

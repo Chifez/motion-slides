@@ -1,7 +1,7 @@
-import { useAccessControl } from '@/hooks/useAccessControl'
-import { useEditorStore } from '@/store/editorStore'
+import { useAccessControl } from '@/hooks/use-access-control'
+import { useEditorStore } from '@/store/editor-store'
 import { Play, ChevronLeft, ChevronRight } from 'lucide-react'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 interface Props {
   startPresentation: (options?: { autoplay?: boolean }) => void

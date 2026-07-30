@@ -22,7 +22,7 @@ import {
   buildElbowPoints,
   buildRoundedPath,
   getPathMidpoint,
-} from "@/components/editor/elements/lineHelpers";
+} from "@/components/editor/elements/line-helpers";
 import { getArrow } from "perfect-arrows";
 
 // ─── Canvas constants ────────────────────────────────────────────────────────
