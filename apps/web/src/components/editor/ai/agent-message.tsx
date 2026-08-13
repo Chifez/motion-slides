@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
 import type { UIMessage } from '@ai-sdk/react'
 import {
   BotMessageSquare, User, CheckCircle2, Loader2, XCircle,
-  PlusSquare, Type, Zap, Film, Navigation, Eye, Trash2, Image, WrapText,
+  PlusSquare, Type, Zap, Film, Navigation, Eye, Trash2, Image, WrapText, Undo2,
 } from 'lucide-react'
+import { useEditorStore } from '@/store/editor-store'
 
 // ── Tool metadata for display ─────────────────────────────────────
 
@@ -33,7 +35,13 @@ const TOOL_META: Record<string, ToolMeta> = {
 
 // ── Tool call card ────────────────────────────────────────────────
 
-function ToolCallCard({ toolPart }: { toolPart: Record<string, unknown> }) {
+interface ToolCallCardProps {
+  toolPart: Record<string, unknown>
+  pendingApproval?: { toolName: string; args: any }
+  onApprove?: (approved: boolean) => void
+}
+
+function ToolCallCard({ toolPart, pendingApproval, onApprove }: ToolCallCardProps) {
   const type = String(toolPart.type ?? '')
   const toolName = String(toolPart.toolName ?? type.replace(/^tool-/, ''))
   
@@ -57,7 +65,9 @@ function ToolCallCard({ toolPart }: { toolPart: Record<string, unknown> }) {
   const isError = isSdkOutputError || isLogicalError
   const isSuccess = hasResult && !isError
 
-  const labelText = isError
+  const labelText = pendingApproval 
+    ? `Approve ${meta.activeLabel.toLowerCase()}?`
+    : isError
     ? `${meta.activeLabel} failed`
     : hasResult
     ? meta.completedLabel
@@ -67,24 +77,51 @@ function ToolCallCard({ toolPart }: { toolPart: Record<string, unknown> }) {
     <motion.div
       initial={{ opacity: 0, y: 4, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) text-xs"
+      className="flex flex-col gap-2 px-3 py-2 rounded-lg bg-(--ms-bg-base) border border-(--ms-border) text-xs"
     >
-      <Icon size={13} className={meta.color} />
-      <span className="text-(--ms-text-secondary) font-medium flex-1">
-        {labelText}
-      </span>
-
-      {!hasResult && (
-        <Loader2 size={13} className="text-purple-400 animate-spin shrink-0" />
-      )}
-      {isSuccess && (
-        <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
-      )}
-      {isError && (
-        <span className="flex items-center gap-1 text-red-400 shrink-0">
-          <XCircle size={13} />
-          <span className="text-[10px]">{String(res?.error ?? toolPart.errorText ?? '')}</span>
+      <div className="flex items-center gap-2.5">
+        <Icon size={13} className={meta.color} />
+        <span className="text-(--ms-text-secondary) font-medium flex-1">
+          {labelText}
         </span>
+
+        {pendingApproval && onApprove ? (
+          <div className="flex gap-2 shrink-0">
+            <button 
+              onClick={() => onApprove(false)} 
+              className="px-2 py-0.5 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 border-none cursor-pointer"
+            >
+              No
+            </button>
+            <button 
+              onClick={() => onApprove(true)} 
+              className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border-none cursor-pointer"
+            >
+              Yes
+            </button>
+          </div>
+        ) : (
+          <>
+            {!hasResult && (
+              <Loader2 size={13} className="text-purple-400 animate-spin shrink-0" />
+            )}
+            {isSuccess && (
+              <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+            )}
+            {isError && (
+              <span className="flex items-center gap-1 text-red-400 shrink-0">
+                <XCircle size={13} />
+                <span className="text-[10px] truncate max-w-[150px]">{String(res?.error ?? toolPart.errorText ?? '')}</span>
+              </span>
+            )}
+          </>
+        )}
+      </div>
+      
+      {pendingApproval && (
+        <div className="text-[10px] text-(--ms-text-muted) break-all">
+          Args: {JSON.stringify(pendingApproval.args)}
+        </div>
       )}
     </motion.div>
   )
@@ -94,9 +131,13 @@ function ToolCallCard({ toolPart }: { toolPart: Record<string, unknown> }) {
 
 interface Props {
   message: UIMessage
+  snapshotId?: string
+  pendingApprovals?: Record<string, { toolName: string; args: any }>
+  onApproveTool?: (toolCallId: string, approved: boolean) => void
+  onUndo?: (messageId: string, snapshotId: string) => void
 }
 
-export function AgentMessage({ message }: Props) {
+export function AgentMessage({ message, snapshotId, pendingApprovals, onApproveTool, onUndo }: Props) {
   const isUser = message.role === 'user'
 
   const parts = message.parts ?? []
@@ -136,23 +177,58 @@ export function AgentMessage({ message }: Props) {
         {/* Tool call visualizations */}
         {!isUser && toolParts.length > 0 && (
           <div className="w-full space-y-1.5">
-            {toolParts.map((toolPart, i) => (
-              <ToolCallCard key={i} toolPart={toolPart} />
-            ))}
+            {toolParts.map((toolPart, i) => {
+              const toolCallId = String(toolPart.toolCallId ?? '')
+              return (
+                <ToolCallCard 
+                  key={i} 
+                  toolPart={toolPart} 
+                  pendingApproval={pendingApprovals?.[toolCallId]}
+                  onApprove={(approved) => onApproveTool?.(toolCallId, approved)}
+                />
+              )
+            })}
           </div>
         )}
 
         {/* Text content */}
         {textContent && (
           <div
-            className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+            className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
               isUser
-                ? 'bg-blue-600 text-white rounded-tr-sm'
-                : 'bg-(--ms-bg-elevated) text-(--ms-text-primary) border border-(--ms-border) rounded-tl-sm'
+                ? 'bg-blue-600 text-white rounded-tr-sm whitespace-pre-wrap'
+                : 'bg-(--ms-bg-elevated) text-(--ms-text-primary) border border-(--ms-border) rounded-tl-sm [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_strong]:font-semibold [&_em]:italic'
             }`}
           >
-            {textContent}
+            {isUser ? (
+              textContent
+            ) : (
+              <ReactMarkdown
+                components={{
+                  code: ({ children }) => <code className="bg-zinc-800/80 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                }}
+              >
+                {textContent}
+              </ReactMarkdown>
+            )}
           </div>
+        )}
+        
+        {/* Inline Undo Button */}
+        {!isUser && snapshotId && (
+          <button 
+            onClick={() => {
+              if (onUndo) {
+                onUndo(message.id, snapshotId)
+              } else {
+                useEditorStore.getState().restoreSnapshot(snapshotId)
+              }
+            }}
+            className="flex items-center gap-1 mt-1 text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors bg-transparent border-none cursor-pointer"
+          >
+            <Undo2 size={12} />
+            <span>Undo this action</span>
+          </button>
         )}
       </div>
     </motion.div>

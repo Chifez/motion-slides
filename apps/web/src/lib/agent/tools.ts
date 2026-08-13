@@ -22,7 +22,7 @@ type ToolResult = { success: boolean; [key: string]: unknown }
 // Central Tool Executor — dispatches to domain executors
 // ─────────────────────────────────────────────────────────────────
 
-export async function executeAgentTool(toolName: string, args: Record<string, unknown>): Promise<ToolResult> {
+export async function executeAgentTool(toolName: AgentToolName, args: Record<string, unknown>): Promise<ToolResult> {
   if (toolName in slideToolSchemas) {
     return executeSlideTool(toolName, args)
   }

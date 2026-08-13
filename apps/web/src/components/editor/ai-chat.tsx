@@ -5,7 +5,7 @@ import { useChat } from '@ai-sdk/react'
 import { lastAssistantMessageIsCompleteWithToolCalls } from 'ai'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEditorStore } from '@/store/editor-store'
-import { executeAgentTool } from '@/lib/agent/tools'
+import { executeAgentTool, type AgentToolName } from '@/lib/agent/tools'
 import { AgentChatHeader } from './ai/agent-chat-header'
 import { AgentInput } from './ai/agent-input'
 import { AgentMessage } from './ai/agent-message'
@@ -20,28 +20,26 @@ export function AIChat() {
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const currentSnapshotRef = useRef<string | null>(null)
+  const messageSnapshotMap = useRef<Record<string, string>>({})
+  const [pendingApprovals, setPendingApprovals] = useState<Record<string, { toolName: string; args: any }>>({})
 
-  const { messages, sendMessage, status, stop, addToolOutput } = useChat({
+  const { messages, setMessages, sendMessage, status, stop, addToolOutput } = useChat({
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-    body: {
-      model: selectedModel,
-    },
     onToolCall: async ({ toolCall }) => {
-      console.log('[MotionSlide Agent] Received toolCall:', toolCall)
-      
-      const tc = toolCall as unknown as { toolCallId: string; toolName: string; input?: Record<string, unknown>; args?: Record<string, unknown> }
+      const tc = toolCall as unknown as { toolCallId: string; toolName: string; args?: any }
       const toolName = tc.toolName
-      const toolArgs = tc.input ?? tc.args ?? {}
+      const toolArgs = tc.args ?? {}
+      
+      if (['deleteSlide', 'deleteElement'].includes(toolName)) {
+        setPendingApprovals((prev) => ({ ...prev, [tc.toolCallId]: { toolName, args: toolArgs } }))
+        return
+      }
       
       try {
-        console.log(`[MotionSlide Agent] Executing tool "${toolName}" with args:`, toolArgs)
-        const res = await executeAgentTool(toolName, toolArgs)
-        console.log(`[MotionSlide Agent] Tool "${toolName}" executed successfully. Result:`, res)
-        addToolOutput({ toolCallId: tc.toolCallId, result: res })
-        console.log(`[MotionSlide Agent] Called addToolOutput for "${toolName}"`)
+        const res = await executeAgentTool(toolName as AgentToolName, toolArgs)
+        addToolOutput({ toolCallId: tc.toolCallId, tool: toolName, output: res })
       } catch (err) {
-        console.error(`[MotionSlide Agent] Tool "${toolName}" execution failed:`, err)
-        addToolOutput({ toolCallId: tc.toolCallId, result: { success: false, error: String(err) } })
+        addToolOutput({ toolCallId: tc.toolCallId, tool: toolName, state: 'output-error', errorText: String(err) })
       }
     },
     onError: (err) => {
@@ -51,13 +49,17 @@ export function AIChat() {
         currentSnapshotRef.current = null
       }
     },
-    onFinish: () => {
-      if (currentSnapshotRef.current) {
-        useEditorStore.getState().discardSnapshot(currentSnapshotRef.current)
-        currentSnapshotRef.current = null
-      }
-    },
   })
+
+  // Track the snapshot that started this assistant message
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg?.role === 'assistant' && currentSnapshotRef.current) {
+      if (!messageSnapshotMap.current[lastMsg.id]) {
+        messageSnapshotMap.current[lastMsg.id] = currentSnapshotRef.current
+      }
+    }
+  }, [messages])
 
   const isLoading = status === 'streaming' || status === 'submitted'
 
@@ -66,10 +68,54 @@ export function AIChat() {
     const content = text
     setInput('')
     currentSnapshotRef.current = useEditorStore.getState().pushSnapshot()
-    await sendMessage({ text: content, body: { model: selectedModel } })
+    await sendMessage({ text: content })
   }
 
-  // Auto-scroll to latest message
+  const handleApprove = async (toolCallId: string, approved: boolean) => {
+    const pending = pendingApprovals[toolCallId]
+    if (!pending) return
+    setPendingApprovals((prev) => {
+      const next = { ...prev }
+      delete next[toolCallId]
+      return next
+    })
+
+    if (approved) {
+      try {
+        const res = await executeAgentTool(pending.toolName as AgentToolName, pending.args)
+        addToolOutput({ toolCallId, tool: pending.toolName, output: res })
+      } catch (err) {
+        addToolOutput({ toolCallId, tool: pending.toolName, state: 'output-error', errorText: String(err) })
+      }
+    } else {
+      addToolOutput({ toolCallId, tool: pending.toolName, state: 'output-error', errorText: 'User denied this action.' })
+    }
+  }
+
+  const handleUndo = (messageId: string, snapshotId: string) => {
+    useEditorStore.getState().restoreSnapshot(snapshotId)
+
+    const msgIndex = messages.findIndex((m) => m.id === messageId)
+    if (msgIndex !== -1) {
+      const prevUserMsg = messages.slice(0, msgIndex).reverse().find((m) => m.role === 'user')
+      if (prevUserMsg) {
+        const textContent = (prevUserMsg.parts ?? [])
+          .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+          .map((p) => p.text)
+          .join('')
+        if (textContent) {
+          setInput(textContent)
+        }
+        const userIndex = messages.findIndex((m) => m.id === prevUserMsg.id)
+        if (userIndex !== -1) {
+          setMessages(messages.slice(0, userIndex))
+          return
+        }
+      }
+      setMessages(messages.slice(0, msgIndex))
+    }
+  }
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -91,7 +137,14 @@ export function AIChat() {
                 <AgentWelcome onPrompt={(prompt) => handleSendMessage(prompt)} />
               ) : (
                 messages.map((msg) => (
-                  <AgentMessage key={msg.id} message={msg} />
+                  <AgentMessage 
+                    key={msg.id} 
+                    message={msg} 
+                    snapshotId={messageSnapshotMap.current[msg.id]}
+                    pendingApprovals={pendingApprovals}
+                    onApproveTool={handleApprove}
+                    onUndo={handleUndo}
+                  />
                 ))
               )}
             </AnimatePresence>
