@@ -32,6 +32,7 @@ export type EditorState =
   & IdentitySlice
   & OnboardingSlice
   & GitSlice
+  & SnapshotSlice
 
 type PersistedState = Pick<
   EditorState,

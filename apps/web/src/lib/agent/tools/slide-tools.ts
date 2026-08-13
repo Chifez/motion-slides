@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { tool } from 'ai'
 import { useEditorStore } from '../../../store/editor-store'
 import { uuid } from '../../uuid'
-import type { SceneElement } from '@motionslides/shared'
+import type { SceneElement, Slide } from '@motionslides/shared'
 
 export const slideToolSchemas = {
   addSlide: tool({
@@ -38,9 +38,9 @@ export const slideToolSchemas = {
     inputSchema: z.object({}),
   }),
   getSlideContext: tool({
-    description: 'Get full detail (all elements, positions, styles) for one specific slide.',
+    description: 'Get full detail (all elements, positions, styles) for one specific slide. Omit slideIndex to target the currently active slide in the editor.',
     inputSchema: z.object({
-      slideIndex: z.number().describe('0-based slide index'),
+      slideIndex: z.number().optional().describe('Optional 0-based slide index target. Omit to inspect active slide.'),
     }),
   }),
 }
@@ -73,16 +73,22 @@ export async function executeSlideTool(toolName: string, args: Record<string, un
       let newActiveIndex = 0
       let targetSlideId = ''
       let targetSlideName = ''
+      let limitExceeded = false
 
       useEditorStore.setState((s) => {
         const p = s.projects.find(proj => proj.id === activeProjectId)
         if (!p) return s
         const currentCount = p.slides.length
+        const requiredIndex = targetIndex !== undefined && targetIndex >= currentCount ? targetIndex : currentCount
+
+        if (requiredIndex - currentCount + 1 > 10) {
+          limitExceeded = true
+          return s
+        }
+
         const defaultBg = p.slides[0]?.background ?? '#0d0d14'
         const bg = background ?? defaultBg
-
-        const requiredIndex = targetIndex !== undefined && targetIndex >= currentCount ? targetIndex : currentCount
-        const createdSlides = []
+        const createdSlides: Slide[] = []
 
         for (let i = currentCount; i <= requiredIndex; i++) {
           const isTarget = i === requiredIndex
@@ -110,6 +116,10 @@ export async function executeSlideTool(toolName: string, args: Record<string, un
           activeSlideIndex: newActiveIndex,
         }
       })
+
+      if (limitExceeded) {
+        return { success: false, error: 'Cannot create more than 10 slides at once. Please specify a lower targetIndex.' }
+      }
 
       return {
         success: true,
@@ -190,14 +200,32 @@ export async function executeSlideTool(toolName: string, args: Record<string, un
     }
 
     case 'getSlideContext': {
-      const { slideIndex } = args as { slideIndex: number }
+      const { slideIndex } = args as { slideIndex?: number }
       const project = store.activeProject()
       if (!project) return { success: false, error: 'No active project.' }
-      const slide = project.slides[slideIndex]
-      if (!slide) return { success: false, error: `Slide index ${slideIndex} out of range.` }
+
+      let targetIndex = slideIndex
+      if (targetIndex === undefined) {
+        targetIndex = store.activeSlideIndex
+      }
+
+      let slide = project.slides[targetIndex]
+      if (!slide && targetIndex !== undefined && targetIndex > 0) {
+        // Fallback check for 1-based indexing if 0-based index was out of range
+        slide = project.slides[targetIndex - 1]
+        if (slide) targetIndex = targetIndex - 1
+      }
+
+      if (!slide) {
+        return {
+          success: false,
+          error: `Slide index ${slideIndex} out of range. The project currently has ${project.slides.length} slides (valid 0-based indices 0 to ${project.slides.length - 1}). Use addSlide if you need to create slide ${slideIndex}.`,
+        }
+      }
 
       return {
         success: true,
+        slideIndex: targetIndex,
         slideName: slide.name,
         background: slide.background,
         elements: slide.elements.map((el) => ({

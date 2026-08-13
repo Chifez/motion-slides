@@ -99,9 +99,10 @@ export type AnimToken = ContinuingToken | EnteringToken | LeavingToken;
  * excluded from measurement and animation.
  */
 export function tokenizeText(text: string): CharToken[] {
+  const safeText = typeof text === 'string' ? text : String(text || '');
   const counts: Record<string, number> = {};
 
-  return [...text].map((char, index) => {
+  return [...safeText].map((char, index) => {
     const isWhitespace =
       char === ' ' || char === '\n' || char === '\r' || char === '\t';
 

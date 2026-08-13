@@ -7,6 +7,7 @@ import { useMotionContext } from '@/context/motion-context'
 import { tokenizeText } from './text/char-tokenizer'
 import { useTextMagicMove } from './text/use-text-magic-move'
 import { TextAnimationLayer } from './text/text-animation-layer'
+import ReactMarkdown from 'react-markdown'
 
 interface Props {
   element: SceneElement
@@ -31,7 +32,7 @@ export function TextElement({ element }: Props) {
     spanRefCallback,
   } = useTextMagicMove({
     elementId: element.id,
-    text:      content.value,
+    text:      content.value || '',
     fontSize:  content.fontSize,
     color:     content.color,
     isEditing,
@@ -72,7 +73,7 @@ export function TextElement({ element }: Props) {
   const handleBlur = () => {
     if (editableRef.current) {
       const newValue = editableRef.current.innerText
-      if (newValue !== content.value) {
+      if (newValue !== (content.value || '')) {
         updateElement(element.id, {
           content: { ...content, value: newValue }
         })
@@ -135,14 +136,14 @@ export function TextElement({ element }: Props) {
             background: 'transparent',
           }}
         >
-          {content.value}
+          {content.value || ''}
         </div>
       )
     }
 
     if (content.listStyle === 'bullet' || content.listStyle === 'numbered') {
       const Tag = content.listStyle === 'bullet' ? 'ul' : 'ol'
-      const lines = content.value.split('\n').filter(l => l.trim().length > 0)
+      const lines = (content.value || '').split('\n').filter(l => l.trim().length > 0)
 
       return (
         <Tag style={{
@@ -161,7 +162,7 @@ export function TextElement({ element }: Props) {
     }
 
     if (isAnimationMode || isReadOnly || isTimelinePreview) {
-      const tokens = tokenizeText(content.value)
+      const tokens = tokenizeText(content.value || '')
 
       return (
         <div ref={layoutContainerRef} style={{ position: 'relative', width: '100%' }}>
@@ -209,9 +210,19 @@ export function TextElement({ element }: Props) {
     }
 
     return (
-      <span style={{ width: '100%', whiteSpace: 'pre-wrap', wordBreak: 'break-word', textAlign: content.align }}>
-        {content.value}
-      </span>
+      <div style={{ width: '100%', whiteSpace: 'pre-wrap', wordBreak: 'break-word', textAlign: content.align }}>
+        <ReactMarkdown
+          components={{
+            p: ({ children }) => <>{children}</>,
+            h1: ({ children }) => <span className="font-bold text-xl block">{children}</span>,
+            h2: ({ children }) => <span className="font-bold text-lg block">{children}</span>,
+            h3: ({ children }) => <span className="font-semibold text-base block">{children}</span>,
+            code: ({ children }) => <code className="bg-zinc-800/80 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+          }}
+        >
+          {content.value || ''}
+        </ReactMarkdown>
+      </div>
     )
   }
 

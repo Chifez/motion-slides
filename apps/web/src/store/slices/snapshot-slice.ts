@@ -5,6 +5,7 @@ import { uuid } from '@/lib/uuid'
 
 export interface SnapshotSlice {
   snapshots: Record<string, { projects: Project[]; activeProjectId: string | null }>
+  snapshotIds: string[]
   pushSnapshot: () => string
   restoreSnapshot: (id: string) => void
   discardSnapshot: (id: string) => void
@@ -12,20 +13,30 @@ export interface SnapshotSlice {
 
 export const createSnapshotSlice: StateCreator<EditorState, [], [], SnapshotSlice> = (set, get) => ({
   snapshots: {},
+  snapshotIds: [],
 
   pushSnapshot: () => {
     const id = uuid()
-    const { projects, activeProjectId } = get()
+    const { projects, activeProjectId, snapshotIds } = get()
     
     // Deep clone projects to prevent mutation of the snapshot
     const clonedProjects = JSON.parse(JSON.stringify(projects)) as Project[]
     
-    set((state) => ({
-      snapshots: {
+    set((state) => {
+      const newSnapshots = {
         ...state.snapshots,
         [id]: { projects: clonedProjects, activeProjectId },
-      },
-    }))
+      }
+      const newIds = [...state.snapshotIds, id]
+      
+      // Enforce 50-item limit to prevent memory bloat
+      if (newIds.length > 50) {
+        const oldestId = newIds.shift()!
+        delete newSnapshots[oldestId]
+      }
+      
+      return { snapshots: newSnapshots, snapshotIds: newIds }
+    })
     
     return id
   },
@@ -38,13 +49,9 @@ export const createSnapshotSlice: StateCreator<EditorState, [], [], SnapshotSlic
     const clonedProjects = JSON.parse(JSON.stringify(snapshot.projects)) as Project[]
     
     set((state) => {
-      const newSnapshots = { ...state.snapshots }
-      delete newSnapshots[id]
-      
       return {
         projects: clonedProjects,
         activeProjectId: snapshot.activeProjectId,
-        snapshots: newSnapshots,
       }
     })
   },
@@ -53,7 +60,8 @@ export const createSnapshotSlice: StateCreator<EditorState, [], [], SnapshotSlic
     set((state) => {
       const newSnapshots = { ...state.snapshots }
       delete newSnapshots[id]
-      return { snapshots: newSnapshots }
+      const newIds = state.snapshotIds.filter(sid => sid !== id)
+      return { snapshots: newSnapshots, snapshotIds: newIds }
     })
   },
 })

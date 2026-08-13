@@ -41,34 +41,54 @@ function nextAvailablePosition(slide: Slide, width: number, height: number) {
   return y + height > 700 ? { x: last.position.x + offset, y: 120 } : { x: last.position.x, y }
 }
 
+const NAMED_COLORS: Record<string, string> = {
+  black: '#000000', white: '#ffffff', red: '#ff0000', green: '#008000',
+  blue: '#0000ff', gray: '#808080', grey: '#808080', yellow: '#ffff00',
+}
+
+function normalizeToHex(input: string): string | null {
+  const s = input.trim().toLowerCase()
+  if (NAMED_COLORS[s]) return NAMED_COLORS[s]
+
+  const rgb = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/)
+  if (rgb) {
+    const [r, g, b] = rgb.slice(1, 4).map(n => parseInt(n, 10))
+    return `#${[r, g, b].map(n => Math.min(255, n).toString(16).padStart(2, '0')).join('')}`
+  }
+
+  let hex = s.replace('#', '')
+  if (/^[0-9a-f]{3}$/.test(hex)) hex = hex.split('').map(c => c + c).join('')
+  return /^[0-9a-f]{6}$/.test(hex) ? `#${hex}` : null
+}
+
+function getLuminance(hex: string): number {
+  const rgb = hex.replace('#', '').match(/.{2}/g)?.map(x => parseInt(x, 16) / 255) || [0,0,0]
+  const [r, g, b] = rgb.map(c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)))
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+function contrastRatio(hex1: string, hex2: string): number {
+  const l1 = getLuminance(hex1)
+  const l2 = getLuminance(hex2)
+  const lightest = Math.max(l1, l2)
+  const darkest = Math.min(l1, l2)
+  return (lightest + 0.05) / (darkest + 0.05)
+}
+
 function ensureReadable(color: string | undefined, background: string): string {
-  // if gradient or unknown, fallback to white since backgrounds are default dark
-  if (!background.startsWith('#')) return color || '#ffffff'
+  const normalizedBg = normalizeToHex(background) || '#0d0d14'
+  const normalizedColor = color ? normalizeToHex(color) : null
   
-  // simple hex luma
-  const hex = background.replace('#', '')
-  if (hex.length < 6) return color || '#ffffff'
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
-  const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  // Treat unparseable colors exactly like omitted colors (fall through to luma check)
+  if (!normalizedColor) {
+    return contrastRatio('#ffffff', normalizedBg) > contrastRatio('#000000', normalizedBg)
+      ? '#ffffff' : '#000000'
+  }
   
-  const isBgDark = luma < 128
+  if (contrastRatio(normalizedColor, normalizedBg) >= 2.5) return normalizedColor
   
-  if (!color) return isBgDark ? '#ffffff' : '#000000'
-  
-  // check if provided color is readable
-  const chex = color.replace('#', '')
-  if (chex.length !== 6) return color
-  const cr = parseInt(chex.substring(0, 2), 16)
-  const cg = parseInt(chex.substring(2, 4), 16)
-  const cb = parseInt(chex.substring(4, 6), 16)
-  const cluma = 0.2126 * cr + 0.7152 * cg + 0.0722 * cb
-  
-  if (isBgDark && cluma < 128) return '#ffffff'
-  if (!isBgDark && cluma >= 128) return '#000000'
-  
-  return color
+  return contrastRatio('#ffffff', normalizedBg) > contrastRatio('#000000', normalizedBg)
+    ? '#ffffff' : '#000000'
 }
 
 export const elementToolSchemas = {
@@ -132,6 +152,11 @@ export async function executeElementTool(toolName: string, args: Record<string, 
         text: string; fontSize?: number; fontWeight?: 'normal' | 'medium' | 'semibold' | 'bold';
         color?: string; align?: 'left' | 'center' | 'right'; x?: number; y?: number; width?: number; slideIndex?: number
       }
+
+      if (text === undefined || text === null || text === '') {
+        return { success: false, error: "Missing required argument: 'text'. Please provide the text to display." }
+      }
+
       const slide = getTargetSlide(store, slideIndex)
       if (!slide) return { success: false, error: `Slide ${slideIndex ?? 'active'} not found.` }
 

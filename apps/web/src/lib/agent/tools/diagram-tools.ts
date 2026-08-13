@@ -98,7 +98,8 @@ export async function executeDiagramTool(toolName: string, args: Record<string, 
       const slide = getTargetSlide(store, slideIndex)
       if (!slide) return { success: false, error: `Slide ${slideIndex ?? 'active'} not found.` }
 
-      const elementId = id || uuid()
+      const derivedSlug = label ? label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : ''
+      const elementId = id || (derivedSlug ? `node-${derivedSlug}` : uuid())
       const newElement: SceneElement = {
         id: elementId,
         type: 'shape',
@@ -134,6 +135,8 @@ export async function executeDiagramTool(toolName: string, args: Record<string, 
               }
         ),
       }))
+
+      useEditorStore.getState().recalculateLines()
 
       return { success: true, elementId, slideName: slide.name, preview: `Added shape "${label || shapeType}"` }
     }
@@ -209,8 +212,19 @@ export async function executeDiagramTool(toolName: string, args: Record<string, 
       const slide = getTargetSlide(store, slideIndex)
       if (!slide) return { success: false, error: `Slide ${slideIndex ?? 'active'} not found.` }
 
-      const fromEl = fromElementId ? slide.elements.find((e) => e.id === fromElementId) : null
-      const toEl = toElementId ? slide.elements.find((e) => e.id === toElementId) : null
+      const findMatchingElement = (targetId?: string) => {
+        if (!targetId) return null
+        const cleanTarget = targetId.trim().toLowerCase()
+        return slide.elements.find((e) => {
+          if (e.id === targetId || e.id === `node-${cleanTarget}`) return true
+          const elLabel = (e.content as any)?.label?.toString().toLowerCase()
+          if (elLabel && (elLabel === cleanTarget || elLabel.includes(cleanTarget) || cleanTarget.includes(elLabel))) return true
+          return false
+        }) || null
+      }
+
+      const fromEl = findMatchingElement(fromElementId)
+      const toEl = findMatchingElement(toElementId)
 
       let lineX = Math.min(x1, x2)
       let lineY = Math.min(y1, y2)
@@ -266,6 +280,8 @@ export async function executeDiagramTool(toolName: string, args: Record<string, 
               }
         ),
       }))
+
+      useEditorStore.getState().recalculateLines()
 
       return { success: true, elementId, slideName: slide.name, preview: `Added line connection "${label || 'connector'}"` }
     }
