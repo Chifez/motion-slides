@@ -754,7 +754,7 @@ export function LandingShowcase() {
       </div>
 
       {/* ── Main Body: sidebar + canvas + inspector ──────────────────────── */}
-      <div className="flex" style={{ height: 640 }}>
+      <div className="flex" style={{ height: 520 }}>
         {/* ── Left: Slide Panel ──────────────────────────────────────────── */}
         <aside className="w-[180px] shrink-0 flex flex-col bg-zinc-950 border-r border-zinc-800/70 overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800/50">
@@ -1122,10 +1122,10 @@ export function LandingShowcase() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSlide.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.25 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: "easeInOut" }}
               className="flex flex-col"
             >
               <div className="px-3 pt-3 pb-2">
