@@ -427,7 +427,7 @@ export function EditorToolbar({ projectId }: Props) {
               title="AI Design Studio Chat"
               className={`inline-flex items-center justify-center p-1.5 rounded-md transition cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
             >
-              <Sparkles size={14} className={isChatOpen ? 'animate-pulse' : ''} />
+              <Sparkles size={14} />
             </button>
 
             <ThemeToggle className="hidden md:flex" />

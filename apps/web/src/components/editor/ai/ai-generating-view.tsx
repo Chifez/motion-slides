@@ -15,7 +15,7 @@ export const AIGeneratingView = memo(function AIGeneratingView({ progress }: Pro
       <div className="relative">
         <Loader2 className="animate-spin text-blue-500" size={32} />
         <div className="absolute inset-0 flex items-center justify-center">
-          <Sparkles size={12} className="text-purple-400 animate-pulse" />
+          <Sparkles size={12} className="text-purple-400" />
         </div>
       </div>
       <div className="space-y-1">

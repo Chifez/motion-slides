@@ -22,6 +22,10 @@ export interface AISlice {
   /** The currently selected model ID */
   selectedModel: string
   setSelectedModel: (model: string) => void
+
+  /** Currently active chat thread ID */
+  activeThreadId: string | null
+  setActiveThreadId: (id: string | null) => void
 }
 
 export const createAISlice: StateCreator<EditorState, [], [], AISlice> = (set) => ({
@@ -31,4 +35,7 @@ export const createAISlice: StateCreator<EditorState, [], [], AISlice> = (set) =
 
   selectedModel: 'gpt-4o',
   setSelectedModel: (model) => set({ selectedModel: model }),
+
+  activeThreadId: null,
+  setActiveThreadId: (id) => set({ activeThreadId: id }),
 })

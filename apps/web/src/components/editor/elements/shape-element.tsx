@@ -236,6 +236,10 @@ export function ShapeElement({ content, elementId }: Props) {
     }
   }
 
+  const isIcon = content.shapeType === 'aws-icon' || content.shapeType === 'gcp-icon' || content.shapeType === 'icon'
+  const shapeFill = content.fill || (content as any).backgroundColor || (isIcon ? 'transparent' : 'rgba(59, 130, 246, 0.25)')
+  const shapeStroke = content.stroke || (content as any).borderColor || (isIcon ? 'transparent' : '#60a5fa')
+
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: content.label ? 4 : 0 }}>
       <svg
@@ -244,7 +248,7 @@ export function ShapeElement({ content, elementId }: Props) {
         style={{ flex: 1, overflow: 'hidden', display: 'block', width: '100%', height: '100%' }}
       >
         <ClusterWrapper content={content} transition={colorTransition}>
-          <ShapeSVG fill={content.fill} stroke={content.stroke} transition={colorTransition} iconPath={content.iconPath} />
+          <ShapeSVG fill={shapeFill} stroke={shapeStroke} transition={colorTransition} iconPath={content.iconPath} />
         </ClusterWrapper>
       </svg>
       {isEditing ? (

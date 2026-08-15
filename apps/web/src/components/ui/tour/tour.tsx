@@ -340,7 +340,7 @@ function TourContent() {
             <header className="flex items-center gap-2">
               {!targetRect && (
                 <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                  <Sparkles size={13} className="animate-pulse" />
+                  <Sparkles size={13} />
                 </div>
               )}
               <h3 className="text-sm font-bold text-(--ms-text-primary) tracking-tight">

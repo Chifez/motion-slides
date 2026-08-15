@@ -1,5 +1,4 @@
-import { motion } from 'framer-motion'
-import { BotMessageSquare, Sparkles, Layers, Zap, Film, Palette } from 'lucide-react'
+import { Sparkles, Zap, Film, ShieldCheck, GitBranch, Palette } from 'lucide-react'
 
 interface Suggestion {
   icon: React.ElementType
@@ -11,33 +10,39 @@ interface Suggestion {
 const SUGGESTIONS: Suggestion[] = [
   {
     icon: Sparkles,
-    label: 'Create a deck',
-    prompt: 'Create a 5-slide pitch deck about a SaaS product with a hero slide, problem, solution, features, and CTA.',
-    color: 'text-purple-400',
-  },
-  {
-    icon: Zap,
-    label: 'Animate everything',
-    prompt: 'Apply staggered slide-up animations to all elements on the current slide.',
+    label: 'Synthesize Deck',
+    prompt: 'Synthesize a 4-slide technical presentation explaining our Distributed Video Processing Pipeline with API Gateway, S3, SQS, and GPU Worker nodes.',
     color: 'text-blue-400',
   },
   {
-    icon: Film,
-    label: 'Cinematic transitions',
-    prompt: 'Read my project slides and add magic-move transitions between all consecutive slides.',
-    color: 'text-pink-400',
+    icon: Zap,
+    label: 'Insert Redis Cache',
+    prompt: 'Add a Redis Caching layer between the API Gateway and the Database with a 0.4s delay, and connect it with a dotted line labeled "cache lookup".',
+    color: 'text-sky-400',
   },
   {
-    icon: Layers,
-    label: 'Review my deck',
-    prompt: 'Read the current project state and give me a quick summary of what slides and transitions I have.',
+    icon: Film,
+    label: 'Choreograph Flow',
+    prompt: 'Choreograph the execution flow on this slide in causal order starting from Client to API Gateway to S3 with a 0.5s step delay.',
+    color: 'text-amber-400',
+  },
+  {
+    icon: ShieldCheck,
+    label: 'Audit Quality',
+    prompt: 'Audit the presentation quality for WCAG contrast violations, node density overload, and orphaned connector lines, and auto-fix any issues found.',
     color: 'text-emerald-400',
   },
   {
+    icon: GitBranch,
+    label: 'Exploratory Branch',
+    prompt: 'Create an exploratory branch called "feature/event-driven-kafka" to test an alternative streaming architecture.',
+    color: 'text-violet-400',
+  },
+  {
     icon: Palette,
-    label: 'Dark gradient slide',
-    prompt: 'Set the current slide background to a deep dark blue-purple gradient.',
-    color: 'text-orange-400',
+    label: 'Apply Theme',
+    prompt: 'Apply the "obsidian-cyan" theme across the entire presentation deck with Outfit typography and harmonize the slide styles.',
+    color: 'text-teal-400',
   },
 ]
 
@@ -47,56 +52,46 @@ interface Props {
 
 export function AgentWelcome({ onPrompt }: Props) {
   return (
-    <motion.div
-      key="welcome"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      className="flex flex-col items-center pt-6 pb-2 gap-6"
-    >
-      {/* Avatar */}
-      <motion.div
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-        className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600/30 to-blue-600/20 border border-purple-500/20 flex items-center justify-center shadow-lg shadow-purple-900/20"
-      >
-        <BotMessageSquare size={28} className="text-purple-300" />
-      </motion.div>
-
-      <div className="text-center space-y-1 px-2">
-        <h3 className="text-sm font-bold text-(--ms-text-primary)">MotionSlide Agent</h3>
-        <p className="text-[11px] text-(--ms-text-muted) leading-relaxed max-w-[260px]">
-          I can build slides, animate elements, design transitions, and prototype flows — just ask.
-        </p>
+    <div className="w-full flex flex-col items-center justify-center gap-6 select-none animate-in fade-in duration-200 text-center py-4 my-auto">
+      {/* Hero Header */}
+      <div className="flex flex-col items-center gap-2 text-center">
+        <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 shadow-xs">
+          <Sparkles size={16} />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold text-(--ms-text-primary) tracking-tight leading-tight">
+            How can I help with your slides?
+          </h3>
+          <p className="text-xs text-(--ms-text-muted) leading-relaxed max-w-[280px]">
+            Build architecture slides, choreograph flows, or audit deck quality.
+          </p>
+        </div>
       </div>
 
-      {/* Quick Actions — Flex Wrap & Centered */}
-      <div className="w-full flex flex-col items-center gap-2.5">
-        <p className="text-[9px] font-black text-(--ms-text-muted) uppercase tracking-[0.2em] text-center">
-          Try asking…
-        </p>
-        <div className="flex flex-wrap justify-center gap-2 max-w-[360px]">
-          {SUGGESTIONS.map((s, i) => {
+      {/* Suggested Actions: Centered Flex Wrap Pills with Breathing Room */}
+      <div className="w-full flex flex-col items-center gap-2">
+        <span className="text-[10px] font-bold text-(--ms-text-muted) uppercase tracking-wider text-center">
+          Quick Actions
+        </span>
+        <div className="flex flex-wrap items-center justify-center gap-2 max-w-[340px]">
+          {SUGGESTIONS.map((s) => {
             const Icon = s.icon
             return (
-              <motion.button
+              <button
                 key={s.label}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.05 }}
+                type="button"
                 onClick={() => onPrompt(s.prompt)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-(--ms-bg-elevated) border border-(--ms-border) hover:border-purple-500/40 hover:bg-purple-500/10 text-left transition-all group cursor-pointer shadow-sm hover:shadow-purple-500/10"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-(--ms-bg-elevated) hover:bg-(--ms-bg-surface) border border-(--ms-border) hover:border-(--ms-border-strong) text-left transition-all duration-150 active:scale-[0.97] cursor-pointer group shadow-2xs"
               >
-                <Icon size={14} className={`${s.color} shrink-0 group-hover:scale-110 transition-transform`} />
-                <span className="text-xs text-(--ms-text-secondary) group-hover:text-(--ms-text-primary) transition-colors font-medium whitespace-nowrap">
+                <Icon size={12} className={`${s.color} shrink-0`} />
+                <span className="text-xs font-medium text-(--ms-text-secondary) group-hover:text-(--ms-text-primary) transition-colors whitespace-nowrap">
                   {s.label}
                 </span>
-              </motion.button>
+              </button>
             )
           })}
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

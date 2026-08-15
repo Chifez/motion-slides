@@ -60,11 +60,11 @@ const THEME_BACKGROUNDS: Record<string, string> = {
 }
 
 const THEME_ACCENTS: Record<string, { stroke: string; fill: string; text: string; line: string }> = {
-  'midnight-indigo': { stroke: '#3b82f6', fill: 'rgba(59, 130, 246, 0.15)', text: '#ffffff', line: '#93c5fd' },
-  'nordic-light': { stroke: '#2563eb', fill: 'rgba(37, 99, 235, 0.08)', text: '#0f172a', line: '#3b82f6' },
-  'obsidian-cyan': { stroke: '#06b6d4', fill: 'rgba(6, 182, 212, 0.15)', text: '#ffffff', line: '#67e8f9' },
-  'emerald-tech': { stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.15)', text: '#ffffff', line: '#6ee7b7' },
-  'cyberpunk-neon': { stroke: '#ec4899', fill: 'rgba(236, 72, 153, 0.15)', text: '#ffffff', line: '#f472b6' },
+  'midnight-indigo': { stroke: '#60a5fa', fill: 'rgba(59, 130, 246, 0.25)', text: '#ffffff', line: '#93c5fd' },
+  'nordic-light': { stroke: '#2563eb', fill: 'rgba(37, 99, 235, 0.12)', text: '#0f172a', line: '#3b82f6' },
+  'obsidian-cyan': { stroke: '#22d3ee', fill: 'rgba(6, 182, 212, 0.25)', text: '#ffffff', line: '#67e8f9' },
+  'emerald-tech': { stroke: '#34d399', fill: 'rgba(16, 185, 129, 0.25)', text: '#ffffff', line: '#6ee7b7' },
+  'cyberpunk-neon': { stroke: '#f472b6', fill: 'rgba(236, 72, 153, 0.25)', text: '#ffffff', line: '#f472b6' },
 }
 
 export async function executeDeckSynthesisTool(
@@ -127,6 +127,7 @@ export async function executeDeckSynthesisTool(
             animation: 'fade-in',
             animationDelay: 0.1,
             content: {
+              value: headerTitle,
               text: headerTitle,
               fontSize: 34,
               fontFamily: 'Inter',
@@ -152,6 +153,7 @@ export async function executeDeckSynthesisTool(
             animation: 'fade-in',
             animationDelay: 0.2,
             content: {
+              value: s.subtitle,
               text: s.subtitle,
               fontSize: 18,
               fontFamily: 'Inter',
@@ -311,6 +313,9 @@ export async function executeDeckSynthesisTool(
             const finalShapeType = (iconPathStr && (n.shapeType === 'rectangle' || n.shapeType === 'aws-icon' || n.shapeType === 'icon')) ? 'aws-icon' : n.shapeType
             const isIcon = finalShapeType === 'aws-icon' || finalShapeType === 'gcp-icon' || finalShapeType === 'icon'
 
+            const shapeFill = isIcon ? 'transparent' : (themeAccent.fill || 'rgba(59, 130, 246, 0.25)')
+            const shapeStroke = isIcon ? 'transparent' : (themeAccent.stroke || '#60a5fa')
+
             elements.push({
               id: n.id,
               type: 'shape',
@@ -327,8 +332,10 @@ export async function executeDeckSynthesisTool(
                 label: n.label,
                 sublabel: n.sublabel,
                 iconPath: iconPathStr,
-                backgroundColor: isIcon ? 'transparent' : themeAccent.fill,
-                borderColor: isIcon ? 'transparent' : themeAccent.stroke,
+                fill: shapeFill,
+                stroke: shapeStroke,
+                backgroundColor: shapeFill,
+                borderColor: shapeStroke,
                 borderWidth: 1.5,
                 textColor: themeAccent.text,
                 cornerRadius: 8,

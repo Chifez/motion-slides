@@ -943,6 +943,10 @@ export async function executeDiagramTool(toolName: string, args: Record<string, 
         const resolvedIcon = resolveIconPathString(n.iconPath || n.label || n.sublabel || n.shapeType)
         const finalShapeType = (resolvedIcon && (n.shapeType === 'rectangle' || n.shapeType === 'aws-icon' || n.shapeType === 'icon')) ? 'aws-icon' : n.shapeType
 
+        const isIcon = finalShapeType === 'aws-icon' || finalShapeType === 'gcp-icon' || finalShapeType === 'icon'
+        const nodeFill = n.fill || (isIcon ? 'transparent' : 'rgba(59, 130, 246, 0.25)')
+        const nodeStroke = n.stroke || (isIcon ? 'transparent' : '#60a5fa')
+
         finalElements.push({
           id: n.id,
           type: 'shape',
@@ -959,8 +963,10 @@ export async function executeDiagramTool(toolName: string, args: Record<string, 
             label: n.label,
             sublabel: n.sublabel,
             iconPath: resolvedIcon,
-            backgroundColor: n.fill || (finalShapeType === 'aws-icon' || finalShapeType === 'gcp-icon' || finalShapeType === 'icon' ? 'transparent' : 'rgba(59, 130, 246, 0.15)'),
-            borderColor: n.stroke || (finalShapeType === 'aws-icon' || finalShapeType === 'gcp-icon' || finalShapeType === 'icon' ? 'transparent' : '#3b82f6'),
+            fill: nodeFill,
+            stroke: nodeStroke,
+            backgroundColor: nodeFill,
+            borderColor: nodeStroke,
             borderWidth: 1.5,
             textColor: '#ffffff',
             cornerRadius: 8,

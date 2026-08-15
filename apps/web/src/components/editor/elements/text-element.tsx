@@ -26,13 +26,15 @@ export function TextElement({ element }: Props) {
   const { isReadOnly } = usePermissions()
   const { durationSec, ease, transitionAnimation, isTimelinePreview } = useMotionContext()
 
+  const rawText = content.value ?? (content as any).text ?? ''
+
   const {
     animTokens,
     layoutContainerRef,
     spanRefCallback,
   } = useTextMagicMove({
     elementId: element.id,
-    text:      content.value || '',
+    text:      rawText,
     fontSize:  content.fontSize,
     color:     content.color,
     isEditing,
@@ -136,14 +138,14 @@ export function TextElement({ element }: Props) {
             background: 'transparent',
           }}
         >
-          {content.value || ''}
+          {rawText}
         </div>
       )
     }
 
     if (content.listStyle === 'bullet' || content.listStyle === 'numbered') {
       const Tag = content.listStyle === 'bullet' ? 'ul' : 'ol'
-      const lines = (content.value || '').split('\n').filter(l => l.trim().length > 0)
+      const lines = rawText.split('\n').filter(l => l.trim().length > 0)
 
       return (
         <Tag style={{
@@ -162,7 +164,7 @@ export function TextElement({ element }: Props) {
     }
 
     if (isAnimationMode || isReadOnly || isTimelinePreview) {
-      const tokens = tokenizeText(content.value || '')
+      const tokens = tokenizeText(rawText)
 
       return (
         <div ref={layoutContainerRef} style={{ position: 'relative', width: '100%' }}>
@@ -220,7 +222,7 @@ export function TextElement({ element }: Props) {
             code: ({ children }) => <code className="bg-zinc-800/80 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
           }}
         >
-          {content.value || ''}
+          {rawText}
         </ReactMarkdown>
       </div>
     )
