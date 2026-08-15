@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Play, PenSquare, GitBranch, Film, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users, WifiOff, GitFork, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch, Film, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users, WifiOff, GitFork, ChevronDown, Search, X, Plus, Loader2 } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import { useEditorStore } from '@/store/editor-store'
 import type { Project } from '@motionslides/shared'
@@ -31,7 +31,7 @@ export function EditorToolbar({ projectId }: Props) {
   const navigate = useNavigate()
 
   const [showBranchMenu, setShowBranchMenu] = useState(false)
-  const [newBranchName, setNewBranchName] = useState('')
+  const [branchSearch, setBranchSearch] = useState('')
   const [isCreatingBranch, setIsCreatingBranch] = useState(false)
   const branchMenuRef = useRef<HTMLDivElement>(null)
 
@@ -67,6 +67,38 @@ export function EditorToolbar({ projectId }: Props) {
   const mainProject = project ? (project.forkedFromId ? projectsList.find(p => p.id === project.forkedFromId) || project : project) : null
   const allBranches = mainProject ? projectsList.filter(p => p.id === mainProject.id || p.forkedFromId === mainProject.id) : []
 
+  const filteredBranches = allBranches.filter(b => {
+    const isMain = b.id === mainProject?.id
+    const displayName = isMain ? 'main' : b.name
+    return displayName.toLowerCase().includes(branchSearch.toLowerCase().trim())
+  })
+
+  const exactMatchExists = allBranches.some(b => {
+    const isMain = b.id === mainProject?.id
+    const displayName = isMain ? 'main' : b.name
+    return displayName.toLowerCase() === branchSearch.toLowerCase().trim()
+  })
+
+  const canCreate = branchSearch.trim().length > 0 && !exactMatchExists
+
+  const handleCreateBranch = async (nameToCreate?: string) => {
+    const targetName = (nameToCreate ?? branchSearch).trim()
+    if (!targetName || isCreatingBranch || !project) return
+    setIsCreatingBranch(true)
+    try {
+      const res = await createBranch(project.id, targetName)
+      if (res && res.id) {
+        setBranchSearch('')
+        setShowBranchMenu(false)
+        navigate({ to: '/p/$projectId', params: { projectId: res.id } })
+      }
+    } catch (err) {
+      console.error('Failed to create branch:', err)
+    } finally {
+      setIsCreatingBranch(false)
+    }
+  }
+
   const isChatOpen = useEditorStore(state => state.isChatOpen)
 
   const { isAuthenticated } = useAccessControl()
@@ -93,16 +125,16 @@ export function EditorToolbar({ projectId }: Props) {
         <Link
           to="/dashboard"
           onClick={() => syncProjects()}
-          className="p-1 md:p-1.5 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors"
+          className="p-1 md:p-1.5 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors shrink-0"
         >
           <ArrowLeft size={16} />
         </Link>
-        <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1" />
+        <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1 shrink-0" />
 
         {isMobile && (
           <button
             onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
-            className={`p-2 rounded-md transition-colors border-none cursor-pointer ${mobileSlidesOpen ? 'bg-blue-600/20 text-blue-400' : 'text-(--ms-text-muted) hover:bg-(--ms-border)'}`}
+            className={`p-2 rounded-md transition-colors border-none cursor-pointer shrink-0 ${mobileSlidesOpen ? 'bg-blue-600/20 text-blue-400' : 'text-(--ms-text-muted) hover:bg-(--ms-border)'}`}
           >
             <Layout size={16} />
           </button>
@@ -118,32 +150,104 @@ export function EditorToolbar({ projectId }: Props) {
           onChange={(event) => updateProjectName(projectId, event.target.value)}
           onBlur={(event) => { if (!event.target.value.trim()) updateProjectName(projectId, 'Untitled Deck') }}
           spellCheck={false}
-          className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-md px-1 md:px-2 py-1 text-[13px] text-(--ms-text-primary) font-medium w-[100px] sm:w-auto sm:min-w-[130px] max-w-[140px] md:max-w-[220px] focus:outline-none transition truncate disabled:opacity-85"
+          className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-md px-1.5 py-1 text-[13px] text-(--ms-text-primary) font-medium w-[100px] sm:w-[120px] md:w-[140px] focus:outline-none transition truncate disabled:opacity-85 shrink-0"
         />
 
         {((!!project.forkedFromId) || (!!project.ownerId && !!user)) && (
-          <div className="relative hidden md:block" ref={branchMenuRef}>
+          <div className="relative hidden md:flex items-center shrink-0" ref={branchMenuRef}>
             <Button
               variant={showBranchMenu ? 'secondary' : 'ghost'}
               size="sm"
-              onClick={() => setShowBranchMenu(!showBranchMenu)}
-              className={showBranchMenu ? 'border-blue-500/50 text-blue-400 bg-blue-600/5' : ''}
+              onClick={() => {
+                setShowBranchMenu(!showBranchMenu)
+                if (!showBranchMenu) setBranchSearch('')
+              }}
+              className={`h-7 px-2 text-xs flex items-center gap-1 shrink-0 ${showBranchMenu ? 'border-blue-500/50 text-blue-400 bg-blue-600/5' : ''}`}
             >
-              <GitBranch size={12} className="text-blue-500 mr-1.5" />
-              <span className="max-w-[100px] truncate mr-1.5">{project.name}</span>
-              <ChevronDown size={11} className={`transition duration-200 ${showBranchMenu ? 'rotate-180' : ''}`} />
+              <GitBranch size={12} className="text-blue-500 shrink-0" />
+              <span title={project.forkedFromId ? project.name : 'main'} className="max-w-[70px] lg:max-w-[90px] truncate">{project.forkedFromId ? project.name : 'main'}</span>
+              <ChevronDown size={11} className={`transition duration-200 shrink-0 ${showBranchMenu ? 'rotate-180' : ''}`} />
             </Button>
 
             {showBranchMenu && (
-              <div className="absolute top-full left-0 mt-2 w-72 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-50 p-2 flex flex-col gap-2">
-                <span className="text-[9px] font-black text-(--ms-text-muted) uppercase tracking-wider px-2 pt-1 block">
-                  Switch Branch
-                </span>
+              <div className="absolute top-full left-0 mt-2 w-80 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col">
+                {/* Header */}
+                <div className="flex items-center justify-between px-3 py-2 border-b border-(--ms-border)">
+                  <span className="text-xs font-semibold text-(--ms-text-primary)">
+                    Switch branches/tags
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowBranchMenu(false)}
+                    className="p-1 rounded text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors border-none bg-transparent cursor-pointer"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
 
-                <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto custom-scrollbar px-1">
-                  {allBranches.map((b) => {
+                {/* Search / Create Input */}
+                <div className="p-2 border-b border-(--ms-border)">
+                  <div className="relative flex items-center">
+                    <Search size={13} className="absolute left-2.5 text-(--ms-text-muted) pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Find or create a branch..."
+                      value={branchSearch}
+                      onChange={(e) => setBranchSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          if (canCreate) {
+                            handleCreateBranch()
+                          } else if (filteredBranches.length > 0) {
+                            const target = filteredBranches[0]
+                            if (target.id !== project.id) {
+                              setShowBranchMenu(false)
+                              navigate({ to: '/p/$projectId', params: { projectId: target.id } })
+                            }
+                          }
+                        }
+                      }}
+                      autoFocus
+                      className="w-full bg-(--ms-bg-base) border border-(--ms-border) focus:border-blue-500 rounded-lg pl-8 pr-7 py-1.5 text-xs text-(--ms-text-primary) placeholder:text-(--ms-text-muted) focus:outline-none transition"
+                    />
+                    {isCreatingBranch && (
+                      <Loader2 size={13} className="absolute right-2.5 text-blue-400 animate-spin" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex items-center px-3 pt-2 pb-0 gap-4 border-b border-(--ms-border)">
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-blue-400 border-b-2 border-blue-500 pb-1.5 -mb-px bg-transparent border-t-0 border-x-0 cursor-pointer"
+                  >
+                    Branches
+                  </button>
+                </div>
+
+                {/* Branch list */}
+                <div className="flex flex-col max-h-52 overflow-y-auto custom-scrollbar p-1">
+                  {canCreate && (
+                    <button
+                      type="button"
+                      onClick={() => handleCreateBranch()}
+                      disabled={isCreatingBranch}
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-xs font-medium text-blue-400 hover:bg-blue-600/10 transition border-none bg-blue-500/5 cursor-pointer mb-1 shrink-0"
+                    >
+                      <Plus size={13} className="shrink-0 text-blue-400" />
+                      <span className="truncate">
+                        Create branch: <strong className="text-(--ms-text-primary)">{branchSearch.trim()}</strong>
+                      </span>
+                    </button>
+                  )}
+
+                  {filteredBranches.map((b) => {
                     const isCurrent = b.id === project.id
                     const branchIsGuest = b.ownerId && b.ownerId !== user?.id && b.localAuthorId !== localAuthorId
+                    const isMain = b.id === mainProject?.id
+                    const displayName = isMain ? 'main' : b.name
                     return (
                       <button
                         key={b.id}
@@ -152,68 +256,56 @@ export function EditorToolbar({ projectId }: Props) {
                           setShowBranchMenu(false)
                           navigate({ to: '/p/$projectId', params: { projectId: b.id } })
                         }}
-                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-xs font-semibold transition border-none bg-transparent cursor-pointer ${isCurrent
-                          ? 'text-blue-400 bg-blue-600/5 font-bold cursor-default'
-                          : 'text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50'
-                          }`}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-xs font-medium transition border-none bg-transparent cursor-pointer ${
+                          isCurrent
+                            ? 'text-blue-400 bg-blue-600/10 font-semibold cursor-default'
+                            : 'text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50'
+                        }`}
                       >
-                        <span className="truncate flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isCurrent ? 'bg-blue-400' : 'bg-(--ms-text-muted)/40'}`} />
-                          <span className="truncate">{b.name}</span>
+                        <span className="truncate flex items-center gap-2 min-w-0">
+                          {isCurrent ? (
+                            <Check size={13} className="text-blue-400 shrink-0" />
+                          ) : (
+                            <span className="w-3.5 shrink-0" />
+                          )}
+                          <span className="truncate" title={displayName}>{displayName}</span>
                         </span>
-                        {branchIsGuest && (
-                          <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/10 scale-90 shrink-0">
-                            Collaborator Branch
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0 ml-2">
+                          {isMain && (
+                            <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-(--ms-border) text-(--ms-text-muted) border border-(--ms-border)">
+                              default
+                            </span>
+                          )}
+                          {branchIsGuest && (
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/10">
+                              Collaborator
+                            </span>
+                          )}
+                        </div>
                       </button>
                     )
                   })}
+
+                  {filteredBranches.length === 0 && !canCreate && (
+                    <div className="py-6 text-center text-xs text-(--ms-text-muted)">
+                      No branches found
+                    </div>
+                  )}
                 </div>
 
-                <div className="h-px bg-(--ms-border) my-0.5" />
-
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault()
-                    if (!newBranchName.trim() || isCreatingBranch) return
-                    setIsCreatingBranch(true)
-                    try {
-                      const res = await createBranch(project.id, newBranchName.trim())
-                      if (res && res.id) {
-                        setNewBranchName('')
-                        setShowBranchMenu(false)
-                        navigate({ to: '/p/$projectId', params: { projectId: res.id } })
-                      }
-                    } catch (err) {
-                      console.error('Failed to create branch:', err)
-                    } finally {
-                      setIsCreatingBranch(false)
-                    }
-                  }}
-                  className="px-1 flex flex-col gap-1.5"
-                >
-                  <span className="text-[9px] font-black text-(--ms-text-muted) uppercase tracking-wider px-1 block">
-                    Create New Branch
-                  </span>
-                  <div className="flex gap-1.5">
-                    <Input
-                      type="text"
-                      placeholder="Branch name..."
-                      value={newBranchName}
-                      disabled={isCreatingBranch}
-                      onChange={(e) => setNewBranchName(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={!newBranchName.trim() || isCreatingBranch}
-                      isLoading={isCreatingBranch}
-                    >
-                      {isCreatingBranch ? '' : 'Create'}
-                    </Button>
-                  </div>
-                </form>
+                {/* Footer */}
+                <div className="p-1.5 border-t border-(--ms-border) bg-(--ms-bg-base)/50 flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowBranchMenu(false)
+                      useEditorStore.getState().toggleGitPanel()
+                    }}
+                    className="w-full text-center text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) py-1 rounded hover:bg-(--ms-border)/50 transition bg-transparent border-none cursor-pointer"
+                  >
+                    View all branches
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -221,10 +313,10 @@ export function EditorToolbar({ projectId }: Props) {
 
 
 
-        <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1 hidden md:block" />
+        <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1 hidden md:block shrink-0" />
 
         {mode === 'edit' && (
-          <div className="flex items-center bg-(--ms-bg-elevated) border border-(--ms-border) rounded-md p-0.5">
+          <div className="flex items-center bg-(--ms-bg-elevated) border border-(--ms-border) rounded-md p-0.5 shrink-0">
             <button
               onClick={() => setEditorMode('design')}
               className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition cursor-pointer border-none ${editorMode === 'design'
@@ -257,7 +349,7 @@ export function EditorToolbar({ projectId }: Props) {
 
         {!isPrototypeMode && !isMobile && (
           <>
-            <div className="w-px h-5 bg-(--ms-border) mx-1" />
+            <div className="w-px h-5 bg-(--ms-border) mx-1 shrink-0" />
             <ToolSelector />
             <ElementButtons />
           </>
