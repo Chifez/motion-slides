@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { useEditorStore } from '../../../store/editor-store'
 import { executeAgentTool, agentToolSchemas } from '../tools'
 
-describe('Agent Granular Diagram Tools', () => {
+describe('Agent Diagram & Layout Tools', () => {
   beforeEach(() => {
-    // Reset editor store state with a dummy active project and slide
+    // Reset editor store state with a clean active project and slide
     useEditorStore.setState({
       activeProjectId: 'proj-1',
       activeSlideIndex: 0,
@@ -33,36 +33,120 @@ describe('Agent Granular Diagram Tools', () => {
     })
   })
 
-  it('should register all diagram and slide tool schemas', () => {
+  it('should register all diagram and slide tool schemas with inputSchema', () => {
     expect(agentToolSchemas.addShapeElement).toBeDefined()
     expect(agentToolSchemas.addSectionElement).toBeDefined()
     expect(agentToolSchemas.addLineElement).toBeDefined()
-    expect(agentToolSchemas.deleteElement).toBeDefined()
-    expect(agentToolSchemas.addSlide).toBeDefined()
-    expect(agentToolSchemas.addTextElement).toBeDefined()
+    expect(agentToolSchemas.generateDiagram).toBeDefined()
+    expect((agentToolSchemas.generateDiagram as any).inputSchema).toBeDefined()
+    expect((agentToolSchemas.addSlide as any).inputSchema).toBeDefined()
+    expect((agentToolSchemas.addTextElement as any).inputSchema).toBeDefined()
   })
 
-  it('should execute addShapeElement to add server/database shapes', async () => {
-    const res = await executeAgentTool('addShapeElement', {
-      shapeType: 'server',
-      label: 'App Server',
-      x: 300,
-      y: 200,
-      width: 90,
-      height: 90,
-      stroke: '#3b82f6',
+  it('should execute generateDiagram with auto-scaling and centered coordinates', async () => {
+    const res = await executeAgentTool('generateDiagram', {
+      nodes: [
+        { id: 'client', shapeType: 'client', label: 'Client App', sublabel: 'React / Next.js' },
+        { id: 'api', shapeType: 'server', label: 'API Gateway', sublabel: 'REST API' },
+        { id: 'transcoder', shapeType: 'server', label: 'Transcoder Service', sublabel: 'FFmpeg Worker' },
+        { id: 'bucket', shapeType: 'bucket', label: 'S3 Media Storage', sublabel: 'Raw & Processed' },
+        { id: 'db', shapeType: 'database', label: 'PostgreSQL DB', sublabel: 'Metadata Store' },
+      ],
+      edges: [
+        { from: 'client', to: 'api', label: 'POST /upload' },
+        { from: 'api', to: 'transcoder', label: 'Queue Job' },
+        { from: 'transcoder', to: 'bucket', label: 'Store Video' },
+        { from: 'transcoder', to: 'db', label: 'Save Metadata' },
+      ],
+      direction: 'LR',
     })
 
     expect(res.success).toBe(true)
     const store = useEditorStore.getState()
     const activeSlide = store.activeSlide()
-    expect(activeSlide?.elements.length).toBe(1)
+    expect(activeSlide).toBeDefined()
 
-    const shapeEl = activeSlide?.elements[0]
-    expect(shapeEl?.type).toBe('shape')
-    expect(shapeEl?.position).toEqual({ x: 300, y: 200 })
-    expect((shapeEl?.content as any).shapeType).toBe('server')
-    expect((shapeEl?.content as any).label).toBe('App Server')
+    // 5 shapes + 4 connecting lines = 9 elements
+    expect(activeSlide?.elements.length).toBe(9)
+
+    const shapes = activeSlide?.elements.filter(e => e.type === 'shape') ?? []
+    expect(shapes.length).toBe(5)
+
+    const lines = activeSlide?.elements.filter(e => e.type === 'line') ?? []
+    expect(lines.length).toBe(4)
+
+    // Verify all shapes are placed cleanly within the 1280x720 canvas
+    shapes.forEach(shape => {
+      expect(shape.position.x).toBeGreaterThanOrEqual(20)
+      expect(shape.position.x + shape.size.width).toBeLessThanOrEqual(1260)
+      expect(shape.position.y).toBeGreaterThanOrEqual(20)
+      expect(shape.position.y + shape.size.height).toBeLessThanOrEqual(700)
+    })
+
+    // Verify line connections have proper ports mapped
+    const clientToApiLine = lines.find(l => (l.content as any).startConnection?.elementId === 'client')
+    expect(clientToApiLine).toBeDefined()
+    expect((clientToApiLine?.content as any).startConnection?.handleId).toBe('right')
+    expect((clientToApiLine?.content as any).endConnection?.handleId).toBe('left')
+  })
+
+  it('should execute generateDiagram with compound container sections', async () => {
+    const res = await executeAgentTool('generateDiagram', {
+      nodes: [
+        { id: 'client', shapeType: 'client', label: 'Client App', layer: 'Edge Tier' },
+        { id: 'api', shapeType: 'server', label: 'API Gateway', layer: 'Compute Layer' },
+        { id: 'worker', shapeType: 'server', label: 'Processing Worker', layer: 'Compute Layer' },
+        { id: 'db', shapeType: 'database', label: 'Database', layer: 'Storage Layer' },
+      ],
+      edges: [
+        { from: 'client', to: 'api' },
+        { from: 'api', to: 'worker' },
+        { from: 'worker', to: 'db' },
+      ],
+      sections: [
+        { label: 'Edge Tier', layer: 'Edge Tier' },
+        { label: 'Compute VPC', layer: 'Compute Layer' },
+        { label: 'Data Store VPC', layer: 'Storage Layer' },
+      ],
+    })
+
+    expect(res.success).toBe(true)
+    const store = useEditorStore.getState()
+    const activeSlide = store.activeSlide()
+
+    const sections = activeSlide?.elements.filter(e => e.type === 'section') ?? []
+    expect(sections.length).toBe(3)
+
+    // Sections should be at bottom zIndex
+    sections.forEach(sec => {
+      expect(sec.zIndex).toBe(1)
+      expect(sec.position.x).toBeGreaterThanOrEqual(20)
+      expect(sec.position.y).toBeGreaterThanOrEqual(20)
+    })
+  })
+
+  it('should auto-position shapes without overlapping when coordinates are omitted', async () => {
+    const res1 = await executeAgentTool('addShapeElement', {
+      shapeType: 'client',
+      label: 'Client 1',
+    })
+    const res2 = await executeAgentTool('addShapeElement', {
+      shapeType: 'server',
+      label: 'Server 1',
+    })
+
+    expect(res1.success).toBe(true)
+    expect(res2.success).toBe(true)
+
+    const store = useEditorStore.getState()
+    const activeSlide = store.activeSlide()
+    expect(activeSlide?.elements.length).toBe(2)
+
+    const shape1 = activeSlide?.elements[0]
+    const shape2 = activeSlide?.elements[1]
+
+    // Shapes should not have identical coordinates
+    expect(shape1?.position.x).not.toBe(shape2?.position.x)
   })
 
   it('should execute addSectionElement to add boundary containers', async () => {
@@ -87,7 +171,6 @@ describe('Agent Granular Diagram Tools', () => {
   })
 
   it('should execute addLineElement to connect nodes', async () => {
-    // Add two nodes first
     await executeAgentTool('addShapeElement', { id: 'node-1', shapeType: 'client', label: 'Client', x: 100, y: 200 })
     await executeAgentTool('addShapeElement', { id: 'node-2', shapeType: 'server', label: 'Server', x: 400, y: 200 })
 

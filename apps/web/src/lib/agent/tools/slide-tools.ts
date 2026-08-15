@@ -143,8 +143,11 @@ export async function executeSlideTool(toolName: string, args: Record<string, un
       const { slideIndex } = args as { slideIndex: number }
       const project = store.activeProject()
       if (!project) return { success: false, error: 'No active project.' }
-      if (slideIndex < 0 || slideIndex >= project.slides.length)
+      
+      // Prevent undefined or NaN from bypassing bounds check and corrupting state
+      if (typeof slideIndex !== 'number' || isNaN(slideIndex) || slideIndex < 0 || slideIndex >= project.slides.length)
         return { success: false, error: `Slide index ${slideIndex} out of range.` }
+        
       store.setActiveSlide(slideIndex)
       return { success: true, slideIndex, slideName: project.slides[slideIndex].name }
     }
@@ -230,6 +233,7 @@ export async function executeSlideTool(toolName: string, args: Record<string, un
         background: slide.background,
         elements: slide.elements.map((el) => ({
           id: el.id, type: el.type, animation: el.animation,
+          diagramGroupId: el.diagramGroupId,
           content: el.content, position: el.position, size: el.size,
         })),
       }

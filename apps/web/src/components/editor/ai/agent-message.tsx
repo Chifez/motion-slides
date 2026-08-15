@@ -22,6 +22,7 @@ const TOOL_META: Record<string, ToolMeta> = {
   updateElementText:   { activeLabel: 'Updating text',          completedLabel: 'Text updated',            icon: WrapText,    color: 'text-cyan-400' },
   deleteElement:       { activeLabel: 'Deleting element',       completedLabel: 'Element deleted',         icon: Trash2,      color: 'text-red-400' },
   addShapeElement:     { activeLabel: 'Adding shape',           completedLabel: 'Shape added',             icon: PlusSquare,  color: 'text-indigo-400' },
+  generateDiagram:     { activeLabel: 'Generating layout',      completedLabel: 'Diagram generated',       icon: Zap,         color: 'text-indigo-400' },
   addSectionElement:   { activeLabel: 'Adding section',         completedLabel: 'Section added',           icon: PlusSquare,  color: 'text-violet-400' },
   addLineElement:      { activeLabel: 'Adding connecting line', completedLabel: 'Connecting line added',  icon: Zap,         color: 'text-amber-400' },
   applyAnimation:      { activeLabel: 'Applying animation',     completedLabel: 'Animation applied',       icon: Zap,         color: 'text-purple-400' },
@@ -142,14 +143,26 @@ export function AgentMessage({ message, snapshotId, pendingApprovals, onApproveT
 
   const parts = message.parts ?? []
   
-  const textContent = parts
-    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-    .map((p) => p.text)
-    .join('')
+  const groupedParts: Array<
+    | { type: 'text'; text: string }
+    | { type: 'tool'; toolPart: Record<string, unknown> }
+  > = []
 
-  const toolParts = parts.filter(
-    (p) => typeof p.type === 'string' && (p.type.startsWith('tool-') || p.type === 'tool-invocation')
-  ) as Array<Record<string, unknown>>
+  let currentText = ''
+  for (const p of parts) {
+    if (p.type === 'text') {
+      currentText += p.text
+    } else if (typeof p.type === 'string' && (p.type.startsWith('tool-') || p.type === 'tool-invocation')) {
+      if (currentText.trim()) {
+        groupedParts.push({ type: 'text', text: currentText })
+        currentText = ''
+      }
+      groupedParts.push({ type: 'tool', toolPart: p as Record<string, unknown> })
+    }
+  }
+  if (currentText.trim()) {
+    groupedParts.push({ type: 'text', text: currentText })
+  }
 
   return (
     <motion.div
@@ -173,44 +186,41 @@ export function AgentMessage({ message, snapshotId, pendingApprovals, onApproveT
       </div>
 
       {/* Content bubble */}
-      <div className={`flex flex-col gap-2 max-w-[88%] ${isUser ? 'items-end' : 'items-start'}`}>
-        {/* Tool call visualizations */}
-        {!isUser && toolParts.length > 0 && (
-          <div className="w-full space-y-1.5">
-            {toolParts.map((toolPart, i) => {
-              const toolCallId = String(toolPart.toolCallId ?? '')
-              return (
-                <ToolCallCard 
-                  key={i} 
-                  toolPart={toolPart} 
-                  pendingApproval={pendingApprovals?.[toolCallId]}
-                  onApprove={(approved) => onApproveTool?.(toolCallId, approved)}
-                />
-              )
-            })}
+      <div className={`flex flex-col gap-2 max-w-[88%] ${isUser ? 'items-end' : 'items-start w-full'}`}>
+        {isUser ? (
+          <div className="px-4 py-3 rounded-2xl bg-blue-600 text-white rounded-tr-sm whitespace-pre-wrap text-sm leading-relaxed">
+            {groupedParts.filter(p => p.type === 'text').map(p => p.text).join('')}
           </div>
-        )}
-
-        {/* Text content */}
-        {textContent && (
-          <div
-            className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-              isUser
-                ? 'bg-blue-600 text-white rounded-tr-sm whitespace-pre-wrap'
-                : 'bg-(--ms-bg-elevated) text-(--ms-text-primary) border border-(--ms-border) rounded-tl-sm [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_strong]:font-semibold [&_em]:italic'
-            }`}
-          >
-            {isUser ? (
-              textContent
-            ) : (
-              <ReactMarkdown
-                components={{
-                  code: ({ children }) => <code className="bg-zinc-800/80 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
-                }}
-              >
-                {textContent}
-              </ReactMarkdown>
-            )}
+        ) : (
+          <div className="w-full space-y-2">
+            {groupedParts.map((part, index) => {
+              if (part.type === 'text') {
+                return (
+                  <div
+                    key={index}
+                    className="px-4 py-3 rounded-2xl bg-(--ms-bg-elevated) text-(--ms-text-primary) border border-(--ms-border) rounded-tl-sm text-sm leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_strong]:font-semibold [&_em]:italic"
+                  >
+                    <ReactMarkdown
+                      components={{
+                        code: ({ children }) => <code className="bg-zinc-800/80 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                      }}
+                    >
+                      {part.text}
+                    </ReactMarkdown>
+                  </div>
+                )
+              } else {
+                const toolCallId = String(part.toolPart.toolCallId ?? '')
+                return (
+                  <ToolCallCard 
+                    key={index} 
+                    toolPart={part.toolPart} 
+                    pendingApproval={pendingApprovals?.[toolCallId]}
+                    onApprove={(approved) => onApproveTool?.(toolCallId, approved)}
+                  />
+                )
+              }
+            })}
           </div>
         )}
         

@@ -26,9 +26,9 @@ export function AIChat() {
   const { messages, setMessages, sendMessage, status, stop, addToolOutput } = useChat({
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     onToolCall: async ({ toolCall }) => {
-      const tc = toolCall as unknown as { toolCallId: string; toolName: string; args?: any }
+      const tc = toolCall as unknown as { toolCallId: string; toolName: string; args?: any; input?: any }
       const toolName = tc.toolName
-      const toolArgs = tc.args ?? {}
+      const toolArgs = tc.input ?? tc.args ?? {}
       
       if (['deleteSlide', 'deleteElement'].includes(toolName)) {
         setPendingApprovals((prev) => ({ ...prev, [tc.toolCallId]: { toolName, args: toolArgs } }))

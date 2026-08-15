@@ -20,7 +20,7 @@ export interface ElementSlice {
   groupElements: (ids: string[]) => void
   ungroupElements: (groupId: string) => void
   addSection: () => void
-  recalculateLines: () => void
+  recalculateLines: (targetSlideIndex?: number) => void
 }
 
 /**
@@ -185,9 +185,10 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
    * Safe to call after deletions too — cleanupConnectionsForDeletedElement 
    * already strips dangling refs before this runs.
    */
-  recalculateLines: () => {
+  recalculateLines: (targetSlideIndex?: number) => {
     const { activeProjectId, activeSlideIndex } = get()
     if (!activeProjectId) return
+    const slideIdx = targetSlideIndex ?? activeSlideIndex
 
     set((state) => ({
       projects: state.projects.map((p) => {
@@ -195,7 +196,7 @@ export const createElementSlice: StateCreator<EditorState, [], [], ElementSlice>
         return {
           ...p,
           slides: p.slides.map((sl, i) => {
-            if (i !== activeSlideIndex) return sl
+            if (i !== slideIdx) return sl
             const next = recalcLinesOnSlide(sl.elements)
             return next === sl.elements ? sl : { ...sl, elements: next }
           }),
