@@ -1,8 +1,9 @@
-import { useRef, useState, type FormEvent, type ChangeEvent } from 'react'
+import { useRef, useState, type FormEvent, type ChangeEvent, type DragEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Square, Mic, ChevronDown, BrainCircuit, Bot, Cpu } from 'lucide-react'
+import { Send, Square, Mic, ChevronDown, BrainCircuit, Bot, Cpu, Paperclip, FileText, X, UploadCloud } from 'lucide-react'
 import { useEditorStore } from '@/store/editor-store'
 import { transcribeAudioAction } from '@/lib/actions/ai-studio'
+import { extractDocumentContent, type ExtractedDocument } from '@/lib/generation/doc-extractor'
 
 interface ModelDef {
   id: string
@@ -35,18 +36,74 @@ interface Props {
   onStop: () => void
 }
 
+interface AttachedFileState {
+  doc: ExtractedDocument
+  fileSize: string
+}
+
 export function AgentInput({ input, isLoading, selectedModel, onInputChange, onSubmit, onStop }: Props) {
   const setSelectedModel = useEditorStore((s) => s.setSelectedModel)
   const [showModelMenu, setShowModelMenu] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [attachedFile, setAttachedFile] = useState<AttachedFileState | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const modelMenuRef = useRef<HTMLDivElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
 
   const activeModel = MODELS.find((m) => m.id === selectedModel) ?? MODELS[0]
   const ActiveIcon = activeModel.icon
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  const handleFileProcess = async (file: File) => {
+    try {
+      const doc = await extractDocumentContent(file)
+      setAttachedFile({
+        doc,
+        fileSize: formatFileSize(file.size),
+      })
+    } catch (err) {
+      console.error('[Agent] Document extraction error:', err)
+    }
+  }
+
+  const handleFileInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      await handleFileProcess(file)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) {
+      await handleFileProcess(file)
+    }
+  }
 
   const toggleRecording = async () => {
     if (isRecording) {
@@ -94,24 +151,109 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
     }
   }
 
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (attachedFile) {
+      // Prepend document context to the input
+      const docHeader = `Attached document:\n\`\`\`${attachedFile.doc.fileType}\n${attachedFile.doc.summaryBriefing}\n\`\`\`\n\n`
+      const combinedText = input.trim()
+        ? `${input.trim()}\n\n${docHeader}`
+        : `Please synthesize a comprehensive presentation deck based on this document:\n\n${docHeader}`
+      
+      const fakeEvent = { target: { value: combinedText } } as ChangeEvent<HTMLTextAreaElement>
+      onInputChange(fakeEvent)
+      setAttachedFile(null)
+    }
+    onSubmit(e)
+  }
+
   return (
     <div className="shrink-0 border-t border-(--ms-border) p-3 space-y-2 bg-(--ms-bg-base)">
-      <form onSubmit={onSubmit}>
-        <div className="relative bg-(--ms-bg-elevated) border border-(--ms-border) rounded-2xl focus-within:border-purple-500/50 transition-colors shadow-lg">
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".md,.markdown,.txt,.json,.yaml,.yml,.pdf,.docx,.ts,.tsx,.py,.go,.rs,.sql"
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
+
+      <form onSubmit={handleFormSubmit}>
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`relative bg-(--ms-bg-elevated) border rounded-2xl transition-colors shadow-lg ${
+            isDragging
+              ? 'border-purple-500 bg-purple-500/10'
+              : 'border-(--ms-border) focus-within:border-purple-500/50'
+          }`}
+        >
+          {/* Drag & drop overlay */}
+          <AnimatePresence>
+            {isDragging && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-20 rounded-2xl bg-purple-950/80 backdrop-blur-xs flex flex-col items-center justify-center gap-1.5 text-purple-300 pointer-events-none"
+              >
+                <UploadCloud size={24} className="animate-bounce text-purple-400" />
+                <p className="text-xs font-semibold">Drop document or code file to synthesize slides</p>
+                <p className="text-[10px] opacity-70">Markdown, PDF, OpenAPI YAML, JSON, Code</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Attached File Chip */}
+          <AnimatePresence>
+            {attachedFile && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, y: -4 }}
+                animate={{ opacity: 1, height: 'auto', y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -4 }}
+                className="px-3 pt-2.5 pb-1 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/30 text-xs text-purple-300 max-w-[85%] truncate">
+                  <FileText size={13} className="text-purple-400 shrink-0" />
+                  <span className="font-semibold truncate">{attachedFile.doc.fileName}</span>
+                  <span className="text-[10px] text-purple-400/60 shrink-0">({attachedFile.fileSize})</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAttachedFile(null)}
+                  className="p-1 rounded-md text-(--ms-text-muted) hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer border-none bg-transparent"
+                  title="Remove attachment"
+                >
+                  <X size={13} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <textarea
             ref={textareaRef}
             value={input}
             onChange={onInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask me to create slides, add animations, set transitions…"
+            placeholder={attachedFile ? `Ask me to synthesize "${attachedFile.doc.title}" or specify layout details…` : "Ask me to create slides, add animations, set transitions, or drop a document…"}
             rows={3}
             className="w-full bg-transparent border-none p-3.5 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) resize-none focus:outline-none scrollbar-hide font-medium leading-relaxed"
             disabled={isLoading}
           />
 
           <div className="flex items-center justify-between p-2 pt-0 border-t border-(--ms-border)/30">
-            {/* Left: model selector + mic */}
+            {/* Left: file upload + mic + model selector */}
             <div className="flex items-center gap-1">
+              {/* Paperclip / File Upload Button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2 rounded-lg text-(--ms-text-muted) hover:text-purple-400 hover:bg-purple-500/10 bg-transparent transition cursor-pointer border-none"
+                title="Attach Document (.md, .pdf, .yaml, .json, code)"
+              >
+                <Paperclip size={15} />
+              </button>
+
               {/* Voice */}
               <button
                 type="button"
@@ -214,9 +356,9 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
             ) : (
               <button
                 type="submit"
-                disabled={!input.trim()}
+                disabled={!input.trim() && !attachedFile}
                 className={`p-2 rounded-xl transition cursor-pointer border-none shadow-lg ${
-                  !input.trim()
+                  !input.trim() && !attachedFile
                     ? 'bg-(--ms-border) text-(--ms-text-muted) cursor-not-allowed'
                     : 'bg-purple-600 hover:bg-purple-500 text-white active:scale-95 shadow-purple-900/30'
                 }`}

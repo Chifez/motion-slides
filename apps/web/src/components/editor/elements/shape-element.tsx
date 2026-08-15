@@ -168,13 +168,15 @@ function DocumentShape({ fill, stroke, transition }: ShapeProps) {
   )
 }
 
-function AwsIconShape({ iconPath }: { iconPath?: string }) {
-  if (!iconPath) return null
+function AwsIconShape({ iconPath }: { iconPath?: string | { path?: string } }) {
+  const actualPath = typeof iconPath === 'object' ? iconPath?.path : iconPath
+  if (!actualPath || typeof actualPath !== 'string') return null
+  const cleanPath = actualPath.startsWith('/') ? actualPath.slice(1) : actualPath
   return (
     <foreignObject x="0" y="0" width="100" height="100">
       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <img
-          src={`/${encodeURI(iconPath)}`}
+          src={`/${cleanPath}`}
           alt="Icon"
           style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', pointerEvents: 'none' }}
         />
@@ -194,6 +196,7 @@ const shapeMap: Record<string, React.FC<any>> = {
   user: UserShape, bucket: BucketShape, queue: QueueShape, document: DocumentShape,
   'aws-icon': AwsIconShape,
   'gcp-icon': AwsIconShape,
+  icon: AwsIconShape,
 }
 
 export function ShapeElement({ content, elementId }: Props) {

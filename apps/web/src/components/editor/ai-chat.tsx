@@ -116,9 +116,21 @@ export function AIChat() {
     }
   }
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const isAutoScrollEnabled = useRef(true)
+
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current
+    // User is near bottom if within 80px
+    isAutoScrollEnabled.current = scrollHeight - scrollTop - clientHeight < 80
+  }
+
+  // Stable direct scroll without smooth physics cancellation jitter
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if (!scrollContainerRef.current || !isAutoScrollEnabled.current) return
+    scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
+  }, [messages, status])
 
   return (
     <Panel.Root
@@ -131,37 +143,35 @@ export function AIChat() {
           <AgentChatHeader onClose={() => setChatOpen(false)} />
 
           {/* Message Thread */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-hide">
-            <AnimatePresence initial={false}>
-              {messages.length === 0 ? (
-                <AgentWelcome onPrompt={(prompt) => handleSendMessage(prompt)} />
-              ) : (
-                messages.map((msg) => (
-                  <AgentMessage 
-                    key={msg.id} 
-                    message={msg} 
-                    snapshotId={messageSnapshotMap.current[msg.id]}
-                    pendingApprovals={pendingApprovals}
-                    onApproveTool={handleApprove}
-                    onUndo={handleUndo}
-                  />
-                ))
-              )}
-            </AnimatePresence>
+          <div 
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-hide"
+          >
+            {messages.length === 0 ? (
+              <AgentWelcome onPrompt={(prompt) => handleSendMessage(prompt)} />
+            ) : (
+              messages.map((msg) => (
+                <AgentMessage 
+                  key={msg.id} 
+                  message={msg} 
+                  snapshotId={messageSnapshotMap.current[msg.id]}
+                  pendingApprovals={pendingApprovals}
+                  onApproveTool={handleApprove}
+                  onUndo={handleUndo}
+                />
+              ))
+            )}
 
             {isLoading && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 px-1"
-              >
+              <div className="flex items-center gap-2 px-1 py-1">
                 <div className="flex gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:0ms]" />
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:150ms]" />
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:300ms]" />
                 </div>
                 <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-widest font-bold">Thinking…</span>
-              </motion.div>
+              </div>
             )}
 
             <div ref={messagesEndRef} />

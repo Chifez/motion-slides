@@ -3,7 +3,7 @@ import { tool } from 'ai'
 import dagre from 'dagre'
 import { useEditorStore } from '../../../store/editor-store'
 import { uuid } from '../../uuid'
-import { resolveIconPath } from '../../generation/icon-resolver'
+import { resolveIconPath, resolveIconPathString } from '../../generation/icon-resolver'
 import type { SceneElement, ShapeType, LineType, SectionContent, LineContent, ShapeContent, Slide } from '@motionslides/shared'
 
 // ─────────────────────────────────────────────────────────────────
@@ -135,6 +135,39 @@ export const diagramToolSchemas = {
       replaceGroupId: z.string().optional().describe('If iterating on an existing diagram, pass its diagramGroupId to replace it'),
     }),
   }),
+
+  patchDiagram: tool({
+    description: 'Incrementally update an existing diagram on the active slide (adding nodes, removing nodes, rewiring edges) without wiping out manual positions or breaking cross-slide Magic Move IDs.',
+    inputSchema: z.object({
+      diagramGroupId: z.string().optional().describe('Optional target diagramGroupId. If omitted, targets the existing diagram on the active slide.'),
+      slideIndex: z.number().nonnegative().optional(),
+      addNodes: z.array(z.object({
+        id: z.string().describe('Unique ID for the node'),
+        shapeType: z.enum([
+          'rectangle', 'rounded-rectangle', 'circle', 'cylinder', 'diamond',
+          'hexagon', 'database', 'server', 'cloud', 'client', 'user',
+          'bucket', 'queue', 'document', 'aws-icon', 'gcp-icon', 'icon',
+        ]).describe('Shape type'),
+        label: z.string().optional(),
+        sublabel: z.string().optional(),
+        iconPath: z.string().optional(),
+        layer: z.string().optional(),
+        fill: z.string().optional(),
+        stroke: z.string().optional(),
+      })).optional().default([]).describe('New nodes to add into the diagram'),
+      removeNodeIds: z.array(z.string()).optional().default([]).describe('List of node IDs to remove from the diagram'),
+      addEdges: z.array(z.object({
+        from: z.string().describe('Source node ID'),
+        to: z.string().describe('Target node ID'),
+        label: z.string().optional(),
+        style: z.enum(['solid', 'dashed', 'dotted']).optional().default('solid'),
+      })).optional().default([]).describe('New connections to add'),
+      removeEdges: z.array(z.object({
+        from: z.string(),
+        to: z.string(),
+      })).optional().default([]).describe('Connections to remove'),
+    }),
+  }),
 }
 
 function getStore() {
@@ -176,8 +209,8 @@ export async function executeDiagramTool(toolName: string, args: Record<string, 
         : nextAvailableShapePosition(slide, width, height)
 
       // Auto-resolve icon if not provided
-      const resolvedIcon = iconPath || resolveIconPath(label || sublabel || shapeType)
-      const finalShapeType = (resolvedIcon && shapeType === 'rectangle') ? 'icon' : shapeType
+      const resolvedIcon = resolveIconPathString(iconPath || label || sublabel || shapeType)
+      const finalShapeType = (resolvedIcon && (shapeType === 'rectangle' || shapeType === 'aws-icon' || shapeType === 'icon')) ? 'aws-icon' : shapeType
 
       const derivedSlug = label ? label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : ''
       const elementId = id || (derivedSlug ? `node-${derivedSlug}` : uuid())
@@ -598,8 +631,8 @@ export async function executeDiagramTool(toolName: string, args: Record<string, 
           x: 100, y: 100, width: Math.round(nodeWidth * scale), height: Math.round(nodeHeight * scale)
         }
 
-        const resolvedIcon = n.iconPath || resolveIconPath(n.label || n.sublabel || n.shapeType)
-        const finalShapeType = (resolvedIcon && n.shapeType === 'rectangle') ? 'icon' : n.shapeType
+        const resolvedIcon = resolveIconPathString(n.iconPath || n.label || n.sublabel || n.shapeType)
+        const finalShapeType = (resolvedIcon && (n.shapeType === 'rectangle' || n.shapeType === 'aws-icon' || n.shapeType === 'icon')) ? 'aws-icon' : n.shapeType
 
         finalElements.push({
           id: n.id,
@@ -682,6 +715,305 @@ export async function executeDiagramTool(toolName: string, args: Record<string, 
         diagramGroupId, 
         slideName: slide.name, 
         preview: `Generated diagram with ${rawNodes.length} nodes, ${layers.size} containers, and ${rawEdges.length} connections.` 
+      }
+    }
+
+    case 'patchDiagram': {
+      const {
+        diagramGroupId: targetGroupId,
+        slideIndex,
+        addNodes = [],
+        removeNodeIds = [],
+        addEdges = [],
+        removeEdges = [],
+      } = args as {
+        diagramGroupId?: string
+        slideIndex?: number
+        addNodes?: Array<{ id: string; shapeType: ShapeType; label?: string; sublabel?: string; iconPath?: string; layer?: string; fill?: string; stroke?: string }>
+        removeNodeIds?: string[]
+        addEdges?: Array<{ from: string; to: string; label?: string; style?: 'solid' | 'dashed' | 'dotted' }>
+        removeEdges?: Array<{ from: string; to: string }>
+      }
+
+      const slide = getTargetSlide(store, slideIndex)
+      if (!slide) return { success: false, error: `Slide ${slideIndex ?? 'active'} not found.` }
+
+      const removeNodeSet = new Set(removeNodeIds)
+      const diagramGroupId = targetGroupId || slide.elements.find(e => e.diagramGroupId)?.diagramGroupId || `group-patch-${uuid().slice(0, 8)}`
+
+      // 1. Filter existing elements
+      const existingRemainingElements = slide.elements.filter((el) => {
+        if (el.type === 'shape' && removeNodeSet.has(el.id)) return false
+        if (el.type === 'line') {
+          const lc = el.content as LineContent
+          const startId = lc.startConnection?.elementId
+          const endId = lc.endConnection?.elementId
+          if (startId && removeNodeSet.has(startId)) return false
+          if (endId && removeNodeSet.has(endId)) return false
+          // Check removeEdges
+          const matchesRemoveEdge = removeEdges.some(re => re.from === startId && re.to === endId)
+          if (matchesRemoveEdge) return false
+        }
+        return true
+      })
+
+      // 2. Collect all active shape nodes
+      const allActiveNodes: Array<{ id: string; shapeType: string; label?: string; sublabel?: string; iconPath?: string; layer?: string; fill?: string; stroke?: string }> = []
+      
+      existingRemainingElements.forEach((el) => {
+        if (el.type === 'shape') {
+          const sc = el.content as ShapeContent
+          allActiveNodes.push({
+            id: el.id,
+            shapeType: sc.shapeType,
+            label: sc.label,
+            sublabel: sc.sublabel,
+            iconPath: sc.iconPath,
+            fill: sc.backgroundColor || (sc as any).fill,
+            stroke: sc.borderColor || (sc as any).stroke,
+          })
+        }
+      })
+
+      // Append new nodes (prevent duplicates)
+      const existingIdSet = new Set(allActiveNodes.map(n => n.id))
+      addNodes.forEach(an => {
+        if (!existingIdSet.has(an.id)) {
+          allActiveNodes.push(an)
+          existingIdSet.add(an.id)
+        }
+      })
+
+      if (allActiveNodes.length === 0) {
+        return { success: false, error: 'No active nodes remaining in patched diagram.' }
+      }
+
+      // 3. Build compound Dagre graph for clean layout
+      const g = new dagre.graphlib.Graph({ compound: true })
+      g.setGraph({ rankdir: 'LR', nodesep: 50, ranksep: 80, marginx: 20, marginy: 20 })
+      g.setDefaultEdgeLabel(() => ({}))
+
+      const nodeWidth = 140
+      const nodeHeight = 80
+
+      const layers = new Set<string>()
+      allActiveNodes.forEach((n) => {
+        if (n.layer) layers.add(n.layer)
+      })
+      layers.forEach((layerName) => {
+        g.setNode(layerName, { label: layerName, clusterNode: true })
+      })
+
+      allActiveNodes.forEach((n) => {
+        g.setNode(n.id, { width: nodeWidth, height: nodeHeight, label: n.label || n.id })
+        if (n.layer) g.setParent(n.id, n.layer)
+      })
+
+      // Collect existing edges + new edges
+      const activeEdges: Array<{ from: string; to: string; label?: string; style?: 'solid' | 'dashed' | 'dotted' }> = []
+      
+      existingRemainingElements.forEach((el) => {
+        if (el.type === 'line') {
+          const lc = el.content as LineContent
+          const from = lc.startConnection?.elementId
+          const to = lc.endConnection?.elementId
+          if (from && to && existingIdSet.has(from) && existingIdSet.has(to)) {
+            activeEdges.push({ from, to, label: lc.label, style: lc.style as any })
+          }
+        }
+      })
+
+      addEdges.forEach(ae => {
+        if (existingIdSet.has(ae.from) && existingIdSet.has(ae.to)) {
+          activeEdges.push(ae)
+        }
+      })
+
+      activeEdges.forEach((e) => {
+        if (g.hasNode(e.from) && g.hasNode(e.to)) {
+          g.setEdge(e.from, e.to)
+        }
+      })
+
+      dagre.layout(g)
+
+      // 4. Calculate bounding box & normalize
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      const nodePositions = new Map<string, { x: number; y: number }>()
+
+      allActiveNodes.forEach((n) => {
+        const layoutNode = g.node(n.id)
+        if (layoutNode && layoutNode.x !== undefined && layoutNode.y !== undefined) {
+          const nx = layoutNode.x - nodeWidth / 2
+          const ny = layoutNode.y - nodeHeight / 2
+          nodePositions.set(n.id, { x: nx, y: ny })
+          minX = Math.min(minX, nx)
+          minY = Math.min(minY, ny)
+          maxX = Math.max(maxX, nx + nodeWidth)
+          maxY = Math.max(maxY, ny + nodeHeight)
+        }
+      })
+
+      const canvasW = 1280
+      const canvasH = 720
+      const paddingX = 80
+      const paddingY = 80
+      const targetW = canvasW - paddingX * 2
+      const targetH = canvasH - paddingY * 2
+      const graphW = Math.max(1, maxX - minX)
+      const graphH = Math.max(1, maxY - minY)
+
+      const scale = Math.min(1, Math.min(targetW / graphW, targetH / graphH))
+      const finalGraphW = graphW * scale
+      const finalGraphH = graphH * scale
+      const offsetX = paddingX + (targetW - finalGraphW) / 2 - minX * scale
+      const offsetY = paddingY + (targetH - finalGraphH) / 2 - minY * scale
+
+      const transformedNodeMap = new Map<string, { x: number; y: number; width: number; height: number }>()
+      allActiveNodes.forEach((n) => {
+        const rawPos = nodePositions.get(n.id) || { x: 100, y: 100 }
+        transformedNodeMap.set(n.id, {
+          x: Math.round(rawPos.x * scale + offsetX),
+          y: Math.round(rawPos.y * scale + offsetY),
+          width: Math.round(nodeWidth * scale),
+          height: Math.round(nodeHeight * scale),
+        })
+      })
+
+      // 5. Construct rebuilt elements
+      const finalElements: SceneElement[] = []
+
+      // Non-diagram elements (e.g. titles) are kept untouched
+      slide.elements.forEach(el => {
+        if (el.type !== 'shape' && el.type !== 'line' && el.type !== 'section') {
+          finalElements.push(el)
+        }
+      })
+
+      // Container Sections (zIndex: 1)
+      layers.forEach((layerName) => {
+        const childNodes = allActiveNodes.filter((n) => n.layer === layerName)
+        if (childNodes.length === 0) return
+
+        let layerMinX = Infinity, layerMinY = Infinity, layerMaxX = -Infinity, layerMaxY = -Infinity
+        childNodes.forEach((cn) => {
+          const t = transformedNodeMap.get(cn.id)
+          if (t) {
+            layerMinX = Math.min(layerMinX, t.x)
+            layerMinY = Math.min(layerMinY, t.y)
+            layerMaxX = Math.max(layerMaxX, t.x + t.width)
+            layerMaxY = Math.max(layerMaxY, t.y + t.height)
+          }
+        })
+
+        const pad = 24
+        finalElements.push({
+          id: `section-${uuid().slice(0, 8)}`,
+          type: 'section',
+          diagramGroupId,
+          position: {
+            x: Math.max(20, Math.round(layerMinX - pad)),
+            y: Math.max(20, Math.round(layerMinY - pad - 16)),
+          },
+          size: {
+            width: Math.round(layerMaxX - layerMinX + pad * 2),
+            height: Math.round(layerMaxY - layerMinY + pad * 2 + 16),
+          },
+          rotation: 0,
+          opacity: 1,
+          zIndex: 1,
+          animation: 'fade-in',
+          animationDelay: 0.1,
+          content: {
+            label: layerName,
+            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderStyle: 'dashed',
+            borderWidth: 1,
+            cornerRadius: 12,
+          } as SectionContent,
+        })
+      })
+
+      // Shapes (zIndex: 2)
+      allActiveNodes.forEach((n, idx) => {
+        const t = transformedNodeMap.get(n.id) || { x: 100, y: 100, width: 140, height: 80 }
+        const resolvedIcon = resolveIconPathString(n.iconPath || n.label || n.sublabel || n.shapeType)
+        const finalShapeType = (resolvedIcon && (n.shapeType === 'rectangle' || n.shapeType === 'aws-icon' || n.shapeType === 'icon')) ? 'aws-icon' : n.shapeType
+
+        finalElements.push({
+          id: n.id,
+          type: 'shape',
+          diagramGroupId,
+          position: { x: t.x, y: t.y },
+          size: { width: t.width, height: t.height },
+          rotation: 0,
+          opacity: 1,
+          zIndex: 2,
+          animation: 'fade-in',
+          animationDelay: 0.1 + idx * 0.05,
+          content: {
+            shapeType: finalShapeType as any,
+            label: n.label,
+            sublabel: n.sublabel,
+            iconPath: resolvedIcon,
+            backgroundColor: n.fill || 'transparent',
+            borderColor: n.stroke || '#3b82f6',
+            borderWidth: 1.5,
+            cornerRadius: 8,
+          } as ShapeContent,
+        })
+      })
+
+      // Connector Lines (zIndex: 3)
+      activeEdges.forEach((e, idx) => {
+        finalElements.push({
+          id: `line-${uuid().slice(0, 8)}`,
+          type: 'line',
+          diagramGroupId,
+          position: { x: 0, y: 0 },
+          size: { width: 100, height: 100 },
+          rotation: 0,
+          opacity: 1,
+          zIndex: 3,
+          animation: 'draw',
+          animationDelay: 0.2 + idx * 0.08,
+          content: {
+            lineType: 'elbow',
+            style: e.style || 'solid',
+            arrow: 'end',
+            color: '#3b82f6',
+            strokeWidth: 1.5,
+            label: e.label,
+            startConnection: { elementId: e.from, handleId: 'right' },
+            endConnection: { elementId: e.to, handleId: 'left' },
+          } as LineContent,
+        })
+      })
+
+      const activeProjectId = store.activeProjectId
+      useEditorStore.setState((s) => ({
+        projects: s.projects.map((p) =>
+          p.id !== activeProjectId
+            ? p
+            : {
+                ...p,
+                slides: p.slides.map((sl) => {
+                  if (sl.id !== slide.id) return sl
+                  return { ...sl, elements: finalElements }
+                }),
+                updatedAt: Date.now(),
+              }
+        ),
+      }))
+
+      useEditorStore.getState().recalculateLines()
+
+      return {
+        success: true,
+        diagramGroupId,
+        slideName: slide.name,
+        message: `Patched diagram on ${slide.name}: ${addNodes.length} nodes added, ${removeNodeIds.length} nodes removed, total ${allActiveNodes.length} nodes active.`,
       }
     }
 

@@ -195,6 +195,53 @@ describe('Agent Diagram & Layout Tools', () => {
     expect((lineEl?.content as any).label).toBe('request')
   })
 
+  it('should incrementally patch a diagram without wiping existing elements', async () => {
+    // 1. Generate initial diagram: API -> DB
+    await executeAgentTool('generateDiagram', {
+      nodes: [
+        { id: 'api-gw', shapeType: 'server', label: 'API Gateway' },
+        { id: 'postgres-db', shapeType: 'database', label: 'Postgres DB' },
+      ],
+      edges: [
+        { from: 'api-gw', to: 'postgres-db', label: 'Direct Query' },
+      ],
+    })
+
+    const storeInitial = useEditorStore.getState()
+    const slideInitial = storeInitial.activeSlide()
+    expect(slideInitial?.elements.filter(e => e.type === 'shape').length).toBe(2)
+
+    // 2. Patch diagram: Add Redis cache, remove direct API->DB edge, add API->Redis and Redis->DB edges
+    const patchRes = await executeAgentTool('patchDiagram', {
+      addNodes: [
+        { id: 'redis-cache', shapeType: 'database', label: 'Redis Cache' },
+      ],
+      removeEdges: [
+        { from: 'api-gw', to: 'postgres-db' },
+      ],
+      addEdges: [
+        { from: 'api-gw', to: 'redis-cache', label: 'Cache Lookup' },
+        { from: 'redis-cache', to: 'postgres-db', label: 'Cache Miss Fallback' },
+      ],
+    })
+
+    expect(patchRes.success).toBe(true)
+
+    const storePatched = useEditorStore.getState()
+    const slidePatched = storePatched.activeSlide()
+    const shapes = slidePatched?.elements.filter(e => e.type === 'shape') ?? []
+    expect(shapes.length).toBe(3)
+
+    // Original node IDs should still exist
+    expect(shapes.find(s => s.id === 'api-gw')).toBeDefined()
+    expect(shapes.find(s => s.id === 'postgres-db')).toBeDefined()
+    expect(shapes.find(s => s.id === 'redis-cache')).toBeDefined()
+
+    // 2 lines active (api->redis, redis->db)
+    const lines = slidePatched?.elements.filter(e => e.type === 'line') ?? []
+    expect(lines.length).toBe(2)
+  })
+
   it('should execute deleteElement to remove an element by ID', async () => {
     const addRes = await executeAgentTool('addShapeElement', { id: 'node-to-delete', shapeType: 'database', label: 'DB' })
     expect(addRes.success).toBe(true)

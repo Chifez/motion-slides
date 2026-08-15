@@ -194,3 +194,12 @@ export function resolveIconPath(path: string) {
     fallback: 'rectangle' as const
   }
 }
+
+export function resolveIconPathString(keywordOrPath?: string): string | undefined {
+  if (!keywordOrPath || typeof keywordOrPath !== 'string') return undefined
+  const clean = keywordOrPath.trim()
+  if (clean.startsWith('icons/')) return clean
+  const res = resolveIconPath(clean)
+  return res && typeof res === 'object' ? res.path : (typeof res === 'string' ? res : undefined)
+}
+
