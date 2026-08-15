@@ -108,7 +108,7 @@ export function EditorToolbar({ projectId }: Props) {
           </button>
         )}
 
-        <Link to="/" onClick={() => syncProjects()} className="items-center no-underline hidden sm:flex">
+        <Link to="/" onClick={() => syncProjects()} className="items-center no-underline hidden sm:flex shrink-0">
           <Logo expanded={false} size={22} />
         </Link>
 
