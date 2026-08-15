@@ -21,17 +21,18 @@ export function LabelGroup({ text, x, y, fontSize }: LabelGroupProps) {
         width={width}
         height={height}
         rx={4}
-        fill="#1a1a1a"
-        fillOpacity={0.92}
-        stroke="rgba(255,255,255,0.12)"
-        strokeWidth={0.5}
+        fill="#0f172a"
+        fillOpacity={0.95}
+        stroke="rgba(255,255,255,0.18)"
+        strokeWidth={0.75}
       />
       <text
         x={x}
         y={y}
-        fill="#a3a3a3"
+        fill="#ffffff"
         fontSize={fontSize}
         fontFamily="Inter, sans-serif"
+        fontWeight={500}
         textAnchor="middle"
         dominantBaseline="central"
       >

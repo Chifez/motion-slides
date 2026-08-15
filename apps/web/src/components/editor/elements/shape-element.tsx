@@ -268,7 +268,7 @@ export function ShapeElement({ content, elementId }: Props) {
         />
       ) : (
         content.label && (
-          <span style={{ fontSize: 11, color: '#ccc', fontWeight: 500, textAlign: 'center', userSelect: 'none' }}>
+          <span style={{ fontSize: 11, color: '#ffffff', fontWeight: 600, textAlign: 'center', userSelect: 'none' }}>
             {content.label}
           </span>
         )

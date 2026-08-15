@@ -86,7 +86,7 @@ export async function executeSlideTool(toolName: string, args: Record<string, un
           return s
         }
 
-        const defaultBg = p.slides[0]?.background ?? '#0d0d14'
+        const defaultBg = p.slides[0]?.background ?? '#0b0c16'
         const bg = background ?? defaultBg
         const createdSlides: Slide[] = []
 
