@@ -4,7 +4,7 @@ import { useEditorStore } from '@/store/editor-store'
 import { MIN_ELEMENT_WIDTH, MIN_ELEMENT_HEIGHT } from '@/constants/animation'
 import { RESIZE_HANDLES } from '@/constants/editor'
 import type { SceneElement, LineContent } from '@motionslides/shared'
-import { useAccessControl } from '@/hooks/use-access-control'
+import { usePermissions } from '@/context/permission-context'
 import { useLineDrag } from '@/hooks/use-line-drag'
 import { useConnectionDrag } from '@/hooks/use-connection-drag'
 
@@ -17,7 +17,7 @@ function getCanvasScale(): number {
 }
 
 export function ConnectionAnchors() {
-  const { isReadOnly } = useAccessControl()
+  const { isReadOnly } = usePermissions()
   const activeSlide = useEditorStore(s => s.activeSlide)
   const selectedElementIds = useEditorStore(s => s.selectedElementIds)
   const slide = activeSlide()
@@ -65,7 +65,7 @@ export function ConnectionAnchors() {
 }
 
 export function BoundingBox({ element }: Props) {
-  const { isReadOnly } = useAccessControl()
+  const { isReadOnly } = usePermissions()
   const updateElement = useEditorStore(s => s.updateElement)
   const isDragging = useEditorStore(s => s.isDragging)
 

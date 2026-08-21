@@ -1,4 +1,4 @@
-import { useAccessControl } from '@/hooks/use-access-control'
+import { usePermissions } from '@/context/permission-context'
 import { useEditorStore } from '@/store/editor-store'
 import { Play, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
@@ -12,7 +12,7 @@ interface Props {
  * Provides a professional "Player" interface with an Autoplay toggle.
  */
 export function ViewerOverlay({ startPresentation }: Props) {
-  const { mode } = useAccessControl()
+  const { mode } = usePermissions()
   const { activeProject, activeSlideIndex, setActiveSlide } = useEditorStore()
   const project = activeProject()
 

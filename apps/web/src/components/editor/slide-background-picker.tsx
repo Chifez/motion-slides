@@ -26,7 +26,11 @@ export const SlideBackgroundPicker = memo(function SlideBackgroundPicker() {
   const [imageUrl, setImageUrl] = useState('')
 
   return (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
+    <div 
+      className="relative" 
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       <button
         onClick={() => setShowPicker(!showPicker)}
         className="flex items-center gap-1.5 text-[10px] text-(--ms-text-muted) hover:text-(--ms-text-primary) bg-(--ms-bg-surface)/80 backdrop-blur-sm border border-(--ms-border) rounded-md px-2 py-1 cursor-pointer transition-colors"
@@ -43,7 +47,7 @@ export const SlideBackgroundPicker = memo(function SlideBackgroundPicker() {
       </button>
 
       {showPicker && (
-        <div className="absolute top-full mt-1.5 left-0 bg-(--ms-bg-surface) border border-(--ms-border) rounded-lg shadow-2xl z-100 p-4 w-64 backdrop-blur-md">
+        <div className="absolute top-full mt-1.5 left-0 bg-(--ms-bg-surface) border border-(--ms-border) rounded-lg shadow-2xl z-[100] p-4 w-64 backdrop-blur-md">
           <div className="space-y-4">
             <div>
               <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider block mb-2 font-medium">

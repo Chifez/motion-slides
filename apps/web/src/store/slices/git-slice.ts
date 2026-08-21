@@ -67,8 +67,10 @@ function findCommonAncestor(
 
   const getChain = (startId: string) => {
     const chain: string[] = []
+    const visited = new Set<string>()
     let curr: string | null = startId
-    while (curr) {
+    while (curr && !visited.has(curr)) {
+      visited.add(curr)
       chain.push(curr)
       const found = allCommits.find(c => c.id === curr)
       curr = found ? found.parentCommitId : null

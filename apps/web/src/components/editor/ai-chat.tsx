@@ -54,6 +54,13 @@ export function AIChat() {
         addToolOutput({ toolCallId: tc.toolCallId, tool: toolName, state: 'output-error', errorText: String(err) })
       }
     },
+    onFinish: ({ message, messages: allMsgs }) => {
+      const targetMsgs = allMsgs || messages
+      const finalMsgs = message && !targetMsgs.some(m => m.id === message.id)
+        ? [...targetMsgs, message]
+        : targetMsgs
+      persistActiveThread(finalMsgs)
+    },
     onError: (err) => {
       console.error('[MotionSlide Copilot] Chat error:', err)
       if (currentSnapshotRef.current) {
@@ -107,14 +114,15 @@ export function AIChat() {
   }, [messages])
 
   // Persist thread when messages change and stream finishes
-  const persistActiveThread = useCallback(async () => {
+  const persistActiveThread = useCallback(async (customMessages?: typeof messages) => {
     if (!activeProjectId || !activeThreadId) return
+    const msgs = customMessages || messages
     const currentThread = threads.find((t) => t.id === activeThreadId)
     if (!currentThread) return
 
     let updatedTitle = currentThread.title
-    if (currentThread.title === 'New Conversation' && messages.length > 0) {
-      const firstUserMsg = messages.find((m) => m.role === 'user')
+    if (currentThread.title === 'New Conversation' && msgs.length > 0) {
+      const firstUserMsg = msgs.find((m) => m.role === 'user')
       if (firstUserMsg) {
         const textContent = (firstUserMsg.parts ?? [])
           .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
@@ -130,7 +138,7 @@ export function AIChat() {
       ...currentThread,
       title: updatedTitle,
       updatedAt: Date.now(),
-      messages,
+      messages: msgs,
       messageSnapshotMap: messageSnapshotMap.current,
     }
 
@@ -140,12 +148,6 @@ export function AIChat() {
       prev.map((t) => (t.id === activeThreadId ? updatedThread : t))
     )
   }, [activeProjectId, activeThreadId, messages, threads])
-
-  useEffect(() => {
-    if (status === 'ready' && messages.length > 0) {
-      persistActiveThread()
-    }
-  }, [status, messages, persistActiveThread])
 
   const isLoading = status === 'streaming' || status === 'submitted'
 

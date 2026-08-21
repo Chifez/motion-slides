@@ -9,7 +9,7 @@ import { useAutoHide } from '@/hooks/use-auto-hide'
 import { getCanvasDimensions } from '@motionslides/shared'
 import { MotionStage } from './motion-stage'
 import { PresentationControls } from './presentation/presentation-controls'
-import { useAccessControl } from '@/hooks/use-access-control'
+import { usePermissions } from '@/context/permission-context'
 import { CaptionOverlay } from './presentation/caption-overlay'
 
 export function PresentationOverlay() {
@@ -29,7 +29,7 @@ export function PresentationOverlay() {
   const totalSlides = project?.slides.length ?? 0
 
   const [controlsVisible, showControls] = useAutoHide(isPresenting)
-  const { autoplay: urlAutoplay } = useAccessControl()
+  const { autoplay: urlAutoplay } = usePermissions()
   const [autoplayPaused, setAutoplayPaused] = useState(false)
   const [elapsed, setElapsed] = useState(0)
 
@@ -53,14 +53,14 @@ export function PresentationOverlay() {
 
   // Timer loop tracking slide playback progress
   useEffect(() => {
-    if (!isPresenting) return
+    if (!isPresenting || autoplayPaused) return
     setElapsed(0)
     const startTime = Date.now()
     const interval = setInterval(() => {
       setElapsed((Date.now() - startTime) / 1000)
     }, 50)
     return () => clearInterval(interval)
-  }, [activeSlideIndex, isPresenting])
+  }, [activeSlideIndex, isPresenting, autoplayPaused])
 
   const slideStart = slidesWithTiming[activeSlideIndex]?.start ?? 0
   const currentTime = slideStart + elapsed
@@ -217,6 +217,23 @@ export function PresentationOverlay() {
       }
     }
   }, [isPresenting, playbackSettings.backgroundMusic])
+
+  // Sync active audio playback when user pauses/unpauses presentation controls
+  useEffect(() => {
+    if (!isPresenting) return
+
+    if (autoplayPaused) {
+      slideAudioRef.current?.pause()
+      bgMusicRef.current?.pause()
+    } else {
+      if (slideAudioRef.current && slideAudioRef.current.paused) {
+        slideAudioRef.current.play().catch(() => {})
+      }
+      if (bgMusicRef.current && bgMusicRef.current.paused) {
+        bgMusicRef.current.play().catch(() => {})
+      }
+    }
+  }, [autoplayPaused, isPresenting])
 
   const onKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'ArrowRight' || e.key === ' ') {

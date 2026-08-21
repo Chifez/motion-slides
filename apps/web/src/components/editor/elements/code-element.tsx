@@ -129,6 +129,7 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
   const prevPositionsRef = useRef<Map<string, Rect>>(new Map())
   const prevTokensRef = useRef<FlatToken[]>([])
   const transitionIdRef = useRef(0)
+  const tokenRequestIdRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { durationSec: ctxDuration, ease: ctxEase, isTransitioning } = useMotionContext()
@@ -151,13 +152,16 @@ export function CodeElement({ content, elementId: _elementId }: Props) {
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
     const isFirst = ghostTokens.length === 0
+    const reqId = ++tokenRequestIdRef.current
 
     timerRef.current = setTimeout(async () => {
       try {
         const flat = await buildFlatTokens(content.value, content.language || 'javascript')
+        if (reqId !== tokenRequestIdRef.current) return
         transitionIdRef.current += 1
         setGhostTokens(flat)
       } catch {
+        if (reqId !== tokenRequestIdRef.current) return
         const lines = (content.value || '').split('\n')
         const flat: FlatToken[] = []
         lines.forEach((text, i) => {

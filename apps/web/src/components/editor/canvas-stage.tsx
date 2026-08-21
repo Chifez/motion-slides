@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react'
 import { useEditorStore } from '@/store/editor-store'
 import { useCanvasScale } from '@/hooks/use-canvas-scale'
 import { useCanvasCamera } from '@/hooks/use-canvas-camera'
-import { useAccessControl } from '@/hooks/use-access-control'
+import { usePermissions } from '@/context/permission-context'
 import { useBoardTransform } from '@/hooks/use-board-transform'
 import { getCanvasDimensions } from '@motionslides/shared'
 import { useSectionLasso } from '@/hooks/use-section-lasso'
@@ -16,7 +16,7 @@ import { ReviewOverlay } from './review-overlay'
 
 export function CanvasStage() {
   const stageRef = useRef<HTMLDivElement>(null)
-  const { isReadOnly, isAuthenticated, mode } = useAccessControl()
+  const { isReadOnly, isAuthenticated, mode } = usePermissions()
   const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useState(false)
 
   useEffect(() => {

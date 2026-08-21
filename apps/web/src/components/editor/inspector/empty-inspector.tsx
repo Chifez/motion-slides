@@ -1,16 +1,31 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { useEditorStore } from '@/store/editor-store'
 import { AudioRecorder } from '../audio/audio-recorder'
 import { AudioTimelineEditor } from '../audio/audio-timeline-editor'
-import { Music, Presentation, CheckSquare, Square } from 'lucide-react'
+import { Music, Presentation, CheckSquare, Square, Palette } from 'lucide-react'
 
 const sectionCls = "px-3 py-3 border-b border-(--ms-border)"
+
+const PRESET_COLORS = [
+  '#0a0a0a', '#111827', '#1e1b4b', '#0c4a6e', 
+  '#14532d', '#7f1d1d', '#ffffff', '#f5f5f4'
+]
+
+const PRESET_IMAGES = [
+  'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600&q=80'
+]
 
 export const EmptyInspector = memo(function EmptyInspector() {
   const slide = useEditorStore(s => s.activeSlide())
   const updateSlide = useEditorStore(s => s.updateSlide)
   const playbackSettings = useEditorStore(s => s.playbackSettings)
   const updatePlaybackSettings = useEditorStore(s => s.updatePlaybackSettings)
+  const [customImageUrl, setCustomImageUrl] = useState('')
+
+  const slideBg = slide?.background || '#0a0a0a'
 
   const handleSlideAudioChange = (newAudio: any) => {
     updateSlide({ audio: newAudio })
@@ -63,6 +78,105 @@ export const EmptyInspector = memo(function EmptyInspector() {
             className="w-full bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent) transition"
             placeholder="Slide Name"
           />
+        </div>
+      )}
+
+      {slide && (
+        <div className={sectionCls}>
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <Palette size={13} className="text-(--ms-text-muted)" />
+            <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-wider font-semibold">
+              Slide Background
+            </span>
+          </div>
+          
+          <div className="space-y-3">
+            <div>
+              <span className="text-[10px] text-(--ms-text-secondary) block mb-1.5">Color Fill</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={slideBg.startsWith('#') ? slideBg : '#0a0a0a'}
+                  onChange={(e) => updateSlide({ background: e.target.value })}
+                  className="w-8 h-8 rounded-md cursor-pointer border border-white/10 bg-transparent p-0 overflow-hidden shrink-0"
+                />
+                <input
+                  type="text"
+                  value={slideBg}
+                  onChange={(e) => updateSlide({ background: e.target.value })}
+                  className="flex-1 bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2 py-1 text-xs font-mono text-(--ms-text-primary) focus:outline-none"
+                  placeholder="#000000 or url(...)"
+                />
+              </div>
+              <div className="flex gap-1.5 flex-wrap mt-2">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => updateSlide({ background: c })}
+                    className="w-5 h-5 rounded border border-white/15 cursor-pointer hover:scale-110 transition-transform"
+                    style={{ background: c }}
+                    title={c}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[10px] text-(--ms-text-secondary) block mb-1.5">Image Presets</span>
+              <div className="flex gap-1.5 flex-wrap">
+                {PRESET_IMAGES.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => updateSlide({ background: `url(${img})` })}
+                    className="w-11 h-7 rounded border border-white/15 cursor-pointer hover:scale-105 transition-transform bg-cover bg-center"
+                    style={{ backgroundImage: `url(${img})` }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[10px] text-(--ms-text-secondary) block mb-1.5">Custom Image URL</span>
+              <div className="flex gap-1">
+                <input
+                  type="text"
+                  placeholder="https://images.unsplash.com/..."
+                  value={customImageUrl}
+                  onChange={(e) => setCustomImageUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && customImageUrl.trim()) {
+                      updateSlide({ background: `url(${customImageUrl.trim()})` })
+                      setCustomImageUrl('')
+                    }
+                  }}
+                  className="flex-1 bg-(--ms-bg-base)/50 border border-(--ms-border) rounded px-2 py-1 text-[11px] text-(--ms-text-primary) focus:outline-none"
+                />
+                <button
+                  onClick={() => {
+                    if (customImageUrl.trim()) {
+                      updateSlide({ background: `url(${customImageUrl.trim()})` })
+                      setCustomImageUrl('')
+                    }
+                  }}
+                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded text-[10px] uppercase cursor-pointer border-none shrink-0"
+                >
+                  Set
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                const projectId = useEditorStore.getState().activeProjectId
+                if (projectId) {
+                  useEditorStore.getState().updateAllSlidesBackground(projectId, slideBg)
+                }
+              }}
+              className="w-full py-1.5 bg-white/5 hover:bg-white/10 text-(--ms-text-secondary) hover:text-white text-[10px] font-bold rounded cursor-pointer border border-(--ms-border) transition-colors mt-1"
+            >
+              Apply Background to All Slides
+            </button>
+          </div>
         </div>
       )}
 

@@ -11,20 +11,16 @@ import { useEditorStore } from '@/store/editor-store'
  * 3. Dashboard Open (handled in dashboard route)
  */
 export function useSyncManager() {
-  const syncProjects = useEditorStore((s) => s.syncProjects)
-  const projects = useEditorStore((s) => s.projects)
-  const user = useEditorStore((s) => s.user)
-
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!user) return
+      const state = useEditorStore.getState()
+      if (!state.user) return
 
-      const hasUnsynced = projects.some(p => !p.synced)
+      const hasUnsynced = state.projects.some(p => !p.synced)
       if (hasUnsynced) {
-        syncProjects()
-        
+        state.syncProjects()
         e.preventDefault()
         e.returnValue = ''
       }
@@ -32,5 +28,5 @@ export function useSyncManager() {
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [projects, syncProjects, user])
+  }, [])
 }

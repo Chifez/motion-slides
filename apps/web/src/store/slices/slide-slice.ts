@@ -120,7 +120,7 @@ export const createSlideSlice: StateCreator<EditorState, [], [], SlideSlice> = (
       fromSlideId: original.id,
       toSlideId: newSlideId,
       animation: 'magic-move',
-      duration: 0.8,
+      duration: 800,
       ease: { x1: 0.4, y1: 0, x2: 0.2, y2: 1 },
       trigger: 'click'
     })

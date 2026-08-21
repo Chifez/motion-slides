@@ -40,10 +40,11 @@ interface LoaderData {
  * It does NOT contain any business logic. All decisions are in permissions.ts.
  */
 export function useAccessControl(): AccessControl {
-  const search = useSearch({ from: '/p/$projectId' }) as unknown as ProjectSearchParams
-  const { projectId } = useParams({ from: '/p/$projectId' })
-  const navigate = useNavigate({ from: '/p/$projectId' })
-  const loaderData = useLoaderData({ from: '/p/$projectId' }) as unknown as LoaderData
+  const search = (useSearch({ strict: false }) || {}) as unknown as ProjectSearchParams
+  const params = (useParams({ strict: false }) || {}) as unknown as { projectId?: string }
+  const storeActiveId = useEditorStore((state) => state.activeProjectId)
+  const projectId = params.projectId || storeActiveId || ''
+  const loaderData = (useLoaderData({ strict: false }) || {}) as unknown as LoaderData
   const loaderProject = loaderData?.project
   const loaderAccessDenied = loaderData?.accessDenied
 

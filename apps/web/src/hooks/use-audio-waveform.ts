@@ -26,11 +26,13 @@ export function useAudioWaveform(
       return
     }
 
+    const controller = new AbortController()
     let active = true
 
     async function generateWaveform() {
+      let audioCtx: AudioContext | null = null
       try {
-        const response = await fetch(audioUrl)
+        const response = await fetch(audioUrl, { signal: controller.signal })
         if (!response.ok) throw new Error('Failed to fetch audio')
 
         const arrayBuffer = await response.arrayBuffer()
@@ -39,7 +41,7 @@ export function useAudioWaveform(
           (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
         if (!AudioContextClass) return
 
-        const audioCtx = new AudioContextClass()
+        audioCtx = new AudioContextClass()
         const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer)
         const rawData = audioBuffer.getChannelData(0)
         const totalSamples = rawData.length
@@ -64,10 +66,16 @@ export function useAudioWaveform(
           waveformCache.set(cacheKey, normalizedPeaks)
           setPeaks(normalizedPeaks)
         }
-
-        await audioCtx.close()
-      } catch (err) {
-        console.error('Error generating waveform:', err)
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          console.error('Error generating waveform:', err)
+        }
+      } finally {
+        if (audioCtx) {
+          try {
+            await audioCtx.close()
+          } catch {}
+        }
       }
     }
 
@@ -75,6 +83,7 @@ export function useAudioWaveform(
 
     return () => {
       active = false
+      controller.abort()
     }
   }, [url, numberOfBars])
 

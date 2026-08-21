@@ -11,6 +11,9 @@ import { CanvasSpotlightOverlay } from './elements/canvas-spotlight-overlay'
 import { Info } from 'lucide-react'
 import { HotspotCard } from './elements/hotspot-card'
 
+import { MotionWrapper } from './motion-wrapper'
+import { useMotionContext } from '@/context/motion-context'
+
 interface Props {
   slide: Slide | null
   previousSlide: Slide | null
@@ -21,50 +24,26 @@ interface Props {
 
 function CanvasElementStatic({ 
   element, 
-  hasFocal,
-  activeTransition,
-  settings,
 }: { 
   element: SceneElement
-  hasFocal: boolean 
+  hasFocal?: boolean 
   activeTransition?: SlideTransition | null
   settings?: PlaybackSettings
 }) {
   const [isCardOpen, setIsCardOpen] = useState(false)
+  const { continuingIds } = useMotionContext()
+  const isContinuing = continuingIds.has(element.id)
 
-  // Auto-open card after slide transition completes
-  useEffect(() => {
-    if (!element.isHotspot) return
-    setIsCardOpen(false)
-    const transitionMs = activeTransition?.duration ?? settings?.transitionDuration ?? 500
-    const timer = setTimeout(() => {
-      setIsCardOpen(true)
-    }, transitionMs + 100)
-    
-    return () => clearTimeout(timer)
-  }, [element.id, activeTransition, settings, element.isHotspot])
-
-  const isFocalOrHotspot = element.isFocal || element.isHotspot
-  let targetZIndex = element.zIndex ?? 0
-  if (hasFocal && isFocalOrHotspot) {
-    targetZIndex = 5000 + (element.zIndex ?? 0)
-  }
-  const isCircle = element.type === 'shape' && (element.content as any).shapeType === 'circle'
-  const commonStyle = {
-    position: 'absolute' as const,
-    left: element.position.x,
-    top: element.position.y,
-    width: element.size.width,
-    height: element.size.height,
-    rotate: `${element.rotation}deg`,
-    opacity: element.opacity,
-    zIndex: targetZIndex,
-  }
   return (
-    <div style={commonStyle}>
-      {element.pulseEffect && (
-        <div className="ripple-ring" style={{ borderRadius: isCircle ? '50%' : undefined }} />
-      )}
+    <MotionWrapper
+      element={element}
+      isSelected={false}
+      isReadOnly={true}
+      isContinuing={isContinuing}
+      onPointerDown={() => {}}
+      onDoubleClick={() => {}}
+      onClick={() => {}}
+    >
       <ElementRenderer element={element} isSelected={false} />
 
       {element.isHotspot && (
@@ -88,7 +67,7 @@ function CanvasElementStatic({
           </AnimatePresence>
         </div>
       )}
-    </div>
+    </MotionWrapper>
   )
 }
 

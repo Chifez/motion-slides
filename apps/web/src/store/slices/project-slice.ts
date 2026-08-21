@@ -28,8 +28,19 @@ export const createProjectSlice: StateCreator<EditorState, [], [], ProjectSlice>
   activeProjectId: null,
 
   activeProject: () => {
-    const { projects, activeProjectId } = get()
-    return projects.find((projectItem) => projectItem.id === activeProjectId) ?? null
+    const { projects, activeProjectId, gitCheckedOutCommitId, gitCheckedOutState } = get()
+    const baseProject = projects.find((projectItem) => projectItem.id === activeProjectId) ?? null
+    if (!baseProject) return null
+
+    if (gitCheckedOutCommitId && gitCheckedOutState) {
+      return {
+        ...baseProject,
+        slides: gitCheckedOutState.slides,
+        transitions: gitCheckedOutState.transitions,
+        prototypeLayout: gitCheckedOutState.prototypeLayout,
+      }
+    }
+    return baseProject
   },
 
   createProject: (name) => {

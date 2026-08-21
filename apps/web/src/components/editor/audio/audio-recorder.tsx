@@ -21,10 +21,23 @@ export function AudioRecorder({ existingAudio, onSave }: AudioRecorderProps) {
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null)
   
   useEffect(() => {
+    // Reset and pause preview when audio track changes or unmounts
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
+      if (audioPreviewRef.current) {
+        audioPreviewRef.current.pause()
+        audioPreviewRef.current = null
+      }
     }
-  }, [])
+  }, [audioUrl])
+
+  useEffect(() => {
+    if (audioPreviewRef.current) {
+      audioPreviewRef.current.pause()
+      audioPreviewRef.current = null
+      setIsPlaying(false)
+    }
+  }, [audioUrl])
 
   const startRecording = async () => {
     try {

@@ -52,6 +52,7 @@ type PersistedState = Pick<
  * overhead.
  */
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let pendingPersist: { name: string; value: StorageValue<PersistedState> } | null = null
 
 const optimizedStorage: PersistStorage<PersistedState> = {
   getItem: async (name: string): Promise<StorageValue<PersistedState> | null> => {
@@ -61,18 +62,21 @@ const optimizedStorage: PersistStorage<PersistedState> = {
     return JSON.parse(raw) as StorageValue<PersistedState>
   },
   setItem: async (name: string, value: StorageValue<PersistedState>): Promise<void> => {
+    pendingPersist = { name, value }
 
-    if (useEditorStore.getState()?.isDragging) return
-
+    if (useEditorStore.getState()?.isDragging) {
+      // During active drags, hold pending state without disk I/O
+      return
+    }
 
     if (debounceTimer) clearTimeout(debounceTimer)
 
-
     debounceTimer = setTimeout(async () => {
       try {
-
-        const serialized = JSON.stringify(value)
-        await set(name, serialized)
+        const toSave = pendingPersist ?? { name, value }
+        const serialized = JSON.stringify(toSave.value)
+        await set(toSave.name, serialized)
+        pendingPersist = null
       } catch (error) {
         console.error('[Storage] Failed to persist state:', error)
       } finally {

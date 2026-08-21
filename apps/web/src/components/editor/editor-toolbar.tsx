@@ -4,8 +4,6 @@ import { ArrowLeft, Play, PenSquare, GitBranch, Film, CheckSquare, Layout, Spark
 import { useEffect, useState, useRef } from 'react'
 import { useEditorStore } from '@/store/editor-store'
 import type { Project } from '@motionslides/shared'
-import { ElementButtons } from './toolbar/element-buttons'
-import { ToolSelector } from './toolbar/tool-selector'
 import { SettingsDropdown } from './toolbar/settings-dropdown'
 import { ExportDropdown } from './toolbar/export-dropdown'
 import { Logo } from '@/components/ui/logo'
@@ -14,7 +12,6 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { ShareMenu } from './toolbar/share-menu'
 import { UserMenu } from '@/components/auth/user-menu'
 
-import { useAccessControl } from '@/hooks/use-access-control'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useOnlineStatus } from '@/hooks/use-online-status'
 import { usePermissions } from '@/context/permission-context'
@@ -56,7 +53,7 @@ export function EditorToolbar({ projectId }: Props) {
   const localAuthorId = useEditorStore(state => state.localAuthorId)
   const editorMode = useEditorStore(state => state.editorMode ?? 'design')
   const setEditorMode = useEditorStore(state => state.setEditorMode)
-  const { mode, canEdit } = usePermissions()
+  const { mode, canEdit, isAuthenticated } = usePermissions()
 
   const projectName = useEditorStore(state => state.projects.find(projectItem => projectItem.id === projectId)?.name ?? '')
   const project = useEditorStore(state => state.projects.find(projectItem => projectItem.id === projectId))
@@ -101,15 +98,12 @@ export function EditorToolbar({ projectId }: Props) {
 
   const isChatOpen = useEditorStore(state => state.isChatOpen)
 
-  const { isAuthenticated } = useAccessControl()
   const parentProject = project?.forkedFromId ? projectsList.find(p => p.id === project.forkedFromId) : null
   const isBranch = project?.forkedFromId && parentProject && project.ownerId === parentProject.ownerId
   const canShare = project ? (isAuthenticated && project.ownerId === user?.id && !isBranch) : false
 
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const isMobile = useIsMobile();
-
-
 
   if (!project) return null
 
@@ -121,249 +115,228 @@ export function EditorToolbar({ projectId }: Props) {
           <span className="truncate">You are offline. Changes are saved locally and will sync when you reconnect.</span>
         </div>
       )}
-      <header className="h-14 shrink-0 flex items-center gap-1 md:gap-2 px-2 md:px-3 bg-(--ms-bg-surface) border-b border-(--ms-border) z-50 transition-colors">
-        <Link
-          to="/dashboard"
-          onClick={() => syncProjects()}
-          className="p-1 md:p-1.5 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors shrink-0"
-        >
-          <ArrowLeft size={16} />
-        </Link>
-        <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1 shrink-0" />
-
-        {isMobile && (
-          <button
-            onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
-            className={`p-2 rounded-md transition-colors border-none cursor-pointer shrink-0 ${mobileSlidesOpen ? 'bg-blue-600/20 text-blue-400' : 'text-(--ms-text-muted) hover:bg-(--ms-border)'}`}
+      <header className="h-14 shrink-0 flex items-center justify-between gap-2 px-3 md:px-4 bg-(--ms-bg-surface) border-b border-(--ms-border) z-50 transition-colors">
+        {/* Left Zone: Identity & Navigation */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            to="/dashboard"
+            onClick={() => syncProjects()}
+            className="p-1.5 rounded-lg text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50 transition-colors shrink-0"
+            title="Back to Dashboard"
           >
-            <Layout size={16} />
-          </button>
-        )}
+            <ArrowLeft size={16} />
+          </Link>
 
-        <Link to="/" onClick={() => syncProjects()} className="items-center no-underline hidden sm:flex shrink-0">
-          <Logo expanded={false} size={22} />
-        </Link>
-
-        <input
-          value={projectName}
-          disabled={project.ownerId !== user?.id}
-          onChange={(event) => updateProjectName(projectId, event.target.value)}
-          onBlur={(event) => { if (!event.target.value.trim()) updateProjectName(projectId, 'Untitled Deck') }}
-          spellCheck={false}
-          className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-md px-1.5 py-1 text-[13px] text-(--ms-text-primary) font-medium w-[100px] sm:w-[120px] md:w-[140px] focus:outline-none transition truncate disabled:opacity-85 shrink-0"
-        />
-
-        {((!!project.forkedFromId) || (!!project.ownerId && !!user)) && (
-          <div className="relative hidden md:flex items-center shrink-0" ref={branchMenuRef}>
-            <Button
-              variant={showBranchMenu ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => {
-                setShowBranchMenu(!showBranchMenu)
-                if (!showBranchMenu) setBranchSearch('')
-              }}
-              className={`h-7 px-2 text-xs flex items-center gap-1 shrink-0 ${showBranchMenu ? 'border-blue-500/50 text-blue-400 bg-blue-600/5' : ''}`}
+          {isMobile && (
+            <button
+              onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
+              className={`p-1.5 rounded-lg transition-colors border-none cursor-pointer shrink-0 ${mobileSlidesOpen ? 'bg-blue-600/20 text-blue-400' : 'text-(--ms-text-muted) hover:bg-(--ms-border)/50'}`}
+              title="Toggle Slides Panel"
             >
-              <GitBranch size={12} className="text-blue-500 shrink-0" />
-              <span title={project.forkedFromId ? project.name : 'main'} className="max-w-[70px] lg:max-w-[90px] truncate">{project.forkedFromId ? project.name : 'main'}</span>
-              <ChevronDown size={11} className={`transition duration-200 shrink-0 ${showBranchMenu ? 'rotate-180' : ''}`} />
-            </Button>
+              <Layout size={16} />
+            </button>
+          )}
 
-            {showBranchMenu && (
-              <div className="absolute top-full left-0 mt-2 w-80 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col">
-                {/* Header */}
-                <div className="flex items-center justify-between px-3 py-2 border-b border-(--ms-border)">
-                  <span className="text-xs font-semibold text-(--ms-text-primary)">
-                    Switch branches/tags
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowBranchMenu(false)}
-                    className="p-1 rounded text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors border-none bg-transparent cursor-pointer"
-                  >
-                    <X size={13} />
-                  </button>
-                </div>
+          <Link to="/" onClick={() => syncProjects()} className="items-center no-underline hidden sm:flex shrink-0">
+            <Logo expanded={false} size={22} />
+          </Link>
 
-                {/* Search / Create Input */}
-                <div className="p-2 border-b border-(--ms-border)">
-                  <div className="relative flex items-center">
-                    <Search size={13} className="absolute left-2.5 text-(--ms-text-muted) pointer-events-none" />
-                    <input
-                      type="text"
-                      placeholder="Find or create a branch..."
-                      value={branchSearch}
-                      onChange={(e) => setBranchSearch(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          if (canCreate) {
-                            handleCreateBranch()
-                          } else if (filteredBranches.length > 0) {
-                            const target = filteredBranches[0]
-                            if (target.id !== project.id) {
+          <input
+            value={projectName}
+            disabled={project.ownerId !== user?.id}
+            onChange={(event) => updateProjectName(projectId, event.target.value)}
+            onBlur={(event) => { if (!event.target.value.trim()) updateProjectName(projectId, 'Untitled Deck') }}
+            spellCheck={false}
+            className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-lg px-2 py-1 text-xs md:text-[13px] text-(--ms-text-primary) font-semibold w-[100px] sm:w-[130px] md:w-[160px] focus:outline-none transition truncate disabled:opacity-85 shrink-0"
+          />
+
+          {((!!project.forkedFromId) || (!!project.ownerId && !!user)) && (
+            <div className="relative hidden md:flex items-center shrink-0" ref={branchMenuRef}>
+              <Button
+                variant={showBranchMenu ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => {
+                  setShowBranchMenu(!showBranchMenu)
+                  if (!showBranchMenu) setBranchSearch('')
+                }}
+                className={`h-7 px-2 text-xs flex items-center gap-1.5 rounded-lg shrink-0 ${showBranchMenu ? 'border-blue-500/50 text-blue-400 bg-blue-600/5' : ''}`}
+              >
+                <GitBranch size={12} className="text-blue-500 shrink-0" />
+                <span title={project.forkedFromId ? project.name : 'main'} className="max-w-[70px] lg:max-w-[90px] truncate font-medium">
+                  {project.forkedFromId ? project.name : 'main'}
+                </span>
+                <ChevronDown size={11} className={`transition duration-200 shrink-0 ${showBranchMenu ? 'rotate-180' : ''}`} />
+              </Button>
+
+              {showBranchMenu && (
+                <div className="absolute top-full left-0 mt-2 w-80 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col">
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-(--ms-border)">
+                    <span className="text-xs font-semibold text-(--ms-text-primary)">
+                      Switch branches/tags
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowBranchMenu(false)}
+                      className="p-1 rounded text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors border-none bg-transparent cursor-pointer"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+
+                  {/* Search / Create Input */}
+                  <div className="p-2 border-b border-(--ms-border)">
+                    <div className="relative flex items-center">
+                      <Search size={13} className="absolute left-2.5 text-(--ms-text-muted) pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Find or create a branch..."
+                        value={branchSearch}
+                        onChange={(e) => setBranchSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            if (canCreate) {
+                              handleCreateBranch()
+                            } else if (filteredBranches.length > 0) {
+                              const target = filteredBranches[0]
                               setShowBranchMenu(false)
                               navigate({ to: '/p/$projectId', params: { projectId: target.id } })
                             }
                           }
-                        }
-                      }}
-                      autoFocus
-                      className="w-full bg-(--ms-bg-base) border border-(--ms-border) focus:border-blue-500 rounded-lg pl-8 pr-7 py-1.5 text-xs text-(--ms-text-primary) placeholder:text-(--ms-text-muted) focus:outline-none transition"
-                    />
-                    {isCreatingBranch && (
-                      <Loader2 size={13} className="absolute right-2.5 text-blue-400 animate-spin" />
+                        }}
+                        className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-blue-500 transition"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Branch List */}
+                  <div className="max-h-56 overflow-y-auto custom-scrollbar p-1">
+                    {filteredBranches.length > 0 ? (
+                      filteredBranches.map(b => {
+                        const isMain = b.id === mainProject?.id
+                        const isCurrent = b.id === project.id
+                        const displayName = isMain ? 'main' : b.name
+
+                        return (
+                          <button
+                            key={b.id}
+                            onClick={() => {
+                              setShowBranchMenu(false)
+                              if (!isCurrent) {
+                                navigate({ to: '/p/$projectId', params: { projectId: b.id } })
+                              }
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition cursor-pointer border-none text-left ${
+                              isCurrent
+                                ? 'bg-blue-600/10 text-blue-400 font-semibold'
+                                : 'text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50 bg-transparent'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <GitBranch size={13} className={isCurrent ? 'text-blue-500' : 'text-(--ms-text-muted)'} />
+                              <span className="truncate">{displayName}</span>
+                              {isMain && (
+                                <span className="text-[10px] bg-(--ms-border) px-1.5 py-0.2 rounded text-(--ms-text-muted) uppercase tracking-wider">
+                                  default
+                                </span>
+                              )}
+                            </div>
+                            {isCurrent && <Check size={14} className="text-blue-500 shrink-0" />}
+                          </button>
+                        )
+                      })
+                    ) : (
+                      <div className="px-3 py-4 text-center text-xs text-(--ms-text-muted)">
+                        No branches found
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* Tabs */}
-                <div className="flex items-center px-3 pt-2 pb-0 gap-4 border-b border-(--ms-border)">
-                  <button
-                    type="button"
-                    className="text-xs font-semibold text-blue-400 border-b-2 border-blue-500 pb-1.5 -mb-px bg-transparent border-t-0 border-x-0 cursor-pointer"
-                  >
-                    Branches
-                  </button>
-                </div>
-
-                {/* Branch list */}
-                <div className="flex flex-col max-h-52 overflow-y-auto custom-scrollbar p-1">
+                  {/* Footer / Create prompt */}
                   {canCreate && (
-                    <button
-                      type="button"
-                      onClick={() => handleCreateBranch()}
-                      disabled={isCreatingBranch}
-                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-xs font-medium text-blue-400 hover:bg-blue-600/10 transition border-none bg-blue-500/5 cursor-pointer mb-1 shrink-0"
-                    >
-                      <Plus size={13} className="shrink-0 text-blue-400" />
-                      <span className="truncate">
-                        Create branch: <strong className="text-(--ms-text-primary)">{branchSearch.trim()}</strong>
-                      </span>
-                    </button>
-                  )}
-
-                  {filteredBranches.map((b) => {
-                    const isCurrent = b.id === project.id
-                    const branchIsGuest = b.ownerId && b.ownerId !== user?.id && b.localAuthorId !== localAuthorId
-                    const isMain = b.id === mainProject?.id
-                    const displayName = isMain ? 'main' : b.name
-                    return (
+                    <div className="p-2 border-t border-(--ms-border) bg-(--ms-bg-base)/50">
                       <button
-                        key={b.id}
-                        disabled={isCurrent}
-                        onClick={() => {
-                          setShowBranchMenu(false)
-                          navigate({ to: '/p/$projectId', params: { projectId: b.id } })
-                        }}
-                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-xs font-medium transition border-none bg-transparent cursor-pointer ${
-                          isCurrent
-                            ? 'text-blue-400 bg-blue-600/10 font-semibold cursor-default'
-                            : 'text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50'
-                        }`}
+                        type="button"
+                        onClick={() => handleCreateBranch()}
+                        disabled={isCreatingBranch}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium transition cursor-pointer border-none shadow-sm disabled:opacity-50"
                       >
-                        <span className="truncate flex items-center gap-2 min-w-0">
-                          {isCurrent ? (
-                            <Check size={13} className="text-blue-400 shrink-0" />
-                          ) : (
-                            <span className="w-3.5 shrink-0" />
-                          )}
-                          <span className="truncate" title={displayName}>{displayName}</span>
-                        </span>
-                        <div className="flex items-center gap-1 shrink-0 ml-2">
-                          {isMain && (
-                            <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-(--ms-border) text-(--ms-text-muted) border border-(--ms-border)">
-                              default
-                            </span>
-                          )}
-                          {branchIsGuest && (
-                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/10">
-                              Collaborator
-                            </span>
-                          )}
-                        </div>
+                        {isCreatingBranch ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Plus size={13} />
+                        )}
+                        <span className="truncate">Create branch: <strong>{branchSearch.trim()}</strong></span>
                       </button>
-                    )
-                  })}
-
-                  {filteredBranches.length === 0 && !canCreate && (
-                    <div className="py-6 text-center text-xs text-(--ms-text-muted)">
-                      No branches found
                     </div>
                   )}
+
+                  <div className="p-1 border-t border-(--ms-border) bg-(--ms-bg-surface)">
+                    <button
+                      onClick={() => {
+                        setShowBranchMenu(false)
+                        useEditorStore.getState().toggleGitPanel()
+                      }}
+                      className="w-full text-center text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) py-1 rounded hover:bg-(--ms-border)/50 transition bg-transparent border-none cursor-pointer"
+                    >
+                      View all branches
+                    </button>
+                  </div>
                 </div>
+              )}
+            </div>
+          )}
+        </div>
 
-                {/* Footer */}
-                <div className="p-1.5 border-t border-(--ms-border) bg-(--ms-bg-base)/50 flex items-center justify-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowBranchMenu(false)
-                      useEditorStore.getState().toggleGitPanel()
-                    }}
-                    className="w-full text-center text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) py-1 rounded hover:bg-(--ms-border)/50 transition bg-transparent border-none cursor-pointer"
-                  >
-                    View all branches
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-
-
-        <div className="w-px h-5 bg-(--ms-border) mx-0.5 md:mx-1 hidden md:block shrink-0" />
-
+        {/* Center Zone: Workflow Mode Switcher */}
         {mode === 'edit' && (
-          <div className="flex items-center bg-(--ms-bg-elevated) border border-(--ms-border) rounded-md p-0.5 shrink-0">
+          <div className="flex items-center bg-(--ms-bg-base)/80 border border-(--ms-border) rounded-xl p-0.5 shadow-xs">
             <button
               onClick={() => setEditorMode('design')}
-              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition cursor-pointer border-none ${editorMode === 'design'
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-lg transition cursor-pointer border-none ${editorMode === 'design'
                 ? 'bg-(--ms-border-strong) text-(--ms-text-primary) shadow-sm'
                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                 }`}
             >
-              <PenSquare size={12} /> {!isMobile && "Design"}
+              <PenSquare size={13} /> {!isMobile && "Design"}
             </button>
             <button
               onClick={() => setEditorMode('prototype')}
-              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition cursor-pointer border-none ${editorMode === 'prototype'
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-lg transition cursor-pointer border-none ${editorMode === 'prototype'
                 ? 'bg-(--ms-border-strong) text-blue-400 shadow-sm'
                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                 }`}
             >
-              <GitBranch size={12} /> {!isMobile && "Prototype"}
+              <GitBranch size={13} /> {!isMobile && "Prototype"}
             </button>
             <button
               onClick={() => setEditorMode('timeline')}
-              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-sm transition cursor-pointer border-none ${editorMode === 'timeline'
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-lg transition cursor-pointer border-none ${editorMode === 'timeline'
                 ? 'bg-(--ms-border-strong) text-purple-400 shadow-sm'
                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                 }`}
             >
-              <Film size={12} /> {!isMobile && "Timeline"}
+              <Film size={13} /> {!isMobile && "Timeline"}
             </button>
           </div>
         )}
 
-        {!isPrototypeMode && !isMobile && (
-          <>
-            <div className="w-px h-5 bg-(--ms-border) mx-1 shrink-0" />
-            <ToolSelector />
-            <ElementButtons />
-          </>
-        )}
-
-        <div className="flex-1" />
-
+        {/* Right Zone: High-Value Actions */}
         {isMobile ? (
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
+          <div className="flex items-center gap-1.5">
+            <button
+              id="tour-ai-chat-button"
+              onClick={() => toggleChat()}
+              title="AI Design Studio Chat"
+              className={`p-2 rounded-lg transition cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted)'}`}
+            >
+              <Sparkles size={16} />
+            </button>
 
             <div className="relative">
               <button
-                className="p-2 rounded-md bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors border-none cursor-pointer"
+                className="p-2 rounded-lg bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors border-none cursor-pointer"
                 onClick={() => setMobileMoreOpen(!mobileMoreOpen)}
               >
                 <MoreVertical size={16} />
@@ -377,15 +350,6 @@ export function EditorToolbar({ projectId }: Props) {
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     className="absolute top-12 right-0 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-100 p-1.5 w-48"
                   >
-                    <button
-                      onClick={() => { toggleChat(); setMobileMoreOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors border-none bg-transparent text-left cursor-pointer"
-                    >
-                      <Sparkles size={16} className="text-purple-400" />
-                      AI Chat
-                    </button>
-                    <div className="h-px bg-(--ms-border) my-1" />
-
                     <div className="space-y-0.5">
                       <div className="relative h-10 w-full flex items-center gap-2.5 px-3 rounded-lg hover:bg-(--ms-border) transition-colors">
                         <Settings size={16} className="text-(--ms-text-muted)" />
@@ -410,58 +374,63 @@ export function EditorToolbar({ projectId }: Props) {
               </AnimatePresence>
             </div>
 
-            {mode !== 'edit' && (
-              <button
-                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none"
-                onClick={() => startPresentation()}
-              >
-                <Play size={13} fill="currentColor" />
-              </button>
-            )}
+            <button
+              id="tour-present-button"
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer border-none shadow-sm"
+              onClick={() => startPresentation()}
+              title="Start Presentation"
+            >
+              <Play size={13} fill="currentColor" />
+            </button>
           </div>
         ) : (
-          <>
+          <div className="flex items-center gap-1.5 md:gap-2">
+            {/* AI Copilot Button */}
             <button
               id="tour-ai-chat-button"
               onClick={() => toggleChat()}
-              title="AI Design Studio Chat"
-              className={`inline-flex items-center justify-center p-1.5 rounded-md transition cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
+              title="AI Design Studio Copilot"
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer border ${
+                isChatOpen
+                  ? 'bg-purple-600/20 text-purple-300 border-purple-500/40 shadow-xs'
+                  : 'bg-purple-950/30 text-purple-300 hover:bg-purple-900/40 border-purple-500/30'
+              }`}
             >
-              <Sparkles size={14} />
+              <Sparkles size={13} className="text-purple-400" />
+              <span className="hidden lg:inline">Ask AI</span>
             </button>
 
-            <ThemeToggle className="hidden md:flex" />
-
+            {/* Version Control / Git */}
             {((!!project.forkedFromId) || (!!project.ownerId && !!user)) && (
               <button
                 onClick={() => useEditorStore.getState().toggleGitPanel()}
                 title="Version Control (Git)"
-                className={`inline-flex items-center justify-center p-1.5 rounded-md transition cursor-pointer border-none ${isGitPanelOpen
+                className={`inline-flex items-center justify-center p-1.5 rounded-lg transition cursor-pointer border-none ${isGitPanelOpen
                   ? 'bg-blue-600/20 text-blue-400'
-                  : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'
+                  : 'text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50'
                   }`}
               >
-                <GitBranch size={14} />
+                <GitBranch size={15} />
               </button>
             )}
 
             <SettingsDropdown />
             <ExportDropdown />
             {canShare && <ShareMenu project={project} />}
-            <div className="w-px h-5 bg-(--ms-border) mx-1 hidden md:block" />
+            <ThemeToggle />
             <UserMenu dashboard />
 
-            {mode !== 'edit' && (
-              <button
-                id="tour-present-button"
-                className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded-md transition-colors cursor-pointer border-none"
-                onClick={() => startPresentation()}
-                title="Play Presentation"
-              >
-                <Play size={14} fill="currentColor" />
-              </button>
-            )}
-          </>
+            {/* Hero CTA: Present */}
+            <button
+              id="tour-present-button"
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:shadow-md cursor-pointer border-none shadow-sm active:scale-95 ml-1"
+              onClick={() => startPresentation()}
+              title="Start Presentation (Full Screen)"
+            >
+              <Play size={12} fill="currentColor" />
+              <span>Present</span>
+            </button>
+          </div>
         )}
       </header>
     </>
