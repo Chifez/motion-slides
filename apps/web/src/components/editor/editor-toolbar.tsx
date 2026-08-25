@@ -1,9 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Play, PenSquare, GitBranch, Film, CheckSquare, Layout, Sparkles, Sun, Moon, Share2, Copy, Lock, Check, Cloud, MoreVertical, Settings, Download, Users, WifiOff, GitFork, ChevronDown, Search, X, Plus, Loader2 } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch, Film, Sparkles, MoreVertical, Settings, Download, Users, WifiOff, ChevronDown, Search, X, Plus, Loader2 } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import { useEditorStore } from '@/store/editor-store'
-import type { Project } from '@motionslides/shared'
 import { SettingsDropdown } from './toolbar/settings-dropdown'
 import { ExportDropdown } from './toolbar/export-dropdown'
 import { Logo } from '@/components/ui/logo'
@@ -11,17 +9,16 @@ import { useIsMobile } from '@/hooks/use-media-query'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { ShareMenu } from './toolbar/share-menu'
 import { UserMenu } from '@/components/auth/user-menu'
+import { DeckScoreBadge } from './ai/deck-score-badge'
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { useOnlineStatus } from '@/hooks/use-online-status'
 import { usePermissions } from '@/context/permission-context'
 import { Button } from '@/components/ui/core/button'
-import { Input } from '@/components/ui/core/input'
 
 interface Props { projectId: string }
 
 export function EditorToolbar({ projectId }: Props) {
-  const isPrototypeMode = useEditorStore(state => state.isPrototypeMode)
   const mobileSlidesOpen = useEditorStore(state => state.mobileSlidesOpen)
   const isGitPanelOpen = useEditorStore(state => state.isGitPanelOpen)
   const createBranch = useEditorStore(state => state.createBranch)
@@ -44,16 +41,13 @@ export function EditorToolbar({ projectId }: Props) {
 
   const updateProjectName = useEditorStore(state => state.updateProjectName)
   const startPresentation = useEditorStore(state => state.startPresentation)
-  const setPrototypeMode = useEditorStore(state => state.setPrototypeMode)
   const setMobileSlidesOpen = useEditorStore(state => state.setMobileSlidesOpen)
   const toggleChat = useEditorStore(state => state.toggleChat)
   const syncProjects = useEditorStore(state => state.syncProjects)
-  const setSuggestions = useEditorStore(state => state.setSuggestions)
   const user = useEditorStore(state => state.user)
-  const localAuthorId = useEditorStore(state => state.localAuthorId)
   const editorMode = useEditorStore(state => state.editorMode ?? 'design')
   const setEditorMode = useEditorStore(state => state.setEditorMode)
-  const { mode, canEdit, isAuthenticated } = usePermissions()
+  const { mode, isAuthenticated } = usePermissions()
 
   const projectName = useEditorStore(state => state.projects.find(projectItem => projectItem.id === projectId)?.name ?? '')
   const project = useEditorStore(state => state.projects.find(projectItem => projectItem.id === projectId))
@@ -103,7 +97,7 @@ export function EditorToolbar({ projectId }: Props) {
   const canShare = project ? (isAuthenticated && project.ownerId === user?.id && !isBranch) : false
 
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile()
 
   if (!project) return null
 
@@ -133,7 +127,7 @@ export function EditorToolbar({ projectId }: Props) {
               className={`p-1.5 rounded-lg transition-colors border-none cursor-pointer shrink-0 ${mobileSlidesOpen ? 'bg-blue-600/20 text-blue-400' : 'text-(--ms-text-muted) hover:bg-(--ms-border)/50'}`}
               title="Toggle Slides Panel"
             >
-              <Layout size={16} />
+              {mobileSlidesOpen ? <PenSquare size={16} /> : <Film size={16} />}
             </button>
           )}
 
@@ -325,6 +319,8 @@ export function EditorToolbar({ projectId }: Props) {
         {/* Right Zone: High-Value Actions */}
         {isMobile ? (
           <div className="flex items-center gap-1.5">
+            <DeckScoreBadge />
+
             <button
               id="tour-ai-chat-button"
               onClick={() => toggleChat()}
@@ -413,6 +409,9 @@ export function EditorToolbar({ projectId }: Props) {
                 <GitBranch size={15} />
               </button>
             )}
+
+            {/* Deck Health / Critic Score Badge */}
+            <DeckScoreBadge />
 
             <SettingsDropdown />
             <ExportDropdown />
