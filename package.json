@@ -4,12 +4,15 @@
   "type": "module",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "launch"
   ],
   "scripts": {
     "dev": "concurrently \"npm:dev:web\" \"npm:dev:server\"",
     "dev:web": "npm run dev --workspace=@motionslides/web",
     "dev:server": "npm run dev --workspace=@motionslides/export-server",
+    "dev:launch": "npm run dev --workspace=launch",
+    "build:launch": "npm run build --workspace=launch",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },

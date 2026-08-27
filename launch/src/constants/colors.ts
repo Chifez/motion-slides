@@ -1,0 +1,42 @@
+export const COLORS = {
+  bg: {
+    darkest: '#050508',
+    canvas: '#09090d',
+    surface: '#111116',
+    elevated: '#171720',
+    hover: '#22222d',
+    glass: 'rgba(18, 18, 24, 0.75)',
+    glassBorder: 'rgba(255, 255, 255, 0.08)',
+    glassBorderHighlight: 'rgba(255, 255, 255, 0.18)',
+  },
+  accent: {
+    cyan: '#00f0ff',
+    cyanGlow: 'rgba(0, 240, 255, 0.35)',
+    violet: '#8b5cf6',
+    violetGlow: 'rgba(139, 92, 246, 0.35)',
+    pink: '#ec4899',
+    amber: '#f59e0b',
+    emerald: '#10b981',
+    blue: '#3b82f6',
+  },
+  text: {
+    primary: '#ffffff',
+    secondary: '#94a3b8',
+    muted: '#64748b',
+    faint: '#334155',
+    accentCyan: '#38bdf8',
+    accentViolet: '#c084fc',
+  },
+  border: {
+    subtle: 'rgba(255, 255, 255, 0.06)',
+    default: 'rgba(255, 255, 255, 0.12)',
+    focus: '#00f0ff',
+    active: 'rgba(0, 240, 255, 0.5)',
+  },
+  gradient: {
+    brand: 'linear-gradient(135deg, #00f0ff 0%, #8b5cf6 50%, #ec4899 100%)',
+    cyanViolet: 'linear-gradient(135deg, #00f0ff 0%, #8b5cf6 100%)',
+    darkSurface: 'linear-gradient(180deg, rgba(23, 23, 32, 0.8) 0%, rgba(14, 14, 19, 0.95) 100%)',
+    glowRadial: 'radial-gradient(circle at 50% 30%, rgba(0, 240, 255, 0.15) 0%, rgba(139, 92, 246, 0.05) 50%, transparent 80%)',
+  },
+} as const;

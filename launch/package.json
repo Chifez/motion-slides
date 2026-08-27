@@ -1,0 +1,30 @@
+{
+  "name": "launch",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "remotion preview src/index.ts",
+    "build": "remotion render src/index.ts MotionSlidesLaunch out/motionslides-launch.mp4",
+    "render:still": "remotion still src/index.ts MotionSlidesLaunch out/still.png",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.218",
+    "@remotion/cli": "^4.0.218",
+    "@remotion/player": "^4.0.218",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.545.0",
+    "perfect-arrows": "^0.3.7",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "remotion": "^4.0.218",
+    "tailwind-merge": "^3.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.7.2"
+  }
+}
