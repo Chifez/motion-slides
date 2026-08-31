@@ -5,31 +5,37 @@ import { SlideItem } from '../../components/editor-app/app-slide-panel';
 import { AppCodeElement, CodeLine } from '../../components/editor-app/elements/app-code-element';
 import { CameraRig } from '../../components/shared/camera-rig';
 import { CursorPointer } from '../../components/shared/cursor-pointer';
+import { CinematicBackground } from '../../components/shared/cinematic-background';
 import { SceneIntroOverlay } from '../../components/shared/scene-intro-overlay';
+import { SceneTransitionWrapper } from '../../components/shared/scene-transition-wrapper';
 import { SPRING_PRESETS } from '../../constants/spring-presets';
+import { useAbsoluteFrame } from '../../hooks/use-absolute-frame';
+
+// ─── Scene 3 Art Direction ────────────────────────────────────────────────────
+// Badge:    terminal-brackets ([ SHIKI CODE MORPHING ] expands horizontally)
+// Text:     horizon-flip (rotateX -60°→0°, translateY 40px→0) with cyan scanline
+// Handoff:  depth-zoom exit (text expands past camera lens)
+//           Editor enters from horizon: translateY(100px→0) + scale(0.88→1.0)
 
 export function SceneFour() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const absoluteFrame = useAbsoluteFrame('scene3');
 
-  // ─── Milestones: ─────────────────────────────────────────────────
-  // 0 - 70f   : Standalone Centered Intro Interstitial
-  // 65f+      : Editor Workspace Enters with Spring Physics
-  // 100f      : Click Slide 5 thumbnail (x: 245, y: 814)
-  // 115f+     : Smooth Shiki LCS Code Morphing & Spring Height Expansion
-  // 370f      : Exit fade
+  // ─── Milestones ───────────────────────────────────────────────────────────
+  // 0 - 78f   : Standalone Centered Intro Interstitial (+200ms reading time)
+  // 78f+      : Editor Workspace Enters with Horizon Rise Physics
+  // 108f      : Click Slide 5 thumbnail (pointer cursor)
+  // 120f+     : Smooth Shiki LCS Code Morphing & Spring Height Expansion
+  // 350f      : Exit dolly
 
-  const isEditorVisible = frame >= 65;
-  const isMorphActive = frame >= 115;
+  const isEditorVisible = frame >= 78;
+  const isMorphActive = frame >= 120;
 
   const morphSpring = spring({
-    frame: Math.max(0, frame - 115),
+    frame: Math.max(0, frame - 120),
     fps,
-    config: {
-      damping: 20,
-      mass: 0.8,
-      stiffness: 180,
-    },
+    config: SPRING_PRESETS.morph,
   });
 
   const slides: SlideItem[] = [
@@ -40,7 +46,6 @@ export function SceneFour() {
     { id: 's-5', title: 'Line Morphing', subtitle: 'Dynamic Line Morphing', layerCount: 6, previewType: 'code' },
   ];
 
-  // Full set of code lines (with added flags)
   const codeLines: CodeLine[] = [
     { key: 'fn-def', text: 'function renderCanvas() {', type: 'keyword', status: 'unchanged' },
     { key: 'const-stage', text: '  const stage = getStage();', type: 'variable', status: 'unchanged' },
@@ -50,138 +55,111 @@ export function SceneFour() {
     { key: 'fn-end', text: '}', type: 'keyword', status: 'unchanged' },
   ];
 
-  // ─── Editor Window Spring Entrance (enters at frame 65) ──────────
+  // ─── Editor Entrance: Horizon Zoom-In ────────────────────────────────────
+  // Editor rises from the horizon line (translateY 100px → 0) + zooms into focus (scale 0.88 → 1.0)
   const editorEntrance = spring({
-    frame: Math.max(0, frame - 65),
+    frame: Math.max(0, frame - 78),
     fps,
-    config: { damping: 20, mass: 0.85, stiffness: 150 },
+    config: { damping: 22, mass: 0.9, stiffness: 140, overshootClamping: true },
   });
-  const editorScale = interpolate(editorEntrance, [0, 1], [0.94, 1]);
-  const editorOpacity = interpolate(editorEntrance, [0, 1], [0, 1]);
-
-  // ─── Camera Zoom Keyframes ───────────────────────────────────────
-  const cameraKeyframes = [
-    { startFrame: 0, scale: 1, originX: '50%', originY: '50%' },
-    { startFrame: 75, scale: 1.15, originX: '15%', originY: '75%' }, // Zoom on Slide 5 thumbnail
-    {
-      startFrame: 110,
-      scale: 1.32,
-      originX: '50%',
-      originY: '50%',
-      springConfig: { damping: 20, mass: 0.85, stiffness: 140 },
-    }, // Zoom tight into code block
-    {
-      startFrame: 300,
-      scale: 1,
-      originX: '50%',
-      originY: '50%',
-      springConfig: { damping: 28, mass: 1.2, stiffness: 70 },
-    }, // Zoom back out
-  ];
-
-  // ─── Cursor Waypoints (Active once editor is visible) ────────────
-  const cursorWaypoints = [
-    { frame: 65, x: 800, y: 450 },
-    { frame: 85, x: 245, y: 814 }, // Move directly to Slide 5 thumbnail
-    { frame: 100, x: 245, y: 814, click: true }, // Click Slide 5
-    { frame: 135, x: 960, y: 520 }, // Move to code block center
-    { frame: 280, x: 1050, y: 520 },
-  ];
-
-  const sceneExitOpacity = interpolate(frame, [345, 370], [1, 0], {
+  const editorTranslateY = interpolate(editorEntrance, [0, 1], [100, 0], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
+  const editorScale = interpolate(editorEntrance, [0, 1], [0.88, 1]);
+  const editorOpacity = interpolate(editorEntrance, [0, 1], [0, 1]);
+
+  // ─── Camera Zoom Keyframes (Gentle, balanced focus) ──────────────────────
+  const cameraKeyframes = [
+    { startFrame: 0, scale: 1.0, originX: '50%', originY: '50%' },
+    { startFrame: 85, scale: 1.06, originX: '20%', originY: '70%' }, // Subtle focus toward Slide 5 thumbnail
+    { startFrame: 118, scale: 1.12, originX: '50%', originY: '50%', springConfig: SPRING_PRESETS.camera }, // Gentle focus on code block (holds through scene exit)
+  ];
+
+  // ─── Cursor Waypoints ─────────────────────────────────────────────────────
+  const cursorWaypoints = [
+    { frame: 78, x: 800, y: 450, cursorState: 'default' as const },
+    { frame: 94, x: 245, y: 814, cursorState: 'pointer' as const },   // Move to Slide 5 thumbnail
+    { frame: 108, x: 245, y: 814, click: true, cursorState: 'pointer' as const }, // Click Slide 5
+    { frame: 140, x: 960, y: 520, cursorState: 'default' as const },  // Move to code block center
+    { frame: 280, x: 1050, y: 520, cursorState: 'default' as const },
+  ];
+
+  // Scene exit
+  const exitStartFrame = 350;
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: 1920,
-        height: 1080,
-        background: '#08090a',
-        overflow: 'hidden',
-        opacity: sceneExitOpacity,
-      }}
+    <SceneTransitionWrapper
+      entryStartFrame={0}
+      exitStartFrame={exitStartFrame}
+      exitDurationFrames={20}
     >
-      {/* Subtle Linear diffuse cool halo */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 1100,
-          height: 700,
-          background: 'radial-gradient(ellipse at center, rgba(59, 130, 246, 0.045) 0%, rgba(8, 9, 10, 0) 70%)',
-          pointerEvents: 'none',
-        }}
-      />
+      <CinematicBackground absoluteFrame={absoluteFrame}>
+        {/* Phase 1: Intro Interstitial (0 - 78f) — terminal-brackets badge + horizon-flip text (+200ms) */}
+        <SceneIntroOverlay
+          badge="Shiki Code Morphing"
+          badgeColor="#60a5fa"
+          title="Smooth Magic morph for your code"
+          subtitle="Line-level LCS diffing with syntax-aware transitions"
+          startFrame={0}
+          durationInFrames={78}
+          textVariant="horizon-flip"
+          badgeVariant="terminal-brackets"
+          exitVariant="depth-zoom"
+        />
 
-      {/* ── Phase 1: Standalone Centered Intro Interstitial (0 - 70f) ── */}
-      <SceneIntroOverlay
-        badge="Shiki Code Morphing"
-        badgeColor="#60a5fa"
-        title="Smooth Magic morph for your code"
-        subtitle="Line-level LCS diffing with syntax-aware transitions"
-        startFrame={0}
-        durationInFrames={65}
-      />
-
-      {/* ── Phase 2: Editor & Code Diffing (65f+) ───────────────────── */}
-      {isEditorVisible && (
-        <CameraRig keyframes={cameraKeyframes}>
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: editorOpacity,
-              transform: `scale(${editorScale})`,
-            }}
-          >
-            <AppEditorShell
-              projectName="Distributed Architecture Deck"
-              slides={slides}
-              activeSlideIndex={isMorphActive ? 4 : 3}
-              inspectorElementLabel="Code Block · TypeScript"
-              inspectorMotionId="canvas-code-block"
-              inspectorProps={[
-                { name: 'Language', value: 'TypeScript' },
-                { name: 'Theme', value: 'One Dark Pro' },
-                { name: 'Lines', value: isMorphActive ? '6 (+2 added)' : '4 lines' },
-                { name: 'Diff Mode', value: 'Shiki LCS Diff' },
-                { name: 'Width', value: '560px' },
-                { name: 'Height', value: '300px' },
-              ]}
+        {/* Phase 2: Editor — Horizon Zoom-In from 100px below */}
+        {isEditorVisible && (
+          <CameraRig keyframes={cameraKeyframes}>
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: editorOpacity,
+                transform: `translateY(${editorTranslateY}px) scale(${editorScale})`,
+                willChange: 'transform',
+              }}
             >
-              {/* Canvas Area: Centered Code Block with Smooth Morphing */}
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+              <AppEditorShell
+                projectName="Distributed Architecture Deck"
+                slides={slides}
+                activeSlideIndex={isMorphActive ? 4 : 3}
+                inspectorElementLabel="Code Block · TypeScript"
+                inspectorMotionId="canvas-code-block"
+                inspectorProps={[
+                  { name: 'Language', value: 'TypeScript' },
+                  { name: 'Theme', value: 'One Dark Pro' },
+                  { name: 'Lines', value: isMorphActive ? '6 (+2 added)' : '4 lines' },
+                  { name: 'Diff Mode', value: 'Shiki LCS Diff' },
+                  { name: 'Width', value: '560px' },
+                  { name: 'Height', value: '300px' },
+                ]}
               >
-                <AppCodeElement
-                  lines={codeLines}
-                  language="typescript"
-                  morphProgress={morphSpring}
-                  width={560}
-                  height={300}
-                />
-              </div>
-            </AppEditorShell>
-          </div>
+                {/* Canvas Area: Centered Code Block */}
+                <div
+                  style={{
+                    width: '100%', height: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <AppCodeElement
+                    lines={codeLines}
+                    language="typescript"
+                    morphProgress={morphSpring}
+                    width={560}
+                    height={300}
+                  />
+                </div>
+              </AppEditorShell>
+            </div>
 
-          {/* Clean macOS cursor inside CameraRig */}
-          <CursorPointer waypoints={cursorWaypoints} />
-        </CameraRig>
-      )}
-    </div>
+            <CursorPointer waypoints={cursorWaypoints} />
+          </CameraRig>
+        )}
+      </CinematicBackground>
+    </SceneTransitionWrapper>
   );
 }

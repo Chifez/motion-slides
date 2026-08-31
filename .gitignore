@@ -13,4 +13,5 @@ __unconfig*
 todos.json
 .storage/
 .temp/
+launch/public/audio/vo/
 

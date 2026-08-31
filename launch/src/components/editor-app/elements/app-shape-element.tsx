@@ -1,4 +1,5 @@
 import React from 'react';
+import { staticFile } from 'remotion';
 
 export type ShapeType =
   | 'circle'
@@ -9,6 +10,8 @@ export type ShapeType =
   | 'lambda'
   | 'api-gateway'
   | 's3'
+  | 'rds'
+  | 'dynamodb'
   | 'aws-icon';
 
 export interface AppShapeElementProps {
@@ -20,6 +23,16 @@ export interface AppShapeElementProps {
   style?: React.CSSProperties;
 }
 
+// ── Official AWS Icon Paths ──────────────────────────────────────────────────
+export const AWS_ICONS: Record<string, string> = {
+  ec2: 'icons/aws/ec2.svg',
+  lambda: 'icons/aws/lambda.svg',
+  rds: 'icons/aws/rds.svg',
+  dynamodb: 'icons/aws/dynamodb.svg',
+  s3: 'icons/aws/s3.svg',
+  apiGateway: 'icons/aws/api-gateway.svg',
+};
+
 export function CircleShape({ color = '#3b82f6' }: { color?: string }) {
   return (
     <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block' }}>
@@ -29,16 +42,7 @@ export function CircleShape({ color = '#3b82f6' }: { color?: string }) {
 }
 
 export function ServerShape({ color = '#3b82f6' }: { color?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', padding: 4, display: 'block' }}>
-      <rect x="8" y="10" width="84" height="22" rx="3.5" fill="#09090b" stroke={color} strokeWidth="1.5" />
-      <rect x="8" y="39" width="84" height="22" rx="3.5" fill="#09090b" stroke={color} strokeWidth="1.5" />
-      <rect x="8" y="68" width="84" height="22" rx="3.5" fill="#09090b" stroke={color} strokeWidth="1.5" />
-      <circle cx="80" cy="21" r="3.5" fill={color} />
-      <circle cx="80" cy="50" r="3.5" fill={color} />
-      <circle cx="80" cy="79" r="3.5" fill={color} />
-    </svg>
-  );
+  return <AwsIconBadge iconPath={AWS_ICONS.ec2} glowColor="rgba(59, 130, 246, 0.2)" />;
 }
 
 export function DatabaseShape({ color = '#3b82f6' }: { color?: string }) {
@@ -52,7 +56,14 @@ export function DatabaseShape({ color = '#3b82f6' }: { color?: string }) {
   );
 }
 
-export function LambdaShape() {
+export function AwsIconBadge({
+  iconPath,
+  glowColor = 'rgba(255, 255, 255, 0.08)',
+}: {
+  iconPath: string;
+  glowColor?: string;
+}) {
+  const cleanPath = iconPath.startsWith('/') ? iconPath.slice(1) : iconPath;
   return (
     <div
       style={{
@@ -61,85 +72,62 @@ export function LambdaShape() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.05))',
-        border: '1px solid rgba(245, 158, 11, 0.4)',
+        background: 'rgba(17, 17, 22, 0.92)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
         borderRadius: 16,
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.15)',
+        boxShadow: `0 8px 24px rgba(0, 0, 0, 0.6), 0 0 20px ${glowColor}`,
+        padding: 10,
+        boxSizing: 'border-box',
+        position: 'relative',
       }}
     >
-      <span
+      <img
+        src={staticFile(cleanPath)}
+        alt="AWS Service Icon"
         style={{
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: 34,
-          fontWeight: 700,
-          color: '#fbbf24',
-          userSelect: 'none',
-          lineHeight: 1,
+          width: '80%',
+          height: '80%',
+          objectFit: 'contain',
+          display: 'block',
+          pointerEvents: 'none',
         }}
-      >
-        λ
-      </span>
+      />
     </div>
   );
+}
+
+export function LambdaShape() {
+  return <AwsIconBadge iconPath={AWS_ICONS.lambda} glowColor="rgba(245, 158, 11, 0.25)" />;
 }
 
 export function ApiGatewayShape() {
-  return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.05))',
-        border: '1px solid rgba(168, 85, 247, 0.4)',
-        borderRadius: 16,
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.15)',
-      }}
-    >
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#c084fc" strokeWidth="1.75">
-        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-        <line x1="4" y1="22" x2="4" y2="15" />
-      </svg>
-    </div>
-  );
+  return <AwsIconBadge iconPath={AWS_ICONS.apiGateway} glowColor="rgba(168, 85, 247, 0.25)" />;
 }
 
 export function S3Shape() {
-  return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.05))',
-        border: '1px solid rgba(16, 185, 129, 0.4)',
-        borderRadius: 16,
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.15)',
-      }}
-    >
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1.75">
-        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-        <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-        <line x1="12" y1="22.08" x2="12" y2="12" />
-      </svg>
-    </div>
-  );
+  return <AwsIconBadge iconPath={AWS_ICONS.s3} glowColor="rgba(16, 185, 129, 0.25)" />;
+}
+
+export function RdsShape() {
+  return <AwsIconBadge iconPath={AWS_ICONS.rds} glowColor="rgba(59, 130, 246, 0.25)" />;
+}
+
+export function DynamoDbShape() {
+  return <AwsIconBadge iconPath={AWS_ICONS.dynamodb} glowColor="rgba(59, 130, 246, 0.25)" />;
 }
 
 export function AppShapeElement({
   shape,
   color = '#3b82f6',
   label,
+  iconPath,
   selected = false,
   style,
 }: AppShapeElementProps) {
   const renderShape = () => {
     switch (shape) {
       case 'circle':
+      case 'client':
         return <CircleShape color={color} />;
       case 'server':
         return <ServerShape color={color} />;
@@ -151,6 +139,10 @@ export function AppShapeElement({
         return <ApiGatewayShape />;
       case 's3':
         return <S3Shape />;
+      case 'dynamodb':
+        return <DynamoDbShape />;
+      case 'aws-icon':
+        return iconPath ? <AwsIconBadge iconPath={iconPath} /> : <ServerShape color={color} />;
       default:
         return <ServerShape color={color} />;
     }
@@ -186,21 +178,21 @@ export function AppShapeElement({
         </span>
       )}
 
-      {/* Selected Element Bounding Outline */}
+      {/* Selected Element Bounding Outline (Figma/Keynote blue selection outline) */}
       {selected && (
         <div
           style={{
             position: 'absolute',
             inset: -4,
             border: '1.5px solid #18a0fb',
-            borderRadius: 8,
+            borderRadius: 0,
             pointerEvents: 'none',
           }}
         >
-          <div style={{ position: 'absolute', top: -3, left: -3, width: 6, height: 6, background: '#fff', border: '1px solid #18a0fb' }} />
-          <div style={{ position: 'absolute', top: -3, right: -3, width: 6, height: 6, background: '#fff', border: '1px solid #18a0fb' }} />
-          <div style={{ position: 'absolute', bottom: -3, left: -3, width: 6, height: 6, background: '#fff', border: '1px solid #18a0fb' }} />
-          <div style={{ position: 'absolute', bottom: -3, right: -3, width: 6, height: 6, background: '#fff', border: '1px solid #18a0fb' }} />
+          <div style={{ position: 'absolute', top: -3, left: -3, width: 6, height: 6, background: '#fff', border: '1px solid #18a0fb', borderRadius: 0 }} />
+          <div style={{ position: 'absolute', top: -3, right: -3, width: 6, height: 6, background: '#fff', border: '1px solid #18a0fb', borderRadius: 0 }} />
+          <div style={{ position: 'absolute', bottom: -3, left: -3, width: 6, height: 6, background: '#fff', border: '1px solid #18a0fb', borderRadius: 0 }} />
+          <div style={{ position: 'absolute', bottom: -3, right: -3, width: 6, height: 6, background: '#fff', border: '1px solid #18a0fb', borderRadius: 0 }} />
         </div>
       )}
     </div>

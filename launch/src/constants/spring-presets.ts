@@ -1,26 +1,28 @@
 export const SPRING_PRESETS = {
-  // Apple Critically Damped: Zero overshoot, ultra-smooth settling
+  // Apple Critically Damped: True zero-overshoot settling for UI windows and scene enters
+  // overshootClamping: true ensures deterministic settle without bounce
   smooth: {
-    damping: 20,
-    mass: 1,
+    damping: 26,
+    mass: 1.0,
     stiffness: 100,
-    overshootClamping: false,
+    overshootClamping: true,
   },
-  // Snappy Linear / Raycast UI interactions
+  // Snappy Linear / Raycast UI interactions & menu toggles
   snappy: {
-    damping: 16,
+    damping: 18,
     mass: 0.8,
-    stiffness: 140,
-    overshootClamping: false,
+    stiffness: 150,
+    overshootClamping: true,
   },
-  // Gentle camera zooms and canvas pans
+  // Gentle cinematic camera zooms and canvas pans
   camera: {
     damping: 24,
     mass: 1.2,
     stiffness: 70,
-    overshootClamping: false,
+    overshootClamping: true,
   },
-  // Subtle physical pop for badges, cursors and nodes
+  // Dynamic physical pop for badges, cursor clicks, and accent nodes
+  // overshootClamping: false is intentional — gives lively micro-bounce on flick interactions
   pop: {
     damping: 12,
     mass: 0.6,
@@ -29,9 +31,9 @@ export const SPRING_PRESETS = {
   },
   // Fluid morphing for FLIP and line-diff animations
   morph: {
-    damping: 18,
+    damping: 20,
     mass: 0.9,
-    stiffness: 110,
-    overshootClamping: false,
+    stiffness: 120,
+    overshootClamping: true,
   },
 } as const;
