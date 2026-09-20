@@ -28,8 +28,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       try {
         const currentPath = window.location.pathname
         const callbackURL = currentPath === '/' 
-          ? `${window.location.origin}/dashboard` 
-          : window.location.href
+          ? '/dashboard' 
+          : `${window.location.pathname}${window.location.search}${window.location.hash}`
 
         if (mode === 'signup') {
           const { error } = await authClient.signUp.email({
@@ -64,8 +64,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     try {
       const currentPath = window.location.pathname
       const callbackURL = currentPath === '/' 
-        ? `${window.location.origin}/dashboard` 
-        : window.location.href
+        ? '/dashboard' 
+        : `${window.location.pathname}${window.location.search}${window.location.hash}`
 
       await authClient.signIn.social({
         provider,
