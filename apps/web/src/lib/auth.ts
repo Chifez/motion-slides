@@ -5,6 +5,7 @@ import { db } from "./db";
 import * as schema from "./db/schema";
 
 export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET || process.env.ENCRYPTION_KEY,
   plugins: [tanstackStartCookies()],
   baseURL:
     process.env.BETTER_AUTH_URL ||
