@@ -6,7 +6,9 @@ import * as schema from "./db/schema";
 
 export const auth = betterAuth({
   plugins: [tanstackStartCookies()],
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseURL:
+    process.env.BETTER_AUTH_URL ||
+    "https://chifez-motion-slides-apps-web.classroom-analytics.workers.dev",
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
