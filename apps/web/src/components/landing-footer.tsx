@@ -16,6 +16,9 @@ const FOOTER_LINKS = {
     { label: 'Changelog', href: 'https://github.com/Chifez/motion-slides/releases', external: true },
     { label: 'Issues', href: 'https://github.com/Chifez/motion-slides/issues', external: true },
   ],
+  Legal: [
+    { label: 'Privacy Policy', href: '/privacy', isRoute: true },
+  ],
   App: [
     { label: 'Open Dashboard', href: '/dashboard', isRoute: true },
     { label: 'New Presentation', href: '/dashboard', isRoute: true },
@@ -117,6 +120,14 @@ export function LandingFooter() {
           <p className="text-[11px] text-zinc-700" style={{ fontFamily: 'Inter, sans-serif' }}>
             © {year} MotionSlides. MIT License.
           </p>
+          <span className="text-zinc-800 hidden sm:block">·</span>
+          <Link
+            to="/privacy"
+            className="text-[11px] text-zinc-700 hover:text-zinc-400 transition-colors no-underline"
+            style={{ fontFamily: 'Inter, sans-serif' }}
+          >
+            Privacy Policy
+          </Link>
           <span className="text-zinc-800 hidden sm:block">·</span>
           <a
             href="https://github.com/Chifez/motion-slides"

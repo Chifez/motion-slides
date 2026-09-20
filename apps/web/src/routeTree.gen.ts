@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ExportViewRouteImport } from './routes/export-view'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
@@ -21,6 +22,11 @@ import { Route as ApiGenerateReadmeRouteImport } from './routes/api/generate/rea
 import { Route as ApiGenerateArchitectureRouteImport } from './routes/api/generate/architecture'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExportViewRoute = ExportViewRouteImport.update({
   id: '/export-view',
   path: '/export-view',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
+  '/privacy': typeof PrivacyRoute
   '/api/chat': typeof ApiChatRoute
   '/embed/$projectId': typeof EmbedProjectIdRoute
   '/p/$projectId': typeof PProjectIdRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
+  '/privacy': typeof PrivacyRoute
   '/api/chat': typeof ApiChatRoute
   '/embed/$projectId': typeof EmbedProjectIdRoute
   '/p/$projectId': typeof PProjectIdRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/export-view': typeof ExportViewRoute
+  '/privacy': typeof PrivacyRoute
   '/api/chat': typeof ApiChatRoute
   '/embed/$projectId': typeof EmbedProjectIdRoute
   '/p/$projectId': typeof PProjectIdRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/export-view'
+    | '/privacy'
     | '/api/chat'
     | '/embed/$projectId'
     | '/p/$projectId'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/export-view'
+    | '/privacy'
     | '/api/chat'
     | '/embed/$projectId'
     | '/p/$projectId'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/export-view'
+    | '/privacy'
     | '/api/chat'
     | '/embed/$projectId'
     | '/p/$projectId'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   ExportViewRoute: typeof ExportViewRoute
+  PrivacyRoute: typeof PrivacyRoute
   ApiChatRoute: typeof ApiChatRoute
   EmbedProjectIdRoute: typeof EmbedProjectIdRoute
   PProjectIdRoute: typeof PProjectIdRoute
@@ -175,6 +188,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/export-view': {
       id: '/export-view'
       path: '/export-view'
@@ -259,6 +279,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   ExportViewRoute: ExportViewRoute,
+  PrivacyRoute: PrivacyRoute,
   ApiChatRoute: ApiChatRoute,
   EmbedProjectIdRoute: EmbedProjectIdRoute,
   PProjectIdRoute: PProjectIdRoute,
