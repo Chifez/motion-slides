@@ -16,7 +16,20 @@ const config = defineConfig({
   plugins: [
     devtools(),
     tailwindcss(),
-    nitro(),
+    nitro({
+      preset: (process.env.NITRO_PRESET as any) || 'cloudflare_module',
+      compatibilityDate: '2026-03-01',
+      cloudflare: {
+        deployConfig: true,
+        nodeCompat: true,
+        wrangler: {
+          compatibility_flags: ['nodejs_compat', 'new_module_registry'],
+          vars: {
+            BETTER_AUTH_URL: 'https://chifez-motion-slides-apps-web.classroom-analytics.workers.dev',
+          },
+        },
+      },
+    }),
     tanstackStart(),
     viteReact(),
     VitePWA({

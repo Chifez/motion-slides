@@ -18,8 +18,8 @@ export const createIdentitySlice: StateCreator<
   [],
   IdentitySlice
 > = (set, get) => ({
-  // Note: Initial value will be overwritten by hydration if it exists
-  localAuthorId: uuid(),
+  // Note: Initial value will be populated on client initialization or hydration
+  localAuthorId: '',
 
   initializeIdentity: () => {
     const { localAuthorId } = get()

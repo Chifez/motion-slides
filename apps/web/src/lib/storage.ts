@@ -22,13 +22,21 @@ export class LocalStorageProvider implements StorageProvider {
 
   constructor() {
     this.baseDir = getStorageDir()
-    fs.mkdirSync(this.baseDir, { recursive: true })
+    try {
+      fs.mkdirSync(this.baseDir, { recursive: true })
+    } catch {
+      // Safe fallback for edge environments (Cloudflare Workers) with read-only filesystem
+    }
   }
 
   async uploadFile(data: Uint8Array, filename: string, mimeType: string): Promise<{ url: string; key: string }> {
     const category = mimeType.startsWith('audio/') ? 'uploads' : 'exports'
     const targetDir = path.join(this.baseDir, category)
-    fs.mkdirSync(targetDir, { recursive: true })
+    try {
+      fs.mkdirSync(targetDir, { recursive: true })
+    } catch {
+      // Safe fallback for edge environments
+    }
 
     const isExport = category === 'exports'
     const baseName = path.basename(filename)
