@@ -388,11 +388,11 @@ export function EditorToolbar({ projectId }: Props) {
               title="AI Design Studio Copilot"
               className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer border ${
                 isChatOpen
-                  ? 'bg-purple-600/20 text-purple-300 border-purple-500/40 shadow-xs'
-                  : 'bg-purple-950/30 text-purple-300 hover:bg-purple-900/40 border-purple-500/30'
+                  ? 'bg-purple-100 text-purple-700 border-purple-300 shadow-xs dark:bg-purple-600/25 dark:text-purple-200 dark:border-purple-500/40'
+                  : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:hover:bg-purple-900/40 dark:border-purple-500/30'
               }`}
             >
-              <Sparkles size={13} className="text-purple-400" />
+              <Sparkles size={13} className="text-purple-600 dark:text-purple-400" />
               <span className="hidden lg:inline">Ask AI</span>
             </button>
 

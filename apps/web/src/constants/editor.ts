@@ -65,8 +65,8 @@ export const RESIZE_HANDLES = ['tl', 'tm', 'tr', 'ml', 'mr', 'bl', 'bm', 'br'] a
 /** Default configs for creating new elements from the toolbar */
 export const DEFAULT_TEXT_ELEMENT = {
   type: 'text' as const,
-  position: { x: 100, y: 100 },
-  size: { width: 200, height: 60 },
+  position: { x: 440, y: 330 },
+  size: { width: 400, height: 60 },
   rotation: 0,
   opacity: 1,
   zIndex: 10,
@@ -77,7 +77,7 @@ export const DEFAULT_TEXT_ELEMENT = {
     fontFamily: 'Inter',
     fontStyle: 'normal' as const,
     color: '#ffffff',
-    align: 'left' as const,
+    align: 'center' as const,
     listStyle: 'none' as const,
   },
   autoHeight: true,
@@ -85,7 +85,7 @@ export const DEFAULT_TEXT_ELEMENT = {
 
 export const DEFAULT_CODE_ELEMENT = {
   type: 'code' as const,
-  position: { x: 100, y: 200 },
+  position: { x: 430, y: 280 },
   size: { width: 420, height: 160 },
   rotation: 0,
   opacity: 1,
@@ -95,7 +95,7 @@ export const DEFAULT_CODE_ELEMENT = {
 
 export const DEFAULT_SHAPE_ELEMENT = {
   type: 'shape' as const,
-  position: { x: 200, y: 200 },
+  position: { x: 580, y: 300 },
   size: { width: 120, height: 120 },
   rotation: 0,
   opacity: 1,
@@ -105,7 +105,7 @@ export const DEFAULT_SHAPE_ELEMENT = {
 
 export const DEFAULT_LINE_ELEMENT = {
   type: 'line' as const,
-  position: { x: 100, y: 300 },
+  position: { x: 540, y: 310 },
   size: { width: 200, height: 100 },
   rotation: 0,
   opacity: 1,
@@ -123,7 +123,7 @@ export const DEFAULT_LINE_ELEMENT = {
 
 export const DEFAULT_CHART_ELEMENT = {
   type: 'chart' as const,
-  position: { x: 100, y: 100 },
+  position: { x: 440, y: 220 },
   size: { width: 400, height: 280 },
   rotation: 0,
   opacity: 1,
