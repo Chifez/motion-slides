@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { db } from '../db'
+import { db, withDbRetry } from '../db'
 import { projects } from '../db/schema'
 import { eq, and, or, sql, inArray } from 'drizzle-orm'
 import { auth } from '../auth'
@@ -29,16 +29,16 @@ const projectSchema = z.object({
 export const syncProjectsAction = createServerFn({ method: 'POST' })
   .inputValidator(z.array(projectSchema))
   .handler(async ({ data: projectsToSync }) => {
-    const request = getRequest()
-    const session = await auth.api.getSession({ headers: request.headers })
-
-    if (!session) {
-      throw new Error('Unauthorized: You must be logged in to sync projects.')
-    }
-
-    const userId = session.user.id
-
     try {
+      const request = getRequest()
+      const session = await auth.api.getSession({ headers: request.headers })
+
+      if (!session) {
+        return { success: false, error: 'Unauthorized: You must be logged in to sync projects.', code: 'UNAUTHORIZED' }
+      }
+
+      const userId = session.user.id
+
       await db.transaction(async (transaction) => {
         for (const project of projectsToSync) {
           await transaction.insert(projects)
@@ -159,24 +159,29 @@ export const updateProjectVisibilityAction = createServerFn({ method: 'POST' })
 
 export const listRemoteProjectsAction = createServerFn({ method: 'GET' })
   .handler(async () => {
-    const request = getRequest()
-    const session = await auth.api.getSession({ headers: request.headers })
-    if (!session) return []
+    try {
+      const request = getRequest()
+      const session = await auth.api.getSession({ headers: request.headers })
+      if (!session) return []
 
-    const userProjects = await db.query.projects.findMany({
-      where: eq(projects.ownerId, session.user.id),
-      columns: { id: true }
-    })
-    
-    const userProjectIds = userProjects.map(p => p.id)
-    
-    const results = await db.query.projects.findMany({
-      where: or(
-        eq(projects.ownerId, session.user.id),
-        userProjectIds.length > 0 ? inArray(projects.forkedFromId, userProjectIds) : undefined
-      )
-    })
-    return results as unknown as Project[]
+      const userProjects = await withDbRetry(() => db.query.projects.findMany({
+        where: eq(projects.ownerId, session.user.id),
+        columns: { id: true }
+      }))
+      
+      const userProjectIds = userProjects.map(p => p.id)
+      
+      const results = await withDbRetry(() => db.query.projects.findMany({
+        where: or(
+          eq(projects.ownerId, session.user.id),
+          userProjectIds.length > 0 ? inArray(projects.forkedFromId, userProjectIds) : undefined
+        )
+      }))
+      return results as unknown as Project[]
+    } catch (err) {
+      console.error('Failed to list remote projects:', err)
+      return []
+    }
   })
 
 export const getRemoteProjectAction = createServerFn({ method: 'GET' })
@@ -184,9 +189,9 @@ export const getRemoteProjectAction = createServerFn({ method: 'GET' })
   .handler(async ({ data: { projectId, shareKey } }) => {
     const request = getRequest()
 
-    const result = await db.query.projects.findFirst({
+    const result = await withDbRetry(() => db.query.projects.findFirst({
       where: eq(projects.id, projectId)
-    })
+    }))
 
     if (!result) {
       return null
