@@ -25,7 +25,7 @@ const config = defineConfig({
         wrangler: {
           compatibility_flags: ['nodejs_compat', 'new_module_registry'],
           vars: {
-            BETTER_AUTH_URL: 'https://chifez-motion-slides-apps-web.classroom-analytics.workers.dev',
+            BETTER_AUTH_URL: 'https://chifez-motion-slides-apps-web.chifez.workers.dev',
           },
         },
       },
