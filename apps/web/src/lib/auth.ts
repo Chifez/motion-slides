@@ -58,8 +58,10 @@ export const auth = betterAuth({
   plugins: [tanstackStartCookies()],
   baseURL:
     process.env.BETTER_AUTH_URL ||
-    "https://chifez-motion-slides-apps-web.chifez.workers.dev",
+    "https://motionslides.app",
   trustedOrigins: [
+    "https://motionslides.app",
+    "https://*.motionslides.app",
     "https://*.workers.dev",
     "https://*.chifez.workers.dev",
     "https://*.classroom-analytics.workers.dev",
