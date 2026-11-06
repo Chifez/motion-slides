@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useEditorStore } from '@/store/editor-store'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, LogOut, Cloud, ChevronDown, Download, Settings } from 'lucide-react'
+import { User, LogOut, Cloud, ChevronDown, Download, Settings, ShieldCheck } from 'lucide-react'
 import { AuthModal } from './auth-modal'
+import { AllowlistModal } from './allowlist-modal'
 import { usePWAInstall } from '@/hooks/use-pwainstall'
 import { SettingsModal } from '../dashboard/settings-modal'
+import { getBetaStatusAction } from '@/lib/actions/allowlist'
 
 
 export function UserMenu({ dashboard }: { dashboard?: boolean }) {
@@ -13,7 +15,19 @@ export function UserMenu({ dashboard }: { dashboard?: boolean }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isAllowlistOpen, setIsAllowlistOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(user?.email === 'chifez1@gmail.com')
   const { canInstall, promptInstall } = usePWAInstall()
+
+  const handleToggleDropdown = () => {
+    const next = !isDropdownOpen
+    setIsDropdownOpen(next)
+    if (next) {
+      getBetaStatusAction()
+        .then((res) => setIsAdmin(res.isAdmin))
+        .catch(() => {})
+    }
+  }
 
   if (!user) {
     return (
@@ -32,7 +46,7 @@ export function UserMenu({ dashboard }: { dashboard?: boolean }) {
   return (
     <div className="relative">
       <button
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        onClick={handleToggleDropdown}
         className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full bg-(--ms-bg-elevated) hover:bg-(--ms-border) border border-(--ms-border) transition cursor-pointer text-left"
       >
         <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-inner">
@@ -47,6 +61,7 @@ export function UserMenu({ dashboard }: { dashboard?: boolean }) {
       </button>
 
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <AllowlistModal isOpen={isAllowlistOpen} onClose={() => setIsAllowlistOpen(false)} />
 
       <AnimatePresence>
         {isDropdownOpen && (
@@ -65,6 +80,19 @@ export function UserMenu({ dashboard }: { dashboard?: boolean }) {
                 <p className="text-[9px] font-bold text-(--ms-text-muted) uppercase tracking-widest mb-0.5">Account</p>
                 <p className="text-[11px] font-medium text-(--ms-text-primary) truncate">{user.email}</p>
               </div>
+
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    setIsAllowlistOpen(true)
+                    setIsDropdownOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-[11px] text-amber-400 hover:bg-amber-500/10 rounded-lg transition cursor-pointer border-none bg-transparent"
+                >
+                  <ShieldCheck size={14} />
+                  <span>Early Access Allowlist</span>
+                </button>
+              )}
 
               <button
                 onClick={() => {
@@ -107,3 +135,4 @@ export function UserMenu({ dashboard }: { dashboard?: boolean }) {
     </div>
   )
 }
+

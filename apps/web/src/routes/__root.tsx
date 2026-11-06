@@ -80,6 +80,18 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     checkSession()
     initializeIdentity()
     document.body.classList.add('transitions-enabled')
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const error = params.get('error') || params.get('error_description')
+      if (error) {
+        useEditorStore.getState().showToast(decodeURIComponent(error), 'error')
+        const url = new URL(window.location.href)
+        url.searchParams.delete('error')
+        url.searchParams.delete('error_description')
+        window.history.replaceState({}, '', url.pathname + (url.search || '') + (url.hash || ''))
+      }
+    }
   }, [checkSession, initializeIdentity])
 
   useEffect(() => {

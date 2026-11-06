@@ -1,8 +1,57 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
-import { db } from "./db";
+import { createAuthMiddleware, APIError } from "better-auth/api";
+import { db, withDbRetry } from "./db";
 import * as schema from "./db/schema";
+
+/**
+ * Validates whether an email is permitted access when PRIVATE_BETA is enabled.
+ */
+export async function isEmailAllowed(rawEmail?: string | null): Promise<boolean> {
+  const isPrivateBeta = process.env.PRIVATE_BETA === 'true'
+  if (!isPrivateBeta) {
+    return true // Public launch mode: open to everyone
+  }
+
+  if (!rawEmail) return false
+  const email = rawEmail.trim().toLowerCase()
+
+  // 1. Superuser / Admin check (chifez1@gmail.com is default)
+  const adminEmails = (process.env.ADMIN_EMAILS || 'chifez1@gmail.com')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+  if (adminEmails.includes(email)) {
+    return true
+  }
+
+  // 2. Static env fallback check (e.g. ALLOWED_EMAILS)
+  if (process.env.ALLOWED_EMAILS) {
+    const staticAllowed = process.env.ALLOWED_EMAILS.split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+    if (staticAllowed.some((pattern) => (pattern.startsWith('@') ? email.endsWith(pattern) : email === pattern))) {
+      return true
+    }
+  }
+
+  // 3. Database allowlist check (Neon PostgreSQL)
+  try {
+    const records = await withDbRetry(() => db.query.allowlist.findMany())
+    const isMatched = records.some((record) => {
+      const pattern = record.email.trim().toLowerCase()
+      return pattern.startsWith('@') ? email.endsWith(pattern) : email === pattern
+    })
+    if (isMatched) {
+      return true
+    }
+  } catch (err) {
+    console.error('[Allowlist Verification Error]:', err)
+  }
+
+  return false
+}
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || process.env.ENCRYPTION_KEY,
@@ -29,6 +78,40 @@ export const auth = betterAuth({
       verification: schema.verification,
     },
   }),
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          if (process.env.PRIVATE_BETA === 'true') {
+            const allowed = await isEmailAllowed(user.email)
+            if (!allowed) {
+              throw new APIError('FORBIDDEN', {
+                message: 'Access Denied: MotionSlides is currently in private beta. Your email is not on the allowlist.',
+              })
+            }
+          }
+          return { data: user }
+        },
+      },
+    },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (process.env.PRIVATE_BETA === 'true') {
+        if (ctx.path === '/sign-in/email' || ctx.path === '/sign-up/email') {
+          const email = (ctx.body as any)?.email
+          if (email) {
+            const allowed = await isEmailAllowed(email)
+            if (!allowed) {
+              throw new APIError('FORBIDDEN', {
+                message: 'Access Denied: MotionSlides is currently in private beta. Your email is not on the allowlist.',
+              })
+            }
+          }
+        }
+      }
+    }),
+  },
   emailAndPassword: {
     enabled: true,
   },

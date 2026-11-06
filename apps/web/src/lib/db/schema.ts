@@ -129,3 +129,16 @@ export const pullRequestComments = pgTable('pull_request_comments', {
   createdAt:   bigint('createdAt', { mode: 'number' }).notNull(),
 })
 
+// ─────────────────────────────────────────────
+// Early Access / Private Beta Allowlist
+// ─────────────────────────────────────────────
+
+export const allowlist = pgTable('allowlist', {
+  id:        text('id').primaryKey(),
+  email:     text('email').notNull().unique(), // exact email or domain pattern like '@company.com'
+  notes:     text('notes'),
+  addedBy:   text('addedBy'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+

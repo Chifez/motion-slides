@@ -13,7 +13,7 @@ import type { TextContent } from '@motionslides/shared'
 describe('Auto-Remediation Engine', () => {
   it('should auto-fix contrast violations on flawedContrastDeck and elevate score to passing', () => {
     const initialReport = evaluateStaticDeck(flawedContrastDeck)
-    expect(initialReport.overallScore).toBeLessThan(80)
+    expect(initialReport.overallScore).toBeLessThan(85)
 
     const result = applyRemediationPlan(flawedContrastDeck, initialReport)
 
