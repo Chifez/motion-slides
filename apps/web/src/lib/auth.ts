@@ -53,23 +53,30 @@ export async function isEmailAllowed(rawEmail?: string | null): Promise<boolean>
   return false
 }
 
+const defaultAuthUrl = process.env.BETTER_AUTH_URL || "https://motionslides.app";
+
+const authUrlOrigin = (() => {
+  try {
+    return [new URL(defaultAuthUrl).origin];
+  } catch {
+    return [];
+  }
+})();
+
+const envOrigins = (process.env.BETTER_AUTH_TRUSTED_ORIGINS || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || process.env.ENCRYPTION_KEY,
   plugins: [tanstackStartCookies()],
-  baseURL:
-    process.env.BETTER_AUTH_URL ||
-    "https://motionslides.app",
+  baseURL: defaultAuthUrl,
   trustedOrigins: [
-    "https://motionslides.app",
-    "https://*.motionslides.app",
-    "https://*.workers.dev",
-    "https://*.chifez.workers.dev",
-    "https://*.classroom-analytics.workers.dev",
     "http://localhost:3000",
     "http://localhost:5173",
-    ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS
-      ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
-      : []),
+    ...authUrlOrigin,
+    ...envOrigins,
   ],
   database: drizzleAdapter(db, {
     provider: "pg",
