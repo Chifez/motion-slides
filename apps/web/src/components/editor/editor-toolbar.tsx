@@ -42,6 +42,8 @@ export function EditorToolbar({ projectId }: Props) {
   const updateProjectName = useEditorStore(state => state.updateProjectName)
   const startPresentation = useEditorStore(state => state.startPresentation)
   const setMobileSlidesOpen = useEditorStore(state => state.setMobileSlidesOpen)
+  const activeSlideIndex = useEditorStore(state => state.activeSlideIndex)
+  const totalSlides = useEditorStore(state => state.activeProject()?.slides.length ?? 0)
   const toggleChat = useEditorStore(state => state.toggleChat)
   const syncProjects = useEditorStore(state => state.syncProjects)
   const user = useEditorStore(state => state.user)
@@ -134,6 +136,10 @@ export function EditorToolbar({ projectId }: Props) {
             <ArrowLeft size={16} />
           </Link>
 
+          <Link to="/" onClick={() => syncProjects()} className="items-center no-underline hidden sm:flex shrink-0">
+            <Logo expanded={false} size={22} />
+          </Link>
+
           {isMobile && (
             <button
               onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
@@ -148,10 +154,6 @@ export function EditorToolbar({ projectId }: Props) {
               <PanelLeft size={16} />
             </button>
           )}
-
-          <Link to="/" onClick={() => syncProjects()} className="items-center no-underline hidden sm:flex shrink-0">
-            <Logo expanded={false} size={22} />
-          </Link>
 
           <input
             value={projectName}
@@ -364,7 +366,7 @@ export function EditorToolbar({ projectId }: Props) {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute top-11 right-0 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-100 p-2 w-56"
+                    className="absolute top-11 right-0 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-100 p-2 w-64"
                   >
                     {/* On screens < md, provide mode switcher here */}
                     {mode === 'edit' && (
@@ -372,47 +374,50 @@ export function EditorToolbar({ projectId }: Props) {
                         <div className="text-[10px] font-semibold text-(--ms-text-muted) uppercase tracking-wider px-1 mb-1.5">
                           Editor Mode
                         </div>
-                        <div className="grid grid-cols-3 gap-1 bg-(--ms-bg-base) p-1 rounded-lg border border-(--ms-border)">
+                        <div className="flex items-center bg-(--ms-bg-base) p-0.5 rounded-lg border border-(--ms-border) gap-0.5 w-full">
                           <button
+                            type="button"
                             onClick={() => {
                               setEditorMode('design')
                               setMobileMoreOpen(false)
                             }}
-                            className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded text-[11px] font-medium transition border-none cursor-pointer ${
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-[11px] font-semibold transition border-none cursor-pointer whitespace-nowrap shrink-0 ${
                               editorMode === 'design'
                                 ? 'bg-(--ms-border-strong) text-(--ms-text-primary) shadow-xs'
                                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                             }`}
                           >
-                            <PenSquare size={13} />
+                            <PenSquare size={12} className="shrink-0" />
                             <span>Design</span>
                           </button>
                           <button
+                            type="button"
                             onClick={() => {
                               setEditorMode('prototype')
                               setMobileMoreOpen(false)
                             }}
-                            className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded text-[11px] font-medium transition border-none cursor-pointer ${
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-[11px] font-semibold transition border-none cursor-pointer whitespace-nowrap shrink-0 ${
                               editorMode === 'prototype'
                                 ? 'bg-(--ms-border-strong) text-blue-400 shadow-xs'
                                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                             }`}
                           >
-                            <GitBranch size={13} />
+                            <GitBranch size={12} className="shrink-0" />
                             <span>Proto</span>
                           </button>
                           <button
+                            type="button"
                             onClick={() => {
                               setEditorMode('timeline')
                               setMobileMoreOpen(false)
                             }}
-                            className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded text-[11px] font-medium transition border-none cursor-pointer ${
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-[11px] font-semibold transition border-none cursor-pointer whitespace-nowrap shrink-0 ${
                               editorMode === 'timeline'
                                 ? 'bg-(--ms-border-strong) text-purple-400 shadow-xs'
                                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
                             }`}
                           >
-                            <Film size={13} />
+                            <Film size={12} className="shrink-0" />
                             <span>Time</span>
                           </button>
                         </div>
@@ -420,6 +425,22 @@ export function EditorToolbar({ projectId }: Props) {
                     )}
 
                     <div className="space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileMoreOpen(false)
+                          setMobileSlidesOpen(!mobileSlidesOpen)
+                        }}
+                        className="w-full h-10 flex items-center justify-between px-3 rounded-lg hover:bg-(--ms-border) text-sm text-(--ms-text-secondary) hover:text-(--ms-text-primary) transition-colors border-none bg-transparent cursor-pointer text-left"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <PanelLeft size={16} className={mobileSlidesOpen ? 'text-blue-400' : 'text-(--ms-text-muted)'} />
+                          <span>Slides & Layers</span>
+                        </span>
+                        <span className="text-xs text-(--ms-text-muted) font-mono">
+                          {activeSlideIndex + 1}/{totalSlides}
+                        </span>
+                      </button>
                       <div className="relative h-10 w-full flex items-center gap-2.5 px-3 rounded-lg hover:bg-(--ms-border) transition-colors">
                         <Settings size={16} className="text-(--ms-text-muted)" />
                         <span className="text-sm text-(--ms-text-secondary)">Settings</span>

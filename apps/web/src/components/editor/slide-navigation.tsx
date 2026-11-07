@@ -110,7 +110,7 @@ export const SlideNavigation = memo(function SlideNavigation() {
 
   return (
     <div
-      className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-(--ms-bg-surface)/90 border border-(--ms-border) rounded-2xl p-1 backdrop-blur-xl shadow-2xl z-40 select-none max-w-[calc(100vw-32px)]"
+      className="absolute bottom-5 left-1/2 -translate-x-1/2 flex flex-nowrap shrink-0 items-center gap-1 bg-(--ms-bg-surface)/90 border border-(--ms-border) rounded-2xl p-1 backdrop-blur-xl shadow-2xl z-40 select-none max-w-[calc(100vw-32px)]"
       onPointerDown={(e) => e.stopPropagation()}
     >
       {/* 1. Pointer & Hand Tools (Desktop & Tablet) */}
@@ -133,8 +133,8 @@ export const SlideNavigation = memo(function SlideNavigation() {
 
       <div className="hidden sm:block w-px h-4 bg-(--ms-border) mx-1" />
 
-      {/* 2. Expanded Insert Tools (Desktop >= 900px) */}
-      <div className="hidden md:flex items-center gap-0.5">
+      {/* 2. Expanded Insert Tools (Desktop >= 1024px) */}
+      <div className="hidden lg:flex items-center gap-0.5">
         <button className={dockBtnCls} onClick={addText} title="Add Text (T)">
           <Type size={14} />
         </button>
@@ -223,8 +223,8 @@ export const SlideNavigation = memo(function SlideNavigation() {
         </div>
       </div>
 
-      {/* 2b. Compact Insert Trigger (Tablet 640px - 899px) */}
-      <div className="hidden sm:flex md:hidden relative" ref={compactInsertRef}>
+      {/* 2b. Compact Insert Trigger (Tablet 640px - 1023px) */}
+      <div className="hidden sm:flex lg:hidden relative" ref={compactInsertRef}>
         <button
           className={`${dockBtnCls} gap-1 px-2 font-medium text-xs`}
           onClick={() => setShowCompactInsert(!showCompactInsert)}
@@ -267,11 +267,11 @@ export const SlideNavigation = memo(function SlideNavigation() {
       <div className="hidden sm:block w-px h-4 bg-(--ms-border) mx-1" />
 
       {/* 3. Slide Stepper & Zoom Reset */}
-      <div className="flex items-center gap-1">
+      <div className="flex flex-nowrap shrink-0 items-center gap-0.5 sm:gap-1">
         <button
           onClick={() => setActiveSlide(activeSlideIndex - 1)}
           disabled={activeSlideIndex === 0}
-          className="p-1.5 rounded-lg text-(--ms-text-muted) hover:text-(--ms-text-primary) disabled:opacity-20 disabled:cursor-default transition cursor-pointer border-none bg-transparent"
+          className="p-1.5 rounded-lg text-(--ms-text-muted) hover:text-(--ms-text-primary) disabled:opacity-20 disabled:cursor-default transition cursor-pointer border-none bg-transparent shrink-0"
           title="Previous Slide"
         >
           <ChevronLeft size={15} />
@@ -279,7 +279,7 @@ export const SlideNavigation = memo(function SlideNavigation() {
 
         <button
           onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
-          className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold tracking-tight transition cursor-pointer border-none ${
+          className={`flex flex-nowrap shrink-0 items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold tracking-tight transition cursor-pointer border-none whitespace-nowrap ${
             mobileSlidesOpen
               ? 'bg-blue-600/20 text-blue-400'
               : 'text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50 bg-transparent'
@@ -288,24 +288,24 @@ export const SlideNavigation = memo(function SlideNavigation() {
           aria-label="Toggle slide panel"
         >
           <LayoutGrid size={13} className="shrink-0 opacity-80" />
-          <span>{activeSlideIndex + 1} / {totalSlides}</span>
+          <span className="whitespace-nowrap">{activeSlideIndex + 1} / {totalSlides}</span>
         </button>
 
         <button
           onClick={() => setActiveSlide(activeSlideIndex + 1)}
           disabled={activeSlideIndex >= totalSlides - 1}
-          className="p-1.5 rounded-lg text-(--ms-text-muted) hover:text-(--ms-text-primary) disabled:opacity-20 disabled:cursor-default transition cursor-pointer border-none bg-transparent"
+          className="p-1.5 rounded-lg text-(--ms-text-muted) hover:text-(--ms-text-primary) disabled:opacity-20 disabled:cursor-default transition cursor-pointer border-none bg-transparent shrink-0"
           title="Next Slide"
         >
           <ChevronRight size={15} />
         </button>
 
-        <div className="w-px h-4 bg-(--ms-border) mx-0.5" />
+        <div className="w-px h-4 bg-(--ms-border) mx-0.5 shrink-0" />
 
         <button
           onClick={() => resetCamera()}
           title="Reset zoom to 100%"
-          className="text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) font-mono font-medium border-none bg-transparent cursor-pointer px-1.5 py-1 rounded-md hover:bg-(--ms-border)/50 transition"
+          className="text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) font-mono font-medium border-none bg-transparent cursor-pointer px-1.5 py-1 rounded-md hover:bg-(--ms-border)/50 transition shrink-0 whitespace-nowrap"
         >
           {Math.round(zoom * 100)}%
         </button>

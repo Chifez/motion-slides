@@ -82,7 +82,9 @@ export function SlidePanel() {
           {isMobile && (
             <button
               onClick={() => setMobileSlidesOpen(false)}
-              className="p-1 rounded-md text-(--ms-text-muted) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent"
+              className="p-1.5 rounded-lg text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border) transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center"
+              title="Close Slides Panel"
+              aria-label="Close Slides Panel"
             >
               <X size={16} />
             </button>

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -37,14 +38,30 @@ export function Trigger({ children, asChild }: { children: React.ReactElement<an
 
 export function Portal({ children, forceMount, className }: { children: React.ReactNode, forceMount?: boolean, className?: string }) {
   const { open } = usePanel()
-  return (
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
+
+  return createPortal(
     <AnimatePresence>
       {(open || forceMount) && (
-        <div className={cn("fixed inset-0 z-[120] flex pointer-events-none", className)}>
+        <motion.div
+          key="panel-portal-wrapper"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className={cn("fixed inset-0 z-[120] pointer-events-none", className)}
+        >
           {children}
-        </div>
+        </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
 
@@ -52,12 +69,13 @@ export function Overlay({ className }: { className?: string }) {
   const { onOpenChange } = usePanel()
   return (
     <motion.div
+      key="panel-overlay"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
       onClick={() => onOpenChange(false)}
-      className={cn("absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto", className)}
+      className={cn("absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto touch-none", className)}
     />
   )
 }
@@ -91,10 +109,11 @@ export function Content({ children, className, containerClassName, width = 'w-[3
   
   return (
     <motion.div
+      key="panel-content"
       initial={initial}
       animate={animate}
       exit={exit}
-      transition={{ type: 'spring', damping: 25, stiffness: 200, mass: 0.8 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 220, mass: 0.8 }}
       className={cn(
         "absolute pointer-events-auto flex flex-col bg-(--ms-bg-surface) border-(--ms-border) shadow-2xl overflow-hidden",
         positionClasses,
