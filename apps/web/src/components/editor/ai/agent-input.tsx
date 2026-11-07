@@ -223,7 +223,7 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`relative bg-(--ms-bg-elevated) border rounded-2xl transition-all duration-150 shadow-lg overflow-hidden ${
+          className={`relative bg-(--ms-bg-elevated) border rounded-2xl transition-all duration-150 shadow-lg ${
             isDragging
               ? 'border-blue-500 bg-blue-500/10'
               : 'border-(--ms-border) hover:border-(--ms-border-strong) focus-within:border-blue-500/50'
@@ -236,7 +236,7 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="px-3 py-1.5 flex items-center justify-between bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs select-none"
+                className="px-3 py-1.5 flex items-center justify-between bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs select-none rounded-t-2xl"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -263,7 +263,7 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="px-3 py-1.5 flex items-center gap-2 bg-blue-500/10 border-b border-blue-500/20 text-blue-400 text-xs select-none"
+                className="px-3 py-1.5 flex items-center gap-2 bg-blue-500/10 border-b border-blue-500/20 text-blue-400 text-xs select-none rounded-t-2xl"
               >
                 <Loader2 size={12} className="animate-spin text-blue-400 shrink-0" />
                 <span className="font-medium text-[11px]">Transcribing voice audio with Whisper…</span>
@@ -278,7 +278,7 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 z-20 bg-blue-950/85 backdrop-blur-sm flex flex-col items-center justify-center gap-1 text-blue-300 pointer-events-none"
+                className="absolute inset-0 z-20 bg-blue-950/85 backdrop-blur-sm flex flex-col items-center justify-center gap-1 text-blue-300 pointer-events-none rounded-2xl"
               >
                 <UploadCloud size={22} className="animate-bounce text-blue-400" />
                 <p className="text-xs font-semibold">Drop file to synthesize slides</p>
@@ -393,54 +393,61 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
 
                 <AnimatePresence>
                   {showModelMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 4, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 4, scale: 0.97 }}
-                      className="absolute bottom-full left-0 mb-1.5 w-56 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-50 overflow-hidden p-1"
-                    >
-                      <p className="text-[8px] text-(--ms-text-muted) font-bold uppercase tracking-wider px-2.5 pt-1.5 pb-1">Cloud Models</p>
-                      {MODELS.filter((m) => m.provider !== 'ollama').map((m) => {
-                        const Icon = m.icon
-                        return (
-                          <button
-                            key={m.id}
-                            type="button"
-                            onClick={() => { setSelectedModel(m.id); setShowModelMenu(false) }}
-                            className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all duration-150 active:scale-[0.98] cursor-pointer border-none ${
-                              selectedModel === m.id ? 'bg-blue-600/15 text-blue-400' : 'bg-transparent text-(--ms-text-secondary) hover:bg-(--ms-bg-surface) hover:text-(--ms-text-primary)'
-                            }`}
-                          >
-                            <Icon size={13} className={PROVIDER_COLORS[m.provider]} />
-                            <div>
-                              <p className="text-xs font-medium leading-none">{m.label}</p>
-                              <p className="text-[9px] text-(--ms-text-muted) mt-0.5">{m.desc}</p>
-                            </div>
-                          </button>
-                        )
-                      })}
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowModelMenu(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute bottom-full left-0 mb-2 w-64 bg-(--ms-bg-surface) border border-(--ms-border-strong) rounded-xl shadow-2xl z-50 p-1.5 backdrop-blur-xl max-h-[340px] overflow-y-auto custom-scrollbar"
+                      >
+                        <p className="text-[9px] text-(--ms-text-muted) font-bold uppercase tracking-wider px-2.5 pt-1.5 pb-1">Cloud Models</p>
+                        {MODELS.filter((m) => m.provider !== 'ollama').map((m) => {
+                          const Icon = m.icon
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => { setSelectedModel(m.id); setShowModelMenu(false) }}
+                              className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all duration-150 active:scale-[0.98] cursor-pointer border-none ${
+                                selectedModel === m.id ? 'bg-blue-600/15 text-blue-400' : 'bg-transparent text-(--ms-text-secondary) hover:bg-(--ms-bg-surface) hover:text-(--ms-text-primary)'
+                              }`}
+                            >
+                              <Icon size={14} className={PROVIDER_COLORS[m.provider]} />
+                              <div>
+                                <p className="text-xs font-medium leading-none">{m.label}</p>
+                                <p className="text-[10px] text-(--ms-text-muted) mt-0.5">{m.desc}</p>
+                              </div>
+                            </button>
+                          )
+                        })}
 
-                      <p className="text-[8px] text-(--ms-text-muted) font-bold uppercase tracking-wider px-2.5 pt-2 pb-1">Local (Ollama)</p>
-                      {MODELS.filter((m) => m.provider === 'ollama').map((m) => {
-                        const Icon = m.icon
-                        return (
-                          <button
-                            key={m.id}
-                            type="button"
-                            onClick={() => { setSelectedModel(m.id); setShowModelMenu(false) }}
-                            className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all duration-150 active:scale-[0.98] cursor-pointer border-none ${
-                              selectedModel === m.id ? 'bg-emerald-600/15 text-emerald-400' : 'bg-transparent text-(--ms-text-secondary) hover:bg-(--ms-bg-surface) hover:text-(--ms-text-primary)'
-                            }`}
-                          >
-                            <Icon size={13} className={PROVIDER_COLORS[m.provider]} />
-                            <div>
-                              <p className="text-xs font-medium leading-none">{m.label}</p>
-                              <p className="text-[9px] text-(--ms-text-muted) mt-0.5">{m.desc}</p>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </motion.div>
+                        <p className="text-[9px] text-(--ms-text-muted) font-bold uppercase tracking-wider px-2.5 pt-2.5 pb-1 border-t border-(--ms-border) mt-1">Open Source (Groq / Ollama)</p>
+                        {MODELS.filter((m) => m.provider === 'ollama').map((m) => {
+                          const Icon = m.icon
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => { setSelectedModel(m.id); setShowModelMenu(false) }}
+                              className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all duration-150 active:scale-[0.98] cursor-pointer border-none ${
+                                selectedModel === m.id ? 'bg-emerald-600/15 text-emerald-400' : 'bg-transparent text-(--ms-text-secondary) hover:bg-(--ms-bg-surface) hover:text-(--ms-text-primary)'
+                              }`}
+                            >
+                              <Icon size={14} className={PROVIDER_COLORS[m.provider]} />
+                              <div>
+                                <p className="text-xs font-medium leading-none">{m.label}</p>
+                                <p className="text-[10px] text-(--ms-text-muted) mt-0.5">{m.desc}</p>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </motion.div>
+                    </>
                   )}
                 </AnimatePresence>
               </div>
