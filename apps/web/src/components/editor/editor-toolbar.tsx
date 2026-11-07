@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Play, PenSquare, GitBranch, Film, Sparkles, MoreVertical, Settings, Download, Users, WifiOff, ChevronDown, Search, X, Plus, Loader2, Check, PanelLeft } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch, Film, Sparkles, MoreVertical, Settings, Download, Users, WifiOff, ChevronDown, Search, X, Plus, Loader2, Check } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import { useEditorStore } from '@/store/editor-store'
 import { SettingsDropdown } from './toolbar/settings-dropdown'
@@ -19,7 +19,6 @@ import { Button } from '@/components/ui/core/button'
 interface Props { projectId: string }
 
 export function EditorToolbar({ projectId }: Props) {
-  const mobileSlidesOpen = useEditorStore(state => state.mobileSlidesOpen)
   const isGitPanelOpen = useEditorStore(state => state.isGitPanelOpen)
   const createBranch = useEditorStore(state => state.createBranch)
   const navigate = useNavigate()
@@ -41,9 +40,6 @@ export function EditorToolbar({ projectId }: Props) {
 
   const updateProjectName = useEditorStore(state => state.updateProjectName)
   const startPresentation = useEditorStore(state => state.startPresentation)
-  const setMobileSlidesOpen = useEditorStore(state => state.setMobileSlidesOpen)
-  const activeSlideIndex = useEditorStore(state => state.activeSlideIndex)
-  const totalSlides = useEditorStore(state => state.activeProject()?.slides.length ?? 0)
   const toggleChat = useEditorStore(state => state.toggleChat)
   const syncProjects = useEditorStore(state => state.syncProjects)
   const user = useEditorStore(state => state.user)
@@ -139,21 +135,6 @@ export function EditorToolbar({ projectId }: Props) {
           <Link to="/" onClick={() => syncProjects()} className="items-center no-underline hidden sm:flex shrink-0">
             <Logo expanded={false} size={22} />
           </Link>
-
-          {isMobile && (
-            <button
-              onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
-              className={`p-1.5 sm:p-2 rounded-lg transition-colors border-none cursor-pointer shrink-0 flex items-center justify-center ${
-                mobileSlidesOpen
-                  ? 'bg-blue-600/20 text-blue-400'
-                  : 'text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50'
-              }`}
-              title={mobileSlidesOpen ? 'Close Slides Panel' : 'Open Slides Panel'}
-              aria-label="Toggle Slides Panel"
-            >
-              <PanelLeft size={16} />
-            </button>
-          )}
 
           <input
             value={projectName}
@@ -425,22 +406,6 @@ export function EditorToolbar({ projectId }: Props) {
                     )}
 
                     <div className="space-y-0.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMobileMoreOpen(false)
-                          setMobileSlidesOpen(!mobileSlidesOpen)
-                        }}
-                        className="w-full h-10 flex items-center justify-between px-3 rounded-lg hover:bg-(--ms-border) text-sm text-(--ms-text-secondary) hover:text-(--ms-text-primary) transition-colors border-none bg-transparent cursor-pointer text-left"
-                      >
-                        <span className="flex items-center gap-2.5">
-                          <PanelLeft size={16} className={mobileSlidesOpen ? 'text-blue-400' : 'text-(--ms-text-muted)'} />
-                          <span>Slides & Layers</span>
-                        </span>
-                        <span className="text-xs text-(--ms-text-muted) font-mono">
-                          {activeSlideIndex + 1}/{totalSlides}
-                        </span>
-                      </button>
                       <div className="relative h-10 w-full flex items-center gap-2.5 px-3 rounded-lg hover:bg-(--ms-border) transition-colors">
                         <Settings size={16} className="text-(--ms-text-muted)" />
                         <span className="text-sm text-(--ms-text-secondary)">Settings</span>
