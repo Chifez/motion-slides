@@ -16,9 +16,9 @@ interface ModelDef {
 const MODELS: ModelDef[] = [
   { id: 'gpt-4o',             label: 'GPT-4o',             provider: 'openai',    desc: 'Fast & Smart',       icon: BrainCircuit },
   { id: 'claude-3-5-sonnet',  label: 'Claude 3.5 Sonnet',  provider: 'anthropic', desc: 'Deep Reasoning',     icon: Bot },
-  { id: 'llama3.2',           label: 'Llama 3.2',          provider: 'ollama',    desc: '100% Local',         icon: Cpu },
-  { id: 'mistral',            label: 'Mistral 7B',          provider: 'ollama',    desc: '100% Local',         icon: Cpu },
-  { id: 'qwen2.5',            label: 'Qwen 2.5',           provider: 'ollama',    desc: '100% Local',         icon: Cpu },
+  { id: 'llama3.2',           label: 'Llama 3.3 / 3.2',    provider: 'ollama',    desc: 'Fast & Open Source', icon: Cpu },
+  { id: 'qwen2.5',            label: 'Qwen 2.5',           provider: 'ollama',    desc: 'Code & Diagramming', icon: Cpu },
+  { id: 'mistral',            label: 'Mistral 7B',         provider: 'ollama',    desc: 'Open Source',        icon: Cpu },
 ]
 
 const PROVIDER_COLORS: Record<string, string> = {

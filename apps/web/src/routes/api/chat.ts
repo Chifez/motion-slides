@@ -64,14 +64,51 @@ Unless the user explicitly requests custom colors or a light theme in their prom
 - **Animations**: \`fade-in\`, \`slide-up\`, \`slide-left\`, \`zoom-in\`, \`pop\`, \`draw\` (exclusive to line elements), \`none\`
 - **Transitions**: \`magic-move\` (signature morph effect), \`slide-left\`, \`slide-right\`, \`slide-up\`, \`slide-down\`, \`fade\`, \`zoom\`, \`flip\``
 
-// Model IDs served locally by Ollama
-const OLLAMA_MODELS = new Set([
-  'llama3.2', 'llama3.2:3b', 'llama3.1', 'llama3.1:8b', 'llama3.1:70b',
+// Model IDs served locally by Ollama or accelerated in production via Groq / Cloudflare Workers AI
+const OPEN_SOURCE_MODELS = new Set([
+  'llama3.2', 'llama3.2:3b', 'llama3.1', 'llama3.1:8b', 'llama3.1:70b', 'llama3.3',
   'mistral', 'mistral:7b', 'qwen2.5', 'gemma3', 'phi4', 'deepseek-r1',
 ])
 
 function resolveProvider(modelId: string, openaiKey: string, anthropicKey: string) {
-  if (OLLAMA_MODELS.has(modelId)) {
+  if (OPEN_SOURCE_MODELS.has(modelId)) {
+    // 1. Production High-Speed: Groq (ultra-fast 300+ tok/s inference with OpenAI-compatible tool calling)
+    if (process.env.GROQ_API_KEY) {
+      const groqProvider = createOpenAI({
+        baseURL: 'https://api.groq.com/openai/v1',
+        apiKey: process.env.GROQ_API_KEY,
+      })
+      const groqModelMap: Record<string, string> = {
+        'llama3.2': 'llama-3.3-70b-versatile',
+        'llama3.2:3b': 'llama-3.1-8b-instant',
+        'llama3.1': 'llama-3.3-70b-versatile',
+        'llama3.3': 'llama-3.3-70b-versatile',
+        'qwen2.5': 'qwen-2.5-32b',
+        'mistral': 'mixtral-8x7b-32768',
+      }
+      const targetModel = groqModelMap[modelId] || 'llama-3.3-70b-versatile'
+      return groqProvider(targetModel)
+    }
+
+    // 2. Production Edge: Cloudflare Workers AI OpenAI-compatible endpoint
+    if (process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_AI_TOKEN) {
+      const cfProvider = createOpenAI({
+        baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
+        apiKey: process.env.CLOUDFLARE_AI_TOKEN,
+      })
+      const cfModelMap: Record<string, string> = {
+        'llama3.2': '@cf/meta/llama-3.3-70b-instruct',
+        'llama3.2:3b': '@cf/meta/llama-3.2-3b-instruct',
+        'llama3.1': '@cf/meta/llama-3.1-8b-instruct',
+        'llama3.3': '@cf/meta/llama-3.3-70b-instruct',
+        'qwen2.5': '@cf/qwen/qwen2.5-7b-instruct',
+        'mistral': '@cf/mistral/mistral-7b-instruct-v0.2',
+      }
+      const targetModel = cfModelMap[modelId] || '@cf/meta/llama-3.3-70b-instruct'
+      return cfProvider(targetModel)
+    }
+
+    // 3. Local Development: Local Ollama daemon (localhost:11434)
     const ollamaProvider = createOpenAI({
       baseURL: process.env.OLLAMA_BASE_URL || 'http://localhost:11434/v1',
       apiKey: 'ollama',
@@ -125,11 +162,11 @@ export const Route = createFileRoute('/api/chat')({
         // never delivered back to the model, causing infinite "reading project" hangs.
         const modelMessages = await convertToModelMessages(rawMessages)
 
-        // For Ollama models, no server-side auth is required
-        const isOllamaModel = OLLAMA_MODELS.has(model)
+        // For open-source models (Ollama locally, or Groq / Cloudflare AI in production), no personal key is required
+        const isOpenSourceModel = OPEN_SOURCE_MODELS.has(model)
 
-        // For cloud models, require either a configured env key or a session
-        if (!isOllamaModel && !session && !openaiApiKey) {
+        // For proprietary cloud models (GPT-4o, Claude), require either a configured env key, BYOK, or session
+        if (!isOpenSourceModel && !session && !openaiApiKey) {
           return new Response(JSON.stringify({ error: 'Unauthorized. Please log in or configure an API key.' }), {
             status: 401,
             headers: { 'Content-Type': 'application/json' },
