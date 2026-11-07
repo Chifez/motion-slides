@@ -73,7 +73,7 @@ const OLLAMA_MODELS = new Set([
 function resolveProvider(modelId: string, openaiKey: string, anthropicKey: string) {
   if (OLLAMA_MODELS.has(modelId)) {
     const ollamaProvider = createOpenAI({
-      baseURL: 'http://localhost:11434/v1',
+      baseURL: process.env.OLLAMA_BASE_URL || 'http://localhost:11434/v1',
       apiKey: 'ollama',
     })
     return ollamaProvider(modelId)
