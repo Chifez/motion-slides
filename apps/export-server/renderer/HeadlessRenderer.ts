@@ -198,6 +198,34 @@ export class HeadlessRenderer {
 
     // Wait one real event loop turn for React to commit
     await this.page!.evaluate(() => new Promise<void>(r => (window as any).__realSetTimeout(r, 50)))
+
+    // Preload barrier: wait for fonts and images to load
+    await this.waitForAssetsToLoad()
+  }
+
+  /**
+   * Preload barrier: ensures all web fonts and images in the DOM are completely
+   * loaded before deterministic frame capture commences.
+   */
+  private async waitForAssetsToLoad(): Promise<void> {
+    try {
+      await this.page!.evaluate(async () => {
+        if (document.fonts) {
+          await document.fonts.ready
+        }
+        const images = Array.from(document.querySelectorAll('img'))
+        await Promise.all(
+          images.map((img) => {
+            if (img.complete) return Promise.resolve()
+            return new Promise((resolve) => {
+              img.onload = img.onerror = resolve
+            })
+          })
+        )
+      })
+    } catch (err) {
+      console.warn('[HeadlessRenderer] Asset preload barrier warning:', err)
+    }
   }
 
   // ── Slide capture ──────────────────────────────────────────────────────────
@@ -231,6 +259,7 @@ export class HeadlessRenderer {
     await this.tickClock(0)
     await this.tickClock(0)
     await this.page!.evaluate(() => new Promise<void>(r => (window as any).__realSetTimeout(r, 16)))
+    await this.waitForAssetsToLoad()
 
     // ── Transition frames ────────────────────────────────────────────────────
     if (includeTransition && transitionDuration > 0) {

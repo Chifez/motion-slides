@@ -82,20 +82,79 @@ export class LocalStorageProvider implements StorageProvider {
   }
 }
 
-class S3StorageProvider implements StorageProvider {
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+
+export class S3StorageProvider implements StorageProvider {
+  private client: S3Client
+  private bucket: string
+  private publicUrlPrefix?: string
+
+  constructor() {
+    this.bucket = process.env.R2_BUCKET_NAME || process.env.S3_BUCKET_NAME || 'motionslides-exports'
+    this.publicUrlPrefix = process.env.R2_PUBLIC_URL || process.env.S3_PUBLIC_URL
+
+    const endpoint = process.env.R2_ACCOUNT_ID
+      ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
+      : (process.env.S3_ENDPOINT || undefined)
+
+    const region = process.env.S3_REGION || 'auto'
+    const accessKeyId = process.env.R2_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || ''
+    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || ''
+
+    this.client = new S3Client({
+      region,
+      endpoint,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    })
+  }
+
   async uploadFile(data: Uint8Array, filename: string, mimeType: string): Promise<{ url: string; key: string }> {
-    throw new Error('S3 Upload not configured')
+    const category = mimeType.startsWith('audio/') ? 'uploads' : 'exports'
+    const baseName = path.basename(filename)
+    const key = `${category}/${Date.now()}-${baseName.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: Buffer.from(data),
+        ContentType: mimeType,
+      })
+    )
+
+    const url = await this.getDownloadUrl(key)
+    return { url, key }
   }
+
   async getDownloadUrl(key: string): Promise<string> {
-    throw new Error('S3 Download not configured')
+    if (this.publicUrlPrefix) {
+      return `${this.publicUrlPrefix.replace(/\/$/, '')}/${key}`
+    }
+
+    // Default: generate a presigned GET URL valid for 24 hours (86,400 seconds)
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    })
+    return await getSignedUrl(this.client, command, { expiresIn: 86400 })
   }
+
   async deleteFile(key: string): Promise<void> {
-    throw new Error('S3 Delete not configured')
+    await this.client.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      })
+    )
   }
 }
 
 export const storageProvider: StorageProvider = 
-  process.env.STORAGE_PROVIDER === 's3' 
+  process.env.STORAGE_PROVIDER === 's3' || process.env.STORAGE_PROVIDER === 'r2'
     ? new S3StorageProvider() 
     : new LocalStorageProvider()
 

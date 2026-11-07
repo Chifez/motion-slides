@@ -185,7 +185,7 @@ export function initExportWorker(): void {
         let finalUrl = `/api/download/${jobId}`
         const storage = getStorageProvider()
         
-        if (process.env.STORAGE_PROVIDER === 's3') {
+        if (process.env.STORAGE_PROVIDER === 's3' || process.env.STORAGE_PROVIDER === 'r2') {
           const fileData = await fs.promises.readFile(outPath)
           const ext = path.extname(outPath)
           const mimeType = ext === '.pdf' ? 'application/pdf' : (ext === '.webm' ? 'video/webm' : 'video/mp4')

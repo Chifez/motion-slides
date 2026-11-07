@@ -8,6 +8,8 @@
     "start": "node dist/apps/export-server/index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1164.0",
+    "@aws-sdk/s3-request-presigner": "^3.1164.0",
     "@getworkbench/express": "^0.7.0",
     "@motionslides/shared": "*",
     "bullmq": "^5.77.6",
