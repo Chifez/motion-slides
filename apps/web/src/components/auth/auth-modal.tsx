@@ -10,17 +10,19 @@ interface AuthModalProps {
   onClose: () => void
 }
 
+export type AuthMode = 'login' | 'signup' | 'forgot-password'
+
 /**
  * Authentication modal with theme-flexible styling.
  * Replaces hardcoded dark-mode hex values with MS design system tokens.
  */
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [mode, setMode] = useState<AuthMode>('login')
   const checkSession = useEditorStore((s) => s.checkSession)
   const syncProjects = useEditorStore((s) => s.syncProjects)
 
   const [state, formAction] = useActionState(
-    async (_prevState: { error: string | null }, formData: FormData) => {
+    async (_prevState: { error: string | null; success: string | null }, formData: FormData) => {
       const email = formData.get('email') as string
       const password = formData.get('password') as string
       const name = formData.get('name') as string
@@ -38,26 +40,33 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             name,
             callbackURL
           })
-          if (error) return { error: error.message || 'Signup failed' }
-        } else {
+          if (error) return { error: error.message || 'Signup failed', success: null }
+        } else if (mode === 'login') {
           const { error } = await authClient.signIn.email({
             email,
             password,
             callbackURL
           })
-          if (error) return { error: error.message || 'Login failed' }
+          if (error) return { error: error.message || 'Login failed', success: null }
+        } else if (mode === 'forgot-password') {
+          const { error } = await authClient.forgetPassword({
+            email,
+            redirectTo: '/reset-password',
+          })
+          if (error) return { error: error.message || 'Failed to send reset link', success: null }
+          return { error: null, success: `Password reset link sent to ${email}. Check your inbox!` }
         }
 
         await checkSession()
         await syncProjects()
 
         onClose()
-        return { error: null }
+        return { error: null, success: null }
       } catch (err: any) {
-        return { error: err.message || 'Authentication failed' }
+        return { error: err.message || 'Authentication failed', success: null }
       }
     },
-    { error: null }
+    { error: null, success: null }
   )
 
   const handleSocialSignIn = async (provider: 'github' | 'google') => {
@@ -70,6 +79,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       await authClient.signIn.social({
         provider,
         callbackURL,
+        errorCallbackURL: `${window.location.origin}/?error=oauth_error`,
       })
     } catch (err: any) {
       console.error('Social sign in failed:', err)
@@ -105,12 +115,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <div className="p-8">
           <header className="text-center mb-8">
             <h2 className="text-2xl font-bold text-(--ms-text-primary) mb-2">
-              {mode === 'login' ? 'Welcome back' : 'Create an account'}
+              {mode === 'login'
+                ? 'Welcome back'
+                : mode === 'signup'
+                  ? 'Create an account'
+                  : 'Reset your password'}
             </h2>
             <p className="text-sm text-(--ms-text-muted)">
               {mode === 'login'
                 ? 'Sign in to sync your projects to the cloud'
-                : 'Join MotionSlides to share and collaborate'}
+                : mode === 'signup'
+                  ? 'Join MotionSlides to share and collaborate'
+                  : 'Enter your email and we’ll send you a recovery link'}
             </p>
           </header>
 
@@ -145,59 +161,80 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-(--ms-text-muted) ml-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-(--ms-text-muted) opacity-40" size={18} />
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition"
-                />
+            {mode !== 'forgot-password' && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-xs font-medium text-(--ms-text-muted)">Password</label>
+                  {mode === 'login' && (
+                    <button
+                      type="button"
+                      onClick={() => setMode('forgot-password')}
+                      className="text-xs text-blue-500 hover:text-blue-400 font-medium cursor-pointer border-none bg-transparent"
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-(--ms-text-muted) opacity-40" size={18} />
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    className="w-full bg-(--ms-bg-base) border border-(--ms-border) rounded-xl py-2.5 pl-10 pr-4 text-sm text-(--ms-text-primary) placeholder-(--ms-text-muted) focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {state.error && (
-              <p className="text-xs text-red-400 font-medium ml-1 bg-red-400/10 p-2 rounded-lg border border-red-400/20">
+              <p className="text-xs text-red-400 font-medium ml-1 bg-red-400/10 p-2.5 rounded-lg border border-red-400/20">
                 {state.error}
               </p>
+            )}
+
+            {state.success && (
+              <div className="text-xs text-emerald-400 font-medium ml-1 bg-emerald-400/10 p-3 rounded-lg border border-emerald-400/20 leading-relaxed">
+                {state.success}
+              </div>
             )}
 
             <AuthSubmitButton mode={mode} />
           </form>
 
-          <div className="mt-6">
-            <div className="relative flex items-center justify-center mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-(--ms-border)"></div>
+          {mode !== 'forgot-password' && (
+            <div className="mt-6">
+              <div className="relative flex items-center justify-center mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-(--ms-border)"></div>
+                </div>
+                <span className="relative px-3 bg-(--ms-bg-surface) text-[10px] uppercase tracking-wider text-(--ms-text-muted) font-bold">
+                  Or continue with
+                </span>
               </div>
-              <span className="relative px-3 bg-(--ms-bg-surface) text-[10px] uppercase tracking-wider text-(--ms-text-muted) font-bold">
-                Or continue with
-              </span>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => handleSocialSignIn('github')}
-                type="button"
-                className="w-full bg-(--ms-bg-base) hover:bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-primary) font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Github size={16} />
-                <span className="text-sm">GitHub</span>
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => handleSocialSignIn('github')}
+                  type="button"
+                  className="w-full bg-(--ms-bg-base) hover:bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-primary) font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Github size={16} />
+                  <span className="text-sm">GitHub</span>
+                </button>
 
-              <button
-                onClick={() => handleSocialSignIn('google')}
-                type="button"
-                className="w-full bg-(--ms-bg-base) hover:bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-primary) font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Chrome size={16} />
-                <span className="text-sm">Google</span>
-              </button>
+                <button
+                  onClick={() => handleSocialSignIn('google')}
+                  type="button"
+                  className="w-full bg-(--ms-bg-base) hover:bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-primary) font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Chrome size={16} />
+                  <span className="text-sm">Google</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <footer className="mt-8 text-center text-xs text-(--ms-text-muted)">
             {mode === 'login' ? (
@@ -210,7 +247,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   Create one now
                 </button>
               </>
-            ) : (
+            ) : mode === 'signup' ? (
               <>
                 Already have an account?{' '}
                 <button
@@ -218,6 +255,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   className="text-blue-500 hover:text-blue-400 font-medium underline underline-offset-4 cursor-pointer bg-transparent border-none"
                 >
                   Sign in instead
+                </button>
+              </>
+            ) : (
+              <>
+                Remember your password?{' '}
+                <button
+                  onClick={() => setMode('login')}
+                  className="text-blue-500 hover:text-blue-400 font-medium underline underline-offset-4 cursor-pointer bg-transparent border-none"
+                >
+                  Back to sign in
                 </button>
               </>
             )}
@@ -228,7 +275,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   )
 }
 
-function AuthSubmitButton({ mode }: { mode: 'login' | 'signup' }) {
+function AuthSubmitButton({ mode }: { mode: AuthMode }) {
   const { pending } = useFormStatus()
 
   return (
@@ -240,7 +287,11 @@ function AuthSubmitButton({ mode }: { mode: 'login' | 'signup' }) {
       {pending ? (
         <Loader2 className="animate-spin" size={20} />
       ) : (
-        mode === 'login' ? 'Sign In' : 'Create Account'
+        mode === 'login'
+          ? 'Sign In'
+          : mode === 'signup'
+            ? 'Create Account'
+            : 'Send Reset Link'
       )}
     </button>
   )

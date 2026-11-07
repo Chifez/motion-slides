@@ -13,6 +13,8 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ExportViewRouteImport } from './routes/export-view'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ResetPasswordIndexRouteImport } from './routes/reset-password.index'
+import { Route as ResetPasswordTokenRouteImport } from './routes/reset-password.$token'
 import { Route as PProjectIdRouteImport } from './routes/p.$projectId'
 import { Route as EmbedProjectIdRouteImport } from './routes/embed.$projectId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -40,6 +42,16 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordIndexRoute = ResetPasswordIndexRouteImport.update({
+  id: '/reset-password/',
+  path: '/reset-password/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordTokenRoute = ResetPasswordTokenRouteImport.update({
+  id: '/reset-password/$token',
+  path: '/reset-password/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PProjectIdRoute = PProjectIdRouteImport.update({
@@ -91,6 +103,8 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/embed/$projectId': typeof EmbedProjectIdRoute
   '/p/$projectId': typeof PProjectIdRoute
+  '/reset-password/$token': typeof ResetPasswordTokenRoute
+  '/reset-password/': typeof ResetPasswordIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
@@ -105,6 +119,8 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/embed/$projectId': typeof EmbedProjectIdRoute
   '/p/$projectId': typeof PProjectIdRoute
+  '/reset-password/$token': typeof ResetPasswordTokenRoute
+  '/reset-password': typeof ResetPasswordIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
@@ -120,6 +136,8 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/embed/$projectId': typeof EmbedProjectIdRoute
   '/p/$projectId': typeof PProjectIdRoute
+  '/reset-password/$token': typeof ResetPasswordTokenRoute
+  '/reset-password/': typeof ResetPasswordIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
   '/api/generate/readme': typeof ApiGenerateReadmeRoute
@@ -136,6 +154,8 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/embed/$projectId'
     | '/p/$projectId'
+    | '/reset-password/$token'
+    | '/reset-password/'
     | '/api/auth/$'
     | '/api/generate/architecture'
     | '/api/generate/readme'
@@ -150,6 +170,8 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/embed/$projectId'
     | '/p/$projectId'
+    | '/reset-password/$token'
+    | '/reset-password'
     | '/api/auth/$'
     | '/api/generate/architecture'
     | '/api/generate/readme'
@@ -164,6 +186,8 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/embed/$projectId'
     | '/p/$projectId'
+    | '/reset-password/$token'
+    | '/reset-password/'
     | '/api/auth/$'
     | '/api/generate/architecture'
     | '/api/generate/readme'
@@ -179,6 +203,8 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   EmbedProjectIdRoute: typeof EmbedProjectIdRoute
   PProjectIdRoute: typeof PProjectIdRoute
+  ResetPasswordTokenRoute: typeof ResetPasswordTokenRoute
+  ResetPasswordIndexRoute: typeof ResetPasswordIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiGenerateArchitectureRoute: typeof ApiGenerateArchitectureRoute
   ApiGenerateReadmeRoute: typeof ApiGenerateReadmeRoute
@@ -214,6 +240,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password/': {
+      id: '/reset-password/'
+      path: '/reset-password'
+      fullPath: '/reset-password/'
+      preLoaderRoute: typeof ResetPasswordIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password/$token': {
+      id: '/reset-password/$token'
+      path: '/reset-password/$token'
+      fullPath: '/reset-password/$token'
+      preLoaderRoute: typeof ResetPasswordTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$projectId': {
@@ -283,6 +323,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   EmbedProjectIdRoute: EmbedProjectIdRoute,
   PProjectIdRoute: PProjectIdRoute,
+  ResetPasswordTokenRoute: ResetPasswordTokenRoute,
+  ResetPasswordIndexRoute: ResetPasswordIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiGenerateArchitectureRoute: ApiGenerateArchitectureRoute,
   ApiGenerateReadmeRoute: ApiGenerateReadmeRoute,

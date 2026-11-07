@@ -53,7 +53,9 @@ export async function isEmailAllowed(rawEmail?: string | null): Promise<boolean>
   return false
 }
 
-const defaultAuthUrl = process.env.BETTER_AUTH_URL || "https://motionslides.app";
+const defaultAuthUrl = process.env.BETTER_AUTH_URL || (
+  process.env.NODE_ENV !== 'production' ? 'http://localhost:3000' : 'https://motionslides.app'
+);
 
 const authUrlOrigin = (() => {
   try {
@@ -74,10 +76,16 @@ export const auth = betterAuth({
   baseURL: defaultAuthUrl,
   trustedOrigins: [
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://localhost:5173",
+    "https://motionslides.app",
+    "https://www.motionslides.app",
     ...authUrlOrigin,
     ...envOrigins,
   ],
+  advanced: {
+    trustedProxyHeaders: true,
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -123,6 +131,46 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    resetPasswordTokenExpiresIn: 60 * 60, // 1 hour
+    sendResetPassword: async ({ user, url, token }) => {
+      const resetUrl = url.startsWith('http') ? url : `${defaultAuthUrl}${url}`
+      console.log(`[Password Reset] Link for ${user.email}: ${resetUrl} (token: ${token})`)
+
+      if (process.env.RESEND_API_KEY) {
+        try {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: process.env.EMAIL_FROM || 'MotionSlides <auth@motionslides.app>',
+              to: [user.email],
+              subject: 'Reset your MotionSlides password',
+              html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #0a0a0c; color: #f4f4f5; border-radius: 16px; border: 1px solid #27272a;">
+                  <h2 style="font-size: 22px; font-weight: 700; color: #ffffff; margin-bottom: 12px;">Reset your MotionSlides password</h2>
+                  <p style="font-size: 14px; line-height: 1.6; color: #a1a1aa; margin-bottom: 24px;">
+                    We received a request to reset the password for <strong>${user.email}</strong>. Click the button below to choose a new password.
+                  </p>
+                  <p style="margin-bottom: 28px;">
+                    <a href="${resetUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block;">
+                      Reset Password
+                    </a>
+                  </p>
+                  <p style="font-size: 12px; color: #71717a; line-height: 1.5; border-top: 1px solid #27272a; padding-top: 20px;">
+                    If you didn't request a password reset, you can safely ignore this email. This link will expire in 1 hour.
+                  </p>
+                </div>
+              `,
+            }),
+          })
+        } catch (emailErr) {
+          console.error('[Password Reset Email Error]:', emailErr)
+        }
+      }
+    },
   },
   socialProviders: {
     google: {

@@ -85,7 +85,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       const params = new URLSearchParams(window.location.search)
       const error = params.get('error') || params.get('error_description')
       if (error) {
-        useEditorStore.getState().showToast(decodeURIComponent(error), 'error')
+        const decoded = decodeURIComponent(error)
+        let friendlyMessage = decoded
+        if (decoded === 'please_restart_the_process' || decoded === 'state_mismatch') {
+          friendlyMessage = 'Authentication session expired or origin mismatched. Please try signing in again.'
+        } else if (decoded === 'oauth_error') {
+          friendlyMessage = 'Social sign-in was cancelled or encountered an error. Please try again.'
+        }
+        useEditorStore.getState().showToast(friendlyMessage, 'error')
         const url = new URL(window.location.href)
         url.searchParams.delete('error')
         url.searchParams.delete('error_description')
