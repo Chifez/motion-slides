@@ -3,6 +3,7 @@ import { Sparkles, Trash2, GripVertical } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useEditorStore } from '@/store/editor-store'
+import { useIsMobile } from '@/hooks/use-media-query'
 import { LayerList } from './layer-list'
 
 interface SlideThumbProps {
@@ -26,7 +27,8 @@ export const SlideThumb = memo(function SlideThumb({
     const p = s.projects.find(p => p.id === s.activeProjectId)
     return p?.slides.find(sl => sl.id === slideId)
   })
-  const { updateSlide, setActiveSlide, duplicateSlide, deleteSlide } = useEditorStore()
+  const { updateSlide, setActiveSlide, duplicateSlide, deleteSlide, setMobileSlidesOpen } = useEditorStore()
+  const isMobile = useIsMobile()
 
   const {
     attributes,
@@ -50,7 +52,12 @@ export const SlideThumb = memo(function SlideThumb({
   const { name, background, elements } = slide
   const slideName = name || `Slide ${index + 1}`
 
-  const onSelect    = () => setActiveSlide(index)
+  const onSelect = () => {
+    setActiveSlide(index)
+    if (isMobile) {
+      setMobileSlidesOpen(false)
+    }
+  }
   const onDuplicate = () => duplicateSlide(index)
   const onDelete    = () => deleteSlide(index)
 

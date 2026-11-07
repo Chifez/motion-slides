@@ -22,10 +22,10 @@ export function DeckScoreBadge() {
         <button
           onClick={() => setIsOpen(true)}
           title="Deck Quality & Health (Empty Draft)"
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-(--ms-border) bg-(--ms-bg-base)/60 text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/40 transition-all cursor-pointer shadow-xs active:scale-[0.97]"
+          className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-medium border border-(--ms-border) bg-(--ms-bg-base)/60 text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/40 transition-all cursor-pointer shadow-xs active:scale-[0.97] shrink-0"
         >
-          <CircleDashed size={13} className="text-(--ms-text-muted) opacity-70" />
-          <span>Draft</span>
+          <CircleDashed size={13} className="text-(--ms-text-muted) opacity-70 shrink-0" />
+          <span className="hidden sm:inline">Draft</span>
         </button>
 
         {isOpen && <DeckCriticModal report={report} onClose={() => setIsOpen(false)} />}
@@ -64,14 +64,14 @@ export function DeckScoreBadge() {
       <button
         onClick={() => setIsOpen(true)}
         title="Deck Quality & Health Report"
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer shadow-xs active:scale-[0.97] ${getScoreStyle()}`}
+        className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer shadow-xs active:scale-[0.97] shrink-0 ${getScoreStyle()}`}
       >
         {getStatusIcon()}
         <span className="font-mono tabular-nums tracking-tight font-semibold">
           {score}
-          <span className="opacity-50 text-[10px] font-normal">/100</span>
+          <span className="hidden sm:inline opacity-50 text-[10px] font-normal">/100</span>
         </span>
-        <span className="text-[10px] font-bold tracking-wider px-1 py-0.2 rounded bg-white/10 opacity-90">
+        <span className="hidden sm:inline text-[10px] font-bold tracking-wider px-1 py-0.2 rounded bg-white/10 opacity-90">
           {report.grade}
         </span>
       </button>

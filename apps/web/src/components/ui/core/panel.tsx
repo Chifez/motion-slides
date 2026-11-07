@@ -35,12 +35,12 @@ export function Trigger({ children, asChild }: { children: React.ReactElement<an
   return <button onClick={() => onOpenChange(true)}>{children}</button>
 }
 
-export function Portal({ children, forceMount }: { children: React.ReactNode, forceMount?: boolean }) {
+export function Portal({ children, forceMount, className }: { children: React.ReactNode, forceMount?: boolean, className?: string }) {
   const { open } = usePanel()
   return (
     <AnimatePresence>
       {(open || forceMount) && (
-        <div className="fixed inset-0 z-[90] flex pointer-events-none">
+        <div className={cn("fixed inset-0 z-[120] flex pointer-events-none", className)}>
           {children}
         </div>
       )}

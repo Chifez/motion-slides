@@ -1,7 +1,7 @@
 import { memo, useState, useRef } from 'react'
 import {
   ChevronLeft, ChevronRight, MousePointer, Hand, Type, Layout, Code2,
-  Shapes, Minus, BarChart3, ChevronDown, Plus
+  Shapes, Minus, BarChart3, ChevronDown, Plus, LayoutGrid
 } from 'lucide-react'
 import { useEditorStore } from '@/store/editor-store'
 import { uuid } from '@/lib/uuid'
@@ -23,6 +23,8 @@ export const SlideNavigation = memo(function SlideNavigation() {
   const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
   const totalSlides = useEditorStore(s => s.activeProject()?.slides.length ?? 0)
   const setActiveSlide = useEditorStore(s => s.setActiveSlide)
+  const mobileSlidesOpen = useEditorStore(s => s.mobileSlidesOpen)
+  const setMobileSlidesOpen = useEditorStore(s => s.setMobileSlidesOpen)
   const zoom = useEditorStore(s => s.camera.zoom)
   const resetCamera = useEditorStore(s => s.resetCamera)
   const activeTool = useEditorStore(s => s.activeTool)
@@ -275,9 +277,19 @@ export const SlideNavigation = memo(function SlideNavigation() {
           <ChevronLeft size={15} />
         </button>
 
-        <span className="text-xs text-(--ms-text-muted) font-semibold min-w-[42px] text-center tracking-tight">
-          {activeSlideIndex + 1} / {totalSlides}
-        </span>
+        <button
+          onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
+          className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold tracking-tight transition cursor-pointer border-none ${
+            mobileSlidesOpen
+              ? 'bg-blue-600/20 text-blue-400'
+              : 'text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50 bg-transparent'
+          }`}
+          title="Toggle slide thumbnails & panel"
+          aria-label="Toggle slide panel"
+        >
+          <LayoutGrid size={13} className="shrink-0 opacity-80" />
+          <span>{activeSlideIndex + 1} / {totalSlides}</span>
+        </button>
 
         <button
           onClick={() => setActiveSlide(activeSlideIndex + 1)}

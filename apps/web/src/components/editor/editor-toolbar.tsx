@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Play, PenSquare, GitBranch, Film, Sparkles, MoreVertical, Settings, Download, Users, WifiOff, ChevronDown, Search, X, Plus, Loader2 } from 'lucide-react'
+import { ArrowLeft, Play, PenSquare, GitBranch, Film, Sparkles, MoreVertical, Settings, Download, Users, WifiOff, ChevronDown, Search, X, Plus, Loader2, Check, PanelLeft } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import { useEditorStore } from '@/store/editor-store'
 import { SettingsDropdown } from './toolbar/settings-dropdown'
@@ -97,7 +97,20 @@ export function EditorToolbar({ projectId }: Props) {
   const canShare = project ? (isAuthenticated && project.ownerId === user?.id && !isBranch) : false
 
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
+  const mobileMoreRef = useRef<HTMLDivElement>(null)
   const isMobile = useIsMobile()
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (mobileMoreRef.current && !mobileMoreRef.current.contains(event.target as Node)) {
+        setMobileMoreOpen(false)
+      }
+    }
+    if (mobileMoreOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [mobileMoreOpen])
 
   if (!project) return null
 
@@ -109,9 +122,9 @@ export function EditorToolbar({ projectId }: Props) {
           <span className="truncate">You are offline. Changes are saved locally and will sync when you reconnect.</span>
         </div>
       )}
-      <header className="h-14 shrink-0 flex items-center justify-between gap-2 px-3 md:px-4 bg-(--ms-bg-surface) border-b border-(--ms-border) z-50 transition-colors">
+      <header className="h-14 shrink-0 flex items-center justify-between gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 bg-(--ms-bg-surface) border-b border-(--ms-border) z-50 transition-colors">
         {/* Left Zone: Identity & Navigation */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink min-w-0">
           <Link
             to="/dashboard"
             onClick={() => syncProjects()}
@@ -124,10 +137,15 @@ export function EditorToolbar({ projectId }: Props) {
           {isMobile && (
             <button
               onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
-              className={`p-1.5 rounded-lg transition-colors border-none cursor-pointer shrink-0 ${mobileSlidesOpen ? 'bg-blue-600/20 text-blue-400' : 'text-(--ms-text-muted) hover:bg-(--ms-border)/50'}`}
-              title="Toggle Slides Panel"
+              className={`p-1.5 sm:p-2 rounded-lg transition-colors border-none cursor-pointer shrink-0 flex items-center justify-center ${
+                mobileSlidesOpen
+                  ? 'bg-blue-600/20 text-blue-400'
+                  : 'text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50'
+              }`}
+              title={mobileSlidesOpen ? 'Close Slides Panel' : 'Open Slides Panel'}
+              aria-label="Toggle Slides Panel"
             >
-              {mobileSlidesOpen ? <PenSquare size={16} /> : <Film size={16} />}
+              <PanelLeft size={16} />
             </button>
           )}
 
@@ -141,7 +159,7 @@ export function EditorToolbar({ projectId }: Props) {
             onChange={(event) => updateProjectName(projectId, event.target.value)}
             onBlur={(event) => { if (!event.target.value.trim()) updateProjectName(projectId, 'Untitled Deck') }}
             spellCheck={false}
-            className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-lg px-2 py-1 text-xs md:text-[13px] text-(--ms-text-primary) font-semibold w-[100px] sm:w-[130px] md:w-[160px] focus:outline-none transition truncate disabled:opacity-85 shrink-0"
+            className="bg-transparent border border-transparent hover:border-(--ms-border) focus:border-blue-500 focus:bg-(--ms-bg-base) rounded-lg px-1.5 py-1 text-xs md:text-[13px] text-(--ms-text-primary) font-semibold max-w-[85px] xs:max-w-[110px] sm:max-w-[140px] md:max-w-[170px] focus:outline-none transition truncate disabled:opacity-85 shrink"
           />
 
           {((!!project.forkedFromId) || (!!project.ownerId && !!user)) && (
@@ -283,9 +301,9 @@ export function EditorToolbar({ projectId }: Props) {
           )}
         </div>
 
-        {/* Center Zone: Workflow Mode Switcher */}
+        {/* Center Zone: Workflow Mode Switcher (Visible on Tablet & Desktop) */}
         {mode === 'edit' && (
-          <div className="flex items-center bg-(--ms-bg-base)/80 border border-(--ms-border) rounded-xl p-0.5 shadow-xs">
+          <div className="hidden md:flex items-center bg-(--ms-bg-base)/80 border border-(--ms-border) rounded-xl p-0.5 shadow-xs shrink-0">
             <button
               onClick={() => setEditorMode('design')}
               className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-lg transition cursor-pointer border-none ${editorMode === 'design'
@@ -318,22 +336,24 @@ export function EditorToolbar({ projectId }: Props) {
 
         {/* Right Zone: High-Value Actions */}
         {isMobile ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <DeckScoreBadge />
 
             <button
               id="tour-ai-chat-button"
               onClick={() => toggleChat()}
               title="AI Design Studio Chat"
-              className={`p-2 rounded-lg transition cursor-pointer border-none ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted)'}`}
+              className={`p-1.5 sm:p-2 rounded-lg transition cursor-pointer border-none shrink-0 ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
             >
               <Sparkles size={16} />
             </button>
 
-            <div className="relative">
+            <div className="relative shrink-0" ref={mobileMoreRef}>
               <button
-                className="p-2 rounded-lg bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors border-none cursor-pointer"
+                className="p-1.5 sm:p-2 rounded-lg bg-(--ms-bg-elevated) border border-(--ms-border) text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors border-none cursor-pointer shrink-0"
                 onClick={() => setMobileMoreOpen(!mobileMoreOpen)}
+                title="More options"
+                aria-label="More options"
               >
                 <MoreVertical size={16} />
               </button>
@@ -344,8 +364,61 @@ export function EditorToolbar({ projectId }: Props) {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute top-12 right-0 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-100 p-1.5 w-48"
+                    className="absolute top-11 right-0 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-100 p-2 w-56"
                   >
+                    {/* On screens < md, provide mode switcher here */}
+                    {mode === 'edit' && (
+                      <div className="md:hidden pb-2 mb-2 border-b border-(--ms-border)">
+                        <div className="text-[10px] font-semibold text-(--ms-text-muted) uppercase tracking-wider px-1 mb-1.5">
+                          Editor Mode
+                        </div>
+                        <div className="grid grid-cols-3 gap-1 bg-(--ms-bg-base) p-1 rounded-lg border border-(--ms-border)">
+                          <button
+                            onClick={() => {
+                              setEditorMode('design')
+                              setMobileMoreOpen(false)
+                            }}
+                            className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded text-[11px] font-medium transition border-none cursor-pointer ${
+                              editorMode === 'design'
+                                ? 'bg-(--ms-border-strong) text-(--ms-text-primary) shadow-xs'
+                                : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
+                            }`}
+                          >
+                            <PenSquare size={13} />
+                            <span>Design</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditorMode('prototype')
+                              setMobileMoreOpen(false)
+                            }}
+                            className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded text-[11px] font-medium transition border-none cursor-pointer ${
+                              editorMode === 'prototype'
+                                ? 'bg-(--ms-border-strong) text-blue-400 shadow-xs'
+                                : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
+                            }`}
+                          >
+                            <GitBranch size={13} />
+                            <span>Proto</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditorMode('timeline')
+                              setMobileMoreOpen(false)
+                            }}
+                            className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded text-[11px] font-medium transition border-none cursor-pointer ${
+                              editorMode === 'timeline'
+                                ? 'bg-(--ms-border-strong) text-purple-400 shadow-xs'
+                                : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
+                            }`}
+                          >
+                            <Film size={13} />
+                            <span>Time</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="space-y-0.5">
                       <div className="relative h-10 w-full flex items-center gap-2.5 px-3 rounded-lg hover:bg-(--ms-border) transition-colors">
                         <Settings size={16} className="text-(--ms-text-muted)" />
@@ -364,6 +437,25 @@ export function EditorToolbar({ projectId }: Props) {
                           <ShareMenu project={project} isMobile />
                         </div>
                       )}
+                      {((!!project.forkedFromId) || (!!project.ownerId && !!user)) && (
+                        <button
+                          onClick={() => {
+                            setMobileMoreOpen(false)
+                            useEditorStore.getState().toggleGitPanel()
+                          }}
+                          className="w-full h-10 flex items-center gap-2.5 px-3 rounded-lg hover:bg-(--ms-border) text-sm text-(--ms-text-secondary) hover:text-(--ms-text-primary) transition-colors border-none bg-transparent cursor-pointer text-left"
+                        >
+                          <GitBranch size={16} className="text-(--ms-text-muted)" />
+                          <span>Version Control (Git)</span>
+                        </button>
+                      )}
+                      <div className="w-full h-10 flex items-center justify-between px-3 rounded-lg hover:bg-(--ms-border) text-sm text-(--ms-text-secondary) transition-colors">
+                        <span className="flex items-center gap-2.5">
+                          <Sparkles size={16} className="text-(--ms-text-muted)" />
+                          <span>Appearance</span>
+                        </span>
+                        <ThemeToggle />
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -372,7 +464,7 @@ export function EditorToolbar({ projectId }: Props) {
 
             <button
               id="tour-present-button"
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer border-none shadow-sm"
+              className="inline-flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors cursor-pointer border-none shadow-sm shrink-0 active:scale-95"
               onClick={() => startPresentation()}
               title="Start Presentation"
             >

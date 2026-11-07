@@ -103,7 +103,7 @@ export function ExportDropdown({ isMobile }: { isMobile?: boolean }) {
           {!isMobile && <Download size={13} />} {!isMobile && !useIsMobile() && "Export"}
         </button>
         {open && (
-          <div className="absolute right-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-999 p-3 w-64 transition-colors">
+          <div className={isMobile ? "fixed inset-x-4 top-20 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-[110] p-4 transition-colors" : "absolute right-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-999 p-3 w-64 transition-colors"}>
             <div className="space-y-1 mb-3">
               <button
                 onClick={() => handleExportFormat('mp4')}

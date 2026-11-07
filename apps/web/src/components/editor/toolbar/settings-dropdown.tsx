@@ -59,7 +59,7 @@ export function SettingsDropdown({ isMobile }: { isMobile?: boolean }) {
         {!isMobile && <Settings size={13} />}
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-999 p-3 w-72 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <div className={isMobile ? "fixed inset-x-4 top-20 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-[110] p-4 max-h-[80vh] overflow-y-auto custom-scrollbar" : "absolute right-0 top-full mt-1.5 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg shadow-2xl z-999 p-3 w-72 max-h-[80vh] overflow-y-auto custom-scrollbar"}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-semibold text-(--ms-text-secondary) uppercase tracking-wider">Settings</span>
             <button onClick={() => setOpen(false)} className="p-0.5 rounded text-(--ms-text-muted) hover:text-(--ms-text-primary) bg-transparent border-none cursor-pointer">
