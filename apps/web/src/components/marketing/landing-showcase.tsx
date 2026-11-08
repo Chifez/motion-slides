@@ -716,7 +716,7 @@ export function LandingShowcase() {
         </div>
 
         {/* Center: element tool buttons */}
-        <div className="flex-1 flex items-center justify-center gap-1">
+        <div className="flex-1 hidden sm:flex items-center justify-center gap-1">
           {[
             { icon: <MousePointer2 size={12} />, active: true },
             { icon: <Type size={12} />, active: false },
@@ -754,9 +754,9 @@ export function LandingShowcase() {
       </div>
 
       {/* ── Main Body: sidebar + canvas + inspector ──────────────────────── */}
-      <div className="flex" style={{ height: 520 }}>
-        {/* ── Left: Slide Panel ──────────────────────────────────────────── */}
-        <aside className="w-[180px] shrink-0 flex flex-col bg-zinc-950 border-r border-zinc-800/70 overflow-hidden">
+      <div className="flex flex-col md:flex-row h-auto md:h-[520px]">
+        {/* ── Left: Slide Panel (hidden on mobile, full width on desktop) ──── */}
+        <aside className="hidden md:flex w-[180px] shrink-0 flex-col bg-zinc-950 border-r border-zinc-800/70 overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800/50">
             <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-600">
               Slides &amp; Layers
@@ -779,7 +779,7 @@ export function LandingShowcase() {
         </aside>
 
         {/* ── Center: Canvas ────────────────────────────────────────────── */}
-        <div className="flex-1 flex items-center justify-center bg-[#070708] relative overflow-hidden">
+        <div className="flex-1 flex items-center justify-center bg-[#070708] relative overflow-hidden aspect-[16/9] md:aspect-auto w-full h-[240px] xs:h-[280px] sm:h-[380px] md:h-full min-h-[220px]">
           {/* Subtle dot-grid */}
           <div
             className="absolute inset-0 pointer-events-none"
@@ -1108,8 +1108,8 @@ export function LandingShowcase() {
           </div>
         </div>
 
-        {/* ── Right: Inspector Panel ────────────────────────────────────── */}
-        <aside className="w-[180px] shrink-0 flex flex-col bg-zinc-950 border-l border-zinc-800/70 overflow-hidden">
+        {/* ── Right: Inspector Panel (hidden on mobile and tablet) ─────── */}
+        <aside className="hidden lg:flex w-[180px] shrink-0 flex-col bg-zinc-950 border-l border-zinc-800/70 overflow-hidden">
           {/* Header */}
           <div className="flex items-center px-3 py-2 border-b border-zinc-800/50 gap-2">
             <AlignCenter size={9} className="text-zinc-600 shrink-0" />
@@ -1191,6 +1191,26 @@ export function LandingShowcase() {
             </motion.div>
           </AnimatePresence>
         </aside>
+      </div>
+
+      {/* ── Mobile Slide Navigation Strip (visible only on mobile) ──── */}
+      <div className="md:hidden flex items-center justify-between px-3 py-1.5 border-t border-zinc-800/60 bg-zinc-950/90 overflow-x-auto gap-2">
+        <span className="text-[10px] text-zinc-500 font-medium shrink-0">Select slide:</span>
+        <div className="flex items-center gap-1.5 flex-1 justify-end">
+          {MOCK_SLIDES.map((slide, i) => (
+            <button
+              key={slide.id}
+              onClick={() => handleSlideClick(i)}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition cursor-pointer border shrink-0 active:scale-[0.97] ${
+                i === slideIndex
+                  ? "bg-blue-600/20 text-blue-400 border-blue-500/40"
+                  : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white"
+              }`}
+            >
+              Slide {i + 1}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Bottom status bar ────────────────────────────────────────────── */}

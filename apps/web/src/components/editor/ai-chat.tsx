@@ -50,6 +50,22 @@ export function AIChat() {
       try {
         const res = await executeAgentTool(toolName as AgentToolName, toolArgs)
         addToolOutput({ toolCallId: tc.toolCallId, tool: toolName, output: res })
+
+        // When AI generates or modifies slides/elements/diagrams, activate Deck Report
+        if ([
+          'synthesizeDeckFromDocument',
+          'generateDiagram',
+          'patchDiagram',
+          'addSlide',
+          'addSlideWithLayout',
+          'addShapeElement',
+          'addSectionElement',
+          'applyDeckTheme',
+          'harmonizeSlideStyles',
+          'auditPresentationQuality',
+        ].includes(toolName)) {
+          useEditorStore.getState().setHasAiGenerated(true)
+        }
       } catch (err) {
         addToolOutput({ toolCallId: tc.toolCallId, tool: toolName, state: 'output-error', errorText: String(err) })
       }

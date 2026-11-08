@@ -42,14 +42,29 @@ export const createAuthSlice: StateCreator<
 
   checkSession: async () => {
     set({ sessionStatus: 'loading' })
-    try {
-      const { data: session } = await authClient.getSession()
-      set({ 
-        user: session?.user ?? null,
-        sessionStatus: session?.user ? 'authenticated' : 'unauthenticated'
-      })
-    } catch (err) {
-      set({ user: null, sessionStatus: 'unauthenticated' })
+    let attempts = 0
+    while (attempts < 3) {
+      try {
+        const { data: session, error } = await authClient.getSession()
+        if (error && attempts < 2) {
+          attempts++
+          await new Promise((r) => setTimeout(r, 400 * attempts))
+          continue
+        }
+
+        set({ 
+          user: session?.user ?? null,
+          sessionStatus: session?.user ? 'authenticated' : 'unauthenticated'
+        })
+        return
+      } catch (err) {
+        attempts++
+        if (attempts < 3) {
+          await new Promise((r) => setTimeout(r, 400 * attempts))
+        } else {
+          set({ user: null, sessionStatus: 'unauthenticated' })
+        }
+      }
     }
   },
 

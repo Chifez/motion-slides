@@ -231,7 +231,20 @@ function ToolCallCard({ toolPart, pendingApproval, onApprove }: ToolCallCardProp
               <Loader2 size={11} className="text-blue-400 animate-spin" />
             )}
             {isSuccess && (
-              <Check size={12} className="text-emerald-400" />
+              <div className="flex items-center gap-1.5">
+                <Check size={12} className="text-emerald-400" />
+                {['synthesizeDeckFromDocument', 'generateDiagram', 'auditPresentationQuality'].includes(toolName) && (
+                  <button
+                    type="button"
+                    onClick={() => useEditorStore.getState().openCriticModal()}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 cursor-pointer active:scale-[0.97] transition-all ml-1"
+                    title="View Deck Quality Report"
+                  >
+                    <ShieldCheck size={10} />
+                    <span>Report</span>
+                  </button>
+                )}
+              </div>
             )}
             {isError && (
               <span className="flex items-center gap-1 text-red-400 text-[10px]">

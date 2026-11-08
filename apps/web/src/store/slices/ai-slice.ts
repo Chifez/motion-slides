@@ -26,6 +26,16 @@ export interface AISlice {
   /** Currently active chat thread ID */
   activeThreadId: string | null
   setActiveThreadId: (id: string | null) => void
+
+  /** Whether AI generation (slides, diagrams, themes) was performed on the current deck */
+  hasAiGenerated: boolean
+  setHasAiGenerated: (has: boolean) => void
+
+  /** Whether the Deck Quality / Critic modal is open */
+  isCriticModalOpen: boolean
+  setIsCriticModalOpen: (open: boolean) => void
+  openCriticModal: () => void
+  closeCriticModal: () => void
 }
 
 export const createAISlice: StateCreator<EditorState, [], [], AISlice> = (set) => ({
@@ -38,4 +48,12 @@ export const createAISlice: StateCreator<EditorState, [], [], AISlice> = (set) =
 
   activeThreadId: null,
   setActiveThreadId: (id) => set({ activeThreadId: id }),
+
+  hasAiGenerated: false,
+  setHasAiGenerated: (has: boolean) => set({ hasAiGenerated: has }),
+
+  isCriticModalOpen: false,
+  setIsCriticModalOpen: (open: boolean) => set({ isCriticModalOpen: open }),
+  openCriticModal: () => set({ isCriticModalOpen: true }),
+  closeCriticModal: () => set({ isCriticModalOpen: false }),
 })

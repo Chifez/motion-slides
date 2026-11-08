@@ -14,8 +14,8 @@ import {
   Sparkles,
   Move,
   ArrowRight,
-  CircleDashed,
-  Plus,
+  ChevronRight,
+  Sliders,
 } from 'lucide-react'
 import { useEditorStore } from '@/store/editor-store'
 import type { DeckEvaluationReport, DimensionKey } from '@/lib/agent/evaluation/evaluation-types'
@@ -34,22 +34,22 @@ const DIMENSION_CONFIG: Record<
   accessibility: {
     label: 'Contrast & Readability',
     icon: Eye,
-    description: 'WCAG AA 4.5:1 relative luminance',
+    description: 'WCAG AA 4.5:1 luminance standard',
   },
   visualDensity: {
     label: 'Spatial Layout & Bounds',
     icon: Layers,
-    description: '16:9 safe margins and collision physics',
+    description: '16:9 safe margins & bounding boxes',
   },
   typography: {
     label: 'Typography Hierarchy',
     icon: Type,
-    description: 'Word density and text scale balance',
+    description: 'Word density & text scale balance',
   },
   narrative: {
     label: 'Narrative Arc',
     icon: Sparkles,
-    description: 'Headline clarity and logical progression',
+    description: 'Headline clarity & slide progression',
   },
   motionAndFlow: {
     label: 'Motion & Magic Move',
@@ -68,15 +68,20 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
   const project = useEditorStore((s) => s.activeProject())
   const setActiveSlideIndex = useEditorStore((s) => s.setActiveSlideIndex)
   const activeProjectId = useEditorStore((s) => s.activeProjectId)
-  const toggleChat = useEditorStore((s) => s.toggleChat)
 
   useEffect(() => {
+    let ignore = false
     if (activeProjectId) {
-      getEvaluationHistory(activeProjectId).then(setHistory)
+      getEvaluationHistory(activeProjectId).then((data) => {
+        if (!ignore) setHistory(data)
+      })
+    }
+    return () => {
+      ignore = true
     }
   }, [activeProjectId])
 
-  // Handle ESC key to dismiss
+  // ESC key listener with explicit cleanup
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -104,7 +109,7 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
       const updatedHistory = await getEvaluationHistory(activeProjectId)
       setHistory(updatedHistory)
 
-      setFixSuccessMessage(`Applied ${result.actionsApplied.length} auto-remediation fix(es)`)
+      setFixSuccessMessage(`Auto-remediated ${result.actionsApplied.length} issue(s)`)
       setTimeout(() => setFixSuccessMessage(null), 3500)
     } catch (err) {
       console.error('[DeckCritic] Auto-fix error:', err)
@@ -118,20 +123,26 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
     onClose()
   }
 
-  const isEmpty = report.isEmptyDeck
   const totalFixable = [...report.criticalIssues, ...report.warningIssues].filter((i) => i.autoFixable).length
+  const totalIssuesCount = report.criticalIssues.length + report.warningIssues.length
+
+  const getGradeColor = (score: number) => {
+    if (score >= 85) return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25'
+    if (score >= 70) return 'text-amber-400 bg-amber-500/10 border-amber-500/25'
+    return 'text-rose-400 bg-rose-500/10 border-rose-500/25'
+  }
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+        {/* Backdrop overlay */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-md"
+          className="absolute inset-0 bg-black/60 backdrop-blur-xs"
         />
 
         {/* Modal Window */}
@@ -139,21 +150,28 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
           initial={{ opacity: 0, scale: 0.96, y: 8 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 8 }}
-          transition={{ type: 'spring', bounce: 0, duration: 0.25 }}
-          className="relative w-full max-w-xl bg-[#0f111a]/95 border border-white/[0.08] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.06)] rounded-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
+          transition={{ type: 'spring', bounce: 0, duration: 0.28 }}
+          className="relative w-full max-w-xl bg-(--ms-bg-elevated) border border-(--ms-border) shadow-2xl rounded-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-            <div>
-              <h2 className="text-sm font-semibold text-white tracking-tight">Presentation Health</h2>
-              <p className="text-xs text-white/40 mt-0.5">
-                {project ? project.name : 'Untitled Deck'} • {project?.slides.length ?? 0} slide(s)
-              </p>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-(--ms-border) bg-(--ms-bg-base)/40">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                <Sparkles size={16} />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-(--ms-text-primary) tracking-tight">
+                  Deck Quality & Health Report
+                </h2>
+                <p className="text-[11px] text-(--ms-text-muted) mt-0.5">
+                  {project?.name || 'Presentation Deck'} • {project?.slides.length ?? 0} slide(s) evaluated
+                </p>
+              </div>
             </div>
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer border-none bg-transparent active:scale-[0.95]"
+              className="p-1.5 rounded-lg text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent active:scale-[0.95]"
               title="Close (Esc)"
             >
               <X size={16} />
@@ -161,47 +179,49 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
           </div>
 
           {/* Segmented Tab Navigation */}
-          {!isEmpty && (
-            <div className="px-5 pt-3 pb-1 border-b border-white/[0.06] bg-white/[0.01]">
-              <div className="inline-flex items-center p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">
-                <button
-                  onClick={() => setActiveTab('overview')}
-                  className={`relative px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer border-none ${
-                    activeTab === 'overview' ? 'text-white' : 'text-white/50 hover:text-white/80 bg-transparent'
-                  }`}
-                >
-                  {activeTab === 'overview' && (
-                    <motion.div
-                      layoutId="critic-tab-pill"
-                      transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
-                      className="absolute inset-0 rounded-md bg-white/[0.12] shadow-xs"
-                    />
-                  )}
-                  <span className="relative z-10">Scorecard</span>
-                </button>
+          <div className="px-5 pt-3 pb-1 border-b border-(--ms-border) bg-(--ms-bg-base)/20">
+            <div className="inline-flex items-center p-0.5 rounded-lg bg-(--ms-bg-base) border border-(--ms-border)">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`relative px-3.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer border-none ${
+                  activeTab === 'overview'
+                    ? 'text-(--ms-text-primary)'
+                    : 'text-(--ms-text-muted) hover:text-(--ms-text-secondary) bg-transparent'
+                }`}
+              >
+                {activeTab === 'overview' && (
+                  <motion.div
+                    layoutId="critic-tab-pill"
+                    transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
+                    className="absolute inset-0 rounded-md bg-(--ms-bg-surface) shadow-xs border border-(--ms-border-strong)"
+                  />
+                )}
+                <span className="relative z-10">Quality Scorecard</span>
+              </button>
 
-                <button
-                  onClick={() => setActiveTab('history')}
-                  className={`relative px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer border-none flex items-center gap-1.5 ${
-                    activeTab === 'history' ? 'text-white' : 'text-white/50 hover:text-white/80 bg-transparent'
-                  }`}
-                >
-                  {activeTab === 'history' && (
-                    <motion.div
-                      layoutId="critic-tab-pill"
-                      transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
-                      className="absolute inset-0 rounded-md bg-white/[0.12] shadow-xs"
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-1">
-                    History {history.length > 0 && <span className="text-[10px] opacity-60">({history.length})</span>}
-                  </span>
-                </button>
-              </div>
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`relative px-3.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer border-none flex items-center gap-1.5 ${
+                  activeTab === 'history'
+                    ? 'text-(--ms-text-primary)'
+                    : 'text-(--ms-text-muted) hover:text-(--ms-text-secondary) bg-transparent'
+                }`}
+              >
+                {activeTab === 'history' && (
+                  <motion.div
+                    layoutId="critic-tab-pill"
+                    transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
+                    className="absolute inset-0 rounded-md bg-(--ms-bg-surface) shadow-xs border border-(--ms-border-strong)"
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1">
+                  History {history.length > 0 && <span className="text-[10px] opacity-60">({history.length})</span>}
+                </span>
+              </button>
             </div>
-          )}
+          </div>
 
-          {/* Content Area */}
+          {/* Body Content */}
           <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
             {fixSuccessMessage && (
               <motion.div
@@ -215,71 +235,93 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
               </motion.div>
             )}
 
-            {isEmpty ? (
-              /* Empty Canvas State */
-              <div className="py-12 px-4 text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto text-white/40">
-                  <CircleDashed size={24} className="animate-spin-slow" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-white">Canvas is Empty</h3>
-                  <p className="text-xs text-white/40 max-w-sm mx-auto leading-relaxed">
-                    This deck is currently a blank draft. Add shapes, architecture diagrams, or synthesize slides with AI to evaluate contrast, spatial layout, and flow.
-                  </p>
-                </div>
-                <div className="pt-2">
-                  <button
-                    onClick={() => {
-                      onClose()
-                      toggleChat()
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all cursor-pointer border-none shadow-sm active:scale-[0.98]"
-                  >
-                    <Sparkles size={13} />
-                    <span>Open AI Copilot</span>
-                  </button>
-                </div>
-              </div>
-            ) : activeTab === 'overview' ? (
+            {activeTab === 'overview' ? (
               <>
-                {/* Score Summary Card */}
-                <div className="grid grid-cols-3 gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                  <div className="col-span-1 flex flex-col items-center justify-center border-r border-white/[0.06] pr-4">
-                    <div className="text-3xl font-extrabold font-mono text-white tracking-tight tabular-nums">
-                      {report.overallScore}
-                      <span className="text-xs font-normal text-white/30 ml-0.5">/100</span>
+                {/* Score Summary Hero Card */}
+                <div className="p-4 rounded-xl bg-(--ms-bg-surface) border border-(--ms-border) flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-center justify-center min-w-[72px]">
+                      <span className="text-3xl font-extrabold font-mono tracking-tight text-(--ms-text-primary) tabular-nums">
+                        {report.overallScore}
+                      </span>
+                      <span className="text-[10px] font-mono text-(--ms-text-muted)">out of 100</span>
                     </div>
-                    <div className="text-[11px] font-semibold text-blue-400 mt-1 uppercase tracking-wider">
-                      Grade {report.grade}
+
+                    <div className="h-10 w-px bg-(--ms-border) hidden sm:block" />
+
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider border ${getGradeColor(report.overallScore)}`}>
+                          Grade {report.grade}
+                        </span>
+                        <span className="text-xs font-semibold text-(--ms-text-primary)">
+                          {report.overallScore >= 85
+                            ? 'Ready for Presentation'
+                            : report.overallScore >= 70
+                            ? 'Good Baseline • Minor Adjustments'
+                            : 'Review Required'}
+                        </span>
+                      </div>
+                      <p className="text-[11.5px] text-(--ms-text-muted) mt-1">
+                        {totalIssuesCount === 0
+                          ? 'Zero contrast, collision, or layout issues found.'
+                          : `${totalIssuesCount} issue(s) detected across ${project?.slides.length || 0} slide(s).`}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="col-span-2 space-y-2 pl-2">
+                  {totalFixable > 0 && (
+                    <button
+                      onClick={handleAutoFixAll}
+                      disabled={isRemediating}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all cursor-pointer border-none shadow-xs active:scale-[0.97] disabled:opacity-50 shrink-0"
+                    >
+                      <Wand2 size={13} />
+                      <span>{isRemediating ? 'Remediating...' : `Auto-Fix (${totalFixable})`}</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Dimension Breakdown */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-(--ms-text-muted)">
+                    <Sliders size={11} />
+                    <span>Evaluation Dimensions</span>
+                  </div>
+
+                  <div className="space-y-2">
                     {(Object.entries(report.dimensions) as [DimensionKey, any][]).map(([key, dim]) => {
                       const config = DIMENSION_CONFIG[key]
                       const Icon = config.icon
+                      const isHigh = dim.score >= 85
+                      const isMid = dim.score >= 70
+
                       return (
-                        <div key={key} className="space-y-1">
-                          <div className="flex justify-between text-xs items-center">
-                            <span className="text-white/60 flex items-center gap-1.5 font-medium">
-                              <Icon size={12} className="text-white/40" />
+                        <div
+                          key={key}
+                          className="p-2.5 rounded-xl bg-(--ms-bg-base)/60 border border-(--ms-border)/70 space-y-1.5"
+                        >
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="flex items-center gap-2 font-medium text-(--ms-text-primary)">
+                              <Icon size={13} className="text-(--ms-text-muted)" />
                               <span>{config.label}</span>
                             </span>
-                            <span className="font-mono text-[11px] tabular-nums font-semibold text-white/80">
+                            <span className="font-mono text-[11px] tabular-nums font-semibold text-(--ms-text-primary)">
                               {dim.score}%
                             </span>
                           </div>
-                          <div className="w-full h-1 rounded-full bg-white/[0.06] overflow-hidden">
+
+                          <div className="w-full h-1.5 rounded-full bg-(--ms-border) overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all duration-300 ${
-                                dim.score >= 85
-                                  ? 'bg-emerald-400'
-                                  : dim.score >= 70
-                                  ? 'bg-amber-400'
-                                  : 'bg-rose-400'
+                                isHigh ? 'bg-emerald-400' : isMid ? 'bg-amber-400' : 'bg-rose-400'
                               }`}
                               style={{ width: `${dim.score}%` }}
                             />
+                          </div>
+
+                          <div className="text-[10px] text-(--ms-text-muted)">
+                            {config.description}
                           </div>
                         </div>
                       )
@@ -288,55 +330,51 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
                 </div>
 
                 {/* Issues List */}
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-white/50 tracking-wide uppercase">
-                      Issues ({report.criticalIssues.length + report.warningIssues.length})
-                    </h3>
-
-                    {totalFixable > 0 && (
-                      <button
-                        onClick={handleAutoFixAll}
-                        disabled={isRemediating}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition-all cursor-pointer border-none shadow-xs active:scale-[0.98] disabled:opacity-50"
-                      >
-                        <Wand2 size={12} />
-                        <span>{isRemediating ? 'Fixing...' : `Auto-Fix (${totalFixable})`}</span>
-                      </button>
-                    )}
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-(--ms-text-muted)">
+                      Detected Issues ({totalIssuesCount})
+                    </span>
                   </div>
 
-                  {report.criticalIssues.length === 0 && report.warningIssues.length === 0 ? (
-                    <div className="p-5 text-center rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-1">
-                      <ShieldCheck size={22} className="mx-auto text-emerald-400" />
-                      <div className="text-xs font-semibold text-white">No Issues Detected</div>
-                      <p className="text-[11px] text-white/40">All elements comply with contrast, bounds, and layout rules.</p>
+                  {totalIssuesCount === 0 ? (
+                    <div className="p-6 text-center rounded-xl bg-(--ms-bg-surface) border border-(--ms-border) space-y-1.5">
+                      <ShieldCheck size={26} className="mx-auto text-emerald-400" />
+                      <div className="text-xs font-semibold text-(--ms-text-primary)">All Standards Passed</div>
+                      <p className="text-[11px] text-(--ms-text-muted)">
+                        All slides satisfy WCAG AA contrast, spatial boundaries, and element alignment.
+                      </p>
                     </div>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {report.criticalIssues.map((issue) => (
                         <div
                           key={issue.id}
-                          className="flex items-start justify-between p-3 rounded-xl bg-rose-500/[0.07] border border-rose-500/15 text-xs text-rose-300 transition-colors"
+                          className="flex items-start justify-between p-3 rounded-xl bg-rose-500/[0.06] border border-rose-500/20 text-xs transition-colors"
                         >
                           <div className="flex items-start gap-2.5 pr-2">
-                            <AlertCircle size={14} className="text-rose-400 mt-0.5 shrink-0" />
+                            <AlertCircle size={15} className="text-rose-400 mt-0.5 shrink-0" />
                             <div className="space-y-0.5">
-                              <div className="font-medium text-rose-200">
-                                Slide {issue.slideIndex + 1}: {issue.message}
+                              <div className="flex items-center gap-2">
+                                <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-mono text-[10px] font-bold">
+                                  Slide {issue.slideIndex + 1}
+                                </span>
+                                <span className="font-semibold text-rose-200">
+                                  {issue.message}
+                                </span>
                               </div>
-                              <div className="text-[11px] text-rose-300/60 font-normal">
+                              <p className="text-[11px] text-rose-300/70 font-normal">
                                 {issue.suggestedFix}
-                              </div>
+                              </p>
                             </div>
                           </div>
 
                           <button
                             onClick={() => handleJumpToSlide(issue.slideIndex)}
-                            title="Jump to slide"
+                            title={`Jump to Slide ${issue.slideIndex + 1}`}
                             className="p-1 rounded-md hover:bg-rose-500/20 text-rose-300 transition-colors cursor-pointer border-none bg-transparent shrink-0 active:scale-[0.95]"
                           >
-                            <ArrowRight size={13} />
+                            <ArrowRight size={14} />
                           </button>
                         </div>
                       ))}
@@ -344,26 +382,31 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
                       {report.warningIssues.map((issue) => (
                         <div
                           key={issue.id}
-                          className="flex items-start justify-between p-3 rounded-xl bg-amber-500/[0.06] border border-amber-500/15 text-xs text-amber-300 transition-colors"
+                          className="flex items-start justify-between p-3 rounded-xl bg-amber-500/[0.06] border border-amber-500/20 text-xs transition-colors"
                         >
                           <div className="flex items-start gap-2.5 pr-2">
-                            <AlertTriangle size={14} className="text-amber-400 mt-0.5 shrink-0" />
+                            <AlertTriangle size={15} className="text-amber-400 mt-0.5 shrink-0" />
                             <div className="space-y-0.5">
-                              <div className="font-medium text-amber-200">
-                                Slide {issue.slideIndex + 1}: {issue.message}
+                              <div className="flex items-center gap-2">
+                                <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold">
+                                  Slide {issue.slideIndex + 1}
+                                </span>
+                                <span className="font-semibold text-amber-200">
+                                  {issue.message}
+                                </span>
                               </div>
-                              <div className="text-[11px] text-amber-300/60 font-normal">
+                              <p className="text-[11px] text-amber-300/70 font-normal">
                                 {issue.suggestedFix}
-                              </div>
+                              </p>
                             </div>
                           </div>
 
                           <button
                             onClick={() => handleJumpToSlide(issue.slideIndex)}
-                            title="Jump to slide"
+                            title={`Jump to Slide ${issue.slideIndex + 1}`}
                             className="p-1 rounded-md hover:bg-amber-500/20 text-amber-300 transition-colors cursor-pointer border-none bg-transparent shrink-0 active:scale-[0.95]"
                           >
-                            <ArrowRight size={13} />
+                            <ArrowRight size={14} />
                           </button>
                         </div>
                       ))}
@@ -375,37 +418,39 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
               /* History Tab */
               <div className="space-y-2">
                 {history.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-white/30">
+                  <div className="py-12 text-center text-xs text-(--ms-text-muted)">
                     No prior evaluation snapshots recorded for this deck.
                   </div>
                 ) : (
                   history.map((run, idx) => (
                     <div
                       key={run.runId || idx}
-                      className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-xs hover:bg-white/[0.04] transition-colors"
+                      className="flex items-center justify-between p-3 rounded-xl bg-(--ms-bg-surface) border border-(--ms-border) text-xs hover:border-(--ms-border-strong) transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs tabular-nums ${
-                            run.overallScore >= 85
-                              ? 'bg-emerald-500/15 text-emerald-400'
-                              : run.overallScore >= 70
-                              ? 'bg-amber-500/15 text-amber-400'
-                              : 'bg-rose-500/15 text-rose-400'
-                          }`}
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center font-mono font-bold text-xs tabular-nums border ${getGradeColor(
+                            run.overallScore
+                          )}`}
                         >
                           {run.overallScore}
                         </div>
                         <div>
-                          <div className="font-medium text-white">Grade {run.grade}</div>
-                          <div className="text-[11px] text-white/40 flex items-center gap-1.5 mt-0.5 font-mono">
+                          <div className="font-semibold text-(--ms-text-primary)">
+                            Grade {run.grade}
+                          </div>
+                          <div className="text-[11px] text-(--ms-text-muted) flex items-center gap-1.5 mt-0.5 font-mono">
                             <Clock size={11} />
-                            {new Date(run.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} • {run.triggeredBy}
+                            {new Date(run.timestamp).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                            })} • {run.triggeredBy}
                           </div>
                         </div>
                       </div>
 
-                      <div className="text-right text-[11px] font-mono text-white/40">
+                      <div className="text-right text-[11px] font-mono text-(--ms-text-muted)">
                         {run.criticalIssues.length} critical • {run.warningIssues.length} warnings
                       </div>
                     </div>

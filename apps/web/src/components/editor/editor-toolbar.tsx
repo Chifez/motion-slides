@@ -495,7 +495,7 @@ export function EditorToolbar({ projectId }: Props) {
             <ExportDropdown />
             {canShare && <ShareMenu project={project} />}
             <ThemeToggle />
-            <UserMenu dashboard />
+            <UserMenu />
 
             {/* Hero CTA: Present */}
             <button
