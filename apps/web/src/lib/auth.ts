@@ -85,6 +85,21 @@ export const auth = betterAuth({
   ],
   advanced: {
     trustedProxyHeaders: true,
+    useSecureCookies: process.env.NODE_ENV === 'production' || defaultAuthUrl.startsWith('https://'),
+    ...(process.env.NODE_ENV === 'production'
+      ? {
+          crossSubDomainCookies: {
+            enabled: true,
+            domain: ".motionslides.app",
+          },
+        }
+      : {}),
+  },
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google", "github"],
+    },
   },
   database: drizzleAdapter(db, {
     provider: "pg",

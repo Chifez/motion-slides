@@ -26,6 +26,7 @@ const config = defineConfig({
           compatibility_flags: ['nodejs_compat', 'new_module_registry'],
           vars: {
             BETTER_AUTH_URL: 'https://motionslides.app',
+            BETTER_AUTH_TRUSTED_ORIGINS: 'https://motionslides.app,https://www.motionslides.app',
           },
         },
       },
