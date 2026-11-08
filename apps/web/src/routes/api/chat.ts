@@ -136,9 +136,9 @@ export const Route = createFileRoute('/api/chat')({
 
         if (session?.user?.id) {
           try {
-            userRecord = await db.query.user.findFirst({
+            userRecord = (await db.query.user.findFirst({
               where: eq(user.id, session.user.id),
-            })
+            })) ?? null
             if (userRecord?.encryptedOpenAIKey) {
               const decrypted = decrypt(userRecord.encryptedOpenAIKey)
               if (decrypted) {
@@ -232,7 +232,7 @@ export const Route = createFileRoute('/api/chat')({
           onFinish: async ({ usage }) => {
             // Only deduct from balance if user is logged in and NOT using their own BYOK key
             if (!isBYOK && userId) {
-              const tokensUsed = (usage?.promptTokens || 0) + (usage?.completionTokens || 0)
+              const tokensUsed = (usage?.inputTokens || 0) + (usage?.outputTokens || 0)
               if (tokensUsed > 0) {
                 try {
                   const latestUser = await db.query.user.findFirst({
