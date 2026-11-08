@@ -201,11 +201,12 @@ export const Route = createFileRoute('/api/chat')({
             )
           }
 
-          const tokenBalance = userRecord?.tokenBalance ?? 100000
+          const defaultQuota = Number(process.env.DEFAULT_TOKEN_QUOTA || 100000)
+          const tokenBalance = userRecord?.tokenBalance ?? defaultQuota
           if (tokenBalance <= 0) {
             return new Response(
               JSON.stringify({
-                error: 'Monthly AI token quota exceeded (100,000 tokens). Add your own OpenAI or Anthropic API key in Settings for unlimited access.',
+                error: `Monthly AI token quota exceeded (${defaultQuota.toLocaleString()} tokens). Add your own OpenAI or Anthropic API key in Settings for unlimited access.`,
               }),
               { status: 429, headers: { 'Content-Type': 'application/json' } }
             )
@@ -237,7 +238,8 @@ export const Route = createFileRoute('/api/chat')({
                   const latestUser = await db.query.user.findFirst({
                     where: eq(user.id, userId),
                   })
-                  const currentBalance = latestUser?.tokenBalance ?? 100000
+                  const defaultQuota = Number(process.env.DEFAULT_TOKEN_QUOTA || 100000)
+                  const currentBalance = latestUser?.tokenBalance ?? defaultQuota
                   await db.update(user)
                     .set({ tokenBalance: Math.max(0, currentBalance - tokensUsed) })
                     .where(eq(user.id, userId))

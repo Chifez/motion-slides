@@ -39,7 +39,8 @@ async function interceptAIAction(actionFn: (keys: { openai: string; elevenlabs: 
   const decryptedElevenLabsKey = userRecord.encryptedElevenLabsKey ? decrypt(userRecord.encryptedElevenLabsKey) : null
 
   const userHasCustomKey = !!decryptedOpenAIKey || !!decryptedAnthropicKey
-  const userBalance = userRecord.tokenBalance ?? 0
+  const envQuota = process.env.DEFAULT_TOKEN_QUOTA ? Number(process.env.DEFAULT_TOKEN_QUOTA) : 100000
+  const userBalance = userRecord.tokenBalance ?? envQuota
 
   if (!userHasCustomKey && userBalance < cost) {
     throw new Error('Monthly quota exceeded. Please add your own API key in Settings.')
@@ -176,8 +177,11 @@ export const getUserQuotaAction = createServerFn({ method: 'GET' })
       throw new Error('User not found')
     }
 
+    const envQuota = process.env.DEFAULT_TOKEN_QUOTA ? Number(process.env.DEFAULT_TOKEN_QUOTA) : null
+    const tokenQuota = envQuota ?? userRecord.tokenQuota ?? 100000
+
     return {
-      tokenQuota: userRecord.tokenQuota,
-      tokenBalance: userRecord.tokenBalance,
+      tokenQuota,
+      tokenBalance: userRecord.tokenBalance ?? tokenQuota,
     }
   })

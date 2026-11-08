@@ -4,14 +4,16 @@ import { pgTable, text, timestamp, boolean, jsonb, bigint, doublePrecision } fro
 // Authentication Tables (Better-auth)
 // ─────────────────────────────────────────────
 
+export const DEFAULT_TOKEN_QUOTA = Number(process.env.DEFAULT_TOKEN_QUOTA || 100000)
+
 export const user = pgTable('user', {
   id:            text('id').primaryKey(),
   name:          text('name').notNull(),
   email:         text('email').notNull().unique(),
   emailVerified: boolean('emailVerified').notNull(),
   image:         text('image'),
-  tokenQuota:    bigint('tokenQuota', { mode: 'number' }).notNull().default(100000),
-  tokenBalance:  bigint('tokenBalance', { mode: 'number' }).notNull().default(100000),
+  tokenQuota:    bigint('tokenQuota', { mode: 'number' }).notNull().default(DEFAULT_TOKEN_QUOTA),
+  tokenBalance:  bigint('tokenBalance', { mode: 'number' }).notNull().default(DEFAULT_TOKEN_QUOTA),
   encryptedOpenAIKey: text('encryptedOpenAIKey'),
   encryptedAnthropicKey: text('encryptedAnthropicKey'),
   encryptedElevenLabsKey: text('encryptedElevenLabsKey'),
