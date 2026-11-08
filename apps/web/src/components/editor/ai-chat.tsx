@@ -35,7 +35,7 @@ export function AIChat() {
   const [threads, setThreads] = useState<ChatThread[]>([])
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
 
-  const { messages, setMessages, sendMessage, status, stop, addToolOutput } = useChat({
+  const { messages, setMessages, sendMessage, status, stop, addToolOutput, error } = useChat({
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     onToolCall: async ({ toolCall }) => {
       const tc = toolCall as unknown as { toolCallId: string; toolName: string; args?: any; input?: any }
@@ -313,6 +313,13 @@ export function AIChat() {
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse [animation-delay:300ms]" />
                 </div>
                 <span className="text-[10px] text-(--ms-text-muted) uppercase tracking-widest font-semibold">Generating…</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="mx-1 my-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex flex-col gap-1">
+                <span className="font-semibold text-red-200">AI Assistant Alert</span>
+                <span className="text-[11px] leading-relaxed">{error.message || 'An error occurred during generation.'}</span>
               </div>
             )}
 

@@ -13,6 +13,7 @@ export const user = pgTable('user', {
   tokenQuota:    bigint('tokenQuota', { mode: 'number' }).notNull().default(100000),
   tokenBalance:  bigint('tokenBalance', { mode: 'number' }).notNull().default(100000),
   encryptedOpenAIKey: text('encryptedOpenAIKey'),
+  encryptedAnthropicKey: text('encryptedAnthropicKey'),
   encryptedElevenLabsKey: text('encryptedElevenLabsKey'),
   createdAt:     timestamp('createdAt').notNull(),
   updatedAt:     timestamp('updatedAt').notNull(),

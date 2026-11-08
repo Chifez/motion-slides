@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { X, Key, Database, RefreshCw } from 'lucide-react'
+import { X, Key, Database, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { updateAPIKeysAction, getUserQuotaAction } from '@/lib/actions/ai-studio'
+import { updateAPIKeysAction, getUserQuotaAction, getUserKeysStatusAction } from '@/lib/actions/ai-studio'
 import { useEditorStore } from '@/store/editor-store'
 
 interface Props {
@@ -12,29 +12,42 @@ interface Props {
 export function SettingsModal({ isOpen, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<'api-keys' | 'quota'>('api-keys')
   const [openAIKey, setOpenAIKey] = useState('')
+  const [anthropicKey, setAnthropicKey] = useState('')
   const [elevenLabsKey, setElevenLabsKey] = useState('')
+  const [keyStatus, setKeyStatus] = useState<{ hasOpenAI: boolean; hasAnthropic: boolean; hasElevenLabs: boolean } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const [quota, setQuota] = useState<{ tokenQuota: number; tokenBalance: number } | null>(null)
   
   const user = useEditorStore(s => s.user)
 
   useEffect(() => {
-    if (!isOpen || activeTab !== 'quota') return
+    if (!isOpen) return
 
     let ignore = false
 
-    getUserQuotaAction()
-      .then(res => { if (!ignore) setQuota(res) })
-      .catch(console.error)
+    if (activeTab === 'quota') {
+      getUserQuotaAction()
+        .then(res => { if (!ignore) setQuota(res) })
+        .catch(console.error)
+    } else {
+      getUserKeysStatusAction()
+        .then(res => { if (!ignore) setKeyStatus(res) })
+        .catch(console.error)
+    }
 
     return () => { ignore = true }
   }, [isOpen, activeTab])
 
   const handleSaveKeys = async () => {
     setIsSaving(true)
+    setSaveSuccess(false)
     try {
-      await updateAPIKeysAction({ data: { openAIKey, elevenLabsKey } })
-      // In a real app we'd show a success toast here
+      await updateAPIKeysAction({ data: { openAIKey, anthropicKey, elevenLabsKey } })
+      setSaveSuccess(true)
+      const updated = await getUserKeysStatusAction()
+      setKeyStatus(updated)
+      setTimeout(() => setSaveSuccess(false), 3000)
     } catch (e) {
       alert('Failed to save API keys')
     }
@@ -100,28 +113,67 @@ export function SettingsModal({ isOpen, onClose }: Props) {
                   </div>
                   
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-(--ms-text-secondary)">OpenAI API Key</label>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-(--ms-text-secondary)">OpenAI API Key (GPT-4o)</label>
+                        {keyStatus?.hasOpenAI && (
+                          <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                            <CheckCircle2 size={11} /> Saved
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="password"
-                        placeholder="sk-..."
+                        placeholder={keyStatus?.hasOpenAI ? "•••••••••••••••• (Leave blank to keep current)" : "sk-..."}
                         value={openAIKey}
                         onChange={e => setOpenAIKey(e.target.value)}
                         className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg px-3 py-2 text-sm text-(--ms-text-primary) focus:border-blue-500 focus:outline-none transition-colors"
                       />
                     </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-(--ms-text-secondary)">ElevenLabs API Key</label>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-(--ms-text-secondary)">Anthropic API Key (Claude 3.5 Sonnet)</label>
+                        {keyStatus?.hasAnthropic && (
+                          <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                            <CheckCircle2 size={11} /> Saved
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="password"
-                        placeholder="sk_..."
+                        placeholder={keyStatus?.hasAnthropic ? "•••••••••••••••• (Leave blank to keep current)" : "sk-ant-..."}
+                        value={anthropicKey}
+                        onChange={e => setAnthropicKey(e.target.value)}
+                        className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg px-3 py-2 text-sm text-(--ms-text-primary) focus:border-blue-500 focus:outline-none transition-colors"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-(--ms-text-secondary)">ElevenLabs API Key (Voiceover)</label>
+                        {keyStatus?.hasElevenLabs && (
+                          <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                            <CheckCircle2 size={11} /> Saved
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="password"
+                        placeholder={keyStatus?.hasElevenLabs ? "•••••••••••••••• (Leave blank to keep current)" : "sk_..."}
                         value={elevenLabsKey}
                         onChange={e => setElevenLabsKey(e.target.value)}
                         className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg px-3 py-2 text-sm text-(--ms-text-primary) focus:border-blue-500 focus:outline-none transition-colors"
                       />
                     </div>
                   </div>
+
+                  {saveSuccess && (
+                    <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
+                      <CheckCircle2 size={14} className="shrink-0" />
+                      <span>API keys updated and encrypted securely.</span>
+                    </div>
+                  )}
 
                   <button
                     onClick={handleSaveKeys}

@@ -64,15 +64,20 @@ Unless the user explicitly requests custom colors or a light theme in their prom
 - **Animations**: \`fade-in\`, \`slide-up\`, \`slide-left\`, \`zoom-in\`, \`pop\`, \`draw\` (exclusive to line elements), \`none\`
 - **Transitions**: \`magic-move\` (signature morph effect), \`slide-left\`, \`slide-right\`, \`slide-up\`, \`slide-down\`, \`fade\`, \`zoom\`, \`flip\``
 
-// Model IDs served locally by Ollama or accelerated in production via Groq / Cloudflare Workers AI
+// Model IDs served locally by Ollama or accelerated in production via Groq
 const OPEN_SOURCE_MODELS = new Set([
   'llama3.2', 'llama3.2:3b', 'llama3.1', 'llama3.1:8b', 'llama3.1:70b', 'llama3.3',
   'mistral', 'mistral:7b', 'qwen2.5', 'gemma3', 'phi4', 'deepseek-r1',
 ])
 
-function resolveProvider(modelId: string, openaiKey: string, anthropicKey: string) {
+interface ResolvedModel {
+  model: any
+  provider: 'groq' | 'ollama' | 'anthropic' | 'openai'
+}
+
+function resolveProvider(modelId: string, openaiKey: string, anthropicKey: string): ResolvedModel {
   if (OPEN_SOURCE_MODELS.has(modelId)) {
-    // 1. Production High-Speed: Groq (ultra-fast 300+ tok/s inference with OpenAI-compatible tool calling)
+    // 1. Production High-Speed: Groq (ultra-fast inference with tool calling)
     if (process.env.GROQ_API_KEY) {
       const groqProvider = createOpenAI({
         baseURL: 'https://api.groq.com/openai/v1',
@@ -87,44 +92,32 @@ function resolveProvider(modelId: string, openaiKey: string, anthropicKey: strin
         'mistral': 'openai/gpt-oss-120b',
       }
       const targetModel = groqModelMap[modelId] || 'openai/gpt-oss-120b'
-      return groqProvider(targetModel)
+      return { model: groqProvider(targetModel), provider: 'groq' }
     }
 
-    // 2. Production Edge: Cloudflare Workers AI OpenAI-compatible endpoint
-    if (process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_AI_TOKEN) {
-      const cfProvider = createOpenAI({
-        baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
-        apiKey: process.env.CLOUDFLARE_AI_TOKEN,
-      })
-      const cfModelMap: Record<string, string> = {
-        'llama3.2': '@cf/meta/llama-3.3-70b-instruct',
-        'llama3.2:3b': '@cf/meta/llama-3.2-3b-instruct',
-        'llama3.1': '@cf/meta/llama-3.1-8b-instruct',
-        'llama3.3': '@cf/meta/llama-3.3-70b-instruct',
-        'qwen2.5': '@cf/qwen/qwen2.5-7b-instruct',
-        'mistral': '@cf/mistral/mistral-7b-instruct-v0.2',
-      }
-      const targetModel = cfModelMap[modelId] || '@cf/meta/llama-3.3-70b-instruct'
-      return cfProvider(targetModel)
-    }
-
-    // 3. Local Development: Local Ollama daemon (localhost:11434)
+    // 2. Local Development Fallback: Local Ollama daemon (localhost:11434)
     const ollamaProvider = createOpenAI({
       baseURL: process.env.OLLAMA_BASE_URL || 'http://localhost:11434/v1',
       apiKey: 'ollama',
     })
-    return ollamaProvider(modelId)
+    return { model: ollamaProvider(modelId), provider: 'ollama' }
   }
 
   if (modelId.startsWith('claude')) {
     const anthropicProvider = createAnthropic({
       apiKey: anthropicKey || process.env.ANTHROPIC_API_KEY || '',
     })
-    return anthropicProvider(modelId as Parameters<ReturnType<typeof createAnthropic>>[0])
+    return {
+      model: anthropicProvider(modelId as Parameters<ReturnType<typeof createAnthropic>>[0]),
+      provider: 'anthropic',
+    }
   }
 
   const openaiProvider = createOpenAI({ apiKey: openaiKey })
-  return openaiProvider(modelId as Parameters<ReturnType<typeof createOpenAI>>[0])
+  return {
+    model: openaiProvider(modelId as Parameters<ReturnType<typeof createOpenAI>>[0]),
+    provider: 'openai',
+  }
 }
 
 export const Route = createFileRoute('/api/chat')({
@@ -134,19 +127,34 @@ export const Route = createFileRoute('/api/chat')({
         // ── Auth & Key resolution ──────────────────────────────────────
         const session = await auth.api.getSession({ headers: request.headers })
 
+        let userRecord: typeof user.$inferSelect | null = null
+        let userHasAnthropicKey = false
+        let userHasOpenAIKey = false
+
         let openaiApiKey = process.env.OPENAI_API_KEY ?? ''
         let anthropicApiKey = process.env.ANTHROPIC_API_KEY ?? ''
 
         if (session?.user?.id) {
           try {
-            const userRecord = await db.query.user.findFirst({
+            userRecord = await db.query.user.findFirst({
               where: eq(user.id, session.user.id),
             })
             if (userRecord?.encryptedOpenAIKey) {
-              openaiApiKey = decrypt(userRecord.encryptedOpenAIKey) || openaiApiKey
+              const decrypted = decrypt(userRecord.encryptedOpenAIKey)
+              if (decrypted) {
+                openaiApiKey = decrypted
+                userHasOpenAIKey = true
+              }
             }
-          } catch {
-            // fall through to env key
+            if (userRecord?.encryptedAnthropicKey) {
+              const decrypted = decrypt(userRecord.encryptedAnthropicKey)
+              if (decrypted) {
+                anthropicApiKey = decrypted
+                userHasAnthropicKey = true
+              }
+            }
+          } catch (err) {
+            console.error('Failed to load user record / keys:', err)
           }
         }
 
@@ -155,37 +163,97 @@ export const Route = createFileRoute('/api/chat')({
         const rawMessages = Array.isArray(raw.messages) ? raw.messages : []
         const model = typeof raw.model === 'string' ? raw.model : 'gpt-4o'
 
-        // Convert UIMessages (AI SDK v6 format with parts arrays that include
-        // tool call/result parts) into CoreMessages that streamText expects.
-        // This is critical for multi-step agentic loops: the old hand-rolled
-        // normalizer was stripping all non-text parts, so tool results were
-        // never delivered back to the model, causing infinite "reading project" hangs.
-        const modelMessages = await convertToModelMessages(rawMessages)
-
-        // For open-source models (Ollama locally, or Groq / Cloudflare AI in production), no personal key is required
+        const isAnthropicModel = model.startsWith('claude')
         const isOpenSourceModel = OPEN_SOURCE_MODELS.has(model)
+        const isOpenAIModel = !isAnthropicModel && !isOpenSourceModel
 
-        // For proprietary cloud models (GPT-4o, Claude), require either a configured env key, BYOK, or session
-        if (!isOpenSourceModel && !session && !openaiApiKey) {
-          return new Response(JSON.stringify({ error: 'Unauthorized. Please log in or configure an API key.' }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' },
-          })
+        // ── Determine BYOK (Bring Your Own Key) ───────────────────────
+        // BYOK is active when the user uses their own custom API key for the selected model.
+        // BYOK requests completely bypass platform quota limits and never deduct tokens.
+        const isBYOK = isAnthropicModel
+          ? userHasAnthropicKey
+          : isOpenAIModel
+            ? userHasOpenAIKey
+            : false
+
+        // ── Key Validation ─────────────────────────────────────────────
+        if (isAnthropicModel && !anthropicApiKey) {
+          return new Response(
+            JSON.stringify({ error: 'Claude models require an Anthropic API key. Please add your key in Settings.' }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          )
         }
 
-        // ── Resolve the correct provider ──────────────────────────────
-        const providerModel = resolveProvider(model, openaiApiKey, anthropicApiKey)
+        if (isOpenAIModel && !openaiApiKey) {
+          return new Response(
+            JSON.stringify({ error: 'OpenAI models require an API key. Please add your key in Settings or configure OPENAI_API_KEY.' }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // ── User Quota Gating (for Platform-Provided Usage) ───────────
+        // If not using BYOK, the user is consuming shared platform quota (Groq or platform OpenAI).
+        if (!isBYOK) {
+          if (!session?.user?.id) {
+            return new Response(
+              JSON.stringify({ error: 'Please log in to use AI assistant features.' }),
+              { status: 401, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+
+          const tokenBalance = userRecord?.tokenBalance ?? 100000
+          if (tokenBalance <= 0) {
+            return new Response(
+              JSON.stringify({
+                error: 'Monthly AI token quota exceeded (100,000 tokens). Add your own OpenAI or Anthropic API key in Settings for unlimited access.',
+              }),
+              { status: 429, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+        }
+
+        // ── Convert Messages & Resolve Provider ───────────────────────
+        const modelMessages = await convertToModelMessages(rawMessages)
+        const { model: providerModel, provider: providerName } = resolveProvider(
+          model,
+          openaiApiKey,
+          anthropicApiKey
+        )
 
         // ── Stream the response with registered tools & maxSteps ─────
+        const userId = session?.user?.id
         const result = streamText({
           model: providerModel,
           system: SYSTEM_PROMPT,
           messages: modelMessages,
           tools: agentToolSchemas,
           stopWhen: stepCountIs(5),
+          onFinish: async ({ usage }) => {
+            // Only deduct from balance if user is logged in and NOT using their own BYOK key
+            if (!isBYOK && userId) {
+              const tokensUsed = (usage?.promptTokens || 0) + (usage?.completionTokens || 0)
+              if (tokensUsed > 0) {
+                try {
+                  const latestUser = await db.query.user.findFirst({
+                    where: eq(user.id, userId),
+                  })
+                  const currentBalance = latestUser?.tokenBalance ?? 100000
+                  await db.update(user)
+                    .set({ tokenBalance: Math.max(0, currentBalance - tokensUsed) })
+                    .where(eq(user.id, userId))
+                } catch (err) {
+                  console.error('Failed to deduct user token quota:', err)
+                }
+              }
+            }
+          },
         })
 
         return result.toUIMessageStreamResponse({
+          headers: {
+            'x-ai-provider': providerName,
+            'x-ai-byok': isBYOK ? 'true' : 'false',
+          },
           onError: (error) => {
             if (NoSuchToolError.isInstance(error)) {
               return "The model tried to call a tool that doesn't exist. Smaller/local models often struggle with this — try a larger model like GPT-4o or Claude for complex editing tasks."
@@ -194,7 +262,7 @@ export const Route = createFileRoute('/api/chat')({
               return 'The model produced malformed tool arguments. This usually means the model is too small for this task — try switching models.'
             }
             return 'Something went wrong processing that request.'
-          }
+          },
         })
       },
     },

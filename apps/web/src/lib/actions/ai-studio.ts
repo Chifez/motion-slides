@@ -35,9 +35,10 @@ async function interceptAIAction(actionFn: (keys: { openai: string; elevenlabs: 
   }
 
   const decryptedOpenAIKey = userRecord.encryptedOpenAIKey ? decrypt(userRecord.encryptedOpenAIKey) : null
+  const decryptedAnthropicKey = userRecord.encryptedAnthropicKey ? decrypt(userRecord.encryptedAnthropicKey) : null
   const decryptedElevenLabsKey = userRecord.encryptedElevenLabsKey ? decrypt(userRecord.encryptedElevenLabsKey) : null
 
-  const userHasCustomKey = !!decryptedOpenAIKey
+  const userHasCustomKey = !!decryptedOpenAIKey || !!decryptedAnthropicKey
   const userBalance = userRecord.tokenBalance ?? 0
 
   if (!userHasCustomKey && userBalance < cost) {
@@ -110,27 +111,53 @@ export const generateVoiceoverAction = createServerFn({ method: 'POST' })
 
 export const updateAPIKeysAction = createServerFn({ method: 'POST' })
   .inputValidator(z.object({
-    openAIKey: z.string(),
-    elevenLabsKey: z.string(),
+    openAIKey: z.string().optional().default(''),
+    anthropicKey: z.string().optional().default(''),
+    elevenLabsKey: z.string().optional().default(''),
   }))
-  .handler(async ({ data: { openAIKey, elevenLabsKey } }) => {
+  .handler(async ({ data: { openAIKey, anthropicKey, elevenLabsKey } }) => {
     const request = getRequest()
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) {
       throw new Error('Unauthorized: You must be logged in to update settings.')
     }
 
-    const encryptedOpenAIKey = openAIKey ? encrypt(openAIKey) : null
-    const encryptedElevenLabsKey = elevenLabsKey ? encrypt(elevenLabsKey) : null
+    const updates: Record<string, string | null> = {}
+
+    if (openAIKey !== undefined) {
+      updates.encryptedOpenAIKey = openAIKey.trim() ? encrypt(openAIKey.trim()) : null
+    }
+    if (anthropicKey !== undefined) {
+      updates.encryptedAnthropicKey = anthropicKey.trim() ? encrypt(anthropicKey.trim()) : null
+    }
+    if (elevenLabsKey !== undefined) {
+      updates.encryptedElevenLabsKey = elevenLabsKey.trim() ? encrypt(elevenLabsKey.trim()) : null
+    }
 
     await db.update(user)
-      .set({
-        encryptedOpenAIKey,
-        encryptedElevenLabsKey,
-      })
+      .set(updates)
       .where(eq(user.id, session.user.id))
 
     return { success: true }
+  })
+
+export const getUserKeysStatusAction = createServerFn({ method: 'GET' })
+  .handler(async () => {
+    const request = getRequest()
+    const session = await auth.api.getSession({ headers: request.headers })
+    if (!session) {
+      return { hasOpenAI: false, hasAnthropic: false, hasElevenLabs: false }
+    }
+
+    const userRecord = await db.query.user.findFirst({
+      where: eq(user.id, session.user.id),
+    })
+
+    return {
+      hasOpenAI: !!userRecord?.encryptedOpenAIKey,
+      hasAnthropic: !!userRecord?.encryptedAnthropicKey,
+      hasElevenLabs: !!userRecord?.encryptedElevenLabsKey,
+    }
   })
 
 export const getUserQuotaAction = createServerFn({ method: 'GET' })
