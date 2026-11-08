@@ -127,6 +127,30 @@ export const auth = betterAuth({
         },
       },
     },
+    session: {
+      create: {
+        before: async (session, ctx) => {
+          if (process.env.PRIVATE_BETA === 'true') {
+            const user = ctx?.context?.internalAdapter
+              ? await ctx.context.internalAdapter.findUserById(session.userId)
+              : await db.query.user.findFirst({
+                  where: (u, { eq }) => eq(u.id, session.userId),
+                })
+            if (user && !(await isEmailAllowed(user.email))) {
+              if (ctx && (ctx.path.startsWith('/callback') || ctx.path.startsWith('/oauth2/callback'))) {
+                const base = defaultAuthUrl.replace(/\/api\/auth$/, '')
+                const msg = encodeURIComponent('Access Denied: MotionSlides is currently in private beta. Your email is not on the allowlist.')
+                throw ctx.redirect(`${base}/?error=beta_access_denied&error_description=${msg}`)
+              }
+              throw new APIError('FORBIDDEN', {
+                message: 'Access Denied: MotionSlides is currently in private beta. Your email is not on the allowlist.',
+              })
+            }
+          }
+          return { data: session }
+        },
+      },
+    },
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {

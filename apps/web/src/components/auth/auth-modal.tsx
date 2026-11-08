@@ -49,7 +49,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           })
           if (error) return { error: error.message || 'Login failed', success: null }
         } else if (mode === 'forgot-password') {
-          const { error } = await authClient.forgetPassword({
+          const { error } = await authClient.requestPasswordReset({
             email,
             redirectTo: '/reset-password',
           })

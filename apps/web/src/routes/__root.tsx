@@ -91,6 +91,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           friendlyMessage = 'Authentication session expired or origin mismatched. Please try signing in again.'
         } else if (decoded === 'oauth_error') {
           friendlyMessage = 'Social sign-in was cancelled or encountered an error. Please try again.'
+        } else if (decoded === 'beta_access_denied' || decoded.includes('private_beta') || decoded.includes('allowlist')) {
+          friendlyMessage = params.get('error_description')
+            ? decodeURIComponent(params.get('error_description')!)
+            : 'Access Denied: MotionSlides is currently in private beta. Your email is not on the allowlist.'
+        } else {
+          friendlyMessage = friendlyMessage.replace(/_/g, ' ')
         }
         useEditorStore.getState().showToast(friendlyMessage, 'error')
         const url = new URL(window.location.href)

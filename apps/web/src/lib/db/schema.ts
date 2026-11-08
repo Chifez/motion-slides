@@ -134,7 +134,7 @@ export const pullRequestComments = pgTable('pull_request_comments', {
 // ─────────────────────────────────────────────
 
 export const allowlist = pgTable('allowlist', {
-  id:        text('id').primaryKey(),
+  id:        text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   email:     text('email').notNull().unique(), // exact email or domain pattern like '@company.com'
   notes:     text('notes'),
   addedBy:   text('addedBy'),
