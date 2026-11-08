@@ -61,3 +61,4 @@ echo ""
 echo " To monitor logs:"
 echo "   docker compose logs -f export-server"
 echo "=================================================="
+

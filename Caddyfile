@@ -7,3 +7,4 @@ export.motionslides.app {
         flush_interval -1
     }
 }
+

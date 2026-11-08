@@ -64,3 +64,4 @@ volumes:
 networks:
   motionslides_net:
     driver: bridge
+
