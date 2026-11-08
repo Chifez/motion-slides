@@ -222,11 +222,10 @@ export function EditorToolbar({ projectId }: Props) {
                                 navigate({ to: '/p/$projectId', params: { projectId: b.id } })
                               }
                             }}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition cursor-pointer border-none text-left ${
-                              isCurrent
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition cursor-pointer border-none text-left ${isCurrent
                                 ? 'bg-blue-600/10 text-blue-400 font-semibold'
                                 : 'text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-border)/50 bg-transparent'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center gap-2 truncate">
                               <GitBranch size={13} className={isCurrent ? 'text-blue-500' : 'text-(--ms-text-muted)'} />
@@ -362,11 +361,10 @@ export function EditorToolbar({ projectId }: Props) {
                               setEditorMode('design')
                               setMobileMoreOpen(false)
                             }}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-[11px] font-semibold transition border-none cursor-pointer whitespace-nowrap shrink-0 ${
-                              editorMode === 'design'
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-[11px] font-semibold transition border-none cursor-pointer whitespace-nowrap shrink-0 ${editorMode === 'design'
                                 ? 'bg-(--ms-border-strong) text-(--ms-text-primary) shadow-xs'
                                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
-                            }`}
+                              }`}
                           >
                             <PenSquare size={12} className="shrink-0" />
                             <span>Design</span>
@@ -377,11 +375,10 @@ export function EditorToolbar({ projectId }: Props) {
                               setEditorMode('prototype')
                               setMobileMoreOpen(false)
                             }}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-[11px] font-semibold transition border-none cursor-pointer whitespace-nowrap shrink-0 ${
-                              editorMode === 'prototype'
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-[11px] font-semibold transition border-none cursor-pointer whitespace-nowrap shrink-0 ${editorMode === 'prototype'
                                 ? 'bg-(--ms-border-strong) text-blue-400 shadow-xs'
                                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
-                            }`}
+                              }`}
                           >
                             <GitBranch size={12} className="shrink-0" />
                             <span>Proto</span>
@@ -392,11 +389,10 @@ export function EditorToolbar({ projectId }: Props) {
                               setEditorMode('timeline')
                               setMobileMoreOpen(false)
                             }}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-[11px] font-semibold transition border-none cursor-pointer whitespace-nowrap shrink-0 ${
-                              editorMode === 'timeline'
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-[11px] font-semibold transition border-none cursor-pointer whitespace-nowrap shrink-0 ${editorMode === 'timeline'
                                 ? 'bg-(--ms-border-strong) text-purple-400 shadow-xs'
                                 : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
-                            }`}
+                              }`}
                           >
                             <Film size={12} className="shrink-0" />
                             <span>Time</span>
@@ -464,11 +460,10 @@ export function EditorToolbar({ projectId }: Props) {
               id="tour-ai-chat-button"
               onClick={() => toggleChat()}
               title="AI Design Studio Copilot"
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer border ${
-                isChatOpen
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer border ${isChatOpen
                   ? 'bg-purple-100 text-purple-700 border-purple-300 shadow-xs dark:bg-purple-600/25 dark:text-purple-200 dark:border-purple-500/40'
                   : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:hover:bg-purple-900/40 dark:border-purple-500/30'
-              }`}
+                }`}
             >
               <Sparkles size={13} className="text-purple-600 dark:text-purple-400" />
               <span className="hidden lg:inline">Ask AI</span>

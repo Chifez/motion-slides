@@ -19,36 +19,36 @@ interface ToolMeta {
 }
 
 const TOOL_META: Record<string, ToolMeta> = {
-  addSlide:                      { activeLabel: 'Adding slide',                     completedLabel: 'Slide added',                     icon: PlusSquare,    color: 'text-blue-400' },
-  addTextElement:                { activeLabel: 'Adding text element',              completedLabel: 'Text element added',              icon: Type,          color: 'text-sky-400' },
-  updateElementText:             { activeLabel: 'Updating text',                    completedLabel: 'Text updated',                    icon: WrapText,      color: 'text-cyan-400' },
-  deleteElement:                 { activeLabel: 'Deleting element',                 completedLabel: 'Element deleted',                 icon: Trash2,        color: 'text-rose-400' },
-  addShapeElement:               { activeLabel: 'Adding shape',                     completedLabel: 'Shape added',                     icon: PlusSquare,    color: 'text-indigo-400' },
-  generateDiagram:               { activeLabel: 'Generating architecture diagram',  completedLabel: 'Architecture diagram generated',  icon: Zap,           color: 'text-blue-400' },
-  patchDiagram:                  { activeLabel: 'Patching diagram layout',          completedLabel: 'Diagram layout patched',          icon: Zap,           color: 'text-blue-400' },
-  synthesizeDeckFromDocument:    { activeLabel: 'Synthesizing presentation deck',   completedLabel: 'Presentation deck synthesized',   icon: Film,          color: 'text-purple-400' },
-  applyDeckTheme:                { activeLabel: 'Applying deck theme',              completedLabel: 'Deck theme applied',              icon: Palette,       color: 'text-pink-400' },
-  harmonizeSlideStyles:          { activeLabel: 'Harmonizing typography',           completedLabel: 'Typography harmonized',           icon: Type,          color: 'text-teal-400' },
-  choreographFlow:               { activeLabel: 'Choreographing motion flow',       completedLabel: 'Motion flow choreographed',       icon: PlayCircle,    color: 'text-amber-400' },
-  optimizeMagicMove:             { activeLabel: 'Optimizing Magic Move',            completedLabel: 'Magic Move optimized',            icon: Sparkles,      color: 'text-violet-400' },
-  setSlideTimingAndTransitions:  { activeLabel: 'Configuring transitions',          completedLabel: 'Transitions configured',          icon: Film,          color: 'text-pink-400' },
-  createExploratoryBranch:       { activeLabel: 'Creating Git branch',              completedLabel: 'Git branch created',              icon: GitBranch,     color: 'text-emerald-400' },
-  switchBranch:                  { activeLabel: 'Switching Git branch',             completedLabel: 'Switched Git branch',             icon: GitBranch,     color: 'text-emerald-400' },
-  listBranches:                  { activeLabel: 'Listing Git branches',             completedLabel: 'Git branches listed',             icon: GitBranch,     color: 'text-emerald-400' },
-  agenticMergeReview:            { activeLabel: 'Reviewing branch diff',            completedLabel: 'Merge review completed',          icon: GitMerge,      color: 'text-blue-400' },
-  auditPresentationQuality:      { activeLabel: 'Auditing presentation quality',    completedLabel: 'Quality audit completed',         icon: ShieldCheck,   color: 'text-emerald-400' },
-  generateSpeakerNotes:          { activeLabel: 'Writing speaker notes',            completedLabel: 'Speaker notes generated',         icon: FileText,      color: 'text-sky-400' },
-  startPresentationMode:         { activeLabel: 'Launching presentation mode',      completedLabel: 'Presentation mode launched',      icon: PlayCircle,    color: 'text-orange-400' },
-  exportPresentation:            { activeLabel: 'Preparing deck export',            completedLabel: 'Deck export prepared',            icon: Share2,        color: 'text-amber-400' },
-  addSectionElement:             { activeLabel: 'Adding container section',         completedLabel: 'Container section added',         icon: PlusSquare,    color: 'text-violet-400' },
-  addLineElement:                { activeLabel: 'Adding connecting line',           completedLabel: 'Connecting line added',           icon: Zap,           color: 'text-amber-400' },
-  applyAnimation:                { activeLabel: 'Applying animation',               completedLabel: 'Animation applied',               icon: Zap,           color: 'text-purple-400' },
-  applyAnimationToAll:           { activeLabel: 'Animating slide elements',         completedLabel: 'All slide elements animated',     icon: Zap,           color: 'text-purple-400' },
-  setTransition:                 { activeLabel: 'Setting transition',               completedLabel: 'Transition set',                  icon: Film,          color: 'text-pink-400' },
-  goToSlide:                     { activeLabel: 'Navigating to slide',              completedLabel: 'Navigated to slide',              icon: Navigation,    color: 'text-orange-400' },
-  getProjectContext:             { activeLabel: 'Reading project state',            completedLabel: 'Project state read',              icon: Eye,           color: 'text-emerald-400' },
-  setSlideBackground:            { activeLabel: 'Updating slide background',        completedLabel: 'Slide background updated',        icon: Image,         color: 'text-teal-400' },
-  deleteSlide:                   { activeLabel: 'Deleting slide',                   completedLabel: 'Slide deleted',                   icon: Trash2,        color: 'text-rose-400' },
+  addSlide: { activeLabel: 'Adding slide', completedLabel: 'Slide added', icon: PlusSquare, color: 'text-blue-400' },
+  addTextElement: { activeLabel: 'Adding text element', completedLabel: 'Text element added', icon: Type, color: 'text-sky-400' },
+  updateElementText: { activeLabel: 'Updating text', completedLabel: 'Text updated', icon: WrapText, color: 'text-cyan-400' },
+  deleteElement: { activeLabel: 'Deleting element', completedLabel: 'Element deleted', icon: Trash2, color: 'text-rose-400' },
+  addShapeElement: { activeLabel: 'Adding shape', completedLabel: 'Shape added', icon: PlusSquare, color: 'text-indigo-400' },
+  generateDiagram: { activeLabel: 'Generating architecture diagram', completedLabel: 'Architecture diagram generated', icon: Zap, color: 'text-blue-400' },
+  patchDiagram: { activeLabel: 'Patching diagram layout', completedLabel: 'Diagram layout patched', icon: Zap, color: 'text-blue-400' },
+  synthesizeDeckFromDocument: { activeLabel: 'Synthesizing presentation deck', completedLabel: 'Presentation deck synthesized', icon: Film, color: 'text-purple-400' },
+  applyDeckTheme: { activeLabel: 'Applying deck theme', completedLabel: 'Deck theme applied', icon: Palette, color: 'text-pink-400' },
+  harmonizeSlideStyles: { activeLabel: 'Harmonizing typography', completedLabel: 'Typography harmonized', icon: Type, color: 'text-teal-400' },
+  choreographFlow: { activeLabel: 'Choreographing motion flow', completedLabel: 'Motion flow choreographed', icon: PlayCircle, color: 'text-amber-400' },
+  optimizeMagicMove: { activeLabel: 'Optimizing Magic Move', completedLabel: 'Magic Move optimized', icon: Sparkles, color: 'text-violet-400' },
+  setSlideTimingAndTransitions: { activeLabel: 'Configuring transitions', completedLabel: 'Transitions configured', icon: Film, color: 'text-pink-400' },
+  createExploratoryBranch: { activeLabel: 'Creating Git branch', completedLabel: 'Git branch created', icon: GitBranch, color: 'text-emerald-400' },
+  switchBranch: { activeLabel: 'Switching Git branch', completedLabel: 'Switched Git branch', icon: GitBranch, color: 'text-emerald-400' },
+  listBranches: { activeLabel: 'Listing Git branches', completedLabel: 'Git branches listed', icon: GitBranch, color: 'text-emerald-400' },
+  agenticMergeReview: { activeLabel: 'Reviewing branch diff', completedLabel: 'Merge review completed', icon: GitMerge, color: 'text-blue-400' },
+  auditPresentationQuality: { activeLabel: 'Auditing presentation quality', completedLabel: 'Quality audit completed', icon: ShieldCheck, color: 'text-emerald-400' },
+  generateSpeakerNotes: { activeLabel: 'Writing speaker notes', completedLabel: 'Speaker notes generated', icon: FileText, color: 'text-sky-400' },
+  startPresentationMode: { activeLabel: 'Launching presentation mode', completedLabel: 'Presentation mode launched', icon: PlayCircle, color: 'text-orange-400' },
+  exportPresentation: { activeLabel: 'Preparing deck export', completedLabel: 'Deck export prepared', icon: Share2, color: 'text-amber-400' },
+  addSectionElement: { activeLabel: 'Adding container section', completedLabel: 'Container section added', icon: PlusSquare, color: 'text-violet-400' },
+  addLineElement: { activeLabel: 'Adding connecting line', completedLabel: 'Connecting line added', icon: Zap, color: 'text-amber-400' },
+  applyAnimation: { activeLabel: 'Applying animation', completedLabel: 'Animation applied', icon: Zap, color: 'text-purple-400' },
+  applyAnimationToAll: { activeLabel: 'Animating slide elements', completedLabel: 'All slide elements animated', icon: Zap, color: 'text-purple-400' },
+  setTransition: { activeLabel: 'Setting transition', completedLabel: 'Transition set', icon: Film, color: 'text-pink-400' },
+  goToSlide: { activeLabel: 'Navigating to slide', completedLabel: 'Navigated to slide', icon: Navigation, color: 'text-orange-400' },
+  getProjectContext: { activeLabel: 'Reading project state', completedLabel: 'Project state read', icon: Eye, color: 'text-emerald-400' },
+  setSlideBackground: { activeLabel: 'Updating slide background', completedLabel: 'Slide background updated', icon: Image, color: 'text-teal-400' },
+  deleteSlide: { activeLabel: 'Deleting slide', completedLabel: 'Slide deleted', icon: Trash2, color: 'text-rose-400' },
 }
 
 // ── Extract Inner Sub-Operations ──────────────────────────────────
@@ -166,7 +166,7 @@ function ToolCallCard({ toolPart, pendingApproval, onApprove }: ToolCallCardProp
   const [isExpanded, setIsExpanded] = useState(true)
   const type = String(toolPart.type ?? '')
   const toolName = String(toolPart.toolName ?? type.replace(/^tool-/, ''))
-  
+
   const meta = TOOL_META[toolName] ?? {
     activeLabel: toolName,
     completedLabel: `${toolName} completed`,
@@ -187,13 +187,13 @@ function ToolCallCard({ toolPart, pendingApproval, onApprove }: ToolCallCardProp
   const isError = isSdkOutputError || isLogicalError
   const isSuccess = hasResult && !isError
 
-  const labelText = pendingApproval 
+  const labelText = pendingApproval
     ? `Approve ${meta.activeLabel.toLowerCase()}?`
     : isError
-    ? `${meta.activeLabel} failed`
-    : hasResult
-    ? meta.completedLabel
-    : meta.activeLabel
+      ? `${meta.activeLabel} failed`
+      : hasResult
+        ? meta.completedLabel
+        : meta.activeLabel
 
   const toolInput = (toolPart.input ?? toolPart.args ?? {}) as Record<string, unknown>
   const subOperations = getSubOperations(toolName, toolInput, res)
@@ -210,16 +210,16 @@ function ToolCallCard({ toolPart, pendingApproval, onApprove }: ToolCallCardProp
 
         {pendingApproval && onApprove ? (
           <div className="flex gap-1.5 shrink-0">
-            <button 
+            <button
               type="button"
-              onClick={() => onApprove(false)} 
+              onClick={() => onApprove(false)}
               className="px-2 py-0.5 rounded text-[11px] font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 border-none cursor-pointer active:scale-[0.97] transition-all"
             >
               Deny
             </button>
-            <button 
+            <button
               type="button"
-              onClick={() => onApprove(true)} 
+              onClick={() => onApprove(true)}
               className="px-2 py-0.5 rounded text-[11px] font-medium bg-blue-600 text-white hover:bg-blue-500 border-none cursor-pointer active:scale-[0.97] transition-all"
             >
               Approve
@@ -305,7 +305,7 @@ export const AgentMessage = memo(function AgentMessage({
   const [copied, setCopied] = useState(false)
 
   const parts = message.parts ?? []
-  
+
   const groupedParts: Array<
     | { type: 'text'; text: string }
     | { type: 'tool'; toolPart: Record<string, unknown> }
@@ -344,11 +344,10 @@ export const AgentMessage = memo(function AgentMessage({
     <div className={`group relative flex gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* Avatar */}
       <div
-        className={`w-6 h-6 rounded-md shrink-0 flex items-center justify-center ${
-          isUser
+        className={`w-6 h-6 rounded-md shrink-0 flex items-center justify-center ${isUser
             ? 'bg-blue-600 text-white'
             : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-        }`}
+          }`}
       >
         {isUser ? (
           <User size={12} />
@@ -388,9 +387,9 @@ export const AgentMessage = memo(function AgentMessage({
               } else {
                 const toolCallId = String(part.toolPart.toolCallId ?? '')
                 return (
-                  <ToolCallCard 
-                    key={index} 
-                    toolPart={part.toolPart} 
+                  <ToolCallCard
+                    key={index}
+                    toolPart={part.toolPart}
                     pendingApproval={pendingApprovals?.[toolCallId]}
                     onApprove={(approved) => onApproveTool?.(toolCallId, approved)}
                   />
@@ -401,9 +400,8 @@ export const AgentMessage = memo(function AgentMessage({
             {/* Assistant Action Toolbar (Pinned on latest message, hover on older) */}
             {(isLastAssistantMessage || snapshotId || fullAssistantText) && (
               <div
-                className={`flex items-center gap-1.5 pt-0.5 transition-opacity duration-150 ${
-                  isLastAssistantMessage ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                }`}
+                className={`flex items-center gap-1.5 pt-0.5 transition-opacity duration-150 ${isLastAssistantMessage ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  }`}
               >
                 {fullAssistantText && (
                   <button
@@ -427,7 +425,7 @@ export const AgentMessage = memo(function AgentMessage({
                 )}
 
                 {snapshotId && (
-                  <button 
+                  <button
                     type="button"
                     onClick={() => {
                       if (onUndo) {

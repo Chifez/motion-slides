@@ -59,18 +59,18 @@ export function DeckScoreBadge() {
       >
         <Sparkles size={11} className="opacity-80 shrink-0" />
         {getStatusIcon()}
-        <span className="font-mono tabular-nums tracking-tight font-semibold text-[11.5px]">
-          {score}
-          <span className="hidden sm:inline opacity-50 text-[10px] font-normal">/100</span>
-        </span>
-        <span className="hidden sm:inline text-[9.5px] font-bold tracking-wider px-1 py-0.5 rounded bg-white/10 opacity-90">
-          Grade {report.grade}
-        </span>
-      </button>
+          <span className="font-mono tabular-nums tracking-tight font-semibold text-[11.5px]">
+            {score}
+            <span className="hidden sm:inline opacity-50 text-[10px] font-normal">/100</span>
+          </span>
+            <span className="hidden sm:inline text-[9.5px] font-bold tracking-wider px-1 py-0.5 rounded bg-white/10 opacity-90">
+              Grade {report.grade}
+            </span>
+          </button>
 
-      {isCriticModalOpen && (
-        <DeckCriticModal report={report} onClose={closeCriticModal} />
-      )}
-    </>
-  )
+          {isCriticModalOpen && (
+            <DeckCriticModal report={report} onClose={closeCriticModal} />
+          )}
+        </>
+        )
 }

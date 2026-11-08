@@ -34,7 +34,7 @@ export function UserMenu({ dashboard }: { dashboard?: boolean }) {
       <>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="text-xs font-semibold text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors px-4 py-1.5 rounded-full border border-(--ms-border) hover:border-(--ms-border-strong) bg-transparent cursor-pointer active:scale-[0.97]"
+          className="text-xs font-semibold text-(--ms-text-muted) hover:text-(--ms-text-primary) transition-colors px-4 py-1.5 rounded-full border border-(--ms-border) hover:border-(--ms-border-strong) bg-transparent cursor-pointer"
         >
           Sign In
         </button>
@@ -47,16 +47,17 @@ export function UserMenu({ dashboard }: { dashboard?: boolean }) {
     <div className="relative">
       <button
         onClick={handleToggleDropdown}
-        className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-(--ms-bg-elevated) hover:bg-(--ms-border) border border-(--ms-border) transition cursor-pointer text-left active:scale-[0.97]"
-        title={user.name || user.email}
+        className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full bg-(--ms-bg-elevated) hover:bg-(--ms-border) border border-(--ms-border) transition cursor-pointer text-left"
       >
-        <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-inner shrink-0">
-          {user.name?.[0] || user.email?.[0] || 'U'}
+        <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-inner">
+          {user.name?.[0] || 'U'}
         </div>
-        <span className="text-[11px] font-medium text-(--ms-text-primary) max-w-[120px] truncate hidden sm:inline">
-          {user.name || user.email.split('@')[0]}
-        </span>
-        <ChevronDown size={12} className={`text-(--ms-text-muted) transition-transform shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+        {!dashboard && (
+          <span className="text-[11px] font-medium text-(--ms-text-primary) max-w-[80px] truncate">
+            {user.name}
+          </span>
+        )}
+        <ChevronDown size={12} className={`text-(--ms-text-muted) transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
       </button>
 
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
