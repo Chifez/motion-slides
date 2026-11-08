@@ -79,14 +79,14 @@ function resolveProvider(modelId: string, openaiKey: string, anthropicKey: strin
         apiKey: process.env.GROQ_API_KEY,
       })
       const groqModelMap: Record<string, string> = {
-        'llama3.2': 'llama-3.3-70b-versatile',
-        'llama3.2:3b': 'llama-3.1-8b-instant',
-        'llama3.1': 'llama-3.3-70b-versatile',
-        'llama3.3': 'llama-3.3-70b-versatile',
-        'qwen2.5': 'qwen-2.5-32b',
-        'mistral': 'mixtral-8x7b-32768',
+        'llama3.2': 'openai/gpt-oss-120b',
+        'llama3.2:3b': 'openai/gpt-oss-20b',
+        'llama3.1': 'openai/gpt-oss-120b',
+        'llama3.3': 'openai/gpt-oss-120b',
+        'qwen2.5': 'qwen/qwen3.8-27b',
+        'mistral': 'openai/gpt-oss-120b',
       }
-      const targetModel = groqModelMap[modelId] || 'llama-3.3-70b-versatile'
+      const targetModel = groqModelMap[modelId] || 'openai/gpt-oss-120b'
       return groqProvider(targetModel)
     }
 
