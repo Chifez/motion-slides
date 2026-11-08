@@ -1,0 +1,66 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: motionslides-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - motionslides_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  export-server:
+    build:
+      context: .
+      dockerfile: apps/export-server/Dockerfile
+    container_name: motionslides-export-server
+    restart: always
+    ports:
+      - "3001:3001"
+    env_file:
+      - apps/export-server/.env
+    environment:
+      - PORT=3001
+      - REDIS_URL=redis://redis:6379
+      - FRONTEND_URL=https://motionslides.app
+      - MAX_CONCURRENT_EXPORTS=1
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - export_storage:/app/apps/export-server/.storage
+      - export_output:/app/apps/export-server/exports
+    networks:
+      - motionslides_net
+
+  caddy:
+    image: caddy:alpine
+    container_name: motionslides-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - export-server
+    networks:
+      - motionslides_net
+
+volumes:
+  redis_data:
+  export_storage:
+  export_output:
+  caddy_data:
+  caddy_config:
+
+networks:
+  motionslides_net:
+    driver: bridge

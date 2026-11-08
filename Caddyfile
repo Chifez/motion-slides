@@ -1,0 +1,9 @@
+{
+    email chifez1@gmail.com
+}
+
+export.motionslides.app {
+    reverse_proxy export-server:3001 {
+        flush_interval -1
+    }
+}
