@@ -100,6 +100,7 @@ export const auth = betterAuth({
       enabled: true,
       trustedProviders: ["google", "github"],
     },
+    skipStateCookieCheck: true,
   },
   database: drizzleAdapter(db, {
     provider: "pg",
