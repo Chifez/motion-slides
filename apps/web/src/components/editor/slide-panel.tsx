@@ -67,7 +67,7 @@ export function SlidePanel() {
   const activeDragIndex = activeDragSlide ? slides.indexOf(activeDragSlide) : -1
 
   const panelContent = (
-    <div className={`h-full flex flex-col bg-(--ms-bg-surface) transition-colors ${!isMobile ? 'border-r border-(--ms-border)' : ''}`}>
+    <div id="tour-slide-panel" className={`h-full flex flex-col bg-(--ms-bg-surface) transition-colors ${!isMobile ? 'border-r border-(--ms-border)' : ''}`}>
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-(--ms-border) sticky top-0 bg-(--ms-bg-surface) z-10 transition-colors">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-(--ms-text-muted)">Slides & Layers</span>
         <div className="flex items-center gap-1">
@@ -153,7 +153,7 @@ export function SlidePanel() {
   }
 
   return (
-    <aside id="tour-slide-panel" className="w-[220px] shrink-0 flex flex-col bg-(--ms-bg-surface) overflow-hidden transition-colors relative z-10">
+    <aside className="w-[220px] shrink-0 flex flex-col bg-(--ms-bg-surface) overflow-hidden transition-colors relative z-10">
       {panelContent}
     </aside>
   )

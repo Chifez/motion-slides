@@ -278,7 +278,12 @@ export const SlideNavigation = memo(function SlideNavigation() {
         </button>
 
         <button
-          onClick={() => setMobileSlidesOpen(!mobileSlidesOpen)}
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation()
+            setMobileSlidesOpen(!mobileSlidesOpen)
+          }}
           className={`flex flex-nowrap shrink-0 items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold tracking-tight transition cursor-pointer border-none whitespace-nowrap ${
             mobileSlidesOpen
               ? 'bg-blue-600/20 text-blue-400'

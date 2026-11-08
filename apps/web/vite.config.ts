@@ -28,6 +28,7 @@ const config = defineConfig({
             BETTER_AUTH_URL: 'https://motionslides.app',
             BETTER_AUTH_TRUSTED_ORIGINS: 'https://motionslides.app,https://www.motionslides.app',
             VITE_EXPORT_SERVER_URL: 'https://motionslides-export.fly.dev',
+            VITE_FORCE_TOUR: 'false',
           },
         },
       },

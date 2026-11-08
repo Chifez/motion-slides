@@ -107,16 +107,21 @@ export const createOnboardingSlice: StateCreator<
 
   completeOnboarding: () => {
     const { user, onboardingTourType } = get()
-    if (user && onboardingTourType) {
-      setStorageItem(`ms-onboarded-${user.id}-${onboardingTourType}`, 'true')
-    } else if (onboardingTourType) {
-      // Allow guests/locals to also complete and store a guest flag
+    if (onboardingTourType) {
+      // 1. Device-wide flag: never show again on this browser once completed or dismissed
+      setStorageItem(`ms-onboarded-${onboardingTourType}`, 'true')
       setStorageItem(`ms-onboarded-guest-${onboardingTourType}`, 'true')
+      
+      // 2. User-specific flag if authenticated
+      if (user?.id) {
+        setStorageItem(`ms-onboarded-${user.id}-${onboardingTourType}`, 'true')
+      }
+      
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(`ms-dismissed-${onboardingTourType}`, 'true')
+      }
     }
-    
-    if (typeof window !== 'undefined' && onboardingTourType) {
-      sessionStorage.setItem(`ms-dismissed-${onboardingTourType}`, 'true')
-    }
+
     set({
       isOnboardingActive: false,
       onboardingStep: 0,
@@ -125,7 +130,11 @@ export const createOnboardingSlice: StateCreator<
   },
 
   isTourCompleted: (userId, type) => {
-    const key = userId ? `ms-onboarded-${userId}-${type}` : `ms-onboarded-guest-${type}`
-    return getStorageItem(key) === 'true'
+    // 1. Check device-level completion first
+    if (getStorageItem(`ms-onboarded-${type}`) === 'true') return true
+    if (getStorageItem(`ms-onboarded-guest-${type}`) === 'true') return true
+    // 2. Check user-specific key
+    if (userId && getStorageItem(`ms-onboarded-${userId}-${type}`) === 'true') return true
+    return false
   }
 })

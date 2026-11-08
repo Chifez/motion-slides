@@ -48,6 +48,12 @@ export function useSectionLasso({
     if (isReadOnly || (activeTool !== 'section' && activeTool !== 'select')) return
     if (event.button !== 0) return
 
+    // Never start canvas lasso if the user clicked or touched an interactive element
+    const target = event.target as HTMLElement | null
+    if (target?.closest('button, a, input, select, textarea, [role="button"], [data-interactive]')) {
+      return
+    }
+
     const coords = getCanvasCoordinates(event.clientX, event.clientY)
     if (!coords) return
 

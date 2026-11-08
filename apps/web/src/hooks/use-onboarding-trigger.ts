@@ -29,21 +29,20 @@ export function useOnboardingTrigger(type: TourType, showEditorUI: boolean = tru
       return
     }
 
+    // Check device or user completion first
+    const isCompleted = isTourCompleted(user?.id || '', type)
+    if (isCompleted || dismissedThisSession || alreadyActive) {
+      return
+    }
+
     if (type === 'dashboard') {
-      if (user) {
-        const completed = isTourCompleted(user.id, 'dashboard')
-        if (!completed && projects.length === 0 && !alreadyActive) {
-          startOnboarding('dashboard')
-          hasTriggered.current = true
-        }
-      }
-    } else if (type === 'editor' && showEditorUI) {
-      const userId = user?.id || ''
-      const completed = isTourCompleted(userId, 'editor')
-      if (!completed && !alreadyActive) {
-        startOnboarding('editor')
+      if (user && projects.length === 0) {
+        startOnboarding('dashboard')
         hasTriggered.current = true
       }
+    } else if (type === 'editor' && showEditorUI) {
+      startOnboarding('editor')
+      hasTriggered.current = true
     }
   }, [user, projects.length, showEditorUI, startOnboarding, isTourCompleted, type])
 }
