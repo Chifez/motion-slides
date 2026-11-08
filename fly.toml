@@ -3,7 +3,7 @@
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 
 app = "motionslides-export"
-primary_region = "ams"
+primary_region = "lhr"
 
 [build]
   dockerfile = "apps/export-server/Dockerfile"
@@ -12,7 +12,8 @@ primary_region = "ams"
   PORT = "3001"
   FRONTEND_URL = "https://motionslides.app"
   MAX_CONCURRENT_EXPORTS = "1"
-  STORAGE_PROVIDER = "local"
+  STORAGE_PROVIDER = "r2"
+  R2_BUCKET_NAME = "motionslides"
 
 [http_service]
   internal_port = 3001
@@ -26,3 +27,4 @@ primary_region = "ams"
   cpu_kind = "shared"
   cpus = 2
   memory_mb = 2048
+

@@ -26,7 +26,9 @@ export async function startExport(
   format:     ExportFormat,
   onProgress: ProgressCallback,
 ): Promise<string | null> {
-  const serverUrl = import.meta.env.VITE_EXPORT_SERVER_URL ?? 'http://localhost:3001'
+  const serverUrl = import.meta.env.VITE_EXPORT_SERVER_URL ?? (
+    import.meta.env.PROD ? 'https://motionslides-export.fly.dev' : 'http://localhost:3001'
+  )
 
   // ── Serialize the project ────────────────────────────────────────────────
   onProgress({ stage: 'preparing', percent: 0, message: 'Serializing project…' })
