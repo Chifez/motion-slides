@@ -12,7 +12,7 @@ x-web-environment: &web-environment
   STORAGE_PROVIDER: local
   STORAGE_DIR: /app/.storage
   VITE_EXPORT_SERVER_URL: http://localhost:3001
-  VITE_PWA_DEV: "true"
+  VITE_PWA_DEV: "false"
   DEFAULT_TOKEN_QUOTA: "100000"
   # Allows repeatable local agent testing without mutating a user's quota.
   # The application ignores this flag in production.
