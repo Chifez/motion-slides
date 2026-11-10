@@ -1,16 +1,24 @@
 # ── Stage 1: Build ─────────────────────────────────────────────────────────────
-FROM node:20-bookworm-slim AS builder
+FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
+
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # Copy root workspace package definitions
 COPY package*.json ./
 COPY packages/shared/package*.json ./packages/shared/
 COPY apps/export-server/package*.json ./apps/export-server/
+COPY apps/web/package*.json ./apps/web/
+COPY launch/package*.json ./launch/
 COPY tsconfig.base.json ./
 
 # Install all monorepo dependencies
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci \
+      --workspace=@motionslides/export-server \
+      --workspace=@motionslides/shared
 
 # Copy source files
 COPY packages/shared ./packages/shared
@@ -20,7 +28,7 @@ COPY apps/export-server ./apps/export-server
 RUN npm run build --workspace=@motionslides/export-server
 
 # ── Stage 2: Production Runner ─────────────────────────────────────────────────
-FROM node:20-bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 
 WORKDIR /app
 
@@ -30,26 +38,21 @@ ENV CHROME_EXECUTABLE=/usr/bin/chromium
 ENV PORT=3001
 
 # Install Chromium, FFmpeg, and international font packages to ensure crisp text rendering
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     ffmpeg \
     fonts-freefont-ttf \
     fonts-ipafont-gothic \
     fonts-kacst \
     fonts-wqy-zenhei \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    ca-certificates
 
-# Copy package files for production install
-COPY package*.json ./
-COPY packages/shared/package*.json ./packages/shared/
-COPY apps/export-server/package*.json ./apps/export-server/
-
-# Install production dependencies only
-RUN npm ci --omit=dev
-
-# Copy shared sources and compiled artifacts from builder
-COPY packages/shared ./packages/shared
+# Reuse the dependency tree that compiled successfully in the builder. This
+# avoids a second registry-dependent install in the runtime stage.
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/shared ./packages/shared
 COPY --from=builder /app/apps/export-server/dist ./apps/export-server/dist
 
 WORKDIR /app/apps/export-server

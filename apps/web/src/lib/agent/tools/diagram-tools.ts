@@ -771,8 +771,8 @@ export async function executeDiagramTool(toolName: string, args: Record<string, 
             label: sc.label,
             sublabel: sc.sublabel,
             iconPath: sc.iconPath,
-            fill: sc.backgroundColor || (sc as any).fill,
-            stroke: sc.borderColor || (sc as any).stroke,
+            fill: sc.fill,
+            stroke: sc.stroke,
           })
         }
       })

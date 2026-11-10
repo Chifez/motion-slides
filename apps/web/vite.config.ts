@@ -40,6 +40,9 @@ const config = defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'script',
       manifest: false, // We'll use the one in public/manifest.json
+      devOptions: {
+        enabled: process.env.VITE_PWA_DEV === 'true',
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
         runtimeCaching: [

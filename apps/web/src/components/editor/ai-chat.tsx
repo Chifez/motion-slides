@@ -348,9 +348,9 @@ export function AIChat() {
             isLoading={isLoading}
             selectedModel={selectedModel}
             onInputChange={(e) => setInput(e.target.value)}
-            onSubmit={(e) => {
+            onSubmit={(e, message) => {
               e.preventDefault()
-              handleSendMessage(input)
+              handleSendMessage(message)
             }}
             onStop={stop}
           />

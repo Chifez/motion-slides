@@ -1,0 +1,36 @@
+FROM node:22-bookworm-slim
+
+WORKDIR /app
+
+ENV NODE_ENV=development
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+# Install the complete workspace dependency graph before copying source so this
+# layer remains cached while application files change.
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
+COPY apps/export-server/package.json ./apps/export-server/
+COPY packages/shared/package.json ./packages/shared/
+COPY launch/package.json ./launch/
+
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci \
+      --workspace=@motionslides/web \
+      --workspace=@motionslides/shared
+
+# The local Compose stack mounts /app/node_modules as a persistent volume.
+# Store the lockfile fingerprint in that volume so startup can detect when a
+# rebuilt image is being shadowed by an older dependency installation.
+RUN sha256sum package-lock.json | cut -d ' ' -f1 > node_modules/.motionslides-lock-hash
+
+COPY tsconfig.base.json ./
+COPY packages/shared ./packages/shared
+COPY apps/web ./apps/web
+
+WORKDIR /app/apps/web
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

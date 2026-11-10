@@ -5,7 +5,7 @@ import {
   Sparkles, User, Check, Loader2, XCircle,
   PlusSquare, Type, Zap, Film, Navigation, Eye, Trash2, Image, WrapText, Undo2,
   ChevronDown, ChevronRight, Palette, PlayCircle, GitBranch, GitMerge,
-  ShieldCheck, FileText, Share2, Copy, CheckCheck,
+  ShieldCheck, FileText, Share2, Copy, CheckCheck, BarChart3, Code2,
 } from 'lucide-react'
 import { useEditorStore } from '@/store/editor-store'
 
@@ -23,6 +23,10 @@ const TOOL_META: Record<string, ToolMeta> = {
   addTextElement: { activeLabel: 'Adding text element', completedLabel: 'Text element added', icon: Type, color: 'text-sky-400' },
   updateElementText: { activeLabel: 'Updating text', completedLabel: 'Text updated', icon: WrapText, color: 'text-cyan-400' },
   deleteElement: { activeLabel: 'Deleting element', completedLabel: 'Element deleted', icon: Trash2, color: 'text-rose-400' },
+  addChartElement: { activeLabel: 'Adding chart', completedLabel: 'Chart added', icon: BarChart3, color: 'text-amber-400' },
+  updateChartElement: { activeLabel: 'Updating chart', completedLabel: 'Chart updated', icon: BarChart3, color: 'text-amber-400' },
+  addCodeElement: { activeLabel: 'Adding code snippet', completedLabel: 'Code snippet added', icon: Code2, color: 'text-emerald-400' },
+  updateCodeElement: { activeLabel: 'Updating code snippet', completedLabel: 'Code snippet updated', icon: Code2, color: 'text-emerald-400' },
   addShapeElement: { activeLabel: 'Adding shape', completedLabel: 'Shape added', icon: PlusSquare, color: 'text-indigo-400' },
   generateDiagram: { activeLabel: 'Generating architecture diagram', completedLabel: 'Architecture diagram generated', icon: Zap, color: 'text-blue-400' },
   patchDiagram: { activeLabel: 'Patching diagram layout', completedLabel: 'Diagram layout patched', icon: Zap, color: 'text-blue-400' },

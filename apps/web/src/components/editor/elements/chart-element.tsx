@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip,
-  AreaChart, Area
+  AreaChart, Area, Legend
 } from 'recharts'
 import type { ChartContent } from '@motionslides/shared'
 import { useMotionContext } from '@/context/motion-context'
@@ -11,6 +11,9 @@ interface Props {
   content: ChartContent
 }
 
+const AXIS_TICK = { fill: '#94a3b8', fontSize: 12 }
+const LEGEND_STYLE = { fontSize: 12, color: '#cbd5e1' }
+
 const DEFAULT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
 export function ChartElement({ content }: Props) {
@@ -18,12 +21,43 @@ export function ChartElement({ content }: Props) {
 
   const data = useMemo(() => content.data || [], [content.data])
   const colors = content.colors?.length ? content.colors : DEFAULT_COLORS
+  const series = content.series?.length ? content.series : null
+  const seriesData = useMemo(
+    () => (series ? data.map(d => ({ label: d.label, ...(d.values ?? {}) })) : data),
+    [data, series],
+  )
 
   const animationDuration = isTransitioning ? durationSec * 1000 : 0
 
   function renderChart() {
     switch (content.chartType) {
       case 'bar': {
+        if (series) {
+          return (
+            <BarChart data={seriesData}>
+              {content.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />}
+              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={AXIS_TICK} hide={!content.showLabels} />
+              <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} hide={!content.showLabels} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', fontSize: '10px' }}
+                itemStyle={{ color: '#fff' }}
+              />
+              <Legend wrapperStyle={LEGEND_STYLE} />
+              {series.map((s, i) => (
+                <Bar
+                  key={s.key}
+                  dataKey={s.key}
+                  name={s.name}
+                  fill={s.color || colors[i % colors.length]}
+                  radius={[4, 4, 0, 0]}
+                  barSize={content.barSize}
+                  animationDuration={animationDuration}
+                />
+              ))}
+            </BarChart>
+          )
+        }
+
         const normalizedData = data.map(d => ({
           ...d,
           stack: content.isStacked ? (d.stack && d.stack.length > 0 ? d.stack : [d.value]) : [d.value],
@@ -46,13 +80,13 @@ export function ChartElement({ content }: Props) {
               dataKey="label"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#666', fontSize: 10 }}
+              tick={AXIS_TICK}
               hide={!content.showLabels}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#666', fontSize: 10 }}
+              tick={AXIS_TICK}
               hide={!content.showLabels}
             />
             <Tooltip
@@ -87,11 +121,39 @@ export function ChartElement({ content }: Props) {
         )
       }
       case 'line':
+        if (series) {
+          return (
+            <LineChart data={seriesData}>
+              {content.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#333" />}
+              <XAxis dataKey="label" hide={!content.showLabels} tick={AXIS_TICK} />
+              <YAxis hide={!content.showLabels} tick={AXIS_TICK} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', fontSize: '10px' }}
+              />
+              <Legend wrapperStyle={LEGEND_STYLE} />
+              {series.map((s, i) => {
+                const color = s.color || colors[i % colors.length]
+                return (
+                  <Line
+                    key={s.key}
+                    type="monotone"
+                    dataKey={s.key}
+                    name={s.name}
+                    stroke={color}
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: color, strokeWidth: 2, stroke: '#111' }}
+                    animationDuration={animationDuration}
+                  />
+                )
+              })}
+            </LineChart>
+          )
+        }
         return (
           <LineChart data={data}>
             {content.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#333" />}
-            <XAxis dataKey="label" hide={!content.showLabels} tick={{ fill: '#666', fontSize: 10 }} />
-            <YAxis hide={!content.showLabels} tick={{ fill: '#666', fontSize: 10 }} />
+            <XAxis dataKey="label" hide={!content.showLabels} tick={AXIS_TICK} />
+            <YAxis hide={!content.showLabels} tick={AXIS_TICK} />
             <Tooltip
               contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', fontSize: '10px' }}
             />
@@ -131,8 +193,8 @@ export function ChartElement({ content }: Props) {
         return (
           <AreaChart data={data}>
             {content.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#333" />}
-            <XAxis dataKey="label" hide={!content.showLabels} tick={{ fill: '#666', fontSize: 10 }} />
-            <YAxis hide={!content.showLabels} tick={{ fill: '#666', fontSize: 10 }} />
+            <XAxis dataKey="label" hide={!content.showLabels} tick={AXIS_TICK} />
+            <YAxis hide={!content.showLabels} tick={AXIS_TICK} />
             <Tooltip
               contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', fontSize: '10px' }}
             />

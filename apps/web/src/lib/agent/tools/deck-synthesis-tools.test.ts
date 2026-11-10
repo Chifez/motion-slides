@@ -102,8 +102,147 @@ describe('Deck Synthesis Agent Tools', () => {
 
     // Verify Magic Move transition was created
     expect(project?.transitions.length).toBe(1)
-    expect(project?.transitions[0].type).toBe('magic-move')
+    expect(project?.transitions[0].animation).toBe('magic-move')
     expect(project?.transitions[0].fromSlideId).toBe(slide1?.id)
     expect(project?.transitions[0].toSlideId).toBe(slide2?.id)
+  })
+
+  it('creates real chart and code elements with a presentation-safe data layout', async () => {
+    const res = await executeAgentTool('synthesizeDeckFromDocument', {
+      documentTitle: 'Secure Media Upload Comparison',
+      slides: [
+        {
+          name: 'Performance Metrics',
+          intent: 'metrics',
+          title: 'Security improves upload reliability',
+          charts: [
+            {
+              id: 'success-rate',
+              title: 'Upload success rate',
+              chartType: 'line',
+              unit: '%',
+              categories: ['100 rps', '500 rps', '1k rps'],
+              series: [
+                { name: 'Regular', values: [97, 93, 91], color: '#fb7185' },
+                { name: 'Secure', values: [99.9, 99.8, 99.7], color: '#34d399' },
+              ],
+              insight: 'Signed uploads eliminate expired-session retries.',
+            },
+            {
+              id: 'p95-latency',
+              title: 'P95 upload latency',
+              chartType: 'line',
+              unit: 's',
+              categories: ['100 rps', '500 rps', '1k rps'],
+              series: [
+                { name: 'Regular', values: [2.1, 3.6, 4.8] },
+                { name: 'Secure', values: [1.8, 2.3, 2.9] },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'Implementation',
+          intent: 'code',
+          title: 'Issue short-lived upload URLs',
+          codeBlocks: [
+            {
+              id: 'presign-handler',
+              title: 'presign-upload.ts',
+              language: 'typescript',
+              value: 'const url = await createPresignedUpload({ expiresIn: 60 })\nreturn { url }',
+              caption: 'The client uploads directly without receiving storage credentials.',
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(res.success).toBe(true)
+    const slides = useEditorStore.getState().activeProject()?.slides ?? []
+
+    const metricSlide = slides[0]
+    const charts = metricSlide.elements.filter(element => element.type === 'chart')
+    expect(charts).toHaveLength(2)
+    expect(charts.map(chart => chart.id)).toEqual(['success-rate', 'p95-latency'])
+    expect(charts.every(chart => chart.size.width >= 500 && chart.size.height >= 300)).toBe(true)
+    expect(charts.every(chart => chart.position.y >= 150)).toBe(true)
+    expect((charts[0].content as any).series).toHaveLength(2)
+    expect((charts[0].content as any).data[1]).toMatchObject({ label: '500 rps', values: { s1: 99.8 } })
+
+    const codeSlide = slides[1]
+    const code = codeSlide.elements.find(element => element.type === 'code')
+    expect(code).toBeDefined()
+    expect(code?.id).toBe('presign-handler')
+    // Short snippets get a content-fitted window, centered, never the full slot.
+    expect(code!.size.height).toBeLessThan(220)
+    expect(Math.abs(code!.position.x + code!.size.width / 2 - 640)).toBeLessThanOrEqual(1)
+    expect(code?.content).toMatchObject({ language: 'typescript', title: 'presign-upload.ts' })
+  })
+
+  it('rejects metric and code intents that omit their native visual element', async () => {
+    const metricsResult = await executeAgentTool('synthesizeDeckFromDocument', {
+      documentTitle: 'Invalid Metrics Deck',
+      slides: [{ name: 'Metrics', intent: 'metrics', title: 'Text is not a chart' }],
+    })
+    const codeResult = await executeAgentTool('synthesizeDeckFromDocument', {
+      documentTitle: 'Invalid Code Deck',
+      slides: [{ name: 'Implementation', intent: 'code', title: 'Text is not code' }],
+    })
+
+    const validTwoPointChart = await executeAgentTool('synthesizeDeckFromDocument', {
+      documentTitle: 'Two Point Metrics Deck',
+      slides: [{
+        name: 'Metrics',
+        intent: 'metrics',
+        charts: [{ title: 'Latency', data: [{ label: 'Regular', value: 100 }, { label: 'Secure', value: 50 }] }],
+      }],
+    })
+    expect(validTwoPointChart.success).toBe(true)
+    expect(metricsResult).toMatchObject({ success: false, error: expect.stringContaining('no native chart') })
+    expect(codeResult).toMatchObject({ success: false, error: expect.stringContaining('no native code block') })
+  })
+
+  it('rejects malformed topology and mixed slides without replacing the existing deck', async () => {
+    const malformedEdge = await executeAgentTool('synthesizeDeckFromDocument', {
+      documentTitle: 'Malformed Architecture',
+      slides: [{
+        name: 'Architecture',
+        intent: 'architecture',
+        nodes: [
+          { id: 'client', shapeType: 'client', label: 'Client' },
+          { id: 'api', shapeType: 'server', label: 'API' },
+        ],
+        edges: [{ from: 'client', to: 'missing', label: 'Request' }],
+      }],
+    })
+    const mixedSlide = await executeAgentTool('synthesizeDeckFromDocument', {
+      documentTitle: 'Overloaded Slide',
+      slides: [{
+        name: 'Everything at once',
+        nodes: [{ id: 'api', shapeType: 'server', label: 'API' }],
+        charts: [{ title: 'Latency', chartType: 'bar', data: [{ label: 'A', value: 1 }, { label: 'B', value: 2 }] }],
+      }],
+    })
+
+    expect(malformedEdge).toMatchObject({ success: false, error: expect.stringContaining('does not reference existing node IDs') })
+    expect(mixedSlide).toMatchObject({ success: false, error: expect.stringContaining('mixes an architecture graph') })
+    expect(useEditorStore.getState().activeProject()?.slides.map((slide) => slide.id)).toEqual(['slide-initial'])
+  })
+
+  it('validates IDs, chart data, code length, and shape types at the execution boundary', async () => {
+    const result = await executeAgentTool('synthesizeDeckFromDocument', {
+      documentTitle: 'Invalid Payload',
+      slides: [{
+        name: 'Invalid',
+        nodes: [{ id: 'bad id', shapeType: 'unsupported-shape', label: 'Bad node' }],
+        charts: [{ title: 'Duplicate labels', chartType: 'pie', data: [{ label: 'A', value: -1 }, { label: 'A', value: 2 }] }],
+        codeBlocks: [{ title: 'too-long.ts', language: 'typescript', value: Array.from({ length: 31 }, () => 'line').join('\n') }],
+      }],
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('Invalid deck synthesis payload')
+    expect(useEditorStore.getState().activeProject()?.name).toBe('Untitled Deck')
   })
 })

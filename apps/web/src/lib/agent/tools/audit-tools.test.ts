@@ -29,9 +29,13 @@ describe('Presentation Quality Audit Agent Tools', () => {
                   animation: 'none',
                   animationDelay: 0,
                   content: {
-                    text: 'Very Dark Unreadable Text',
+                    value: 'Very Dark Unreadable Text',
                     fontSize: 24,
+                    fontWeight: 'normal',
+                    fontFamily: 'Inter',
+                    fontStyle: 'normal',
                     color: '#1a1a2e', // Very low contrast against #0b0c16
+                    align: 'left',
                   },
                 },
                 {
@@ -47,6 +51,13 @@ describe('Presentation Quality Audit Agent Tools', () => {
                   content: {
                     lineType: 'elbow',
                     style: 'solid',
+                    x1: 0,
+                    y1: 0,
+                    x2: 1,
+                    y2: 1,
+                    arrow: 'end',
+                    color: '#60a5fa',
+                    strokeWidth: 2,
                     startConnection: { elementId: 'non-existent-node-1', handleId: 'right' },
                     endConnection: { elementId: 'non-existent-node-2', handleId: 'left' },
                   },

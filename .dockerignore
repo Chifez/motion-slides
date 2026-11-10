@@ -11,6 +11,7 @@ dist
 .wrangler
 coverage
 launch
+!launch/package.json
 tmp
 .storage
 exports

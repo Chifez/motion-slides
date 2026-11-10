@@ -66,7 +66,7 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
   const [fixSuccessMessage, setFixSuccessMessage] = useState<string | null>(null)
 
   const project = useEditorStore((s) => s.activeProject())
-  const setActiveSlideIndex = useEditorStore((s) => s.setActiveSlideIndex)
+  const setActiveSlideIndex = useEditorStore((s) => s.setActiveSlide)
   const activeProjectId = useEditorStore((s) => s.activeProjectId)
 
   useEffect(() => {
@@ -311,10 +311,11 @@ export function DeckCriticModal({ report: initialReport, onClose }: Props) {
 
                                                         <div className="w-full h-1.5 rounded-full bg-(--ms-border) overflow-hidden">
                                                           <div
-                                isHigh ? 'bg-emerald-400' : isMid ? 'bg-amber-400' : 'bg-rose-400'
-                              }`}
-                                                          style={{ width: `${dim.score}%` }}
-                            />
+                                                            className={`h-full rounded-full ${
+                                                              isHigh ? 'bg-emerald-400' : isMid ? 'bg-amber-400' : 'bg-rose-400'
+                                                            }`}
+                                                            style={{ width: `${dim.score}%` }}
+                                                          />
                                                         </div>
 
                                                         <div className="text-[10px] text-(--ms-text-muted)">

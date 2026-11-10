@@ -65,11 +65,21 @@ export interface ChartDataPoint {
   value: number
   color?: string
   stack?: number[]
+  /** Per-series values keyed by `ChartSeries.key`, used by multi-series charts. */
+  values?: Record<string, number>
+}
+
+export interface ChartSeries {
+  key: string
+  name: string
+  color?: string
 }
 
 export interface ChartContent {
   chartType: ChartType
   data: ChartDataPoint[]
+  /** When present, line/bar charts render one series per entry (grouped bars / multiple lines). */
+  series?: ChartSeries[]
   showLabels?: boolean
   showGrid?: boolean
   colors?: string[]
@@ -81,6 +91,7 @@ export interface ShapeContent {
   shapeType: ShapeType
   fill: string
   stroke: string
+  textColor?: string
   label?: string
   iconPath?:     string
   iconCategory?: string
@@ -162,6 +173,8 @@ export interface SceneElement {
   zIndex: number
   locked?: boolean
   groupId?: string
+  /** Identifies elements belonging to one agent-generated diagram for atomic patching. */
+  diagramGroupId?: string
   layer?: string // For architectural diagrams auto-grouping
   animation?: AnimationType
   animationDelay?: number

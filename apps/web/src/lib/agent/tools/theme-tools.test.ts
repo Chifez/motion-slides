@@ -29,10 +29,13 @@ describe('Theme & Styling Agent Tools', () => {
                   animation: 'fade-in',
                   animationDelay: 0,
                   content: {
-                    text: 'System Architecture',
+                    value: 'System Architecture',
                     fontSize: 36,
+                    fontWeight: 'bold',
                     fontFamily: 'Arial',
+                    fontStyle: 'normal',
                     color: '#ffffff',
+                    align: 'left',
                   },
                 },
                 {
@@ -48,8 +51,8 @@ describe('Theme & Styling Agent Tools', () => {
                   content: {
                     shapeType: 'server',
                     label: 'API Server',
-                    backgroundColor: '#111111',
-                    borderColor: '#ffffff',
+                    fill: '#111111',
+                    stroke: '#ffffff',
                     textColor: '#ffffff',
                   },
                 },
@@ -66,7 +69,13 @@ describe('Theme & Styling Agent Tools', () => {
                   content: {
                     lineType: 'elbow',
                     style: 'solid',
+                    x1: 0,
+                    y1: 0,
+                    x2: 1,
+                    y2: 1,
+                    arrow: 'end',
                     color: '#ffffff',
+                    strokeWidth: 2,
                   },
                 },
               ],
@@ -105,7 +114,7 @@ describe('Theme & Styling Agent Tools', () => {
     expect((title?.content as any).fontFamily).toBe('Outfit')
 
     const shape = slide?.elements.find((e) => e.id === 'node-1')
-    expect((shape?.content as any).borderColor).toBe('#06b6d4')
+    expect((shape?.content as any).stroke).toBe('#06b6d4')
 
     const line = slide?.elements.find((e) => e.id === 'line-1')
     expect((line?.content as any).color).toBe('#06b6d4')

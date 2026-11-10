@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUp, Square, Mic, ChevronDown, BrainCircuit, Bot, Cpu, Paperclip, FileText, X, UploadCloud, Loader2 } from 'lucide-react'
 import { useEditorStore } from '@/store/editor-store'
 import { transcribeAudioAction } from '@/lib/actions/ai-studio'
-import { extractDocumentContent, type ExtractedDocument } from '@/lib/generation/doc-extractor'
+import { buildDocumentPrompt, DocumentExtractionError, extractDocumentContent, type ExtractedDocument } from '@/lib/generation/doc-extractor'
 
 interface ModelDef {
   id: string
@@ -32,7 +32,7 @@ interface Props {
   isLoading: boolean
   selectedModel: string
   onInputChange: (e: ChangeEvent<HTMLTextAreaElement>) => void
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void
+  onSubmit: (e: FormEvent<HTMLFormElement>, message: string) => void
   onStop: () => void
 }
 
@@ -41,14 +41,18 @@ interface AttachedFileState {
   fileSize: string
 }
 
+type VoiceInputState = 'idle' | 'requesting-permission' | 'recording' | 'transcribing'
+
 export function AgentInput({ input, isLoading, selectedModel, onInputChange, onSubmit, onStop }: Props) {
   const setSelectedModel = useEditorStore((s) => s.setSelectedModel)
   const [showModelMenu, setShowModelMenu] = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
+  const [voiceInputState, setVoiceInputState] = useState<VoiceInputState>('idle')
   const [recordingSeconds, setRecordingSeconds] = useState(0)
-  const [isTranscribing, setIsTranscribing] = useState(false)
+  const isRecording = voiceInputState === 'recording'
+  const isTranscribing = voiceInputState === 'transcribing'
   const [isDragging, setIsDragging] = useState(false)
   const [attachedFile, setAttachedFile] = useState<AttachedFileState | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -90,6 +94,7 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
   }
 
   const handleFileProcess = async (file: File) => {
+    setFileError(null)
     try {
       const doc = await extractDocumentContent(file)
       setAttachedFile({
@@ -98,6 +103,8 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
       })
     } catch (err) {
       console.error('[Agent] Document extraction error:', err)
+      setAttachedFile(null)
+      setFileError(err instanceof DocumentExtractionError ? err.message : 'Could not read that file. Please try a different document.')
     }
   }
 
@@ -138,10 +145,12 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
         recordingTimerRef.current = null
       }
       mediaRecorderRef.current?.stop()
-      setIsRecording(false)
-      setIsTranscribing(true)
+      setVoiceInputState('transcribing')
       return
     }
+
+    if (voiceInputState !== 'idle') return
+    setVoiceInputState('requesting-permission')
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -165,7 +174,7 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
         } catch (err) {
           console.error('[Agent] Transcription error:', err)
         } finally {
-          setIsTranscribing(false)
+          setVoiceInputState('idle')
           stream.getTracks().forEach((track) => track.stop())
         }
       }
@@ -173,15 +182,14 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
       recorder.start()
       mediaRecorderRef.current = recorder
       setRecordingSeconds(0)
-      setIsRecording(true)
+      setVoiceInputState('recording')
 
       recordingTimerRef.current = setInterval(() => {
         setRecordingSeconds((prev) => prev + 1)
       }, 1000)
     } catch (err) {
       console.error('[Agent] Microphone error:', err)
-      setIsRecording(false)
-      setIsTranscribing(false)
+      setVoiceInputState('idle')
     }
   }
 
@@ -194,17 +202,13 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
   }
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    let message = input.trim()
     if (attachedFile) {
-      const docHeader = `Attached document:\n\`\`\`${attachedFile.doc.fileType}\n${attachedFile.doc.summaryBriefing}\n\`\`\`\n\n`
-      const combinedText = input.trim()
-        ? `${input.trim()}\n\n${docHeader}`
-        : `Please synthesize a comprehensive presentation deck based on this document:\n\n${docHeader}`
-      
-      const fakeEvent = { target: { value: combinedText } } as ChangeEvent<HTMLTextAreaElement>
-      onInputChange(fakeEvent)
+      message = buildDocumentPrompt(attachedFile.doc, message)
       setAttachedFile(null)
+      setFileError(null)
     }
-    onSubmit(e)
+    onSubmit(e, message)
   }
 
   return (
@@ -213,7 +217,7 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
       <input
         ref={fileInputRef}
         type="file"
-        accept=".md,.markdown,.txt,.json,.yaml,.yml,.pdf,.docx,.ts,.tsx,.py,.go,.rs,.sql"
+        accept=".md,.markdown,.mdown,.txt,.json,.yaml,.yml,.pdf,.docx,.ts,.tsx,.js,.jsx,.py,.go,.rs,.java,.sql,.sh,.css,.html"
         className="hidden"
         onChange={handleFileInputChange}
       />
@@ -300,6 +304,10 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
                   <FileText size={12} className="text-blue-400 shrink-0" />
                   <span className="font-medium truncate">{attachedFile.doc.fileName}</span>
                   <span className="text-[10px] text-blue-400/60 shrink-0">({attachedFile.fileSize})</span>
+                  {attachedFile.doc.extraction.truncated && <span className="text-[10px] text-amber-400 shrink-0">(excerpt)</span>}
+                  {attachedFile.doc.extraction.warnings.length > 0 && (
+                    <span className="text-[10px] text-amber-400 shrink-0" title={attachedFile.doc.extraction.warnings.join(' ')}>(warning)</span>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -309,6 +317,19 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
                 >
                   <X size={12} />
                 </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {fileError && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mx-3 mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-2 text-[10px] leading-relaxed text-red-300"
+              >
+                {fileError}
               </motion.div>
             )}
           </AnimatePresence>
@@ -349,7 +370,7 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
               <button
                 type="button"
                 onClick={toggleRecording}
-                disabled={isTranscribing}
+                disabled={voiceInputState === 'requesting-permission' || isTranscribing}
                 className={`p-1.5 rounded-lg transition-all duration-150 active:scale-[0.95] cursor-pointer border-none flex items-center gap-1 ${
                   isRecording
                     ? 'text-red-400 bg-red-500/15 border border-red-500/30'

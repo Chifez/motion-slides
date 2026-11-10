@@ -1,0 +1,111 @@
+name: motionslides-local
+
+x-web-environment: &web-environment
+  NODE_ENV: development
+  NITRO_PRESET: node-server
+  DATABASE_URL: postgresql://motionslides:motionslides@postgres:5432/motionslides
+  BETTER_AUTH_URL: ${MOTION_SLIDES_ORIGIN:-http://localhost:3100}
+  BETTER_AUTH_SECRET: local-development-secret-change-before-deploying
+  BETTER_AUTH_TRUSTED_ORIGINS: ${MOTION_SLIDES_ORIGIN:-http://localhost:3100}
+  ENCRYPTION_KEY: local-development-encryption-key
+  PRIVATE_BETA: "false"
+  STORAGE_PROVIDER: local
+  STORAGE_DIR: /app/.storage
+  VITE_EXPORT_SERVER_URL: http://localhost:3001
+  VITE_PWA_DEV: "true"
+  DEFAULT_TOKEN_QUOTA: "100000"
+  # Allows repeatable local agent testing without mutating a user's quota.
+  # The application ignores this flag in production.
+  DISABLE_AI_QUOTA: "true"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: motionslides
+      POSTGRES_USER: motionslides
+      POSTGRES_PASSWORD: motionslides
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U motionslides -d motionslides"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  db-init:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    working_dir: /app/apps/web
+    command: ["npx", "drizzle-kit", "push", "--force"]
+    environment: *web-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    restart: unless-stopped
+    command: ["sh", "/app/scripts/docker-dev-entrypoint.sh"]
+    environment: *web-environment
+    ports:
+      - "${MOTION_SLIDES_PORT:-3100}:3000"
+    volumes:
+      - .:/app
+      - web_node_modules:/app/node_modules
+      - web_storage:/app/.storage
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+
+  export-server:
+    build:
+      context: .
+      dockerfile: apps/export-server/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: "3001"
+      REDIS_URL: redis://redis:6379
+      FRONTEND_URL: ${MOTION_SLIDES_ORIGIN:-http://localhost:3100}
+      AUTH_SERVICE_URL: http://web:3000
+      STORAGE_PROVIDER: local
+      STORAGE_DIR: /app/.storage
+      OUTPUT_DIR: /app/.storage/exports
+      MAX_CONCURRENT_EXPORTS: "1"
+      ADMIN_USER: admin
+      ADMIN_PASS: local-admin
+    ports:
+      - "3001:3001"
+    volumes:
+      - export_storage:/app/.storage
+    depends_on:
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+  web_node_modules:
+  web_storage:
+  export_storage:

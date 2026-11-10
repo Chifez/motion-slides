@@ -18,7 +18,7 @@ describe('Presenter Mode & Export Agent Tools', () => {
               id: 'slide-1',
               name: 'Slide 1: Cloud Topology',
               background: '#0b0c16',
-              speakerNotes: '',
+              script: '',
               elements: [
                 {
                   id: 'title-1',
@@ -31,8 +31,13 @@ describe('Presenter Mode & Export Agent Tools', () => {
                   animation: 'none',
                   animationDelay: 0,
                   content: {
-                    text: 'Cloud Architecture Overview',
+                    value: 'Cloud Architecture Overview',
                     fontSize: 32,
+                    fontWeight: 'bold',
+                    fontFamily: 'Inter',
+                    fontStyle: 'normal',
+                    color: '#ffffff',
+                    align: 'left',
                   },
                 },
                 {
@@ -45,7 +50,7 @@ describe('Presenter Mode & Export Agent Tools', () => {
                   zIndex: 2,
                   animation: 'none',
                   animationDelay: 0,
-                  content: { shapeType: 'server', label: 'API Gateway' },
+                  content: { shapeType: 'server', label: 'API Gateway', fill: '#111827', stroke: '#60a5fa' },
                 },
                 {
                   id: 'line-1',
@@ -60,6 +65,13 @@ describe('Presenter Mode & Export Agent Tools', () => {
                   content: {
                     lineType: 'elbow',
                     style: 'solid',
+                    x1: 0,
+                    y1: 0,
+                    x2: 1,
+                    y2: 1,
+                    arrow: 'end',
+                    color: '#60a5fa',
+                    strokeWidth: 2,
                     label: 'HTTPS Request',
                   },
                 },
@@ -91,9 +103,9 @@ describe('Presenter Mode & Export Agent Tools', () => {
 
     const store = useEditorStore.getState()
     const slide = store.activeSlide()
-    expect(slide?.speakerNotes).toBeDefined()
-    expect(slide?.speakerNotes).toContain('Technical Notes')
-    expect(slide?.speakerNotes).toContain('API Gateway')
+    expect(slide?.script).toBeDefined()
+    expect(slide?.script).toContain('Technical Notes')
+    expect(slide?.script).toContain('API Gateway')
   })
 
   it('should generate executive speaker notes', async () => {
@@ -103,7 +115,7 @@ describe('Presenter Mode & Export Agent Tools', () => {
 
     const store = useEditorStore.getState()
     const slide = store.activeSlide()
-    expect(slide?.speakerNotes).toContain('Executive Briefing')
+    expect(slide?.script).toContain('Executive Briefing')
   })
 
   it('should trigger startPresentationMode', async () => {

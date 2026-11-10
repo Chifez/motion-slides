@@ -185,7 +185,7 @@ The `export-server` handles high-bitrate video synthesis:
 ## Getting Started
 
 ### Prerequisites
-- **Node.js** (v20+)
+- **Node.js** (v22.12+)
 - **npm** (recommended) or pnpm/yarn
 
 ### Installation
@@ -204,6 +204,33 @@ The `export-server` handles high-bitrate video synthesis:
    npm run dev
    ```
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### OrbStack / Docker Compose
+
+With OrbStack running, the complete local stack can be started without installing
+PostgreSQL, Redis, Chromium, or FFmpeg on the host:
+
+```bash
+npm run orbstack:up
+```
+
+This starts the web studio on [http://localhost:3100](http://localhost:3100),
+the export service on `http://localhost:3001`, PostgreSQL on host port `55432`,
+and Redis internally. The database schema is applied automatically before the
+web service starts. Source files are bind-mounted, so web changes hot reload.
+
+Useful commands:
+
+```bash
+npm run orbstack:logs
+npm run orbstack:down
+```
+
+The local stack reads `apps/web/.env` when present for optional AI provider
+keys. Local database, authentication, storage, and service URLs are overridden
+with safe development values. To completely reset local container data, run
+`docker compose -f docker-compose.local.yml down -v`; this permanently removes
+the local database and uploaded files.
 
 ---
 

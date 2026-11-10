@@ -12,6 +12,9 @@
     "dev:web": "npm run dev --workspace=@motionslides/web",
     "dev:server": "npm run dev --workspace=@motionslides/export-server",
     "dev:launch": "npm run dev --workspace=launch",
+    "orbstack:up": "docker compose -f docker-compose.local.yml up --build",
+    "orbstack:down": "docker compose -f docker-compose.local.yml down",
+    "orbstack:logs": "docker compose -f docker-compose.local.yml logs -f web export-server",
     "build:launch": "npm run build --workspace=launch",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"

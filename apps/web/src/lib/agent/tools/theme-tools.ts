@@ -135,8 +135,8 @@ export async function executeThemeTool(
                     ...el,
                     content: {
                       ...sc,
-                      backgroundColor: t.cardFill,
-                      borderColor: strokeColor,
+                      fill: t.cardFill,
+                      stroke: strokeColor,
                       textColor: t.cardText,
                     },
                   }

@@ -59,7 +59,7 @@ export async function executePresenterTool(
 
         generatedCount++
         const titleEl = slide.elements.find((e) => e.type === 'text' && ((e.content as TextContent).fontSize ?? 0) >= 28)
-        const title = titleEl ? (titleEl.content as TextContent).text : slide.name
+        const title = titleEl ? (titleEl.content as TextContent).value : slide.name
 
         const shapes = slide.elements.filter((e) => e.type === 'shape')
         const lines = slide.elements.filter((e) => e.type === 'line')
@@ -88,7 +88,7 @@ export async function executePresenterTool(
 
         return {
           ...slide,
-          speakerNotes: notes,
+          script: notes,
         }
       })
 
