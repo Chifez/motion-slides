@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch index.ts",
     "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
     "start": "node dist/apps/export-server/index.js"
   },
   "dependencies": {

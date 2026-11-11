@@ -1,7 +1,7 @@
 import { useCallback, useRef, useEffect } from 'react'
 import { useEditorStore } from '@/store/editor-store'
 import { uuid } from '@/lib/uuid'
-import type { SceneElement, Position } from '@motionslides/shared'
+import type { SceneElement, Position, LineContent } from '@motionslides/shared'
 import { getConnectionPos } from '@/store/slices/element-slice'
 
 const SNAP_THRESHOLD = 30
@@ -85,7 +85,7 @@ export function useConnectionDrag(
           color: '#3b82f6',
           strokeWidth: 2,
           startConnection: { elementId: sourceElement.id, handleId },
-        } as any
+        } as LineContent
       }
 
       addElement(tempLine)
@@ -126,7 +126,7 @@ export function useConnectionDrag(
           position: { x: minX, y: minY },
           size: { width: newW, height: newH },
           content: {
-            ...(tempLine.content as any),
+            ...(tempLine.content as LineContent),
             x1: nx1, y1: ny1,
             x2: nx2, y2: ny2,
             endConnection: finalSnap
@@ -182,7 +182,7 @@ export function useConnectionDrag(
             endConnection: finalSnap
               ? { elementId: finalSnap.elementId, handleId: finalSnap.handleId }
               : undefined,
-          } as any
+          } as LineContent
         }
 
         addElement(realLine)

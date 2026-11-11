@@ -41,7 +41,7 @@ export const SectionElement = memo(function SectionElement({ element, content }:
   }, [isEditing])
 
   const handleLabelSubmit = (val: string) => {
-    updateElement(element.id, { content: { ...content, label: val } as any })
+    updateElement(element.id, { content: { ...content, label: val } as SectionContent })
     setEditingId(null)
   }
 
