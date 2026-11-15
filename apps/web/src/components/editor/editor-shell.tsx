@@ -40,6 +40,9 @@ export const EditorShell = memo(function EditorShell({ projectId, blocker }: Pro
   const checkoutCommit = useEditorStore(s => s.checkoutCommit)
   
   const isMobile = useIsMobile()
+  // On desktop the Copilot docks into the right rail and takes the inspector's slot;
+  // the inspector returns as soon as the Copilot closes.
+  const isChatDocked = useEditorStore(s => s.isChatOpen) && !isMobile
   const showEditorUI = !isPresenting && mode === 'edit'
   const isViewOnly = mode === 'view' || mode === 'present'
 
@@ -75,7 +78,7 @@ export const EditorShell = memo(function EditorShell({ projectId, blocker }: Pro
           <>
             {showEditorUI && !isPrototypeMode && <SlidePanel />}
             {isPrototypeMode ? <PrototypeCanvas /> : <CanvasStage />}
-            {showEditorUI && !isPrototypeMode && <InspectorPanel />}
+            {showEditorUI && !isPrototypeMode && !isChatDocked && <InspectorPanel />}
             {showEditorUI && <AIChat />}
           </>
         )}

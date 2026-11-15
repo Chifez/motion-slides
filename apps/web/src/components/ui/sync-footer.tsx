@@ -2,6 +2,7 @@ import { useEditorStore } from '@/store/editor-store'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloudCheck, RefreshCw } from 'lucide-react'
 import { useLocation } from '@tanstack/react-router'
+import { useIsMobile } from '@/hooks/use-media-query'
 
 /**
  * SyncFooter — Minimalist status bar for background synchronization.
@@ -11,14 +12,23 @@ export function SyncFooter() {
   const isSyncing = useEditorStore((s) => s.isSyncing)
   const syncError = useEditorStore((s) => s.syncError)
   const user = useEditorStore((s) => s.user)
+  const isChatOpen = useEditorStore((s) => s.isChatOpen)
+  const chatPanelWidth = useEditorStore((s) => s.chatPanelWidth)
+  const isMobile = useIsMobile()
   const location = useLocation()
 
   const isProject = location.pathname.startsWith('/p')
 
   if (!user || location.pathname === '/' || location.pathname.startsWith('/embed')) return null
 
+  // The Copilot docks to the right edge on desktop; keep status clear of its composer.
+  const isChatDocked = isProject && isChatOpen && !isMobile
+
   return (
-    <div className={`fixed bottom-4 ${isProject ? 'right-[4.5rem]' : 'right-4'} z-[999] pointer-events-none transition-all`}>
+    <div
+      style={isChatDocked ? { right: chatPanelWidth + 16 } : undefined}
+      className={`fixed bottom-4 ${isChatDocked ? '' : isProject ? 'right-[4.5rem]' : 'right-4'} z-[999] pointer-events-none`}
+    >
       <AnimatePresence mode="wait">
         {isSyncing ? (
           <motion.div

@@ -263,3 +263,49 @@ input[type="number"] {
   100% { transform: scale(1.22); opacity: 0;   }
 }
 
+
+
+/* ── Copilot ───────────────────────────────────
+   Shared motion tokens + the "working" text shimmer.
+   Constant motion => linear easing (shimmer); entrances use --ms-ease-out. */
+:root {
+  --ms-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ms-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes ms-text-shimmer {
+  from { background-position: 150% 0; }
+  to   { background-position: -50% 0; }
+}
+.ms-shimmer-text {
+  background-image: linear-gradient(
+    90deg,
+    var(--ms-text-muted) 0%,
+    var(--ms-text-muted) 38%,
+    var(--ms-text-primary) 50%,
+    var(--ms-text-muted) 62%,
+    var(--ms-text-muted) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ms-text-shimmer 1.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ms-shimmer-text {
+    animation: none;
+    background-image: none;
+    color: var(--ms-text-muted);
+  }
+}
+
+.ms-focus-ring:focus-visible {
+  outline: 2px solid var(--ms-accent);
+  outline-offset: 1px;
+}
+
+@keyframes ms-pop-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}

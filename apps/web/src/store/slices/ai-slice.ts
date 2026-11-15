@@ -1,5 +1,21 @@
 import type { StateCreator } from 'zustand'
 import type { EditorState } from '@/store/editor-store'
+import { getStorageItem, setStorageItem } from '@/lib/safe-storage'
+
+export const CHAT_PANEL_MIN_WIDTH = 340
+export const CHAT_PANEL_MAX_WIDTH = 560
+export const CHAT_PANEL_DEFAULT_WIDTH = 384
+const CHAT_PANEL_WIDTH_KEY = 'ms:copilot-width'
+
+export function clampChatPanelWidth(width: number): number {
+  return Math.min(CHAT_PANEL_MAX_WIDTH, Math.max(CHAT_PANEL_MIN_WIDTH, Math.round(width)))
+}
+
+function readPersistedChatPanelWidth(): number {
+  const raw = getStorageItem(CHAT_PANEL_WIDTH_KEY)
+  const parsed = raw ? Number(raw) : NaN
+  return Number.isFinite(parsed) ? clampChatPanelWidth(parsed) : CHAT_PANEL_DEFAULT_WIDTH
+}
 
 // ─────────────────────────────────────────────────────────────────
 // AISlice
@@ -18,6 +34,15 @@ export interface AISlice {
   isChatOpen: boolean
   toggleChat: () => void
   setChatOpen: (open: boolean) => void
+
+  /** Docked width of the Copilot rail in px (persisted on commit). */
+  chatPanelWidth: number
+  setChatPanelWidth: (width: number) => void
+  commitChatPanelWidth: () => void
+
+  /** True while the agent is generating or running tools (drives the toolbar indicator). */
+  isAgentBusy: boolean
+  setAgentBusy: (busy: boolean) => void
 
   /** The currently selected model ID */
   selectedModel: string
@@ -38,10 +63,17 @@ export interface AISlice {
   closeCriticModal: () => void
 }
 
-export const createAISlice: StateCreator<EditorState, [], [], AISlice> = (set) => ({
+export const createAISlice: StateCreator<EditorState, [], [], AISlice> = (set, get) => ({
   isChatOpen: false,
   toggleChat: () => set((s) => ({ isChatOpen: !s.isChatOpen })),
   setChatOpen: (open) => set({ isChatOpen: open }),
+
+  chatPanelWidth: readPersistedChatPanelWidth(),
+  setChatPanelWidth: (width) => set({ chatPanelWidth: clampChatPanelWidth(width) }),
+  commitChatPanelWidth: () => setStorageItem(CHAT_PANEL_WIDTH_KEY, String(get().chatPanelWidth)),
+
+  isAgentBusy: false,
+  setAgentBusy: (busy) => set((s) => (s.isAgentBusy === busy ? s : { isAgentBusy: busy })),
 
   selectedModel: 'gpt-4o',
   setSelectedModel: (model) => set({ selectedModel: model }),

@@ -10,6 +10,7 @@ export interface ChatThread {
   updatedAt: number
   messages: UIMessage[]
   messageSnapshotMap: Record<string, string>
+  messageDurationMap?: Record<string, number>
 }
 
 const getStorageKey = (projectId: string) => `ms_chat_threads_${projectId}`

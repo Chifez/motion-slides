@@ -89,6 +89,7 @@ export function EditorToolbar({ projectId }: Props) {
   }
 
   const isChatOpen = useEditorStore(state => state.isChatOpen)
+  const isAgentBusy = useEditorStore(state => state.isAgentBusy)
 
   const parentProject = project?.forkedFromId ? projectsList.find(p => p.id === project.forkedFromId) : null
   const isBranch = project?.forkedFromId && parentProject && project.ownerId === parentProject.ownerId
@@ -324,10 +325,13 @@ export function EditorToolbar({ projectId }: Props) {
             <button
               id="tour-ai-chat-button"
               onClick={() => toggleChat()}
-              title="AI Design Studio Chat"
-              className={`p-1.5 sm:p-2 rounded-lg transition cursor-pointer border-none shrink-0 ${isChatOpen ? 'bg-purple-600/20 text-purple-400' : 'bg-(--ms-bg-elevated) text-(--ms-text-muted) hover:text-(--ms-text-primary)'}`}
+              title="Copilot"
+              aria-label="Copilot"
+              aria-pressed={isChatOpen}
+              className={`relative p-1.5 sm:p-2 rounded-lg transition-colors cursor-pointer border shrink-0 ${isChatOpen ? 'bg-(--ms-bg-elevated) text-(--ms-text-primary) border-(--ms-border-strong)' : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary) border-transparent'}`}
             >
               <Sparkles size={16} />
+              {isAgentBusy && <span className="absolute top-1 right-1 size-1.5 rounded-full bg-(--ms-accent) animate-pulse" />}
             </button>
 
             <div className="relative shrink-0" ref={mobileMoreRef}>
@@ -455,18 +459,25 @@ export function EditorToolbar({ projectId }: Props) {
           </div>
         ) : (
           <div className="flex items-center gap-1.5 md:gap-2">
-            {/* AI Copilot Button */}
+            {/*
+              Copilot toggle. Deliberately a sibling of Share / Export (same height, border,
+              and neutral ink) rather than a tinted call-to-action: the agent is a tool in the
+              bar, not an ad for itself. "Open" is a pressed state; "working" is a single
+              accent dot, the only colour this control ever shows.
+            */}
             <button
               id="tour-ai-chat-button"
               onClick={() => toggleChat()}
-              title="AI Design Studio Copilot"
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer border ${isChatOpen
-                  ? 'bg-purple-100 text-purple-700 border-purple-300 shadow-xs dark:bg-purple-600/25 dark:text-purple-200 dark:border-purple-500/40'
-                  : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:hover:bg-purple-900/40 dark:border-purple-500/30'
+              title="Copilot"
+              aria-pressed={isChatOpen}
+              className={`relative inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer border ${isChatOpen
+                  ? 'bg-(--ms-bg-elevated) text-(--ms-text-primary) border-(--ms-border-strong)'
+                  : 'bg-white/5 hover:bg-white/10 text-(--ms-text-secondary) hover:text-(--ms-text-primary) border-(--ms-border)'
                 }`}
             >
-              <Sparkles size={13} className="text-purple-600 dark:text-purple-400" />
+              <Sparkles size={13} />
               <span className="hidden lg:inline">Ask AI</span>
+              {isAgentBusy && <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-(--ms-accent) ring-2 ring-(--ms-bg-base) animate-pulse" />}
             </button>
 
             {/* Version Control / Git */}
