@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
-import { X, Sparkles, MessageSquare, Plus, Check, Trash2, ChevronDown, Clock } from 'lucide-react'
+import { X, Plus, Check, Trash2, ChevronDown } from 'lucide-react'
 import type { ChatThread } from '@/store/chat-history-store'
+
+/**
+ * Header: 44px, one row, no brand badge.
+ *
+ * The thread switcher *is* the title (same pattern as Cursor / Linear): the panel is
+ * already labelled by the toolbar button that opened it, so repeating "MotionSlides
+ * Copilot" spends the most valuable row of the rail on a name the user already knows.
+ */
 
 interface Props {
   onClose: () => void
@@ -18,9 +26,11 @@ function formatRelativeTime(timestamp: number): string {
   if (mins < 60) return `${mins}m ago`
   const hours = Math.floor(mins / 60)
   if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  return `${Math.floor(hours / 24)}d ago`
 }
+
+const ICON_BUTTON =
+  'ms-focus-ring flex size-7 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-(--ms-text-muted) transition-[transform,background-color,color] duration-150 hover:bg-(--ms-bg-elevated) hover:text-(--ms-text-primary) active:scale-[0.95]'
 
 export function AgentChatHeader({
   onClose,
@@ -34,152 +44,106 @@ export function AgentChatHeader({
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowThreadMenu(false)
-      }
+    if (!showThreadMenu) return
+    function handlePointerDown(event: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setShowThreadMenu(false)
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setShowThreadMenu(false)
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showThreadMenu])
 
   const activeThread = threads.find((t) => t.id === activeThreadId)
-  const threadTitle = activeThread ? activeThread.title : 'New Thread'
+  const threadTitle = activeThread?.title ?? 'New conversation'
 
   return (
-    <div className="h-13 flex items-center justify-between px-3.5 border-b border-(--ms-border) bg-(--ms-bg-surface) shrink-0 select-none transition-colors">
-      {/* Brand & Copilot Identity */}
-      <div className="flex items-center gap-2 min-w-0">
-        <div className="w-6 h-6 rounded-md bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
-          <Sparkles size={13} />
-        </div>
-        <div className="flex flex-col min-w-0">
-          <span className="text-xs font-semibold text-(--ms-text-primary) tracking-tight leading-tight">
-            MotionSlides Copilot
-          </span>
-        </div>
-      </div>
-
-      {/* Center/Right Thread Switcher & Actions */}
-      <div className="flex items-center gap-1 shrink-0">
-        {/* Thread Switcher Dropdown */}
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setShowThreadMenu(!showThreadMenu)}
-            className={`h-7 px-2 rounded-md text-[11px] font-medium flex items-center gap-1.5 transition-all duration-150 active:scale-[0.97] cursor-pointer border ${
-              showThreadMenu
-                ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                : 'bg-(--ms-bg-elevated) hover:bg-(--ms-border) text-(--ms-text-secondary) hover:text-(--ms-text-primary) border-(--ms-border)'
-            }`}
-            title="Switch or manage conversation threads"
-          >
-            <MessageSquare size={11} className="shrink-0 text-blue-400" />
-            <span className="max-w-[100px] truncate">{threadTitle}</span>
-            <ChevronDown size={10} className={`transition-transform duration-150 shrink-0 ${showThreadMenu ? 'rotate-180' : ''}`} />
-          </button>
-
-          {showThreadMenu && (
-            <div className="absolute top-full right-0 mt-1.5 w-72 bg-(--ms-bg-elevated) border border-(--ms-border) rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col p-1.5 animate-in fade-in zoom-in-95 duration-150">
-              {/* New Thread Action Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowThreadMenu(false)
-                  onNewThread()
-                }}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all duration-150 active:scale-[0.97] cursor-pointer mb-1.5"
-              >
-                <Plus size={13} className="shrink-0" />
-                <span>New Conversation</span>
-              </button>
-
-              <div className="px-2 py-1 flex items-center justify-between border-b border-(--ms-border)">
-                <span className="text-[10px] font-semibold text-(--ms-text-muted) uppercase tracking-wider">
-                  History ({threads.length})
-                </span>
-              </div>
-
-              {/* Thread list */}
-              <div className="flex flex-col max-h-56 overflow-y-auto custom-scrollbar space-y-0.5 pt-1">
-                {threads.length === 0 ? (
-                  <div className="py-6 text-center text-xs text-(--ms-text-muted)">
-                    No conversation history yet
-                  </div>
-                ) : (
-                  threads.map((t) => {
-                    const isActive = t.id === activeThreadId
-                    return (
-                      <div
-                        key={t.id}
-                        className={`group flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors duration-150 ${
-                          isActive
-                            ? 'bg-blue-600/15 text-blue-400 font-medium'
-                            : 'text-(--ms-text-secondary) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-surface)'
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowThreadMenu(false)
-                            onSelectThread(t.id)
-                          }}
-                          className="flex-1 flex items-center gap-2 text-left min-w-0 bg-transparent border-none p-0 cursor-pointer text-inherit font-inherit"
-                        >
-                          {isActive ? (
-                            <Check size={12} className="shrink-0 text-blue-400" />
-                          ) : (
-                            <Clock size={11} className="shrink-0 text-(--ms-text-muted) opacity-60" />
-                          )}
-                          <div className="flex flex-col min-w-0">
-                            <span className="truncate text-xs">{t.title}</span>
-                            <span className="text-[9px] text-(--ms-text-muted)">
-                              {formatRelativeTime(t.updatedAt)} • {t.messages.length} msgs
-                            </span>
-                          </div>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDeleteThread(t.id)
-                          }}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-(--ms-text-muted) hover:text-red-400 transition-all duration-150 border-none bg-transparent cursor-pointer ml-1.5"
-                          title="Delete thread"
-                        >
-                          <Trash2 size={11} />
-                        </button>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Quick New Thread Button */}
+    <header className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-(--ms-border) pr-2 pl-2.5 select-none">
+      <div className="relative min-w-0" ref={menuRef}>
         <button
           type="button"
-          onClick={onNewThread}
-          className="p-1.5 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) transition-all duration-150 active:scale-[0.95] border-none bg-transparent cursor-pointer"
-          title="Start fresh conversation"
-          aria-label="New thread"
+          onClick={() => setShowThreadMenu((open) => !open)}
+          aria-haspopup="menu"
+          aria-expanded={showThreadMenu}
+          className="ms-focus-ring flex h-7 max-w-full cursor-pointer items-center gap-1.5 rounded-md border-none bg-transparent px-1.5 text-[13px] font-medium text-(--ms-text-primary) transition-colors duration-150 hover:bg-(--ms-bg-elevated)"
         >
-          <Plus size={15} />
+          <span className="truncate">{threadTitle}</span>
+          <ChevronDown
+            size={12}
+            className={`shrink-0 text-(--ms-text-muted) transition-transform duration-150 ease-(--ms-ease-out) ${showThreadMenu ? 'rotate-180' : ''}`}
+          />
         </button>
 
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1.5 rounded-md text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-elevated) transition-all duration-150 active:scale-[0.95] border-none bg-transparent cursor-pointer"
-          aria-label="Close copilot"
-        >
+        {showThreadMenu && (
+          <div
+            role="menu"
+            // Anchored to the trigger's top-left, so it scales from there (origin-aware popover).
+            className="absolute top-full left-0 z-50 mt-1 flex max-h-80 w-72 origin-top-left animate-[ms-pop-in_140ms_var(--ms-ease-out)] flex-col overflow-hidden rounded-lg border border-(--ms-border-strong) bg-(--ms-bg-elevated) p-1 shadow-2xl"
+          >
+            <div className="custom-scrollbar flex min-h-0 flex-col gap-px overflow-y-auto">
+              {threads.length === 0 ? (
+                <p className="px-2.5 py-3 text-center text-xs text-(--ms-text-muted)">No conversations yet</p>
+              ) : (
+                threads.map((thread) => {
+                  const isActive = thread.id === activeThreadId
+                  return (
+                    <div
+                      key={thread.id}
+                      className={`group/thread flex items-center rounded-md transition-colors duration-150 ${
+                        isActive ? 'bg-(--ms-bg-surface)' : 'hover:bg-(--ms-bg-surface)'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowThreadMenu(false)
+                          onSelectThread(thread.id)
+                        }}
+                        className="ms-focus-ring flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md border-none bg-transparent px-2 py-1.5 text-left"
+                      >
+                        <span className="flex size-3.5 shrink-0 items-center justify-center text-(--ms-text-primary)">
+                          {isActive && <Check size={12} />}
+                        </span>
+                        <span className="flex min-w-0 flex-col">
+                          <span
+                            className={`truncate text-xs leading-4 ${isActive ? 'text-(--ms-text-primary)' : 'text-(--ms-text-secondary)'}`}
+                          >
+                            {thread.title}
+                          </span>
+                          <span className="text-[11px] leading-4 text-(--ms-text-muted)">{formatRelativeTime(thread.updatedAt)}</span>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteThread(thread.id)}
+                        aria-label={`Delete ${thread.title}`}
+                        className="ms-focus-ring mr-1 flex size-6 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent text-(--ms-text-muted) opacity-0 transition-[opacity,color] duration-150 group-hover/thread:opacity-100 hover:text-rose-400 focus-visible:opacity-100"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex shrink-0 items-center">
+        <button type="button" onClick={onNewThread} className={ICON_BUTTON} title="New conversation" aria-label="New conversation">
+          <Plus size={15} />
+        </button>
+        <button type="button" onClick={onClose} className={ICON_BUTTON} title="Close" aria-label="Close Copilot">
           <X size={15} />
         </button>
       </div>
-    </div>
+    </header>
   )
 }

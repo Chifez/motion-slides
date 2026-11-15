@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, type FormEvent, type ChangeEvent, type DragEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowUp, Square, Mic, ChevronDown, BrainCircuit, Bot, Cpu, Paperclip, FileText, X, UploadCloud, Loader2 } from 'lucide-react'
+import { ArrowUp, Square, Mic, ChevronsUpDown, Check, Paperclip, FileText, X, Loader2 } from 'lucide-react'
 import { useEditorStore } from '@/store/editor-store'
 import { transcribeAudioAction } from '@/lib/actions/ai-studio'
 import { buildDocumentPrompt, DocumentExtractionError, extractDocumentContent, type ExtractedDocument } from '@/lib/generation/doc-extractor'
@@ -8,24 +8,22 @@ import { buildDocumentPrompt, DocumentExtractionError, extractDocumentContent, t
 interface ModelDef {
   id: string
   label: string
-  provider: 'openai' | 'anthropic' | 'ollama'
+  provider: 'cloud' | 'local'
   desc: string
-  icon: React.ElementType
 }
 
 const MODELS: ModelDef[] = [
-  { id: 'gpt-4o',             label: 'GPT-4o',             provider: 'openai',    desc: 'Fast & Smart',       icon: BrainCircuit },
-  { id: 'claude-3-5-sonnet',  label: 'Claude 3.5 Sonnet',  provider: 'anthropic', desc: 'Deep Reasoning',     icon: Bot },
-  { id: 'llama3.2',           label: 'Llama 3.3 / 3.2',    provider: 'ollama',    desc: 'Fast & Open Source', icon: Cpu },
-  { id: 'qwen2.5',            label: 'Qwen 2.5',           provider: 'ollama',    desc: 'Code & Diagramming', icon: Cpu },
-  { id: 'mistral',            label: 'Mistral 7B',         provider: 'ollama',    desc: 'Open Source',        icon: Cpu },
+  { id: 'gpt-4o',            label: 'GPT-4o',            provider: 'cloud', desc: 'Fast and capable' },
+  { id: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet', provider: 'cloud', desc: 'Deep reasoning' },
+  { id: 'llama3.2',          label: 'Llama 3.3 / 3.2',   provider: 'local', desc: 'Fast, open source' },
+  { id: 'qwen2.5',           label: 'Qwen 2.5',          provider: 'local', desc: 'Code and diagrams' },
+  { id: 'mistral',           label: 'Mistral 7B',        provider: 'local', desc: 'Open source' },
 ]
 
-const PROVIDER_COLORS: Record<string, string> = {
-  openai:    'text-blue-400',
-  anthropic: 'text-orange-400',
-  ollama:    'text-emerald-400',
-}
+const MODEL_GROUPS: Array<{ title: string; provider: ModelDef['provider'] }> = [
+  { title: 'Cloud', provider: 'cloud' },
+  { title: 'Open source (Groq / Ollama)', provider: 'local' },
+]
 
 interface Props {
   input: string
@@ -62,7 +60,8 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const activeModel = MODELS.find((m) => m.id === selectedModel) ?? MODELS[0]
-  const ActiveIcon = activeModel.icon
+  const activeSlideNumber = useEditorStore((s) => s.activeSlideIndex) + 1
+  const canSubmit = Boolean(input.trim()) || Boolean(attachedFile)
 
   useEffect(() => {
     return () => {
@@ -77,7 +76,7 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
       const scrollHeight = textareaRef.current.scrollHeight
-      textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, 68), 160)}px`
+      textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, 44), 168)}px`
     }
   }, [input])
 
@@ -194,14 +193,20 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
+      // Typing ahead while the agent works is fine; submitting is not.
+      if (isLoading) return
       const form = textareaRef.current?.closest('form')
       form?.requestSubmit()
     }
   }
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (isLoading) {
+      e.preventDefault()
+      return
+    }
     let message = input.trim()
     if (attachedFile) {
       message = buildDocumentPrompt(attachedFile.doc, message)
@@ -212,7 +217,7 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
   }
 
   return (
-    <div className="shrink-0 p-3 pt-0 bg-transparent">
+    <div className="shrink-0 px-3 pt-1 pb-2.5">
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -223,113 +228,130 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
       />
 
       <form onSubmit={handleFormSubmit}>
+        {/*
+          Composer surface. Border is a hairline at rest and brightens on hover; the accent
+          appears only as a focus ring (the one place the user's attention should be).
+          No drop shadow: this is docked chrome, not a floating card.
+        */}
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`relative bg-(--ms-bg-elevated) border rounded-2xl transition-all duration-150 shadow-lg ${
+          className={`relative rounded-xl border bg-(--ms-bg-elevated) transition-[border-color,box-shadow] duration-150 ${
             isDragging
-              ? 'border-blue-500 bg-blue-500/10'
-              : 'border-(--ms-border) hover:border-(--ms-border-strong) focus-within:border-blue-500/50'
+              ? 'border-(--ms-accent)'
+              : 'border-(--ms-border-strong) focus-within:border-(--ms-accent)/60 focus-within:ring-3 focus-within:ring-(--ms-accent)/15'
           }`}
         >
-          {/* Live Recording Active Banner */}
-          <AnimatePresence>
+          {/* Recording */}
+          <AnimatePresence initial={false}>
             {isRecording && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="px-3 py-1.5 flex items-center justify-between bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs select-none rounded-t-2xl"
+                transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                className="overflow-hidden"
               >
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="font-semibold text-[11px]">Recording Voice</span>
-                  <span className="font-mono text-[11px] bg-red-500/20 px-1.5 py-0.5 rounded font-bold">
-                    {formatTimer(recordingSeconds)}
+                <div className="flex h-8 items-center justify-between border-b border-(--ms-border) px-3 text-xs select-none">
+                  <span className="flex items-center gap-2 text-(--ms-text-secondary)">
+                    <span className="size-1.5 animate-pulse rounded-full bg-rose-500" />
+                    Recording
+                    <span className="tabular-nums text-(--ms-text-muted)">{formatTimer(recordingSeconds)}</span>
                   </span>
+                  <button
+                    type="button"
+                    onClick={toggleRecording}
+                    className="ms-focus-ring cursor-pointer rounded border-none bg-transparent px-1 text-xs font-medium text-(--ms-text-primary) hover:underline"
+                  >
+                    Done
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={toggleRecording}
-                  className="text-[10.5px] font-medium text-red-400 hover:text-red-300 underline cursor-pointer bg-transparent border-none p-0"
-                >
-                  Done Recording
-                </button>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Transcribing Audio State Banner */}
-          <AnimatePresence>
+          {/* Transcribing */}
+          <AnimatePresence initial={false}>
             {isTranscribing && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="px-3 py-1.5 flex items-center gap-2 bg-blue-500/10 border-b border-blue-500/20 text-blue-400 text-xs select-none rounded-t-2xl"
+                transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                className="overflow-hidden"
               >
-                <Loader2 size={12} className="animate-spin text-blue-400 shrink-0" />
-                <span className="font-medium text-[11px]">Transcribing voice audio with Whisper…</span>
+                <div className="flex h-8 items-center gap-2 border-b border-(--ms-border) px-3 text-xs text-(--ms-text-secondary) select-none">
+                  <Loader2 size={12} className="animate-spin text-(--ms-text-muted)" />
+                  Transcribing
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Drag & drop overlay */}
+          {/* Drop target */}
           <AnimatePresence>
             {isDragging && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 z-20 bg-blue-950/85 backdrop-blur-sm flex flex-col items-center justify-center gap-1 text-blue-300 pointer-events-none rounded-2xl"
+                transition={{ duration: 0.12 }}
+                className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-(--ms-accent) bg-(--ms-bg-elevated)/90 backdrop-blur-sm"
               >
-                <UploadCloud size={22} className="animate-bounce text-blue-400" />
-                <p className="text-xs font-semibold">Drop file to synthesize slides</p>
-                <p className="text-[10px] text-blue-300/70">Markdown, PDF, OpenAPI YAML, JSON, Code</p>
+                <p className="text-[13px] leading-5 font-medium text-(--ms-text-primary)">Drop to attach</p>
+                <p className="text-[11px] leading-4 text-(--ms-text-muted)">Markdown, PDF, DOCX, YAML, JSON, code</p>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Attached File Chip */}
-          <AnimatePresence>
+          {/* Attachment */}
+          <AnimatePresence initial={false}>
             {attachedFile && (
               <motion.div
-                initial={{ opacity: 0, height: 0, y: -4 }}
-                animate={{ opacity: 1, height: 'auto', y: 0 }}
-                exit={{ opacity: 0, height: 0, y: -4 }}
-                className="px-3 pt-2.5 pb-1 flex items-center justify-between"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                className="overflow-hidden"
               >
-                <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs text-blue-400 max-w-[85%] truncate">
-                  <FileText size={12} className="text-blue-400 shrink-0" />
-                  <span className="font-medium truncate">{attachedFile.doc.fileName}</span>
-                  <span className="text-[10px] text-blue-400/60 shrink-0">({attachedFile.fileSize})</span>
-                  {attachedFile.doc.extraction.truncated && <span className="text-[10px] text-amber-400 shrink-0">(excerpt)</span>}
-                  {attachedFile.doc.extraction.warnings.length > 0 && (
-                    <span className="text-[10px] text-amber-400 shrink-0" title={attachedFile.doc.extraction.warnings.join(' ')}>(warning)</span>
-                  )}
+                <div className="flex items-center justify-between gap-2 px-2.5 pt-2.5">
+                  <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-(--ms-border) bg-(--ms-bg-surface) py-1 pr-2 pl-1.5 text-xs leading-4">
+                    <FileText size={12} className="shrink-0 text-(--ms-text-muted)" />
+                    <span className="truncate text-(--ms-text-primary)">{attachedFile.doc.fileName}</span>
+                    <span className="shrink-0 tabular-nums text-(--ms-text-muted)">{attachedFile.fileSize}</span>
+                    {attachedFile.doc.extraction.truncated && <span className="shrink-0 text-amber-500">Excerpt</span>}
+                    {attachedFile.doc.extraction.warnings.length > 0 && (
+                      <span className="shrink-0 text-amber-500" title={attachedFile.doc.extraction.warnings.join(' ')}>
+                        Warning
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAttachedFile(null)}
+                    aria-label="Remove attachment"
+                    className="ms-focus-ring flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-(--ms-text-muted) transition-colors duration-150 hover:bg-(--ms-bg-surface) hover:text-(--ms-text-primary)"
+                  >
+                    <X size={12} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setAttachedFile(null)}
-                  className="p-1 rounded-md text-(--ms-text-muted) hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer border-none bg-transparent"
-                  title="Remove attachment"
-                >
-                  <X size={12} />
-                </button>
               </motion.div>
             )}
           </AnimatePresence>
 
-          <AnimatePresence>
+          <AnimatePresence initial={false}>
             {fileError && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mx-3 mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-2 text-[10px] leading-relaxed text-red-300"
+                transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                className="overflow-hidden"
               >
-                {fileError}
+                <p role="alert" className="px-3 pt-2.5 text-xs leading-4 text-rose-400">
+                  {fileError}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -343,164 +365,135 @@ export function AgentInput({ input, isLoading, selectedModel, onInputChange, onS
               isTranscribing
                 ? 'Transcribing your voice…'
                 : isRecording
-                ? 'Listening to audio input…'
-                : attachedFile
-                ? `Synthesize "${attachedFile.doc.title}" or specify layout details…`
-                : 'Ask copilot to create slides, choreograph flows, or drop a spec doc…'
+                  ? 'Listening…'
+                  : attachedFile
+                    ? 'Add instructions, or send to synthesize a deck'
+                    : 'Ask Copilot to edit this deck…'
             }
-            rows={3}
-            className="w-full bg-transparent border-none px-3.5 pt-3 pb-2 text-xs text-(--ms-text-primary) placeholder:text-(--ms-text-muted) resize-none focus:outline-none custom-scrollbar font-medium leading-relaxed min-h-[68px]"
-            disabled={isLoading || isTranscribing}
+            rows={1}
+            aria-label="Message Copilot"
+            className="custom-scrollbar block min-h-11 w-full resize-none border-none bg-transparent px-3 pt-2.5 pb-1 text-[13px] leading-5 tracking-[-0.006em] text-(--ms-text-primary) outline-none placeholder:text-(--ms-text-muted) disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isTranscribing}
           />
 
-          <div className="flex items-center justify-between px-2.5 pb-2">
-            {/* Left: file upload + mic + model selector */}
-            <div className="flex items-center gap-1">
-              {/* Paperclip / File Upload Button */}
+          <div className="flex items-center justify-between px-1.5 pt-0.5 pb-1.5">
+            <div className="flex items-center gap-0.5">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="p-1.5 rounded-lg text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-surface) bg-transparent transition-all duration-150 active:scale-[0.95] cursor-pointer border-none"
-                title="Attach Document (.md, .pdf, .yaml, .json, code)"
+                aria-label="Attach a document"
+                title="Attach a document"
+                className="ms-focus-ring flex size-7 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-(--ms-text-muted) transition-[transform,background-color,color] duration-150 hover:bg-(--ms-bg-surface) hover:text-(--ms-text-primary) active:scale-[0.95]"
               >
                 <Paperclip size={14} />
               </button>
 
-              {/* Voice Button */}
               <button
                 type="button"
                 onClick={toggleRecording}
                 disabled={voiceInputState === 'requesting-permission' || isTranscribing}
-                className={`p-1.5 rounded-lg transition-all duration-150 active:scale-[0.95] cursor-pointer border-none flex items-center gap-1 ${
+                aria-label={isRecording ? 'Stop recording' : 'Dictate'}
+                title={isRecording ? 'Stop recording' : 'Dictate'}
+                className={`ms-focus-ring flex size-7 cursor-pointer items-center justify-center rounded-md border-none transition-[transform,background-color,color] duration-150 active:scale-[0.95] disabled:cursor-wait disabled:opacity-60 ${
                   isRecording
-                    ? 'text-red-400 bg-red-500/15 border border-red-500/30'
-                    : isTranscribing
-                    ? 'text-blue-400 bg-blue-500/15 cursor-wait'
-                    : 'text-(--ms-text-muted) hover:text-(--ms-text-primary) hover:bg-(--ms-bg-surface) bg-transparent'
+                    ? 'bg-rose-500/15 text-rose-400'
+                    : 'bg-transparent text-(--ms-text-muted) hover:bg-(--ms-bg-surface) hover:text-(--ms-text-primary)'
                 }`}
-                title={isRecording ? 'Stop recording (Click to finish)' : isTranscribing ? 'Transcribing...' : 'Voice input'}
               >
-                {isTranscribing ? (
-                  <Loader2 size={14} className="animate-spin text-blue-400" />
-                ) : (
-                  <>
-                    <Mic size={14} className={isRecording ? 'text-red-400' : ''} />
-                    {isRecording && (
-                      <span className="text-[10px] font-mono font-semibold text-red-400 pr-0.5">
-                        {formatTimer(recordingSeconds)}
-                      </span>
-                    )}
-                  </>
-                )}
+                <Mic size={14} />
               </button>
 
-              <div className="w-px h-3.5 bg-(--ms-border) mx-0.5" />
-
-              {/* Model picker */}
-              <div className="relative" ref={modelMenuRef}>
+              <div className="relative ml-1" ref={modelMenuRef} onKeyDown={(e) => e.key === 'Escape' && setShowModelMenu(false)}>
                 <button
                   type="button"
-                  onClick={() => setShowModelMenu((v) => !v)}
-                  className={`flex items-center gap-1 px-1.5 py-1 rounded-md transition-all duration-150 active:scale-[0.97] cursor-pointer text-[10px] font-medium ${
+                  onClick={() => setShowModelMenu((open) => !open)}
+                  aria-haspopup="listbox"
+                  aria-expanded={showModelMenu}
+                  className={`ms-focus-ring flex h-7 cursor-pointer items-center gap-1 rounded-md border-none px-2 text-xs transition-colors duration-150 ${
                     showModelMenu
-                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
-                      : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary) border border-transparent hover:border-(--ms-border)'
+                      ? 'bg-(--ms-bg-surface) text-(--ms-text-primary)'
+                      : 'bg-transparent text-(--ms-text-muted) hover:bg-(--ms-bg-surface) hover:text-(--ms-text-primary)'
                   }`}
                 >
-                  <ActiveIcon size={11} className={PROVIDER_COLORS[activeModel.provider]} />
                   <span>{activeModel.label}</span>
-                  <ChevronDown size={9} className={`transition-transform duration-150 ${showModelMenu ? 'rotate-180' : ''}`} />
+                  <ChevronsUpDown size={11} />
                 </button>
 
-                <AnimatePresence>
-                  {showModelMenu && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setShowModelMenu(false)}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, y: 6, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 6, scale: 0.96 }}
-                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute bottom-full left-0 mb-2 w-64 bg-(--ms-bg-surface) border border-(--ms-border-strong) rounded-xl shadow-2xl z-50 p-1.5 backdrop-blur-xl max-h-[340px] overflow-y-auto custom-scrollbar"
-                      >
-                        <p className="text-[9px] text-(--ms-text-muted) font-bold uppercase tracking-wider px-2.5 pt-1.5 pb-1">Cloud Models</p>
-                        {MODELS.filter((m) => m.provider !== 'ollama').map((m) => {
-                          const Icon = m.icon
-                          return (
-                            <button
-                              key={m.id}
-                              type="button"
-                              onClick={() => { setSelectedModel(m.id); setShowModelMenu(false) }}
-                              className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all duration-150 active:scale-[0.98] cursor-pointer border-none ${
-                                selectedModel === m.id ? 'bg-blue-600/15 text-blue-400' : 'bg-transparent text-(--ms-text-secondary) hover:bg-(--ms-bg-surface) hover:text-(--ms-text-primary)'
-                              }`}
-                            >
-                              <Icon size={14} className={PROVIDER_COLORS[m.provider]} />
-                              <div>
-                                <p className="text-xs font-medium leading-none">{m.label}</p>
-                                <p className="text-[10px] text-(--ms-text-muted) mt-0.5">{m.desc}</p>
-                              </div>
-                            </button>
-                          )
-                        })}
-
-                        <p className="text-[9px] text-(--ms-text-muted) font-bold uppercase tracking-wider px-2.5 pt-2.5 pb-1 border-t border-(--ms-border) mt-1">Open Source (Groq / Ollama)</p>
-                        {MODELS.filter((m) => m.provider === 'ollama').map((m) => {
-                          const Icon = m.icon
-                          return (
-                            <button
-                              key={m.id}
-                              type="button"
-                              onClick={() => { setSelectedModel(m.id); setShowModelMenu(false) }}
-                              className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all duration-150 active:scale-[0.98] cursor-pointer border-none ${
-                                selectedModel === m.id ? 'bg-emerald-600/15 text-emerald-400' : 'bg-transparent text-(--ms-text-secondary) hover:bg-(--ms-bg-surface) hover:text-(--ms-text-primary)'
-                              }`}
-                            >
-                              <Icon size={14} className={PROVIDER_COLORS[m.provider]} />
-                              <div>
-                                <p className="text-xs font-medium leading-none">{m.label}</p>
-                                <p className="text-[10px] text-(--ms-text-muted) mt-0.5">{m.desc}</p>
-                              </div>
-                            </button>
-                          )
-                        })}
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
+                {showModelMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowModelMenu(false)} />
+                    <div
+                      role="listbox"
+                      className="custom-scrollbar absolute bottom-full left-0 z-50 mb-1.5 max-h-80 w-60 origin-bottom-left animate-[ms-pop-in_140ms_var(--ms-ease-out)] overflow-y-auto rounded-lg border border-(--ms-border-strong) bg-(--ms-bg-elevated) p-1 shadow-2xl"
+                    >
+                      {MODEL_GROUPS.map((group, groupIndex) => (
+                        <div key={group.provider} className={groupIndex > 0 ? 'mt-1 border-t border-(--ms-border) pt-1' : ''}>
+                          <p className="px-2 pt-1.5 pb-1 text-[11px] leading-4 font-medium text-(--ms-text-muted)">{group.title}</p>
+                          {MODELS.filter((m) => m.provider === group.provider).map((m) => {
+                            const isSelected = selectedModel === m.id
+                            return (
+                              <button
+                                key={m.id}
+                                type="button"
+                                role="option"
+                                aria-selected={isSelected}
+                                onClick={() => {
+                                  setSelectedModel(m.id)
+                                  setShowModelMenu(false)
+                                }}
+                                className="ms-focus-ring flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border-none bg-transparent px-2 py-1.5 text-left transition-colors duration-150 hover:bg-(--ms-bg-surface)"
+                              >
+                                <span className="flex min-w-0 flex-col">
+                                  <span className="text-xs leading-4 text-(--ms-text-primary)">{m.label}</span>
+                                  <span className="text-[11px] leading-4 text-(--ms-text-muted)">{m.desc}</span>
+                                </span>
+                                {isSelected && <Check size={12} className="shrink-0 text-(--ms-text-primary)" />}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Right: Submit / Stop */}
             {isLoading ? (
               <button
                 type="button"
                 onClick={onStop}
-                className="w-7 h-7 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 flex items-center justify-center transition-all duration-150 active:scale-[0.95] cursor-pointer"
-                title="Stop response"
+                aria-label="Stop generating"
+                title="Stop generating"
+                className="ms-focus-ring flex size-7 cursor-pointer items-center justify-center rounded-lg border-none bg-(--ms-text-primary) text-(--ms-bg-base) transition-transform duration-150 active:scale-[0.95]"
               >
-                <Square size={11} fill="currentColor" />
+                <Square size={10} fill="currentColor" />
               </button>
             ) : (
               <button
                 type="submit"
-                disabled={!input.trim() && !attachedFile}
-                className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all duration-150 cursor-pointer border-none shadow-md ${
-                  !input.trim() && !attachedFile
-                    ? 'bg-(--ms-border) text-(--ms-text-muted) cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-500 text-white active:scale-[0.95] shadow-blue-600/20'
+                disabled={!canSubmit}
+                aria-label="Send message"
+                title="Send (Enter)"
+                className={`ms-focus-ring flex size-7 items-center justify-center rounded-lg border-none transition-[transform,background-color,color,opacity] duration-150 ${
+                  canSubmit
+                    ? 'cursor-pointer bg-(--ms-accent) text-white hover:brightness-110 active:scale-[0.95]'
+                    : 'cursor-not-allowed bg-(--ms-bg-surface) text-(--ms-text-muted)'
                 }`}
-                title="Send message (Enter)"
               >
-                <ArrowUp size={13} strokeWidth={2.5} />
+                <ArrowUp size={14} strokeWidth={2.25} />
               </button>
             )}
           </div>
         </div>
       </form>
+
+      <div className="flex items-center justify-between px-1 pt-1.5 text-[11px] leading-4 text-(--ms-text-muted) select-none">
+        <span>Editing slide {activeSlideNumber}</span>
+        <span className="hidden sm:inline">
+          <kbd className="font-sans">↵</kbd> send · <kbd className="font-sans">⇧↵</kbd> new line
+        </span>
+      </div>
     </div>
   )
 }
