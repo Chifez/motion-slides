@@ -1,5 +1,5 @@
-import { memo, useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { memo, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import type { SceneElement, SectionContent } from '@motionslides/shared'
 import { useEditorStore } from '@/store/editor-store'
 
