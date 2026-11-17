@@ -17,7 +17,8 @@ interface Props {
 export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Props) {
   const [mode, setMode] = useState<'idle' | 'recording' | 'uploading' | 'ai-form' | 'generating'>('idle')
   const [aiText, setAiText] = useState(slideScript || '')
-  const [voiceId, setVoiceId] = useState('rachel')
+  const [voiceId, setVoiceId] = useState('21m00Tcm4TlvDq8ikWAM')
+  const [aiError, setAiError] = useState<string | null>(null)
   const [recordingTime, setRecordingTime] = useState(0)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
@@ -129,25 +130,41 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
     return `${minutesString}:${secondsString}`
   }
 
+  const readAudioDuration = (url: string, fallback: number) => new Promise<number>((resolve) => {
+    const audio = new Audio(url)
+    const finish = (duration: number) => {
+      audio.removeAttribute('src')
+      audio.load()
+      resolve(Number.isFinite(duration) && duration > 0 ? duration : fallback)
+    }
+    audio.addEventListener('loadedmetadata', () => finish(audio.duration), { once: true })
+    audio.addEventListener('error', () => finish(fallback), { once: true })
+  })
+
   const handleGenerate = async () => {
     if (!aiText.trim()) return
+    setAiError(null)
     setMode('generating')
     try {
-      const result = await generateVoiceoverAction({ data: { text: aiText, voiceId, settings: {} } })
+      const result = await generateVoiceoverAction({ data: { text: aiText, voiceId } }) as {
+        audioUrl: string
+        durationEstimate: number
+      }
+      const duration = await readAudioDuration(result.audioUrl, result.durationEstimate)
       onSave({
         id: Math.random().toString(36).substring(7),
-        url: (result as { audioUrl?: string })?.audioUrl || '/placeholder-audio.mp3',
+        url: result.audioUrl,
         fileName: `AI Voice (${voiceId})`,
-        duration: 3.5,
+        duration,
         volume: 1,
         loop: false,
         playbackRate: 1,
         trimStart: 0,
-        trimEnd: 3.5,
+        trimEnd: duration,
       })
       onClose()
-    } catch (e) {
-      alert('Generation failed')
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : 'Generation failed. Please try again.')
       setMode('ai-form')
     }
   }
@@ -200,9 +217,9 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
             onChange={e => setVoiceId(e.target.value)}
             className="bg-black/20 border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-white/20"
           >
-            <option value="rachel">Rachel</option>
-            <option value="antoni">Antoni</option>
-            <option value="bella">Bella</option>
+            <option value="21m00Tcm4TlvDq8ikWAM">Rachel</option>
+            <option value="ErXwobaYiN019PkySvjV">Antoni</option>
+            <option value="EXAVITQu4vr4xnSDxMaL">Bella</option>
           </select>
           <div className="flex gap-2">
             <button onClick={() => setMode('idle')} className="text-[11px] text-white/50 hover:text-white px-2 border-none bg-transparent cursor-pointer">Cancel</button>
@@ -211,6 +228,7 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
             </button>
           </div>
         </div>
+        {aiError && <p role="alert" className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1.5">{aiError}</p>}
       </div>
     )
   }

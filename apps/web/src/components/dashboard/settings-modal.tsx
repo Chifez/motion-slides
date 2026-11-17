@@ -14,6 +14,7 @@ export function SettingsModal({ isOpen, onClose }: Props) {
   const [openAIKey, setOpenAIKey] = useState('')
   const [anthropicKey, setAnthropicKey] = useState('')
   const [elevenLabsKey, setElevenLabsKey] = useState('')
+  const [removeProviders, setRemoveProviders] = useState<Array<'openai' | 'anthropic' | 'elevenlabs'>>([])
   const [keyStatus, setKeyStatus] = useState<{ hasOpenAI: boolean; hasAnthropic: boolean; hasElevenLabs: boolean } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -43,7 +44,18 @@ export function SettingsModal({ isOpen, onClose }: Props) {
     setIsSaving(true)
     setSaveSuccess(false)
     try {
-      await updateAPIKeysAction({ data: { openAIKey, anthropicKey, elevenLabsKey } })
+      await updateAPIKeysAction({
+        data: {
+          ...(openAIKey.trim() ? { openAIKey: openAIKey.trim() } : {}),
+          ...(anthropicKey.trim() ? { anthropicKey: anthropicKey.trim() } : {}),
+          ...(elevenLabsKey.trim() ? { elevenLabsKey: elevenLabsKey.trim() } : {}),
+          removeProviders,
+        },
+      })
+      setOpenAIKey('')
+      setAnthropicKey('')
+      setElevenLabsKey('')
+      setRemoveProviders([])
       setSaveSuccess(true)
       const updated = await getUserKeysStatusAction()
       setKeyStatus(updated)
@@ -52,6 +64,16 @@ export function SettingsModal({ isOpen, onClose }: Props) {
       alert('Failed to save API keys')
     }
     setIsSaving(false)
+  }
+
+  const markForRemoval = (provider: 'openai' | 'anthropic' | 'elevenlabs') => {
+    setRemoveProviders(current => current.includes(provider)
+      ? current.filter(item => item !== provider)
+      : [...current, provider])
+  }
+
+  const unmarkForRemoval = (provider: 'openai' | 'anthropic' | 'elevenlabs') => {
+    setRemoveProviders(current => current.filter(item => item !== provider))
   }
 
   if (!isOpen) return null
@@ -117,16 +139,25 @@ export function SettingsModal({ isOpen, onClose }: Props) {
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-medium text-(--ms-text-secondary)">OpenAI API Key (GPT-4o)</label>
                         {keyStatus?.hasOpenAI && (
-                          <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
-                            <CheckCircle2 size={11} /> Saved
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                              <CheckCircle2 size={11} /> Saved
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => markForRemoval('openai')}
+                              className="text-[10px] text-red-400 hover:text-red-300 border-none bg-transparent cursor-pointer"
+                            >
+                              {removeProviders.includes('openai') ? 'Will remove' : 'Remove'}
+                            </button>
+                          </div>
                         )}
                       </div>
                       <input
                         type="password"
                         placeholder={keyStatus?.hasOpenAI ? "•••••••••••••••• (Leave blank to keep current)" : "sk-..."}
                         value={openAIKey}
-                        onChange={e => setOpenAIKey(e.target.value)}
+                        onChange={e => { setOpenAIKey(e.target.value); unmarkForRemoval('openai') }}
                         className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg px-3 py-2 text-sm text-(--ms-text-primary) focus:border-blue-500 focus:outline-none transition-colors"
                       />
                     </div>
@@ -135,16 +166,25 @@ export function SettingsModal({ isOpen, onClose }: Props) {
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-medium text-(--ms-text-secondary)">Anthropic API Key (Claude 3.5 Sonnet)</label>
                         {keyStatus?.hasAnthropic && (
-                          <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
-                            <CheckCircle2 size={11} /> Saved
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                              <CheckCircle2 size={11} /> Saved
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => markForRemoval('anthropic')}
+                              className="text-[10px] text-red-400 hover:text-red-300 border-none bg-transparent cursor-pointer"
+                            >
+                              {removeProviders.includes('anthropic') ? 'Will remove' : 'Remove'}
+                            </button>
+                          </div>
                         )}
                       </div>
                       <input
                         type="password"
                         placeholder={keyStatus?.hasAnthropic ? "•••••••••••••••• (Leave blank to keep current)" : "sk-ant-..."}
                         value={anthropicKey}
-                        onChange={e => setAnthropicKey(e.target.value)}
+                        onChange={e => { setAnthropicKey(e.target.value); unmarkForRemoval('anthropic') }}
                         className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg px-3 py-2 text-sm text-(--ms-text-primary) focus:border-blue-500 focus:outline-none transition-colors"
                       />
                     </div>
@@ -153,16 +193,25 @@ export function SettingsModal({ isOpen, onClose }: Props) {
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-medium text-(--ms-text-secondary)">ElevenLabs API Key (Voiceover)</label>
                         {keyStatus?.hasElevenLabs && (
-                          <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
-                            <CheckCircle2 size={11} /> Saved
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                              <CheckCircle2 size={11} /> Saved
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => markForRemoval('elevenlabs')}
+                              className="text-[10px] text-red-400 hover:text-red-300 border-none bg-transparent cursor-pointer"
+                            >
+                              {removeProviders.includes('elevenlabs') ? 'Will remove' : 'Remove'}
+                            </button>
+                          </div>
                         )}
                       </div>
                       <input
                         type="password"
                         placeholder={keyStatus?.hasElevenLabs ? "•••••••••••••••• (Leave blank to keep current)" : "sk_..."}
                         value={elevenLabsKey}
-                        onChange={e => setElevenLabsKey(e.target.value)}
+                        onChange={e => { setElevenLabsKey(e.target.value); unmarkForRemoval('elevenlabs') }}
                         className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg px-3 py-2 text-sm text-(--ms-text-primary) focus:border-blue-500 focus:outline-none transition-colors"
                       />
                     </div>
