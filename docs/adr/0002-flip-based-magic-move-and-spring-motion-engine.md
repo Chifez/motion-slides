@@ -10,7 +10,7 @@ We need an animation engine that:
 1. Automatically identifies and pairs elements across adjacent slides even when user edits introduce subtle property changes.
 2. Performs FLIP (First, Last, Invert, Play) transforms with sub-pixel precision across layout dimensions (x, y, width, height, opacity, rotation, color).
 3. Applies physically realistic second-order differential spring physics for organic deceleration without rigid linear or cubic-bezier easing artifacts.
-4. Performs intelligent code morphing (via tokenization and Longest Common Subsequence diffing) so unchanged code lines glide while mutated lines cascade in.
+4. Performs intelligent code morphing via syntax tokenization and stable token identity so unchanged code tokens glide while mutated tokens cascade in. Longest Common Subsequence matching is used for text-character morphing.
 
 ## Decision Drivers
 - **Cinematic Fidelity**: Transitions must feel weighted, continuous, and physical.
@@ -28,7 +28,7 @@ We adopted a hybrid **Framer Motion + Custom FLIP Heuristic Engine**:
    - Spatial proximity (Weight: 20)
 3. **FLIP Projection**: Framer Motion's layout projection engine measures bounding box deltas and inverts them via hardware-accelerated transforms.
 4. **Spring Physics**: All motion uses spring configurations (e.g., `type: 'spring', stiffness: 300, damping: 30, mass: 1`) rather than fixed duration linear curves.
-5. **Code Morphing with Shiki & LCS**: `shiki-highlighter.ts` tokenizes code into syntax-highlighted spans. Diffing identifies invariant lines and animates them to their new line numbers, while additions and deletions stagger with calculated delays.
+5. **Code Morphing with Shiki**: `shiki-highlighter.ts` tokenizes code into syntax-highlighted spans. Stable token occurrence keys identify continuing tokens while additions and deletions stagger with calculated delays. Text elements use LCS matching to keep character paths in reading order.
 
 ---
 
@@ -57,7 +57,7 @@ AI Agents modifying this codebase must adhere to the following strict guardrails
 3. **Spring Over Easing**:
    - Always use physics-based spring definitions (`stiffness`, `damping`, `mass`). Never configure hardcoded `linear` transition easings for presentation elements.
 4. **Code Morphing via Shiki Only**:
-   - Code block rendering MUST use `Shiki` tokenization and the LCS diff pipeline. Never replace code blocks with raw unhighlighted `<pre>` tags or third-party highlight widgets (Prism/Highlight.js).
+   - Code block rendering MUST use `Shiki` tokenization and stable token identity. Text-character morphing MUST retain its LCS pipeline. Never replace code blocks with raw unhighlighted `<pre>` tags or third-party highlight widgets (Prism/Highlight.js).
 
 ---
 

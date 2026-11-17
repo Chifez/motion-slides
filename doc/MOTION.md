@@ -331,13 +331,15 @@ lines = [
 
 ---
 
-## Step 2: Diff (LCS Algorithm)
+## Step 2: Diff (Stable Token Identity)
 
-Identify:
+Identify continuing Shiki token occurrences plus:
 
-* unchanged lines
-* inserted lines
-* removed lines
+* unchanged tokens
+* inserted tokens
+* removed tokens
+
+Text elements use LCS (Longest Common Subsequence) matching to keep character paths in reading order.
 
 ---
 

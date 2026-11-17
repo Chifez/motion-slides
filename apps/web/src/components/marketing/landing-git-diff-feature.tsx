@@ -90,12 +90,12 @@ export function LandingGitDiffFeature() {
           </h2>
 
           <p className="text-zinc-500 text-[15px] leading-relaxed mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Import a GitHub repository or paste code directly. MotionSlides runs LCS character-level diffing between slides — so when you insert a function argument, it animates into position character by character.
+            Import a GitHub repository or paste code directly. MotionSlides tracks stable syntax tokens between slides, so unchanged code moves naturally while additions and removals cascade in.
           </p>
 
           <ul className="flex flex-col gap-2 mb-8">
             {[
-              'LCS line & character diffing',
+              'Stable syntax-token diffing',
               'GitHub repository importer',
               'Git commit timeline → slide steps',
               'Syntax highlighting (50+ languages)',

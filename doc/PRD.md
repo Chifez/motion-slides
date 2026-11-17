@@ -275,13 +275,7 @@ Recommended:
 
 ## Step 2: Diff Algorithm
 
-Initial:
-
-* index-based comparison
-
-Future:
-
-* LCS (Longest Common Subsequence)
+Code blocks use stable Shiki token occurrences. Text elements use LCS (Longest Common Subsequence) matching to preserve character motion in reading order.
 
 ---
 

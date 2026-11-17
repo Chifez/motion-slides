@@ -13,7 +13,7 @@ interface Feature {
 
 const FEATURES: Feature[] = [
   { name: 'Magic Move / identity transitions', motionslides: true, powerpoint: 'partial', canva: false, marp: false },
-  { name: 'Code diff animations (LCS)', motionslides: true, powerpoint: false, canva: false, marp: 'partial' },
+  { name: 'Code diff animations (syntax tokens)', motionslides: true, powerpoint: false, canva: false, marp: 'partial' },
   { name: 'Architecture diagrams + SVG morphing', motionslides: true, powerpoint: 'partial', canva: false, marp: false },
   { name: 'GitHub repository import', motionslides: true, powerpoint: false, canva: false, marp: true },
   { name: 'AI deck & diagram generation', motionslides: true, powerpoint: 'partial', canva: 'partial', marp: false },

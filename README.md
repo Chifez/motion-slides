@@ -54,7 +54,7 @@ MotionSlides includes a unified agentic chat interface designed for rapid techni
 
 Unlike traditional "slide-by-slide" tools, MotionSlides uses a **State-Based Diffing Engine**:
 - **FLIP Animation**: Elements present across multiple slides are automatically matched. The engine calculates the delta and applies smooth interpolation.
-- **Code Morphing**: Powered by **Shiki** and custom LCS diffing. Unchanged code lines slide to new positions, while additions and deletions cascade with staggered delays.
+- **Code Morphing**: Powered by **Shiki** and stable syntax-token identity. Unchanged tokens slide to new positions, while additions and deletions cascade with staggered delays. LCS matching is used for text-character morphing.
 - **Spring Physics**: All motion uses second-order differential equations (Springs), providing a weighted, premium feel without rigid linear paths.
 - **Identity Heuristics**: Even if you change an element's type or color, MotionSlides maintains its motion identity.
 
