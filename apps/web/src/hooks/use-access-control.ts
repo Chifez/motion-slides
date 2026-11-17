@@ -41,6 +41,7 @@ interface LoaderData {
  */
 export function useAccessControl(): AccessControl {
   const search = (useSearch({ strict: false }) || {}) as unknown as ProjectSearchParams
+  const navigate = useNavigate()
   const params = (useParams({ strict: false }) || {}) as unknown as { projectId?: string }
   const storeActiveId = useEditorStore((state) => state.activeProjectId)
   const projectId = params.projectId || storeActiveId || ''
@@ -120,6 +121,18 @@ export function useAccessControl(): AccessControl {
       isPending: false,
     }
   }
+
+  useEffect(() => {
+    // Keep the URL honest when an edit link is opened with view-only access.
+    // Never redirect a fully denied request: its original URL is useful context
+    // for the access-denied view and support diagnostics.
+    if (!access.isDenied && requestedMode === 'edit' && access.mode === 'view') {
+      void navigate({
+        replace: true,
+        search: (previous: Record<string, unknown>) => ({ ...previous, mode: 'view' }),
+      } as never)
+    }
+  }, [access.isDenied, access.mode, navigate, requestedMode])
 
   return access
 }
