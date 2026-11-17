@@ -1,56 +1,29 @@
 import { createFileRoute } from '@tanstack/react-router'
-import fs from 'fs'
-import path from 'path'
 import { getStorageProvider } from '@/lib/storage'
 
 export const Route = createFileRoute('/api/uploads/$filename')({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ params, request }) => {
         try {
           const { filename } = params
-          const storage = getStorageProvider()
-          if (typeof storage.getFilePath !== 'function') {
-            return new Response(JSON.stringify({ error: 'Local storage provider not active' }), {
-              status: 400,
-              headers: { 'Content-Type': 'application/json' },
-            })
-          }
-
-          let filePath: string
-          
-          try {
-            filePath = storage.getFilePath(`uploads/${filename}`)
-          } catch {
-            return new Response(JSON.stringify({ error: 'Forbidden' }), {
-              status: 403,
-              headers: { 'Content-Type': 'application/json' },
-            })
-          }
-
-          if (!fs.existsSync(filePath)) {
+          const storage = getStorageProvider(request)
+          const object = await storage.getUpload(filename)
+          if (!object) {
             return new Response(JSON.stringify({ error: 'File not found' }), {
               status: 404,
               headers: { 'Content-Type': 'application/json' },
             })
           }
 
-          const ext = path.extname(filename).toLowerCase()
-          let contentType = 'audio/mpeg'
-          if (ext === '.wav') contentType = 'audio/wav'
-          else if (ext === '.webm') contentType = 'audio/webm'
-          else if (ext === '.ogg') contentType = 'audio/ogg'
-          else if (ext === '.m4a') contentType = 'audio/x-m4a'
+          const headers = new Headers()
+          object.writeHttpMetadata(headers)
+          if (object.httpEtag) headers.set('etag', object.httpEtag)
+          headers.set('Cache-Control', 'private, max-age=31536000, immutable')
 
-          const fileBuffer = await fs.promises.readFile(filePath)
-          
-          return new Response(fileBuffer, {
+          return new Response(object.body, {
             status: 200,
-            headers: {
-              'Content-Type': contentType,
-              'Content-Length': fileBuffer.byteLength.toString(),
-              'Accept-Ranges': 'bytes',
-            },
+            headers,
           })
         } catch (err: any) {
           console.error('[API Get Uploaded File] Failed:', err)

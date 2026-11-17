@@ -89,6 +89,15 @@ const optimizedStorage: PersistStorage<PersistedState> = {
   },
 }
 
+// Server renders and Node-based tests must never attempt browser persistence.
+// Supplying an explicit no-op adapter avoids Zustand's unavailable-storage
+// warnings while preserving the same non-persistent behavior.
+const serverStorage: PersistStorage<PersistedState> = {
+  getItem: async (): Promise<StorageValue<PersistedState> | null> => null,
+  setItem: async (): Promise<void> => {},
+  removeItem: async (): Promise<void> => {},
+}
+
 export const useEditorStore = create<EditorState>()(
   persist<EditorState, [], [], PersistedState>(
     (...args) => ({
@@ -110,7 +119,7 @@ export const useEditorStore = create<EditorState>()(
       name: 'motionslides-session',
       // We don't use createJSONStorage here because we want the raw object 
       // in setItem to debounce the serialization itself.
-      storage: typeof window !== 'undefined' ? optimizedStorage : undefined,
+      storage: typeof window !== 'undefined' ? optimizedStorage : serverStorage,
       partialize: (state) => ({
         projects: state.projects,
         activeProjectId: state.activeProjectId,

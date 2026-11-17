@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+
 import path from 'path'
 import { defineConfig } from 'vite'
 import { devtools } from '@tanstack/devtools-vite'
@@ -6,6 +8,8 @@ import { nitro } from 'nitro/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const isTest = process.env.VITEST === 'true'
 
 const config = defineConfig({
   resolve: {
@@ -16,7 +20,7 @@ const config = defineConfig({
   plugins: [
     devtools(),
     tailwindcss(),
-    nitro({
+    ...(!isTest ? [nitro({
       preset: (process.env.NITRO_PRESET as any) || 'cloudflare_module',
       compatibilityDate: '2026-03-01',
       cloudflare: {
@@ -24,6 +28,12 @@ const config = defineConfig({
         nodeCompat: true,
         wrangler: {
           compatibility_flags: ['nodejs_compat', 'new_module_registry'],
+          r2_buckets: [
+            {
+              binding: 'MOTIONSLIDES_R2',
+              bucket_name: 'motionslides',
+            },
+          ],
           vars: {
             BETTER_AUTH_URL: 'https://motionslides.app',
             BETTER_AUTH_TRUSTED_ORIGINS: 'https://motionslides.app,https://www.motionslides.app',
@@ -33,7 +43,7 @@ const config = defineConfig({
           },
         },
       },
-    }),
+    })] : []),
     tanstackStart(),
     viteReact(),
     VitePWA({
@@ -78,6 +88,9 @@ const config = defineConfig({
       }
     })
   ],
-})
+  test: {
+    setupFiles: ['./src/test-setup.ts'],
+  },
+} as any)
 
 export default config

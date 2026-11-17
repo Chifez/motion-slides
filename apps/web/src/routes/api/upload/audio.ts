@@ -28,7 +28,7 @@ export const Route = createFileRoute('/api/upload/audio')({
           const arrayBuffer = await file.arrayBuffer()
           const uint8Array = new Uint8Array(arrayBuffer)
 
-          const storage = getStorageProvider()
+          const storage = getStorageProvider(request)
           const { url } = await storage.uploadFile(uint8Array, file.name, file.type || 'audio/webm')
 
           const duration = durationStr ? parseFloat(durationStr) : 0

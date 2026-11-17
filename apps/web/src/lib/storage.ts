@@ -1,112 +1,72 @@
-import fs from 'fs'
-import path from 'path'
 import type { StorageProvider } from '@motionslides/shared'
 
-export function getStorageDir(): string {
-  if (process.env.STORAGE_DIR) {
-    return path.resolve(process.env.STORAGE_DIR)
-  }
-  const cwd = process.cwd()
-  const normalized = cwd.replace(/\\/g, '/')
-  let root = cwd
-  if (normalized.includes('/apps/web')) {
-    root = normalized.split('/apps/web')[0]
-  } else if (normalized.includes('/apps/export-server')) {
-    root = normalized.split('/apps/export-server')[0]
-  }
-  return path.resolve(root, '.storage')
+interface R2ObjectBody {
+  body: ReadableStream
+  httpEtag?: string
+  writeHttpMetadata(headers: Headers): void
 }
 
-export class LocalStorageProvider implements StorageProvider {
-  private baseDir: string
+interface R2Bucket {
+  put(key: string, value: ArrayBuffer | ArrayBufferView | Blob, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>
+  get(key: string): Promise<R2ObjectBody | null>
+  delete(key: string): Promise<void>
+}
 
-  constructor() {
-    this.baseDir = getStorageDir()
-    try {
-      fs.mkdirSync(this.baseDir, { recursive: true })
-    } catch {
-      // Safe fallback for edge environments (Cloudflare Workers) with read-only filesystem
-    }
+type CloudflareRequest = Request & {
+  runtime?: { cloudflare?: { env?: Record<string, unknown> } }
+}
+
+function getR2Bucket(request?: Request): R2Bucket {
+  const requestEnv = (request as CloudflareRequest | undefined)?.runtime?.cloudflare?.env
+  const globalEnv = (globalThis as typeof globalThis & { __env__?: Record<string, unknown> }).__env__
+  const bucket = (requestEnv ?? globalEnv)?.MOTIONSLIDES_R2
+
+  if (!bucket || typeof (bucket as R2Bucket).put !== 'function') {
+    throw new Error('Cloudflare R2 binding MOTIONSLIDES_R2 is unavailable. Configure the Worker R2 binding before uploading files.')
   }
+  return bucket as R2Bucket
+}
+
+function safeFilename(filename: string): string {
+  return filename.split('/').pop()!.replace(/[^a-zA-Z0-9.-]/g, '_') || 'audio.bin'
+}
+
+/**
+ * Cloudflare-only storage adapter. The Worker binding avoids credentials and a
+ * network hop, and Wrangler provides an R2 emulator for local development.
+ */
+export class R2StorageProvider implements StorageProvider {
+  constructor(private readonly bucket: R2Bucket) {}
 
   async uploadFile(data: Uint8Array, filename: string, mimeType: string): Promise<{ url: string; key: string }> {
     const category = mimeType.startsWith('audio/') ? 'uploads' : 'exports'
-    const targetDir = path.join(this.baseDir, category)
-    try {
-      fs.mkdirSync(targetDir, { recursive: true })
-    } catch {
-      // Safe fallback for edge environments
-    }
+    const name = `${crypto.randomUUID()}-${safeFilename(filename)}`
+    const key = `${category}/${name}`
 
-    const isExport = category === 'exports'
-    const baseName = path.basename(filename)
-    const safeName = isExport ? baseName : `${Date.now()}-${baseName.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-    const filePath = path.join(targetDir, safeName)
-    
-    // Path traversal check
-    const resolvedPath = path.resolve(filePath)
-    const resolvedTargetDir = path.resolve(targetDir)
-    if (!resolvedPath.startsWith(resolvedTargetDir + path.sep)) {
-      throw new Error('Security Error: Invalid filename path traversal')
-    }
-
-    await fs.promises.writeFile(filePath, Buffer.from(data))
-    
-    const key = `${category}/${safeName}`
-    const url = isExport ? `/api/download/${safeName.split('.')[0]}` : `/api/uploads/${safeName}`
-    return { url, key }
+    await this.bucket.put(key, data, { httpMetadata: { contentType: mimeType } })
+    return { key, url: await this.getDownloadUrl(key) }
   }
 
   async getDownloadUrl(key: string): Promise<string> {
-    const parts = key.split('/')
-    const category = parts[0]
-    const filename = parts.slice(1).join('/')
-    if (category === 'exports') {
-      return `/api/download/${filename.split('.')[0]}`
+    const [category, ...nameParts] = key.split('/')
+    if (category !== 'uploads' || nameParts.length === 0) {
+      throw new Error('Only uploaded audio assets can be served by the web Worker.')
     }
-    return `/api/uploads/${filename}`
+    return `/api/uploads/${encodeURIComponent(nameParts.join('/'))}`
   }
 
   async deleteFile(key: string): Promise<void> {
-    const filePath = path.join(this.baseDir, key)
-    const resolvedPath = path.resolve(filePath)
-    const resolvedBaseDir = path.resolve(this.baseDir)
-    if (!resolvedPath.startsWith(resolvedBaseDir + path.sep)) {
-      throw new Error('Security Error: Access Denied')
-    }
-    if (fs.existsSync(filePath)) {
-      await fs.promises.unlink(filePath)
-    }
+    await this.bucket.delete(key)
   }
 
-  getFilePath(key: string): string {
-    const filePath = path.join(this.baseDir, key)
-    const resolvedPath = path.resolve(filePath)
-    const resolvedBaseDir = path.resolve(this.baseDir)
-    if (!resolvedPath.startsWith(resolvedBaseDir + path.sep)) {
-      throw new Error('Security Error: Access Denied')
+  async getUpload(filename: string): Promise<R2ObjectBody | null> {
+    if (filename.includes('/') || filename.includes('..')) {
+      throw new Error('Invalid upload filename.')
     }
-    return filePath
+    return this.bucket.get(`uploads/${filename}`)
   }
 }
 
-class S3StorageProvider implements StorageProvider {
-  async uploadFile(data: Uint8Array, filename: string, mimeType: string): Promise<{ url: string; key: string }> {
-    throw new Error('S3 Upload not configured')
-  }
-  async getDownloadUrl(key: string): Promise<string> {
-    throw new Error('S3 Download not configured')
-  }
-  async deleteFile(key: string): Promise<void> {
-    throw new Error('S3 Delete not configured')
-  }
-}
-
-export const storageProvider: StorageProvider = 
-  process.env.STORAGE_PROVIDER === 's3' 
-    ? new S3StorageProvider() 
-    : new LocalStorageProvider()
-
-export function getStorageProvider(): StorageProvider & { getFilePath?(key: string): string } {
-  return storageProvider
+export function getStorageProvider(request?: Request): R2StorageProvider {
+  return new R2StorageProvider(getR2Bucket(request))
 }
