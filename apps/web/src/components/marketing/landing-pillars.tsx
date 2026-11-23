@@ -1,289 +1,360 @@
-import { motion } from 'framer-motion'
-import {
-  Zap, Mic2, Network, ArrowRight, Workflow
-} from 'lucide-react'
+import { useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { Layers, Mic, GitFork, Sparkles } from 'lucide-react'
 
-const PILLARS = [
-  {
-    id: 'magic-move',
-    icon: <Zap size={20} />,
-    accent: '#3b82f6',
-    accentBg: 'rgba(59,130,246,0.08)',
-    accentBorder: 'rgba(59,130,246,0.2)',
-    tag: 'Magic Move Engine',
-    headline: 'Transitions that understand identity, not position.',
-    body: 'Every element carries a persistent ID across slide states. When slides change, MotionSlides computes the delta — elements fly to their new home, morph shape, and shift opacity. Zero manual keyframes.',
-    bullets: ['Spring physics', 'Cross-slide layoutId morphing', 'Enter / exit choreography'],
-    visual: <MagicMoveVisual />,
-  },
-  {
-    id: 'architecture',
-    icon: <Network size={20} />,
-    accent: '#8b5cf6',
-    accentBg: 'rgba(139,92,246,0.08)',
-    accentBorder: 'rgba(139,92,246,0.2)',
-    tag: 'Architecture Diagramming',
-    headline: '10 semantic shapes. Smart connectors. SVG morphing.',
-    body: 'Draw service blueprints with purpose-built IT shapes — servers, databases, cloud nodes, queues, and clients. Elbow routing avoids overlaps automatically. Section boundaries expand to fit.',
-    bullets: ['AWS service icons built-in', 'Drag-to-connect handles', 'Path morphing across states'],
-    visual: <ArchVisual />,
-  },
-  {
-    id: 'audio',
-    icon: <Mic2 size={20} />,
-    accent: '#f59e0b',
-    accentBg: 'rgba(245,158,11,0.08)',
-    accentBorder: 'rgba(245,158,11,0.2)',
-    tag: 'Audio & Subtitle Studio',
-    headline: 'Record, trim, and sync narration — all inside the editor.',
-    body: 'Multi-track voiceover recording with waveform visualization. Trim handles let you cut to the frame. Subtitles auto-sync to your audio timeline for accessible, video-ready presentations.',
-    bullets: ['Multi-track audio timeline', 'Waveform trim editor', 'Auto-synced captions'],
-    visual: <AudioVisual />,
-  },
-  {
-    id: 'prototyping',
-    icon: <Workflow size={20} />,
-    accent: '#10b981',
-    accentBg: 'rgba(16,185,129,0.08)',
-    accentBorder: 'rgba(16,185,129,0.2)',
-    tag: 'Interactive Prototyping',
-    headline: 'Link slides into clickable flows. Present with a laser pointer.',
-    body: 'The Prototype canvas transforms your slide deck into a node graph — drag edges between slides to wire up navigation logic. Add hotspots to elements. Present with full speaker notes and a spotlight tool.',
-    bullets: ['Node-graph slide linking', 'Clickable hotspot elements', 'Laser pointer & speaker notes'],
-    visual: <PrototypeVisual />,
-  },
-]
-
-// ─── Pillar visual mock UIs ───────────────────────────────────────────────────
+const EASE_OUT = [0.23, 1, 0.32, 1] as const
+const MORPH_SPRING = { type: 'spring', stiffness: 280, damping: 30 } as const
 
 function MagicMoveVisual() {
+  const [step, setStep] = useState<'01' | '02'>('01')
+  const shouldReduceMotion = useReducedMotion()
+  const transition = shouldReduceMotion ? { duration: 0.01 } : MORPH_SPRING
+
+  const nodes =
+    step === '01'
+      ? [
+          { id: 'api', label: 'API', left: '10%', top: '34%' },
+          { id: 'worker', label: 'Worker', left: '41%', top: '34%' },
+          { id: 'db', label: 'Postgres', left: '72%', top: '34%' },
+        ]
+      : [
+          { id: 'api', label: 'API', left: '12%', top: '16%' },
+          { id: 'worker', label: 'Worker', left: '54%', top: '16%' },
+          { id: 'db', label: 'Postgres', left: '34%', top: '58%' },
+        ]
+
   return (
-    <div className="relative w-full h-40 bg-[#07070a] rounded-xl border border-zinc-800/60 overflow-hidden">
-      {/* Before state */}
-      <div className="absolute inset-0 flex items-center justify-around px-6">
-        {[
-          { x: 0, label: 'API', color: '#3b82f6' },
-          { x: 1, label: 'DB', color: '#8b5cf6' },
-        ].map((node, i) => (
+    <div className="relative h-[184px] w-full rounded-[12px] border border-white/[0.08] bg-[#070709] p-[12px] overflow-hidden flex flex-col justify-between">
+      <div className="flex items-center justify-between z-10">
+        <span className="font-mono text-[10px] text-zinc-500">layoutId morph</span>
+        <div
+          role="tablist"
+          aria-label="Magic Move slide preview"
+          className="inline-flex items-center rounded-[8px] border border-white/[0.08] bg-[#0C0C0F] p-[2px]"
+        >
+          {(['01', '02'] as const).map((id) => {
+            const active = step === id
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setStep(id)}
+                className={`px-[8px] py-[3px] rounded-[6px] font-mono text-[10px] font-medium border-none cursor-pointer transition-[transform,background-color,color] duration-150 active:scale-[0.97] ${
+                  active ? 'bg-blue-500/15 text-blue-400' : 'bg-transparent text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                Slide {id}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="relative flex-1 w-full">
+        {/* Subtle dot matrix */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+            backgroundSize: '16px 16px',
+          }}
+        />
+        {nodes.map((node) => (
           <motion.div
-            key={node.label}
-            animate={{ x: [0, i === 0 ? 30 : -30, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 }}
-            className="flex flex-col items-center gap-1.5"
+            key={node.id}
+            layout
+            transition={transition}
+            style={{ left: node.left, top: node.top }}
+            className="absolute w-[74px] h-[36px] rounded-[8px] border border-white/[0.12] bg-[#121216] flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
           >
-            <div
-              className="w-10 h-10 rounded-xl border flex items-center justify-center"
-              style={{ borderColor: node.color + '40', background: node.color + '10' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ background: node.color }} />
-            </div>
-            <span className="text-[9px] text-zinc-500 font-bold">{node.label}</span>
+            <span className="font-mono text-[11px] font-medium text-zinc-200">{node.label}</span>
           </motion.div>
         ))}
       </div>
-      <motion.div
-        animate={{ scaleX: [1, 0.4, 1] }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-px bg-blue-500/40"
-      />
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-        <span className="text-[8px] text-zinc-700 font-mono uppercase tracking-widest">layoutId morphing</span>
+    </div>
+  )
+}
+
+function DiagramChartVisual() {
+  const bars = [
+    { label: 'p50', height: '38%' },
+    { label: 'p90', height: '58%' },
+    { label: 'p95', height: '74%' },
+    { label: 'p99', height: '92%' },
+  ]
+
+  return (
+    <div className="relative h-[184px] w-full rounded-[12px] border border-white/[0.08] bg-[#070709] p-[14px] flex items-stretch gap-[12px] overflow-hidden">
+      {/* Architecture tier */}
+      <div className="flex-1 rounded-[10px] border border-dashed border-white/[0.14] bg-white/[0.02] p-[10px] flex flex-col justify-between">
+        <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-zinc-400">
+          Processing Tier
+        </span>
+        <div className="flex items-center justify-between gap-[4px] my-auto">
+          {['Gateway', 'Queue', 'Worker'].map((label, i) => (
+            <div key={label} className="flex items-center gap-[4px]">
+              <div className="rounded-[6px] border border-white/[0.1] bg-[#121216] px-[8px] py-[6px] text-center">
+                <span className="font-mono text-[10px] text-zinc-200 block leading-none">{label}</span>
+              </div>
+              {i < 2 && <span className="text-zinc-600 text-[10px] font-mono">→</span>}
+            </div>
+          ))}
+        </div>
+        <span className="font-mono text-[9px] text-zinc-600">Port-snapped · Dagre</span>
       </div>
-    </div>
-  )
-}
 
-function ArchVisual() {
-  return (
-    <div className="relative w-full h-40 bg-[#07070a] rounded-xl border border-zinc-800/60 overflow-hidden flex items-center justify-center">
-      <svg width="260" height="110" viewBox="0 0 260 110">
-        {/* Section box */}
-        <rect x="70" y="15" width="120" height="80" rx="8" fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.2)" strokeDasharray="4 3" />
-        {/* Nodes */}
-        <circle cx="30" cy="55" r="18" fill="#07070a" stroke="#3b82f6" strokeWidth="1.5" />
-        <text x="30" y="59" textAnchor="middle" fill="#3b82f6" fontSize="7" fontWeight="700">Client</text>
-        <rect x="100" y="35" width="30" height="38" rx="4" fill="#07070a" stroke="#8b5cf6" strokeWidth="1.5" />
-        <text x="115" y="57" textAnchor="middle" fill="#8b5cf6" fontSize="7" fontWeight="700">API</text>
-        <ellipse cx="200" cy="55" rx="18" ry="22" fill="#07070a" stroke="#8b5cf6" strokeWidth="1.5" />
-        <text x="200" y="59" textAnchor="middle" fill="#8b5cf6" fontSize="7" fontWeight="700">DB</text>
-        {/* Connectors */}
-        <path d="M48 55 L100 55" stroke="rgba(255,255,255,0.3)" strokeWidth="1" markerEnd="url(#arr)" strokeDasharray="4 3" />
-        <path d="M130 55 L182 55" stroke="rgba(255,255,255,0.3)" strokeWidth="1" markerEnd="url(#arr)" />
-        <defs>
-          <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="rgba(255,255,255,0.3)" />
-          </marker>
-        </defs>
-        <text x="74" y="51" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="6">req</text>
-        <text x="156" y="51" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="6">write</text>
-      </svg>
-    </div>
-  )
-}
-
-function AudioVisual() {
-  const bars = [0.3, 0.7, 0.5, 0.9, 0.4, 0.8, 0.6, 0.3, 0.95, 0.5, 0.7, 0.4, 0.8, 0.6, 0.3, 0.7, 0.5, 0.4, 0.6, 0.9]
-  return (
-    <div className="relative w-full h-40 bg-[#07070a] rounded-xl border border-zinc-800/60 overflow-hidden p-4 flex flex-col gap-3">
-      {/* Track 1 */}
-      <div className="flex items-center gap-2">
-        <Mic2 size={10} className="text-amber-400 shrink-0" />
-        <span className="text-[8px] text-zinc-600 w-12 shrink-0">Track 1</span>
-        <div className="flex-1 flex items-center gap-[2px] h-7">
-          {bars.map((h, i) => (
-            <motion.div
-              key={i}
-              className="flex-1 rounded-sm bg-amber-500/70"
-              animate={{ scaleY: [h, h * 0.6 + 0.1, h] }}
-              transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.07, ease: 'easeInOut' }}
-              style={{ height: `${h * 100}%`, transformOrigin: 'bottom' }}
-            />
+      {/* Native chart card */}
+      <div className="w-[116px] shrink-0 rounded-[10px] border border-white/[0.08] bg-[#0C0C0F] p-[10px] flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-[9px] text-zinc-400">Latency</span>
+          <span className="font-mono text-[9px] text-zinc-600">ms</span>
+        </div>
+        <div className="flex items-end gap-[6px] h-[82px] pt-[8px]">
+          {bars.map((bar, idx) => (
+            <div key={bar.label} className="flex-1 h-full flex flex-col items-center justify-end gap-[4px]">
+              <div
+                style={{ height: bar.height }}
+                className={`w-full rounded-t-[3px] ${
+                  idx === 3 ? 'bg-blue-500/75 border-t border-blue-400/60' : 'bg-zinc-700/80 border-t border-zinc-500/40'
+                }`}
+              />
+              <span className="font-mono text-[8px] text-zinc-600 leading-none">{bar.label}</span>
+            </div>
           ))}
         </div>
       </div>
-      {/* Track 2 */}
-      <div className="flex items-center gap-2">
-        <Mic2 size={10} className="text-zinc-600 shrink-0" />
-        <span className="text-[8px] text-zinc-700 w-12 shrink-0">Track 2</span>
-        <div className="flex-1 h-7 bg-zinc-900 border border-zinc-800 rounded-sm flex items-center px-2">
-          <span className="text-[8px] text-zinc-700">+ Add track</span>
-        </div>
-      </div>
-      {/* Playhead */}
-      <div className="relative h-px bg-zinc-800 mx-14">
-        <motion.div
-          className="absolute top-0 w-px h-14 -mt-7 bg-amber-400/80"
-          animate={{ left: ['10%', '80%', '10%'] }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-        />
-      </div>
     </div>
   )
 }
 
-function PrototypeVisual() {
-  return (
-    <div className="relative w-full h-40 bg-[#07070a] rounded-xl border border-zinc-800/60 overflow-hidden flex items-center justify-center">
-      <svg width="260" height="120" viewBox="0 0 260 120">
-        {/* Slide nodes */}
-        {[
-          { x: 20, y: 40, label: '01' },
-          { x: 105, y: 20, label: '02' },
-          { x: 105, y: 70, label: '03' },
-          { x: 195, y: 45, label: '04' },
-        ].map((node, i) => (
-          <g key={i}>
-            <rect x={node.x} y={node.y} width="44" height="30" rx="5" fill="#0d0d10" stroke={i === 0 ? '#10b981' : 'rgba(255,255,255,0.1)'} strokeWidth={i === 0 ? 1.5 : 1} />
-            <text x={node.x + 22} y={node.y + 18} textAnchor="middle" fill={i === 0 ? '#10b981' : 'rgba(255,255,255,0.3)'} fontSize="9" fontWeight="700">{node.label}</text>
-          </g>
-        ))}
-        {/* Edges */}
-        <path d="M64 55 L105 35" stroke="rgba(16,185,129,0.4)" strokeWidth="1" markerEnd="url(#garr)" />
-        <path d="M64 55 L105 85" stroke="rgba(16,185,129,0.3)" strokeWidth="1" markerEnd="url(#garr)" strokeDasharray="3 2" />
-        <path d="M149 35 L195 60" stroke="rgba(255,255,255,0.15)" strokeWidth="1" markerEnd="url(#garr)" />
-        <path d="M149 85 L195 60" stroke="rgba(255,255,255,0.15)" strokeWidth="1" markerEnd="url(#garr)" />
-        <defs>
-          <marker id="garr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="rgba(16,185,129,0.4)" />
-          </marker>
-        </defs>
-      </svg>
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-        <span className="text-[8px] text-zinc-700 font-mono uppercase tracking-widest">node-graph slide linking</span>
-      </div>
-    </div>
-  )
-}
+function AudioTimelineVisual() {
+  const waveform = [24, 52, 38, 76, 44, 68, 86, 48, 62, 30, 74, 58, 42, 82, 54, 36, 66, 40, 56, 32]
 
-// ─── Pillar Card ──────────────────────────────────────────────────────────────
-function PillarCard({ pillar, index }: { pillar: typeof PILLARS[number]; index: number }) {
-  const isEven = index % 2 === 0
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 32 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.65, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-      className={`grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center ${!isEven ? 'md:[&>*:first-child]:order-last' : ''}`}
-    >
-      {/* Text side */}
-      <div>
+    <div className="relative h-[184px] w-full rounded-[12px] border border-white/[0.08] bg-[#070709] p-[14px] flex flex-col justify-between overflow-hidden">
+      {/* Ruler */}
+      <div className="flex items-center justify-between pl-[84px] pr-[6px] border-b border-white/[0.06] pb-[6px] font-mono text-[9px] text-zinc-600">
+        <span>00:00</span>
+        <span>00:05</span>
+        <span>00:10</span>
+      </div>
+
+      {/* Tracks */}
+      <div className="relative flex-1 flex flex-col justify-center gap-[10px] py-[6px]">
+        {/* Playhead */}
         <div
-          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-semibold mb-5 border"
-          style={{ color: pillar.accent, background: pillar.accentBg, borderColor: pillar.accentBorder }}
+          aria-hidden="true"
+          className="absolute top-0 bottom-0 left-[58%] w-px bg-blue-500 z-10 pointer-events-none"
         >
-          {pillar.icon}
-          {pillar.tag}
+          <div className="w-[7px] h-[7px] -ml-[3px] rounded-full bg-blue-500" />
         </div>
 
-        <h3
-          className="text-[clamp(22px,3vw,32px)] font-bold tracking-tight text-white leading-tight mb-4"
-          style={{ fontFamily: 'Inter, sans-serif' }}
-        >
-          {pillar.headline}
-        </h3>
+        {/* Track 1: Slides */}
+        <div className="flex items-center gap-[10px]">
+          <span className="w-[74px] shrink-0 font-mono text-[10px] text-zinc-500 truncate">Slides</span>
+          <div className="flex-1 grid grid-cols-3 gap-[4px] h-[24px]">
+            {['Intro', 'Architecture', 'Metrics'].map((s) => (
+              <div
+                key={s}
+                className="rounded-[5px] border border-white/[0.08] bg-[#121216] px-[6px] flex items-center"
+              >
+                <span className="font-mono text-[9px] text-zinc-400 truncate">{s}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        <p className="text-[15px] text-zinc-500 leading-relaxed mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-          {pillar.body}
-        </p>
+        {/* Track 2: Voiceover */}
+        <div className="flex items-center gap-[10px]">
+          <span className="w-[74px] shrink-0 font-mono text-[10px] text-zinc-300 truncate">Voiceover</span>
+          <div className="flex-1 h-[28px] rounded-[5px] border border-white/[0.1] bg-[#121216] px-[8px] flex items-center gap-[3px]">
+            {waveform.map((pct, i) => (
+              <span
+                key={i}
+                style={{ height: `${pct}%` }}
+                className="flex-1 rounded-[1px] bg-zinc-400/75"
+              />
+            ))}
+          </div>
+        </div>
 
-        <ul className="flex flex-col gap-2">
-          {pillar.bullets.map(b => (
-            <li key={b} className="flex items-center gap-2 text-[13px] text-zinc-400" style={{ fontFamily: 'Inter, sans-serif' }}>
-              <ArrowRight size={12} style={{ color: pillar.accent }} className="shrink-0" />
-              {b}
-            </li>
-          ))}
-        </ul>
+        {/* Track 3: Captions */}
+        <div className="flex items-center gap-[10px]">
+          <span className="w-[74px] shrink-0 font-mono text-[10px] text-zinc-500 truncate">Captions</span>
+          <div className="flex-1 grid grid-cols-2 gap-[6px] h-[22px]">
+            <div className="rounded-[5px] border border-white/[0.06] bg-white/[0.02] px-[6px] flex items-center">
+              <span className="font-mono text-[9px] text-zinc-500 truncate">“Traffic enters the edge...”</span>
+            </div>
+            <div className="rounded-[5px] border border-white/[0.06] bg-white/[0.02] px-[6px] flex items-center">
+              <span className="font-mono text-[9px] text-zinc-500 truncate">“Workers scale via queue...”</span>
+            </div>
+          </div>
+        </div>
       </div>
-
-      {/* Visual side */}
-      <div
-        className="rounded-2xl border p-5"
-        style={{ background: pillar.accentBg, borderColor: pillar.accentBorder }}
-      >
-        {pillar.visual}
-      </div>
-    </motion.div>
+    </div>
   )
 }
 
-// ─── Main export ─────────────────────────────────────────────────────────────
-export function LandingPillars() {
+function PrototypeFlowVisual() {
+  const [focusedNode, setFocusedNode] = useState<'01' | '02' | '03' | '04'>('02')
+
+  const nodes = [
+    { id: '01' as const, label: '01 Intro', x: 14, y: 58 },
+    { id: '02' as const, label: '02 Arch', x: 118, y: 26 },
+    { id: '03' as const, label: '03 Metrics', x: 244, y: 26 },
+    { id: '04' as const, label: '04 Deep Dive', x: 244, y: 94 },
+  ]
+
   return (
-    <section id="features" className="px-6 py-24 max-w-5xl mx-auto">
+    <div className="relative h-[184px] w-full rounded-[12px] border border-white/[0.08] bg-[#070709] p-[14px] flex flex-col justify-between overflow-hidden">
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[10px] text-zinc-500">Click node to inspect trigger</span>
+        <span className="font-mono text-[10px] text-zinc-400">
+          {focusedNode === '04' ? 'Hotspot → Slide 04' : `Slide ${focusedNode} active`}
+        </span>
+      </div>
+
+      <div className="relative flex-1 w-full">
+        <svg viewBox="0 0 360 132" className="w-full h-full">
+          {/* Connecting paths */}
+          <path
+            d="M 88 74 C 102 74, 102 42, 118 42"
+            fill="none"
+            stroke="rgba(255,255,255,0.22)"
+            strokeWidth="1.2"
+          />
+          <path
+            d="M 198 42 L 244 42"
+            fill="none"
+            stroke={focusedNode === '03' ? '#3B82F6' : 'rgba(255,255,255,0.22)'}
+            strokeWidth="1.2"
+          />
+          <path
+            d="M 198 46 C 222 46, 218 110, 244 110"
+            fill="none"
+            stroke={focusedNode === '04' ? '#3B82F6' : 'rgba(255,255,255,0.18)'}
+            strokeWidth="1.2"
+            strokeDasharray="4 3"
+          />
+        </svg>
+
+        {nodes.map((node) => {
+          const active = focusedNode === node.id
+          return (
+            <button
+              key={node.id}
+              type="button"
+              onClick={() => setFocusedNode(node.id)}
+              style={{ left: `${(node.x / 360) * 100}%`, top: `${(node.y / 132) * 100}%` }}
+              className={`absolute h-[30px] px-[10px] rounded-[7px] font-mono text-[10px] font-medium cursor-pointer transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.97] whitespace-nowrap ${
+                active
+                  ? 'bg-blue-500/15 border border-blue-500/60 text-blue-300'
+                  : 'bg-[#121216] border border-white/[0.1] text-zinc-300 hover:border-white/[0.22]'
+              }`}
+            >
+              {node.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const CAPABILITIES = [
+  {
+    id: 'magic-move',
+    icon: Sparkles,
+    eyebrow: 'Magic Move Motion Engine',
+    headline: 'Identity-based transitions, zero keyframes.',
+    body: 'Elements carry persistent IDs across slides. MotionSlides computes geometry deltas and springs every node, connector, and frame into place.',
+    visual: MagicMoveVisual,
+  },
+  {
+    id: 'diagrams',
+    icon: Layers,
+    eyebrow: 'Architecture, Code & Native Charts',
+    headline: 'Diagrams, native charts, and cloud icons.',
+    body: 'Compose VPC sections, port-snapped elbow connectors, AWS & GCP icons, Shiki code blocks, and Bar, Line, Area, or Pie charts on a normalized 16:9 canvas.',
+    visual: DiagramChartVisual,
+  },
+  {
+    id: 'audio',
+    icon: Mic,
+    eyebrow: 'Multi-Track Audio, Voiceover & Captions',
+    headline: 'Narrate with built-in AI or ElevenLabs BYOK.',
+    body: 'Record voiceovers in-browser, generate narration with Cloudflare AI out of the box—or bring your ElevenLabs key—layer ducking background music, and auto-sync captions.',
+    visual: AudioTimelineVisual,
+  },
+  {
+    id: 'prototype',
+    icon: GitFork,
+    eyebrow: 'Prototype Flows & Presenter Mode',
+    headline: 'Non-linear flows and live presenter controls.',
+    body: 'Link slides and clickable hotspots on the Prototype graph, then present fullscreen with speaker notes, timed captions, and auto-hiding controls.',
+    visual: PrototypeFlowVisual,
+  },
+] as const
+
+export function LandingPillars() {
+  const shouldReduceMotion = useReducedMotion()
+
+  return (
+    <section id="capabilities" className="max-w-[1120px] mx-auto px-[24px] py-[104px]">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-80px' }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="text-center mb-20"
+        viewport={{ once: true, margin: '-60px' }}
+        transition={{ duration: 0.45, ease: EASE_OUT }}
+        className="max-w-[640px] mb-[48px]"
       >
-        <p className="text-[11px] uppercase tracking-widest text-zinc-600 font-semibold mb-3" style={{ fontFamily: 'Inter, sans-serif' }}>
-          What makes it different
+        <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-zinc-500 mb-[12px]">
+          01 / ENGINE
         </p>
-        <h2
-          className="text-[clamp(32px,5vw,56px)] font-bold tracking-tight text-white mb-4"
-          style={{ fontFamily: 'Inter, sans-serif' }}
-        >
-          Built for the
-          {' '}
-          <span
-            className="italic font-normal"
-            style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
-          >
-            technically minded.
-          </span>
+        <h2 className="text-[clamp(28px,4vw,44px)] font-semibold tracking-[-0.03em] leading-[1.08] text-white mb-[14px]">
+          Every primitive technical decks actually need.
         </h2>
-        <p className="text-zinc-500 text-[16px] max-w-xl mx-auto leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>
-          Every feature was designed from the ground up for presentations that deal with code, systems, and motion.
+        <p className="text-[16px] leading-[1.6] text-zinc-400">
+          No glued-together screenshots or generic dissolves. Motion, diagrams, narration, and flows are native primitives.
         </p>
       </motion.div>
 
-      <div className="flex flex-col gap-28">
-        {PILLARS.map((pillar, i) => (
-          <PillarCard key={pillar.id} pillar={pillar} index={i} />
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
+        {CAPABILITIES.map((card, index) => {
+          const Icon = card.icon
+          const Visual = card.visual
+          return (
+            <motion.article
+              key={card.id}
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.45, delay: shouldReduceMotion ? 0 : index * 0.05, ease: EASE_OUT }}
+              className="rounded-[16px] border border-white/[0.08] bg-[#0C0C0F] p-[28px] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] flex flex-col justify-between gap-[24px]"
+            >
+              <Visual />
+
+              <div>
+                <div className="inline-flex items-center gap-[6px] text-zinc-400 mb-[10px]">
+                  <Icon size={13} className="text-zinc-500" />
+                  <span className="font-mono text-[11px] font-medium text-zinc-400">
+                    {card.eyebrow}
+                  </span>
+                </div>
+
+                <h3 className="text-[20px] font-semibold tracking-[-0.02em] leading-[1.25] text-zinc-100 mb-[8px]">
+                  {card.headline}
+                </h3>
+                <p className="text-[14px] leading-[1.6] text-zinc-400">
+                  {card.body}
+                </p>
+              </div>
+            </motion.article>
+          )
+        })}
       </div>
     </section>
   )
