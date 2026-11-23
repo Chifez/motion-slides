@@ -28,6 +28,9 @@ const config = defineConfig({
         nodeCompat: true,
         wrangler: {
           compatibility_flags: ['nodejs_compat', 'new_module_registry'],
+          ai: {
+            binding: 'AI',
+          },
           r2_buckets: [
             {
               binding: 'MOTIONSLIDES_R2',
