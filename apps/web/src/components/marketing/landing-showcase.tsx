@@ -1,10 +1,9 @@
 import { useState, useLayoutEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Play,
   Pause,
   ArrowLeft,
-  Sparkles,
   GitBranch,
   Film,
   Type,
@@ -183,7 +182,7 @@ const MOCK_SLIDES = [
     inspector: {
       label: "Text Element",
       props: [
-        { name: "Font", value: "DM Serif Display" },
+        { name: "Font", value: "Inter" },
         { name: "Size", value: "54px" },
         { name: "Color", value: "#ffffff" },
         { name: "Opacity", value: "100%" },
@@ -642,10 +641,12 @@ function SlideThumbnail({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function LandingShowcase() {
+  const shouldReduceMotion = useReducedMotion();
   const [slideIndex, setSlideIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [userPlayingOverride, setUserPlayingOverride] = useState<boolean | null>(null);
   const [scale, setScale] = useState(1);
 
+  const isPlaying = userPlayingOverride ?? !shouldReduceMotion;
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Responsive scale calculation
@@ -694,28 +695,27 @@ export function LandingShowcase() {
 
   return (
     <div
-      className="w-full max-w-6xl mx-auto rounded-2xl overflow-hidden border border-zinc-800/70 shadow-[0_40px_120px_rgba(0,0,0,0.6)] select-none"
-      style={{ background: "#0d0d0f" }}
+      className="w-full max-w-[1120px] mx-auto rounded-[16px] overflow-hidden border border-white/[0.08] shadow-[0_32px_100px_rgba(0,0,0,0.75),inset_0_1px_0_rgba(255,255,255,0.06)] select-none bg-[#0B0B0E]"
     >
       {/* ── Fake Toolbar ─────────────────────────────────────────────────── */}
-      <div className="h-11 flex items-center gap-2 px-3 border-b border-zinc-800/80 bg-zinc-950/80">
+      <div className="h-[44px] flex items-center gap-[8px] px-[12px] border-b border-white/[0.06] bg-[#0C0C0F]">
         {/* Left: back + logo + project name */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div className="w-6 h-6 flex items-center justify-center rounded-md text-zinc-600">
+        <div className="flex items-center gap-[6px] shrink-0">
+          <div className="w-[24px] h-[24px] flex items-center justify-center rounded-[6px] text-zinc-600">
             <ArrowLeft size={12} />
           </div>
-          <div className="w-px h-4 bg-zinc-800" />
-          <span className="text-[11px] text-zinc-500 font-semibold ml-1">
-            My Presentation
+          <div className="w-px h-[16px] bg-white/[0.08]" />
+          <span className="text-[11px] text-zinc-300 font-medium ml-[4px]">
+            video-pipeline-rfc
           </span>
-          <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-md px-1.5 py-0.5 ml-1">
-            <GitBranch size={9} className="text-blue-400" />
-            <span className="text-[9px] text-zinc-500">main</span>
+          <div className="flex items-center gap-[4px] bg-white/[0.04] border border-white/[0.08] rounded-[6px] px-[6px] py-[2px] ml-[4px]">
+            <GitBranch size={9} className="text-zinc-400" />
+            <span className="text-[10px] font-mono text-zinc-400">main</span>
           </div>
         </div>
 
         {/* Center: element tool buttons */}
-          <div className="flex-1 hidden sm:flex items-center justify-center gap-1">
+          <div className="flex-1 hidden sm:flex items-center justify-center gap-[4px]">
             {[
               { icon: <MousePointer2 size={12} />, active: true },
               { icon: <Type size={12} />, active: false },
@@ -725,9 +725,9 @@ export function LandingShowcase() {
             ].map((btn, i) => (
               <div
                 key={i}
-                className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${btn.active
-                    ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
-                    : "text-zinc-600 hover:text-zinc-400"
+                className={`w-[28px] h-[28px] flex items-center justify-center rounded-[6px] transition-colors duration-150 ${btn.active
+                    ? "bg-white/[0.08] text-zinc-100 border border-white/[0.12]"
+                    : "text-zinc-500 hover:text-zinc-300"
                   }`}
               >
                 {btn.icon}
@@ -735,18 +735,18 @@ export function LandingShowcase() {
             ))}
           </div>
 
-          {/* Right: play + AI + share */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Right: play + Ask AI */}
+          <div className="flex items-center gap-[6px] shrink-0">
             <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border-none cursor-pointer transition bg-emerald-600/15 text-emerald-400 border border-emerald-600/25 hover:bg-emerald-600/20"
+              type="button"
+              onClick={() => setUserPlayingOverride(!isPlaying)}
+              className="flex items-center gap-[6px] px-[10px] py-[5px] rounded-[6px] text-[11px] font-medium cursor-pointer transition-[transform,background-color,border-color,color] duration-150 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] active:scale-[0.97]"
             >
               {isPlaying ? <Pause size={10} /> : <Play size={10} />}
               {isPlaying ? "Pause" : "Play"}
             </button>
-            <div className="flex items-center gap-1 bg-blue-600/10 border border-blue-500/20 rounded-md px-2 py-1.5">
-              <Sparkles size={10} className="text-blue-400" />
-              <span className="text-[10px] text-blue-400 font-semibold">AI</span>
+            <div className="flex items-center gap-[6px] bg-white/[0.04] border border-white/[0.08] rounded-[6px] px-[10px] py-[5px]">
+              <span className="text-[11px] text-zinc-300 font-medium">Ask AI</span>
             </div>
           </div>
         </div>
@@ -793,10 +793,12 @@ export function LandingShowcase() {
                     {MOCK_SLIDES.map((_, i) => (
                       <button
                         key={i}
+                        type="button"
+                        aria-label={`Go to slide ${i + 1}`}
                         onClick={() => handleSlideClick(i)}
-                        className={`rounded-full transition-all border-none cursor-pointer p-0 ${i === slideIndex
-                            ? "w-4 h-1.5 bg-blue-400"
-                            : "w-1.5 h-1.5 bg-zinc-700 hover:bg-zinc-500"
+                        className={`rounded-full transition-[width,background-color] duration-150 border-none cursor-pointer p-0 ${i === slideIndex
+                            ? "w-[18px] h-[6px] bg-blue-500"
+                            : "w-[6px] h-[6px] bg-zinc-700 hover:bg-zinc-500"
                           }`}
                       />
                     ))}
@@ -1035,15 +1037,11 @@ export function LandingShowcase() {
                                     <span
                                       style={{
                                         fontSize: el.fontSize,
-                                        fontFamily:
-                                          el.role === "title"
-                                            ? '"DM Serif Display", Georgia, serif'
-                                            : "Inter, sans-serif",
-                                        fontStyle:
-                                          el.role === "title" ? "italic" : "normal",
-                                        fontWeight: el.fontWeight || "normal",
+                                        fontFamily: "Inter, sans-serif",
+                                        fontWeight: el.role === "title" ? 600 : (el.fontWeight || "normal"),
+                                        letterSpacing: el.role === "title" ? "-0.03em" : undefined,
                                       }}
-                                      className="text-white tracking-tight leading-snug block"
+                                      className="text-white leading-snug block"
                                     >
                                       {el.value}
                                     </span>
