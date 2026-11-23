@@ -20,8 +20,6 @@ import { Route as EmbedProjectIdRouteImport } from './routes/embed.$projectId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiUploadsFilenameRouteImport } from './routes/api/uploads/$filename'
 import { Route as ApiUploadAudioRouteImport } from './routes/api/upload/audio'
-import { Route as ApiGenerateReadmeRouteImport } from './routes/api/generate/readme'
-import { Route as ApiGenerateArchitectureRouteImport } from './routes/api/generate/architecture'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -79,16 +77,6 @@ const ApiUploadAudioRoute = ApiUploadAudioRouteImport.update({
   path: '/api/upload/audio',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiGenerateReadmeRoute = ApiGenerateReadmeRouteImport.update({
-  id: '/api/generate/readme',
-  path: '/api/generate/readme',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiGenerateArchitectureRoute = ApiGenerateArchitectureRouteImport.update({
-  id: '/api/generate/architecture',
-  path: '/api/generate/architecture',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -106,8 +94,6 @@ export interface FileRoutesByFullPath {
   '/reset-password/$token': typeof ResetPasswordTokenRoute
   '/reset-password/': typeof ResetPasswordIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
-  '/api/generate/readme': typeof ApiGenerateReadmeRoute
   '/api/upload/audio': typeof ApiUploadAudioRoute
   '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
 }
@@ -122,8 +108,6 @@ export interface FileRoutesByTo {
   '/reset-password/$token': typeof ResetPasswordTokenRoute
   '/reset-password': typeof ResetPasswordIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
-  '/api/generate/readme': typeof ApiGenerateReadmeRoute
   '/api/upload/audio': typeof ApiUploadAudioRoute
   '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
 }
@@ -139,8 +123,6 @@ export interface FileRoutesById {
   '/reset-password/$token': typeof ResetPasswordTokenRoute
   '/reset-password/': typeof ResetPasswordIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/generate/architecture': typeof ApiGenerateArchitectureRoute
-  '/api/generate/readme': typeof ApiGenerateReadmeRoute
   '/api/upload/audio': typeof ApiUploadAudioRoute
   '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
 }
@@ -157,8 +139,6 @@ export interface FileRouteTypes {
     | '/reset-password/$token'
     | '/reset-password/'
     | '/api/auth/$'
-    | '/api/generate/architecture'
-    | '/api/generate/readme'
     | '/api/upload/audio'
     | '/api/uploads/$filename'
   fileRoutesByTo: FileRoutesByTo
@@ -173,8 +153,6 @@ export interface FileRouteTypes {
     | '/reset-password/$token'
     | '/reset-password'
     | '/api/auth/$'
-    | '/api/generate/architecture'
-    | '/api/generate/readme'
     | '/api/upload/audio'
     | '/api/uploads/$filename'
   id:
@@ -189,8 +167,6 @@ export interface FileRouteTypes {
     | '/reset-password/$token'
     | '/reset-password/'
     | '/api/auth/$'
-    | '/api/generate/architecture'
-    | '/api/generate/readme'
     | '/api/upload/audio'
     | '/api/uploads/$filename'
   fileRoutesById: FileRoutesById
@@ -206,8 +182,6 @@ export interface RootRouteChildren {
   ResetPasswordTokenRoute: typeof ResetPasswordTokenRoute
   ResetPasswordIndexRoute: typeof ResetPasswordIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiGenerateArchitectureRoute: typeof ApiGenerateArchitectureRoute
-  ApiGenerateReadmeRoute: typeof ApiGenerateReadmeRoute
   ApiUploadAudioRoute: typeof ApiUploadAudioRoute
   ApiUploadsFilenameRoute: typeof ApiUploadsFilenameRoute
 }
@@ -291,20 +265,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUploadAudioRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/generate/readme': {
-      id: '/api/generate/readme'
-      path: '/api/generate/readme'
-      fullPath: '/api/generate/readme'
-      preLoaderRoute: typeof ApiGenerateReadmeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/generate/architecture': {
-      id: '/api/generate/architecture'
-      path: '/api/generate/architecture'
-      fullPath: '/api/generate/architecture'
-      preLoaderRoute: typeof ApiGenerateArchitectureRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -326,8 +286,6 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordTokenRoute: ResetPasswordTokenRoute,
   ResetPasswordIndexRoute: ResetPasswordIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiGenerateArchitectureRoute: ApiGenerateArchitectureRoute,
-  ApiGenerateReadmeRoute: ApiGenerateReadmeRoute,
   ApiUploadAudioRoute: ApiUploadAudioRoute,
   ApiUploadsFilenameRoute: ApiUploadsFilenameRoute,
 }
