@@ -191,7 +191,7 @@ export function SettingsModal({ isOpen, onClose }: Props) {
                     
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-(--ms-text-secondary)">ElevenLabs API Key (Voiceover)</label>
+                        <label className="text-xs font-medium text-(--ms-text-secondary)">ElevenLabs API Key (Unlock ElevenLabs Voices)</label>
                         {keyStatus?.hasElevenLabs && (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
@@ -214,6 +214,9 @@ export function SettingsModal({ isOpen, onClose }: Props) {
                         onChange={e => { setElevenLabsKey(e.target.value); unmarkForRemoval('elevenlabs') }}
                         className="w-full bg-(--ms-bg-elevated) border border-(--ms-border) rounded-lg px-3 py-2 text-sm text-(--ms-text-primary) focus:border-blue-500 focus:outline-none transition-colors"
                       />
+                      <p className="text-[11px] text-(--ms-text-muted)">
+                        Cloudflare AI voices are built in by default. Add your ElevenLabs key to unlock ElevenLabs voices and custom clones.
+                      </p>
                     </div>
                   </div>
 

@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { Loader2, Mic, Upload, Volume2, Sparkles } from 'lucide-react'
+import { Loader2, Lock, Mic, Upload, Volume2, Sparkles } from 'lucide-react'
 import type { SlideAudio } from '@motionslides/shared'
-import { generateVoiceoverAction } from '@/lib/actions/ai-studio'
+import { generateVoiceoverAction, listVoiceoverOptionsAction } from '@/lib/actions/ai-studio'
+import {
+  CLOUDFLARE_VOICES,
+  type VoiceOption,
+  type VoiceoverProvider,
+} from '@/lib/voiceover-catalog'
 
 interface Props {
   existingAudio: SlideAudio | null
@@ -17,13 +22,45 @@ interface Props {
 export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Props) {
   const [mode, setMode] = useState<'idle' | 'recording' | 'uploading' | 'ai-form' | 'generating'>('idle')
   const [aiText, setAiText] = useState(slideScript || '')
-  const [voiceId, setVoiceId] = useState('21m00Tcm4TlvDq8ikWAM')
-  const [aiError, setAiError] = useState<string | null>(null)
+  const [provider, setProvider] = useState<VoiceoverProvider>('cloudflare')
+  const [voiceId, setVoiceId] = useState<string>(CLOUDFLARE_VOICES[0].id)
+  const [hasElevenLabsKey, setHasElevenLabsKey] = useState(false)
+  const [elevenLabsVoices, setElevenLabsVoices] = useState<VoiceOption[]>([])
+  const [loadingCatalog, setLoadingCatalog] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [recordingTime, setRecordingTime] = useState(0)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const activeVoices = provider === 'cloudflare' ? CLOUDFLARE_VOICES : elevenLabsVoices
+  const selectedVoice = activeVoices.find((v) => v.id === voiceId) ?? activeVoices[0] ?? null
+  const isElevenLabsLocked = provider === 'elevenlabs' && !hasElevenLabsKey
+  const canGenerate = Boolean(aiText.trim()) && !isElevenLabsLocked && Boolean(selectedVoice)
+
+  useEffect(() => {
+    if (mode !== 'ai-form') return
+    let ignore = false
+    setLoadingCatalog(true)
+
+    listVoiceoverOptionsAction()
+      .then((res) => {
+        if (ignore) return
+        setHasElevenLabsKey(res.hasElevenLabsKey)
+        setElevenLabsVoices(res.elevenLabsVoices)
+      })
+      .catch(() => {
+        // Default Cloudflare voices remain available even if session/catalog check fails
+      })
+      .finally(() => {
+        if (!ignore) setLoadingCatalog(false)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [mode])
 
   useEffect(() => {
     return () => {
@@ -45,6 +82,7 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
   }, [])
 
   const uploadBlob = async (blob: Blob, name: string) => {
+    setError(null)
     setMode('uploading')
     try {
       const objectUrl = URL.createObjectURL(blob)
@@ -80,13 +118,14 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
         trimEnd: uploadResult.duration || duration,
       })
     } catch {
-      alert('Upload failed')
+      setError('Audio upload failed. Please try again.')
     } finally {
       setMode('idle')
     }
   }
 
   const startRecording = async () => {
+    setError(null)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       recordedChunksRef.current = []
@@ -111,7 +150,7 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
       setRecordingTime(0)
       recordingIntervalRef.current = setInterval(() => setRecordingTime(prevTime => prevTime + 1), 1000)
     } catch {
-      alert('Could not access microphone.')
+      setError('Could not access microphone. Check browser permissions.')
     }
   }
 
@@ -142,11 +181,13 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
   })
 
   const handleGenerate = async () => {
-    if (!aiText.trim()) return
-    setAiError(null)
+    if (!canGenerate || !selectedVoice) return
+    setError(null)
     setMode('generating')
     try {
-      const result = await generateVoiceoverAction({ data: { text: aiText, voiceId } }) as {
+      const result = await generateVoiceoverAction({
+        data: { provider, text: aiText, voiceId: selectedVoice.id },
+      }) as {
         audioUrl: string
         durationEstimate: number
       }
@@ -154,7 +195,10 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
       onSave({
         id: Math.random().toString(36).substring(7),
         url: result.audioUrl,
-        fileName: `AI Voice (${voiceId})`,
+        fileName:
+          provider === 'elevenlabs'
+            ? `ElevenLabs (${selectedVoice.name})`
+            : `AI Voice (${selectedVoice.name})`,
         duration,
         volume: 1,
         loop: false,
@@ -163,8 +207,8 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
         trimEnd: duration,
       })
       onClose()
-    } catch (error) {
-      setAiError(error instanceof Error ? error.message : 'Generation failed. Please try again.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Generation failed. Please try again.')
       setMode('ai-form')
     }
   }
@@ -194,7 +238,7 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
         </span>
         <button
           onClick={stopRecording}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/20 border border-red-500/40 text-red-300 text-[11px] font-semibold rounded-lg cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/20 border border-red-500/40 text-red-300 text-[11px] font-semibold rounded-lg cursor-pointer transition-transform duration-150 active:scale-[0.97]"
         >
           <Volume2 size={12} /> Stop recording
         </button>
@@ -205,67 +249,150 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
   if (mode === 'ai-form') {
     return (
       <div className="flex flex-col gap-3">
+        <div
+          role="tablist"
+          aria-label="Voiceover provider"
+          className="inline-flex self-start items-center gap-1 rounded-lg border border-white/10 bg-black/30 p-0.5"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={provider === 'cloudflare'}
+            onClick={() => {
+              setProvider('cloudflare')
+              setVoiceId(CLOUDFLARE_VOICES[0].id)
+              setError(null)
+            }}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-medium border-none cursor-pointer transition-[transform,background-color,color] duration-150 active:scale-[0.97] ${
+              provider === 'cloudflare'
+                ? 'bg-white/10 text-white'
+                : 'bg-transparent text-white/50 hover:text-white/80'
+            }`}
+          >
+            Cloudflare AI
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={provider === 'elevenlabs'}
+            onClick={() => {
+              setProvider('elevenlabs')
+              setVoiceId(elevenLabsVoices[0]?.id ?? '')
+              setError(null)
+            }}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium border-none cursor-pointer transition-[transform,background-color,color] duration-150 active:scale-[0.97] ${
+              provider === 'elevenlabs'
+                ? 'bg-white/10 text-white'
+                : 'bg-transparent text-white/50 hover:text-white/80'
+            }`}
+          >
+            {!hasElevenLabsKey && <Lock size={10} className="text-white/50" />}
+            ElevenLabs
+          </button>
+        </div>
+
         <textarea
           value={aiText}
           onChange={e => setAiText(e.target.value)}
           placeholder="Script text for voiceover..."
           className="w-full h-24 bg-black/20 border border-white/10 rounded-lg p-2 text-xs text-white resize-none"
         />
-        <div className="flex items-center justify-between">
-          <select 
-            value={voiceId} 
-            onChange={e => setVoiceId(e.target.value)}
-            className="bg-black/20 border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-white/20"
-          >
-            <option value="21m00Tcm4TlvDq8ikWAM">Rachel</option>
-            <option value="ErXwobaYiN019PkySvjV">Antoni</option>
-            <option value="EXAVITQu4vr4xnSDxMaL">Bella</option>
-          </select>
-          <div className="flex gap-2">
-            <button onClick={() => setMode('idle')} className="text-[11px] text-white/50 hover:text-white px-2 border-none bg-transparent cursor-pointer">Cancel</button>
-            <button onClick={handleGenerate} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 border border-blue-500 text-white text-[11px] font-semibold rounded-lg cursor-pointer">
-              Generate
+
+        {loadingCatalog && provider === 'elevenlabs' ? (
+          <div className="flex items-center gap-2 text-[11px] text-white/50">
+            <Loader2 size={12} className="animate-spin" /> Loading ElevenLabs voices…
+          </div>
+        ) : isElevenLabsLocked ? (
+          <p className="text-[11px] text-white/60 bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 m-0">
+            Add your ElevenLabs API key in Settings → API Keys to unlock ElevenLabs voices and custom voice clones.
+          </p>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <select
+              value={selectedVoice?.id ?? ''}
+              onChange={e => setVoiceId(e.target.value)}
+              className="flex-1 min-w-0 bg-black/20 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/20"
+            >
+              {activeVoices.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name} — {v.description}
+                  {v.category && v.category !== 'premade' ? ` (${v.category})` : ''}
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => { setError(null); setMode('idle') }}
+                className="text-[11px] text-white/50 hover:text-white px-2 border-none bg-transparent cursor-pointer transition-transform duration-150 active:scale-[0.97]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!canGenerate}
+                onClick={handleGenerate}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 border border-blue-500 text-white text-[11px] font-semibold rounded-lg cursor-pointer transition-[transform,opacity] duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Generate
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isElevenLabsLocked && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => { setError(null); setMode('idle') }}
+              className="text-[11px] text-white/50 hover:text-white px-2 border-none bg-transparent cursor-pointer transition-transform duration-150 active:scale-[0.97]"
+            >
+              Cancel
             </button>
           </div>
-        </div>
-        {aiError && <p role="alert" className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1.5">{aiError}</p>}
+        )}
+
+        {error && <p role="alert" className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1.5">{error}</p>}
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-3 flex-wrap">
-      {existingAudio && (
-        <span className="text-[10px] text-white/30 italic">Replace: {existingAudio.fileName}</span>
-      )}
-      <button
-        onClick={() => setMode('ai-form')}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 border border-blue-500/40 text-blue-300 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-blue-600/30 transition-colors"
-      >
-        <Sparkles size={12} /> Generate AI
-      </button>
-      <button
-        onClick={startRecording}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/40 text-violet-300 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-violet-600/30 transition-colors"
-      >
-        <Mic size={12} /> Record voice
-      </button>
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-white/60 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-white/10 transition-colors"
-      >
-        <Upload size={12} /> Upload file
-      </button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="audio/*"
-        className="hidden"
-        onChange={async event => {
-          const file = event.target.files?.[0]
-          if (file) await uploadBlob(file, file.name)
-        }}
-      />
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-3 flex-wrap">
+        {existingAudio && (
+          <span className="text-[10px] text-white/30 italic">Replace: {existingAudio.fileName}</span>
+        )}
+        <button
+          onClick={() => { setError(null); setMode('ai-form') }}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 border border-blue-500/40 text-blue-300 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-blue-600/30 transition-[transform,background-color] duration-150 active:scale-[0.97]"
+        >
+          <Sparkles size={12} /> Generate AI
+        </button>
+        <button
+          onClick={startRecording}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/40 text-violet-300 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-violet-600/30 transition-[transform,background-color] duration-150 active:scale-[0.97]"
+        >
+          <Mic size={12} /> Record voice
+        </button>
+        <button
+          onClick={() => { setError(null); fileInputRef.current?.click() }}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-white/60 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-white/10 transition-[transform,background-color] duration-150 active:scale-[0.97]"
+        >
+          <Upload size={12} /> Upload file
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*"
+          className="hidden"
+          onChange={async event => {
+            const file = event.target.files?.[0]
+            if (file) await uploadBlob(file, file.name)
+          }}
+        />
+      </div>
+      {error && <p role="alert" className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1.5">{error}</p>}
     </div>
   )
 }

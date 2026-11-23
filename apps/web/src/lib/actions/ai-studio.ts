@@ -10,6 +10,12 @@ import { getRequest } from '@tanstack/react-start/server'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { getStorageProvider } from '../storage'
+import { CLOUDFLARE_VOICES, type VoiceOption } from '../voiceover-catalog'
+import {
+  fetchElevenLabsVoices,
+  synthesizeCloudflareVoiceover,
+  synthesizeElevenLabsVoiceover,
+} from '../voiceover.server'
 
 /**
  * Action Interceptor Pattern:
@@ -19,7 +25,7 @@ import { getStorageProvider } from '../storage'
  * 4. Execute action.
  * 5. Deduct tokens from balance.
  */
-type AIProvider = 'openai' | 'elevenlabs'
+type AIProvider = 'openai' | 'cloudflare' | 'elevenlabs'
 
 interface ResolvedAIKeys {
   openai: string
@@ -82,18 +88,24 @@ async function interceptAIAction<T>(
   }
 
   const keys = await resolveAndMigrateKeys(userRecord)
-  const userHasCustomKey = provider === 'openai' ? keys.hasOpenAIKey : keys.hasElevenLabsKey
   const envQuota = process.env.DEFAULT_TOKEN_QUOTA ? Number(process.env.DEFAULT_TOKEN_QUOTA) : 100000
   const userBalance = userRecord.tokenBalance ?? envQuota
 
-  if (!userHasCustomKey && userBalance < cost) {
-    throw new Error('Monthly quota exceeded. Please add your own API key in Settings.')
+  let userHasCustomKey = false
+  if (provider === 'openai') {
+    userHasCustomKey = keys.hasOpenAIKey
+    if (!keys.openai) {
+      throw new Error('No OpenAI API key is configured. Please add one in Settings or contact support.')
+    }
+  } else if (provider === 'elevenlabs') {
+    userHasCustomKey = keys.hasElevenLabsKey
+    if (!keys.hasElevenLabsKey) {
+      throw new Error('Add your ElevenLabs API key in Settings to unlock ElevenLabs voices.')
+    }
   }
 
-  const key = keys[provider]
-  if (!key) {
-    const providerName = provider === 'openai' ? 'OpenAI' : 'ElevenLabs'
-    throw new Error(`No ${providerName} API key is configured. Please add one in Settings or contact support.`)
+  if (!userHasCustomKey && userBalance < cost) {
+    throw new Error('Monthly quota exceeded. Please add your own API key in Settings.')
   }
 
   const result = await actionFn(keys)
@@ -137,6 +149,7 @@ export const transcribeAudioAction = createServerFn({ method: 'POST' })
 
 export const generateVoiceoverAction = createServerFn({ method: 'POST' })
   .inputValidator(z.object({
+    provider: z.enum(['cloudflare', 'elevenlabs']).default('cloudflare'),
     text: z.string().trim().min(1).max(5_000),
     voiceId: z.string().trim().min(1).max(128),
     settings: z.object({
@@ -146,39 +159,17 @@ export const generateVoiceoverAction = createServerFn({ method: 'POST' })
       use_speaker_boost: z.boolean().optional(),
     }).optional(),
   }))
-  .handler(async ({ data: { text, voiceId, settings } }) => {
-    // Shared-account usage is metered approximately by input tokens. A user's own
-    // ElevenLabs key bypasses MotionSlides quota and is billed by ElevenLabs directly.
+  .handler(async ({ data: { provider, text, voiceId, settings } }) => {
+    // Built-in Cloudflare AI usage is metered approximately by input characters (~1 token per 4 chars).
+    // A user's own ElevenLabs BYOK key bypasses MotionSlides quota and is billed by ElevenLabs directly.
     const cost = Math.max(100, Math.ceil(text.length / 4))
-    return interceptAIAction('elevenlabs', async (keys) => {
-      const response = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'xi-api-key': keys.elevenlabs,
-          },
-          body: JSON.stringify({
-            text,
-            model_id: 'eleven_multilingual_v2',
-            ...(settings && Object.keys(settings).length > 0 ? { voice_settings: settings } : {}),
-          }),
-        },
-      )
+    return interceptAIAction(provider, async (keys) => {
+      const request = getRequest()
+      const audio = provider === 'elevenlabs'
+        ? await synthesizeElevenLabsVoiceover({ text, voiceId, apiKey: keys.elevenlabs, settings })
+        : await synthesizeCloudflareVoiceover({ text, voiceId, request })
 
-      if (!response.ok) {
-        const detail = (await response.text()).slice(0, 300)
-        console.error(`[ElevenLabs] Voice generation failed (${response.status}): ${detail}`)
-        throw new Error(response.status === 429
-          ? 'ElevenLabs is busy. Please try again in a moment.'
-          : 'ElevenLabs could not generate this voiceover. Check your key, voice, and available credits.')
-      }
-
-      const audio = new Uint8Array(await response.arrayBuffer())
-      if (audio.byteLength === 0) throw new Error('ElevenLabs returned an empty audio file.')
-
-      const storage = getStorageProvider(getRequest())
+      const storage = getStorageProvider(request)
       const { url, key } = await storage.uploadFile(audio, `voiceover-${crypto.randomUUID()}.mp3`, 'audio/mpeg')
       return {
         audioUrl: url,
@@ -188,6 +179,57 @@ export const generateVoiceoverAction = createServerFn({ method: 'POST' })
         durationEstimate: Math.max(1, Math.round(text.trim().split(/\s+/).length / 2.5)),
       }
     }, cost)
+  })
+
+export const listVoiceoverOptionsAction = createServerFn({ method: 'GET' })
+  .handler(async (): Promise<{
+    defaultProvider: 'cloudflare'
+    cloudflareVoices: VoiceOption[]
+    hasElevenLabsKey: boolean
+    elevenLabsVoices: VoiceOption[]
+    elevenLabsFallback?: boolean
+  }> => {
+    const request = getRequest()
+    const session = await auth.api.getSession({ headers: request.headers })
+    if (!session) {
+      return {
+        defaultProvider: 'cloudflare',
+        cloudflareVoices: [...CLOUDFLARE_VOICES],
+        hasElevenLabsKey: false,
+        elevenLabsVoices: [],
+      }
+    }
+
+    const userRecord = await db.query.user.findFirst({
+      where: eq(user.id, session.user.id),
+    })
+    if (!userRecord) {
+      return {
+        defaultProvider: 'cloudflare',
+        cloudflareVoices: [...CLOUDFLARE_VOICES],
+        hasElevenLabsKey: false,
+        elevenLabsVoices: [],
+      }
+    }
+
+    const keys = await resolveAndMigrateKeys(userRecord)
+    if (!keys.hasElevenLabsKey) {
+      return {
+        defaultProvider: 'cloudflare',
+        cloudflareVoices: [...CLOUDFLARE_VOICES],
+        hasElevenLabsKey: false,
+        elevenLabsVoices: [],
+      }
+    }
+
+    const { voices, fallbackUsed } = await fetchElevenLabsVoices({ apiKey: keys.elevenlabs })
+    return {
+      defaultProvider: 'cloudflare',
+      cloudflareVoices: [...CLOUDFLARE_VOICES],
+      hasElevenLabsKey: true,
+      elevenLabsVoices: voices,
+      elevenLabsFallback: fallbackUsed,
+    }
   })
 
 export const updateAPIKeysAction = createServerFn({ method: 'POST' })
