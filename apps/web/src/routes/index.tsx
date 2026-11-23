@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, Link } from '@tanstack/react-router'
-import { ChevronRight, Zap } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { ArrowRight, Github } from 'lucide-react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { LandingNavbar } from '@/components/landing-navbar'
 import { LandingFooter } from '@/components/landing-footer'
 import { getSessionFn } from '@/lib/auth-actions'
@@ -10,6 +10,8 @@ import { LandingGitDiffFeature } from '@/components/marketing/landing-git-diff-f
 import { LandingAIStudioFeature } from '@/components/marketing/landing-ai-studio-feature'
 import { LandingComparison } from '@/components/marketing/landing-comparison'
 import { LandingExportOffline } from '@/components/marketing/landing-export-offline'
+
+const EASE_OUT = [0.23, 1, 0.32, 1] as const
 
 export const Route = createFileRoute('/')({
   beforeLoad: async () => {
@@ -21,224 +23,158 @@ export const Route = createFileRoute('/')({
   component: LandingPage,
 })
 
+function SectionDivider() {
+  return (
+    <div className="max-w-[1120px] mx-auto px-[24px]">
+      <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+    </div>
+  )
+}
 
 function LandingPage() {
-  return (
-    <div className="min-h-screen text-white overflow-y-auto" style={{ background: '#050507' }}>
-      {/* Google Fonts */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap"
-        rel="stylesheet"
-      />
+  const shouldReduceMotion = useReducedMotion()
 
-      {/* ── Animated background orbs ─────────────────────────────────────── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        {/* Primary blue orb - top center */}
-        <motion.div
-          animate={{
-            scale: [1, 1.15, 1],
-            opacity: [0.12, 0.2, 0.12],
-            x: ['-50%', '-45%', '-55%', '-50%'],
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute"
+  return (
+    <div className="min-h-screen bg-[#070709] text-zinc-100 overflow-x-clip relative selection:bg-blue-500/30 selection:text-white">
+      {/* Static architectural atmosphere */}
+      <div aria-hidden="true" className="fixed inset-0 pointer-events-none z-0">
+        <div
+          className="absolute inset-x-0 top-0 h-[640px]"
           style={{
-            top: '-80px',
-            left: '50%',
-            width: 800,
-            height: 600,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(59,130,246,1) 0%, transparent 70%)',
-            filter: 'blur(80px)',
-            transform: 'translateX(-50%)',
+            background:
+              'radial-gradient(ellipse 75% 45% at 50% -10%, rgba(59,130,246,0.11), transparent 70%)',
           }}
         />
-        {/* Purple orb - bottom right */}
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 0.9, 1],
-            opacity: [0.08, 0.14, 0.08],
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-          className="absolute"
+        <div
+          className="absolute inset-x-0 top-0 h-[720px] opacity-[0.04]"
           style={{
-            bottom: '5%',
-            right: '-5%',
-            width: 600,
-            height: 500,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(139,92,246,1) 0%, transparent 70%)',
-            filter: 'blur(90px)',
-          }}
-        />
-        {/* Emerald orb - mid left */}
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.05, 0.1, 0.05],
-            y: [0, -30, 0],
-          }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 6 }}
-          className="absolute"
-          style={{
-            top: '40%',
-            left: '-8%',
-            width: 500,
-            height: 400,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(16,185,129,1) 0%, transparent 70%)',
-            filter: 'blur(100px)',
+            backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+            backgroundSize: '28px 28px',
+            maskImage: 'radial-gradient(ellipse 60% 50% at 50% 0%, #000 30%, transparent 100%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 60% 50% at 50% 0%, #000 30%, transparent 100%)',
           }}
         />
       </div>
 
       <LandingNavbar />
 
-      {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <section className="relative flex flex-col items-center justify-center pt-36 pb-16 md:min-h-screen md:py-20 px-6 text-center overflow-hidden z-10">
+      {/* Hero */}
+      <section className="relative z-10 pt-[132px] pb-[64px] px-[24px] max-w-[1120px] mx-auto text-center">
         <motion.div
-          initial={{ opacity: 0, y: 28 }}
+          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 flex flex-col items-center max-w-4xl w-full"
+          transition={{ duration: 0.45, ease: EASE_OUT }}
+          className="flex flex-col items-center"
         >
-          {/* Badge */}
-          <div
-            className="inline-flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full px-3.5 py-1 text-xs text-blue-400 font-medium mb-6 md:mb-8"
-            style={{ fontFamily: 'Inter, sans-serif' }}
-          >
-            <Zap size={11} />
-            Motion-First Presentation Engine
+          <div className="inline-flex items-center border border-white/[0.08] bg-white/[0.03] rounded-full px-[12px] py-[5px] mb-[24px]">
+            <span className="font-mono text-[11px] tracking-[0.08em] text-zinc-400 uppercase">
+              Open-source presentation engine
+            </span>
           </div>
 
-          {/* Heading */}
-          <h1 className="leading-none mb-5 md:mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-            <span
-              className="block text-[clamp(52px,8vw,96px)] text-neutral-200 font-normal italic mb-1"
-              style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
-            >
-              Slides that move.
-            </span>
-            <span
-              className="block text-[clamp(36px,5vw,64px)] font-bold tracking-[-2px] text-white"
-              style={{ fontFamily: 'Inter, sans-serif' }}
-            >
-              Transitions that{' '}
-              <span className="text-neutral-400">think.</span>
-            </span>
+          <h1 className="text-[clamp(40px,6vw,74px)] font-semibold leading-[1.03] tracking-[-0.038em] max-w-[860px] mb-[22px] bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
+            Presentations engineered for systems, code, and motion.
           </h1>
 
-          <p
-            className="text-[16px] sm:text-[17px] text-neutral-500 max-w-xl leading-relaxed mb-8 md:mb-10"
-            style={{ fontFamily: 'Inter, sans-serif' }}
-          >
-            MotionSlides is a cinematic presentation engine for developers and designers.
-            Transitions are computed, not preset. Code animations are first-class citizens.
+          <p className="text-[16px] sm:text-[18px] leading-[1.6] tracking-[-0.01em] text-zinc-400 max-w-[620px] mb-[32px]">
+            Design architecture walkthroughs, animate syntax-aware code diffs, branch decks like Git, and direct an embedded AI Copilot—then present live or export to MP4, GIF, and PDF.
           </p>
 
-          <div className="flex items-center gap-3 flex-wrap justify-center">
+          <div className="flex items-center gap-[12px] flex-wrap justify-center">
             <Link
               to="/dashboard"
-              className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[15px] px-7 py-3.5 rounded-full no-underline transition hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,255,255,0.15)]"
-              style={{ fontFamily: 'Inter, sans-serif' }}
+              className="inline-flex items-center gap-[8px] bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-[14px] px-[24px] py-[12px] rounded-full no-underline transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
             >
-              Get Started <ChevronRight size={16} />
+              Start building <ArrowRight size={15} />
             </Link>
             <a
               href="https://github.com/Chifez/motion-slides"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 border border-white/12 text-neutral-300 hover:text-white hover:border-white/25 text-[15px] font-medium px-7 py-3.5 rounded-full no-underline transition"
-              style={{ fontFamily: 'Inter, sans-serif' }}
+              className="inline-flex items-center gap-[8px] border border-white/[0.1] bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/[0.18] text-zinc-200 text-[14px] font-medium px-[24px] py-[12px] rounded-full no-underline transition-[transform,background-color,border-color] duration-150 ease-out active:scale-[0.97]"
             >
+              <Github size={15} />
               View on GitHub
             </a>
+          </div>
+
+          <div className="mt-[28px] flex flex-wrap items-center justify-center gap-x-[20px] gap-y-[8px] font-mono text-[11px] text-zinc-500">
+            <span>No signup required</span>
+            <span className="text-zinc-700">·</span>
+            <span>Local-first IndexedDB + Cloud Sync</span>
+            <span className="text-zinc-700">·</span>
+            <span>MIT License</span>
           </div>
         </motion.div>
       </section>
 
-      {/* ── Interactive Editor Showcase ────────────────────────────────────── */}
-      <section className="px-4 sm:px-6 pb-12 relative z-10">
+      {/* Interactive Editor Showcase */}
+      <section className="relative z-10 max-w-[1160px] mx-auto px-[24px] pb-[96px]">
         <LandingShowcase />
       </section>
 
-      {/* ── Subtle section divider ─────────────────────────────────────────── */}
-      <div className="relative z-10 h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-zinc-800 to-transparent my-4" />
+      <SectionDivider />
 
-      {/* ── Feature Pillars ───────────────────────────────────────────────── */}
       <div className="relative z-10">
         <LandingPillars />
       </div>
 
-      <div className="relative z-10 h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
+      <SectionDivider />
 
-      {/* ── Git & Code Intelligence ────────────────────────────────────────── */}
-      <div className="relative z-10">
-        <LandingGitDiffFeature />
-      </div>
-
-      <div className="relative z-10 h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
-
-      {/* ── AI Presentation Studio ────────────────────────────────────────── */}
       <div className="relative z-10">
         <LandingAIStudioFeature />
       </div>
 
-      <div className="relative z-10 h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
+      <SectionDivider />
 
-      {/* ── Export & Offline ──────────────────────────────────────────────── */}
+      <div className="relative z-10">
+        <LandingGitDiffFeature />
+      </div>
+
+      <SectionDivider />
+
       <div className="relative z-10">
         <LandingExportOffline />
       </div>
 
-      <div className="relative z-10 h-px max-w-2xl mx-auto bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
+      <SectionDivider />
 
-      {/* ── Comparison ────────────────────────────────────────────────────── */}
       <div className="relative z-10">
         <LandingComparison />
       </div>
 
-      {/* ── CTA ──────────────────────────────────────────────────────────── */}
-      <section className="px-6 py-24 flex flex-col items-center text-center relative z-10">
+      {/* Closing CTA */}
+      <section className="relative z-10 max-w-[1072px] mx-auto px-[24px] py-[96px]">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="max-w-2xl"
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.45, ease: EASE_OUT }}
+          className="rounded-[16px] border border-white/[0.08] bg-[#0C0C0F] px-[32px] py-[64px] text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] flex flex-col items-center"
         >
-          {/* Glow ring */}
-          <div
-            className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full pointer-events-none"
-            style={{
-              background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
-              filter: 'blur(40px)',
-            }}
-          />
-          <h2
-            className="text-[clamp(28px,4vw,52px)] font-bold tracking-tight text-white mb-4 relative"
-            style={{ fontFamily: 'Inter, sans-serif' }}
-          >
-            Ready to present{' '}
-            <span className="italic font-normal" style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}>
-              differently?
-            </span>
+          <h2 className="text-[clamp(28px,4vw,44px)] font-semibold tracking-[-0.03em] leading-[1.1] text-white mb-[14px] max-w-[600px]">
+            Build your next technical deck in minutes.
           </h2>
-          <p
-            className="text-neutral-500 text-[16px] mb-8 leading-relaxed"
-            style={{ fontFamily: 'Inter, sans-serif' }}
-          >
-            No account needed. Open the dashboard and start building in seconds.
+          <p className="text-[16px] leading-[1.6] text-zinc-400 max-w-[500px] mb-[28px]">
+            Open the canvas right in your browser—no credit card, no mandatory account, full local persistence.
           </p>
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[15px] px-8 py-3.5 rounded-full no-underline hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,255,255,0.15)] transition"
-            style={{ fontFamily: 'Inter, sans-serif' }}
-          >
-            Open Dashboard <ChevronRight size={16} />
-          </Link>
+          <div className="flex items-center gap-[12px] flex-wrap justify-center">
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-[8px] bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-[14px] px-[24px] py-[12px] rounded-full no-underline transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]"
+            >
+              Open Editor <ArrowRight size={15} />
+            </Link>
+            <a
+              href="https://github.com/Chifez/motion-slides"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-[8px] border border-white/[0.1] bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/[0.18] text-zinc-200 text-[14px] font-medium px-[24px] py-[12px] rounded-full no-underline transition-[transform,background-color,border-color] duration-150 ease-out active:scale-[0.97]"
+            >
+              <Github size={15} />
+              Star on GitHub
+            </a>
+          </div>
         </motion.div>
       </section>
 

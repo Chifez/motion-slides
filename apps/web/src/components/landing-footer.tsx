@@ -1,14 +1,14 @@
 import { Link } from '@tanstack/react-router'
-import { Github, Twitter, ExternalLink } from 'lucide-react'
+import { Github, ExternalLink } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 
 const FOOTER_LINKS = {
   Product: [
-    { label: 'Features', href: '#features' },
-    { label: 'AI Studio', href: '#ai-studio' },
-    { label: 'Git & Code Diffs', href: '#git-diffs' },
-    { label: 'Export & Offline', href: '#export' },
-    { label: 'Comparison', href: '#comparison' },
+    { label: 'Capabilities', href: '#capabilities' },
+    { label: 'AI Copilot', href: '#copilot' },
+    { label: 'Code & Git', href: '#code-git' },
+    { label: 'Export & Delivery', href: '#export' },
+    { label: 'Compare', href: '#compare' },
   ],
   Resources: [
     { label: 'GitHub', href: 'https://github.com/Chifez/motion-slides', external: true },
@@ -19,9 +19,9 @@ const FOOTER_LINKS = {
   Legal: [
     { label: 'Privacy Policy', href: '/privacy', isRoute: true },
   ],
-  App: [
-    { label: 'Open Dashboard', href: '/dashboard', isRoute: true },
-    { label: 'New Presentation', href: '/dashboard', isRoute: true },
+  Workspace: [
+    { label: 'Open Editor', href: '/dashboard', isRoute: true },
+    { label: 'Dashboard', href: '/dashboard', isRoute: true },
   ],
 }
 
@@ -29,55 +29,51 @@ export function LandingFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="border-t border-zinc-900 bg-zinc-950/60 backdrop-blur-sm">
-      {/* ── Top section ── */}
-      <div className="max-w-5xl mx-auto px-6 pt-16 pb-10">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
+    <footer className="border-t border-white/[0.06] bg-[#070709]">
+      {/* Top section */}
+      <div className="max-w-[1120px] mx-auto px-[24px] pt-[64px] pb-[44px]">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-[40px]">
           {/* Brand column */}
-          <div className="md:col-span-2 flex flex-col gap-4">
+          <div className="md:col-span-2 flex flex-col gap-[16px]">
             <Logo expanded size={26} />
-            <p className="text-[13px] text-zinc-600 leading-relaxed max-w-[240px]" style={{ fontFamily: 'Inter, sans-serif' }}>
-              A cinematic presentation engine for developers and technical teams. Built different.
+            <p className="text-[13px] text-zinc-500 leading-[1.6] max-w-[260px]">
+              Motion-first presentation engine for systems, architecture diagrams, code diffs, and AI-assisted decks.
             </p>
 
-            {/* Social links */}
-            <div className="flex items-center gap-2 mt-1">
+            {/* Social + MIT license badge */}
+            <div className="flex items-center gap-[10px] mt-[4px]">
               <a
                 href="https://github.com/Chifez/motion-slides"
                 target="_blank"
                 rel="noreferrer"
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-700 transition-colors"
+                aria-label="GitHub repository"
+                className="w-[32px] h-[32px] flex items-center justify-center rounded-[8px] bg-[#0C0C0F] border border-white/[0.08] text-zinc-500 hover:text-zinc-100 hover:border-white/[0.16] transition-[transform,color,border-color] duration-150 active:scale-[0.97]"
               >
                 <Github size={14} />
               </a>
-            </div>
 
-            {/* MIT badge */}
-            <div className="inline-flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1 w-fit">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="text-[10px] text-zinc-500 font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>
-                Open Source · MIT License
-              </span>
+              <div className="inline-flex items-center gap-[6px] bg-[#0C0C0F] border border-white/[0.08] rounded-full px-[12px] py-[5px]">
+                <span className="w-[6px] h-[6px] rounded-full bg-emerald-500" />
+                <span className="font-mono text-[11px] text-zinc-400">
+                  Open Source · MIT License
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Link columns */}
           {Object.entries(FOOTER_LINKS).map(([category, links]) => (
-            <div key={category} className="flex flex-col gap-3">
-              <p
-                className="text-[10px] font-bold uppercase tracking-widest text-zinc-600"
-                style={{ fontFamily: 'Inter, sans-serif' }}
-              >
+            <div key={category} className="flex flex-col gap-[12px]">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
                 {category}
               </p>
-              <ul className="flex flex-col gap-2.5">
-                {links.map(link => (
+              <ul className="flex flex-col gap-[10px] list-none p-0 m-0">
+                {links.map((link) => (
                   <li key={link.label}>
                     {'isRoute' in link && link.isRoute ? (
                       <Link
-                        to={link.href as any}
-                        className="text-[13px] text-zinc-500 hover:text-white transition-colors no-underline flex items-center gap-1.5 group"
-                        style={{ fontFamily: 'Inter, sans-serif' }}
+                        to={link.href as '/dashboard' | '/privacy'}
+                        className="text-[13px] text-zinc-400 hover:text-zinc-100 transition-colors duration-150 no-underline inline-flex items-center gap-[4px]"
                       >
                         {link.label}
                       </Link>
@@ -86,17 +82,15 @@ export function LandingFooter() {
                         href={link.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[13px] text-zinc-500 hover:text-white transition-colors flex items-center gap-1 group"
-                        style={{ fontFamily: 'Inter, sans-serif' }}
+                        className="text-[13px] text-zinc-400 hover:text-zinc-100 transition-colors duration-150 no-underline inline-flex items-center gap-[4px] group"
                       >
                         {link.label}
-                        <ExternalLink size={10} className="opacity-0 group-hover:opacity-60 transition-opacity" />
+                        <ExternalLink size={10} className="opacity-0 group-hover:opacity-60 transition-opacity duration-150" />
                       </a>
                     ) : (
                       <a
                         href={link.href}
-                        className="text-[13px] text-zinc-500 hover:text-white transition-colors"
-                        style={{ fontFamily: 'Inter, sans-serif' }}
+                        className="text-[13px] text-zinc-400 hover:text-zinc-100 transition-colors duration-150 no-underline"
                       >
                         {link.label}
                       </a>
@@ -109,42 +103,40 @@ export function LandingFooter() {
         </div>
       </div>
 
-      {/* ── Divider ── */}
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="h-px bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
+      {/* Divider */}
+      <div className="max-w-[1120px] mx-auto px-[24px]">
+        <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
       </div>
 
-      {/* ── Bottom bar ── */}
-      <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <p className="text-[11px] text-zinc-700" style={{ fontFamily: 'Inter, sans-serif' }}>
+      {/* Bottom bar */}
+      <div className="max-w-[1120px] mx-auto px-[24px] py-[24px] flex flex-col sm:flex-row items-center justify-between gap-[16px]">
+        <div className="flex items-center gap-[16px]">
+          <p className="text-[12px] text-zinc-600">
             © {year} MotionSlides. MIT License.
           </p>
-          <span className="text-zinc-800 hidden sm:block">·</span>
+          <span className="text-zinc-800 hidden sm:inline">·</span>
           <Link
             to="/privacy"
-            className="text-[11px] text-zinc-700 hover:text-zinc-400 transition-colors no-underline"
-            style={{ fontFamily: 'Inter, sans-serif' }}
+            className="text-[12px] text-zinc-600 hover:text-zinc-300 transition-colors duration-150 no-underline"
           >
             Privacy Policy
           </Link>
-          <span className="text-zinc-800 hidden sm:block">·</span>
+          <span className="text-zinc-800 hidden sm:inline">·</span>
           <a
             href="https://github.com/Chifez/motion-slides"
             target="_blank"
             rel="noreferrer"
-            className="text-[11px] text-zinc-700 hover:text-zinc-400 transition-colors flex items-center gap-1"
-            style={{ fontFamily: 'Inter, sans-serif' }}
+            className="text-[12px] text-zinc-600 hover:text-zinc-300 transition-colors duration-150 no-underline inline-flex items-center gap-[5px]"
           >
-            <Github size={11} />
+            <Github size={12} />
             Chifez/motion-slides
           </a>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[10px] text-zinc-700" style={{ fontFamily: 'Inter, sans-serif' }}>
-            All systems operational
+        <div className="flex items-center gap-[6px]">
+          <span className="w-[6px] h-[6px] rounded-full bg-emerald-500" />
+          <span className="font-mono text-[11px] text-zinc-600">
+            Local-first &amp; Cloud-synced
           </span>
         </div>
       </div>
