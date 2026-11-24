@@ -1,34 +1,51 @@
 import { Volume2 } from 'lucide-react'
 import type { Slide, Project } from '@motionslides/shared'
-import { PX_PER_SEC, VO_TRACK_H, AUDIO_TYPE_VOICEOVER } from './constants'
+import { VO_TRACK_H, AUDIO_TYPE_VOICEOVER } from './constants'
 import type { AudioKey, SlideWithTiming } from './types'
 import { WaveformDecoration } from './waveform-decoration'
 
 interface Props {
   slidesWithTiming: SlideWithTiming[]
   slides: Slide[]
+  pxPerSec: number
+  isMuted: boolean
+  liveSlideIndex: number
   selectedAudioKey: AudioKey | null
   setSelectedAudioKey: (key: AudioKey | null) => void
   setInspectorOpen: (open: boolean) => void
+  onOpenVoDrawer: () => void
   activeProjectId: string | null
   updateProject: (id: string, updates: Partial<Project>) => void
 }
 
+/**
+ * Per-slide voiceover lane supporting single-click AudioInspector opening,
+ * bi-directional trim handles (`trimStart` and `trimEnd`), and clickable empty state.
+ */
 export function VoiceoverTrackRow({
   slidesWithTiming,
   slides,
+  pxPerSec,
+  isMuted,
+  liveSlideIndex,
   selectedAudioKey,
   setSelectedAudioKey,
   setInspectorOpen,
+  onOpenVoDrawer,
   activeProjectId,
   updateProject,
 }: Props) {
+  const hasAnyVoiceover = slides.some(s => Boolean(s.audio))
+
   return (
     <div
       className="flex-shrink-0 border-b relative"
-      style={{ height: VO_TRACK_H, borderColor: 'var(--ms-tl-border)' }}
+      style={{
+        height: VO_TRACK_H,
+        borderColor: 'var(--ms-tl-border)',
+        backgroundColor: 'var(--ms-tl-track-bg)',
+      }}
     >
-      <div className="absolute inset-0" style={{ backgroundColor: 'var(--ms-tl-bg)' }} />
       {slidesWithTiming.map(item => {
         const isSelected =
           selectedAudioKey?.type === AUDIO_TYPE_VOICEOVER && selectedAudioKey.slideId === item.slide.id
@@ -37,6 +54,8 @@ export function VoiceoverTrackRow({
             key={`vo-${item.slide.id}`}
             item={item}
             slides={slides}
+            pxPerSec={pxPerSec}
+            isMuted={isMuted}
             isSelected={isSelected}
             setSelectedAudioKey={setSelectedAudioKey}
             setInspectorOpen={setInspectorOpen}
@@ -45,10 +64,16 @@ export function VoiceoverTrackRow({
           />
         )
       })}
-      {slides.every(s => !s.audio) && (
-        <div className="absolute inset-0 flex items-center px-4 text-[9px] font-medium" style={{ color: 'var(--ms-tl-text-dim)' }}>
-          No voiceovers — hover V.O. label and click +
-        </div>
+
+      {!hasAnyVoiceover && (
+        <button
+          type="button"
+          onClick={onOpenVoDrawer}
+          className="absolute inset-0 w-full h-full flex items-center px-4 text-[11px] font-medium border-none bg-transparent text-left cursor-pointer hover:bg-black/[0.025] dark:hover:bg-white/[0.025] transition-colors duration-150"
+          style={{ color: 'var(--ms-tl-text-dim)' }}
+        >
+          Click to add voiceover for Slide {liveSlideIndex + 1}
+        </button>
       )}
     </div>
   )
@@ -57,6 +82,8 @@ export function VoiceoverTrackRow({
 interface VoiceoverClipProps {
   item: SlideWithTiming
   slides: Slide[]
+  pxPerSec: number
+  isMuted: boolean
   isSelected: boolean
   setSelectedAudioKey: (key: AudioKey | null) => void
   setInspectorOpen: (open: boolean) => void
@@ -64,9 +91,11 @@ interface VoiceoverClipProps {
   updateProject: (id: string, updates: Partial<Project>) => void
 }
 
-export function VoiceoverClip({
+function VoiceoverClip({
   item,
   slides,
+  pxPerSec,
+  isMuted,
   isSelected,
   setSelectedAudioKey,
   setInspectorOpen,
@@ -76,7 +105,8 @@ export function VoiceoverClip({
   const audio = item.slide.audio
   if (!audio) return null
 
-  const activeWidth = ((audio.trimEnd - audio.trimStart) / audio.playbackRate) * PX_PER_SEC
+  const activeWidth = ((audio.trimEnd - audio.trimStart) / audio.playbackRate) * pxPerSec
+  const minWindow = Math.min(0.4, audio.duration)
 
   const handleClick = () => {
     if (isSelected) {
@@ -84,23 +114,48 @@ export function VoiceoverClip({
       setInspectorOpen(false)
     } else {
       setSelectedAudioKey({ type: AUDIO_TYPE_VOICEOVER, slideId: item.slide.id })
-      setInspectorOpen(false)
+      setInspectorOpen(true)
     }
   }
 
-  const handleDoubleClick = () => {
-    setSelectedAudioKey({ type: AUDIO_TYPE_VOICEOVER, slideId: item.slide.id })
-    setInspectorOpen(true)
-  }
-
-  const handleTrimDrag = (e: React.MouseEvent) => {
+  const handleTrimStartDrag = (e: React.MouseEvent) => {
     e.stopPropagation()
     const startX = e.clientX
-    const startTrimEnd = audio.trimEnd
+    const initialTrimStart = audio.trimStart
+
     const onMove = (mv: MouseEvent) => {
+      const deltaAudioSec = ((mv.clientX - startX) / pxPerSec) * audio.playbackRate
+      const newTrimStart = Math.max(
+        0,
+        Math.min(audio.trimEnd - minWindow, initialTrimStart + deltaAudioSec),
+      )
+      if (activeProjectId) {
+        updateProject(activeProjectId, {
+          slides: slides.map(s =>
+            s.id === item.slide.id ? { ...s, audio: { ...audio, trimStart: newTrimStart } } : s,
+          ),
+          synced: false,
+        })
+      }
+    }
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
+  const handleTrimEndDrag = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const startX = e.clientX
+    const initialTrimEnd = audio.trimEnd
+
+    const onMove = (mv: MouseEvent) => {
+      const deltaAudioSec = ((mv.clientX - startX) / pxPerSec) * audio.playbackRate
       const newTrimEnd = Math.min(
         audio.duration,
-        Math.max(audio.trimStart + 0.5, startTrimEnd + (mv.clientX - startX) / PX_PER_SEC),
+        Math.max(audio.trimStart + minWindow, initialTrimEnd + deltaAudioSec),
       )
       if (activeProjectId) {
         updateProject(activeProjectId, {
@@ -121,22 +176,29 @@ export function VoiceoverClip({
 
   return (
     <div
-      className="absolute top-2 group"
+      className={`absolute top-1.5 group transition-opacity duration-150 ${isMuted ? 'opacity-40' : ''}`}
       style={{
-        left: `${item.start * PX_PER_SEC + 2}px`,
-        width: `${Math.max(32, activeWidth - 4)}px`,
-        height: `${VO_TRACK_H - 16}px`,
+        left: `${item.start * pxPerSec + 2}px`,
+        width: `${Math.max(36, activeWidth - 4)}px`,
+        height: `${VO_TRACK_H - 12}px`,
       }}
     >
       <div
         onClick={handleClick}
-        onDoubleClick={handleDoubleClick}
-        className={`w-full h-full rounded-lg cursor-pointer relative overflow-hidden transition ${
+        className={`w-full h-full rounded-md cursor-pointer relative overflow-hidden border transition-[border-color,box-shadow] duration-150 ${
           isSelected
-            ? 'bg-violet-600/25 border-2 border-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.2)]'
-            : 'bg-violet-900/20 border border-violet-700/30 hover:border-violet-600/50'
+            ? 'border-(--ms-accent) ring-1 ring-(--ms-accent)/50'
+            : 'border-(--ms-tl-border-strong) hover:border-(--ms-tl-vo-accent)'
         }`}
+        style={{
+          backgroundColor: 'color-mix(in srgb, var(--ms-tl-vo-accent) 10%, var(--ms-bg-elevated))',
+        }}
       >
+        <span
+          className="absolute left-0 top-0 bottom-0 w-0.5 pointer-events-none z-10"
+          style={{ backgroundColor: 'var(--ms-tl-vo-accent)' }}
+        />
+
         <WaveformDecoration
           color={isSelected ? 'var(--ms-vo-fill-selected)' : 'var(--ms-vo-fill)'}
           audioUrl={audio.url}
@@ -144,23 +206,35 @@ export function VoiceoverClip({
           trimEnd={audio.trimEnd}
           duration={audio.duration}
         />
-        <div className="absolute inset-x-2 top-0.5 flex items-center gap-1 pointer-events-none">
-          <Volume2 size={8} className="text-violet-400/70 shrink-0" />
-          <span className="text-[8px] font-medium text-violet-300/60 truncate">{audio.fileName}</span>
+
+        <div className="relative z-10 flex items-center gap-1 px-2 pt-1 pointer-events-none">
+          <Volume2 size={10} className="shrink-0" style={{ color: 'var(--ms-tl-vo-accent)' }} />
+          <span className="text-[10px] font-medium text-(--ms-text-primary) truncate leading-none">
+            {audio.fileName}
+          </span>
         </div>
-        {isSelected && (
-          <div className="absolute inset-x-2 bottom-0.5 text-[7px] font-mono text-violet-400/50 pointer-events-none">
-            dbl-click for settings
-          </div>
-        )}
       </div>
+
+      {/* Left trim handle (trimStart) */}
       <div
-        className={`absolute right-0 top-0 h-full w-2 cursor-ew-resize z-20 flex items-center justify-center transition-opacity ${
+        onMouseDown={handleTrimStartDrag}
+        title="Drag to trim voiceover start"
+        className={`absolute left-0 top-0 h-full w-2 cursor-ew-resize z-20 flex items-center justify-center transition-opacity duration-150 ${
           isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}
-        onMouseDown={handleTrimDrag}
       >
-        <div className="w-0.5 h-4 bg-violet-400/50 rounded-full" />
+        <div className="w-0.5 h-4 rounded-full bg-(--ms-tl-vo-accent)" />
+      </div>
+
+      {/* Right trim handle (trimEnd) */}
+      <div
+        onMouseDown={handleTrimEndDrag}
+        title="Drag to trim voiceover end"
+        className={`absolute right-0 top-0 h-full w-2 cursor-ew-resize z-20 flex items-center justify-center transition-opacity duration-150 ${
+          isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        }`}
+      >
+        <div className="w-0.5 h-4 rounded-full bg-(--ms-tl-vo-accent)" />
       </div>
     </div>
   )
