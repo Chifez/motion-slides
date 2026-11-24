@@ -1,11 +1,11 @@
-import { useCallback } from 'react'
 import type { Slide, SlideTransition, PlaybackSettings, Project } from '@motionslides/shared'
-import { PX_PER_SEC } from '@/components/editor/timeline/constants'
-import type { SlideWithTiming } from '@/components/editor/timeline/types'
+import type { ResizingSlideState, ScrubState, SlideWithTiming } from '@/components/editor/timeline/types'
 import { useEditorStore } from '@/store/editor-store'
 
 interface Params {
   totalDuration: number
+  pxPerSec: number
+  snapEnabled: boolean
   timelineBodyRef: React.RefObject<HTMLDivElement>
   setCurrentTime: (v: number | ((prev: number) => number)) => void
   slides: Slide[]
@@ -14,6 +14,9 @@ interface Params {
   activeProjectId: string | null
   updateProject: (id: string, updates: Partial<Project>) => void
   slidesWithTiming: SlideWithTiming[]
+  onScrubStateChange?: (state: ScrubState) => void
+  onSnapGuideChange?: (time: number | null) => void
+  onResizeTooltipChange?: (state: ResizingSlideState | null) => void
 }
 
 interface Result {
@@ -27,11 +30,13 @@ interface Result {
 
 /**
  * Provides mouse-driven interaction handlers for the timeline:
- * - Ruler click/drag to scrub the playhead
- * - Slide card right-edge drag to resize its duration
+ * - Ruler & playhead cap click/drag to scrub the playhead with optional magnetic snap
+ * - Slide card right-edge drag to resize its duration with live readout & caption ripple
  */
 export function useTimelineScrub({
   totalDuration,
+  pxPerSec,
+  snapEnabled,
   timelineBodyRef,
   setCurrentTime,
   slides,
@@ -40,52 +45,92 @@ export function useTimelineScrub({
   activeProjectId,
   updateProject,
   slidesWithTiming,
+  onScrubStateChange,
+  onSnapGuideChange,
+  onResizeTooltipChange,
 }: Params): Result {
-  const handleRulerMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleRulerMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault()
+    e.stopPropagation()
     const el = timelineBodyRef.current
     if (!el) return
 
-    const rect = el.getBoundingClientRect()
-    const updateTimeFromX = (clientX: number) => {
-      const scrollLeft = el.scrollLeft
-      const relativeX = clientX - rect.left + scrollLeft - 88 // 88px sidebar column
-      const sec = Math.max(0, relativeX / PX_PER_SEC)
-      setCurrentTime(Math.min(totalDuration, sec))
+    const snapPoints = Array.from(
+      new Set(slidesWithTiming.flatMap(item => [item.start, item.end])),
+    )
+    const snapThresholdSec = 6 / Math.max(1, pxPerSec)
+    let lastTime = 0
+
+    const resolveTime = (clientX: number, allowSnap: boolean): number => {
+      const rect = el.getBoundingClientRect()
+      const relativeX = clientX - rect.left + el.scrollLeft
+      const rawSec = Math.max(0, Math.min(totalDuration, relativeX / pxPerSec))
+
+      if (allowSnap) {
+        let bestPt: number | null = null
+        let bestDist = snapThresholdSec
+        for (const pt of snapPoints) {
+          const dist = Math.abs(rawSec - pt)
+          if (dist < bestDist) {
+            bestDist = dist
+            bestPt = pt
+          }
+        }
+        if (bestPt !== null) {
+          onSnapGuideChange?.(bestPt)
+          return bestPt
+        }
+      }
+      onSnapGuideChange?.(null)
+      return rawSec
     }
 
-    updateTimeFromX(e.clientX)
+    const updateFromPointer = (clientX: number, altKey: boolean) => {
+      const next = resolveTime(clientX, snapEnabled && !altKey)
+      lastTime = next
+      setCurrentTime(next)
+      onScrubStateChange?.({ active: true, time: next })
+    }
+
+    updateFromPointer(e.clientX, e.altKey)
 
     const handleMouseMove = (ev: MouseEvent) => {
-      updateTimeFromX(ev.clientX)
+      updateFromPointer(ev.clientX, ev.altKey)
     }
     const handleMouseUp = () => {
+      onScrubStateChange?.({ active: false, time: lastTime })
+      onSnapGuideChange?.(null)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
-  }, [totalDuration, timelineBodyRef, setCurrentTime])
+  }
 
-  const handleSlideResizeMouseDown = useCallback((
+  const handleSlideResizeMouseDown = (
     e: React.MouseEvent,
     slideId: string,
     currentDuration: number,
   ) => {
     e.stopPropagation()
     const startX = e.clientX
-    
-    // Find slide timing start/end in project
+
     const timingInfo = slidesWithTiming.find(s => s.slide.id === slideId)
     const originalSlideEndTime = timingInfo ? timingInfo.end : 0
     const project = useEditorStore.getState().activeProject()
     const originalCaptions = project?.captions ? [...project.captions] : []
 
+    onResizeTooltipChange?.({ slideId, duration: currentDuration })
+
     const handleMouseMove = (ev: MouseEvent) => {
       const deltaX = ev.clientX - startX
-      const deltaSec = deltaX / PX_PER_SEC
-      const targetDuration = Math.max(1, currentDuration + deltaSec)
+      const deltaSec = deltaX / pxPerSec
+      const rawDuration = Math.max(1, currentDuration + deltaSec)
+      const step = ev.shiftKey ? 0.5 : 0.1
+      const targetDuration = Math.max(1, Math.round(rawDuration / step) * step)
       const actualDelta = targetDuration - currentDuration
+
+      onResizeTooltipChange?.({ slideId, duration: targetDuration })
 
       const slideIdx = slides.findIndex(s => s.id === slideId)
       if (slideIdx === -1) return
@@ -111,7 +156,6 @@ export function useTimelineScrub({
         })
       }
 
-      // Ripple offset all captions starting after the current slide's end boundary
       const updatedCaptions = originalCaptions.map(c => {
         if (c.start >= originalSlideEndTime) {
           return {
@@ -132,12 +176,13 @@ export function useTimelineScrub({
       }
     }
     const handleMouseUp = () => {
+      onResizeTooltipChange?.(null)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
-  }, [slides, transitions, playbackSettings.transitionDuration, playbackSettings.transitionEase, activeProjectId, updateProject, slidesWithTiming])
+  }
 
   return { handleRulerMouseDown, handleSlideResizeMouseDown }
 }

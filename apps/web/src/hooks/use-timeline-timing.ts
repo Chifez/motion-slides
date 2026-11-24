@@ -66,6 +66,12 @@ export function useTimelineTiming({
       const start = current
       const end = current + durationSec
       current = end
+      const nextSlide = slides[idx + 1]
+      const outgoingTransition = nextSlide
+        ? (transitions.find(
+            (t: SlideTransition) => t.fromSlideId === s.id && t.toSlideId === nextSlide.id,
+          ) ?? null)
+        : null
       return {
         slide: s,
         index: idx,
@@ -73,6 +79,7 @@ export function useTimelineTiming({
         end,
         duration: durationSec,
         transitionDuration: transitionDuration / 1000,
+        outgoingTransition,
       }
     })
   }, [slides, transitions, playbackSettings.transitionDuration, playbackSettings.autoplayDelay])

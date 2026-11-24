@@ -1,13 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { PlaybackSettings, Project } from '@motionslides/shared'
-import { PX_PER_SEC, formatTime } from '@/components/editor/timeline/constants'
-import type { SlideWithTiming } from '@/components/editor/timeline/types'
+import { formatTime } from '@/components/editor/timeline/constants'
+import type { MutedTracks, SlideWithTiming } from '@/components/editor/timeline/types'
 
 interface Params {
   /** Updated each render via a ref so the rAF closure always reads the latest value */
   totalDurationRef: React.MutableRefObject<number>
   slidesWithTimingRef: React.MutableRefObject<SlideWithTiming[]>
   getSlideIndexAtTimeRef: React.MutableRefObject<(time: number) => number>
+  pxPerSecRef: React.MutableRefObject<number>
+  playbackSpeedRef: React.MutableRefObject<number>
+  mutedTracksRef: React.MutableRefObject<MutedTracks>
+  playbackSpeed: number
+  mutedTracks: MutedTracks
   playbackSettings: PlaybackSettings
   setActiveSlide: (idx: number) => void
   project: Project | null
@@ -18,23 +23,29 @@ interface Result {
   setIsPlaying: (v: boolean) => void
   currentTime: number
   setCurrentTime: (v: number | ((prev: number) => number)) => void
+  currentTimeRef: React.MutableRefObject<number>
   timelineBodyRef: React.RefObject<HTMLDivElement>
   playheadRef: React.RefObject<HTMLDivElement | null>
   timecodeRef: React.RefObject<HTMLSpanElement | null>
 }
 
+function clampRate(rate: number): number {
+  return Math.min(4, Math.max(0.25, rate))
+}
+
 /**
- * Manages the entire playback engine.
- *
- * Timing values are passed as **refs** instead of direct params so that:
- * 1. The hook is called before useTimelineTiming (avoiding circular dependency)
- * 2. The rAF loop and all effects always read the *latest* computed values
- *    without needing to be recreated when timing changes.
+ * Manages the timeline playback loop, dual audio synchronization (voiceover + BGM),
+ * playback rate scaling, and track-level mute state.
  */
 export function useTimelinePlayback({
   totalDurationRef,
   slidesWithTimingRef,
   getSlideIndexAtTimeRef,
+  pxPerSecRef,
+  playbackSpeedRef,
+  mutedTracksRef,
+  playbackSpeed,
+  mutedTracks,
   playbackSettings,
   setActiveSlide,
   project,
@@ -43,6 +54,9 @@ export function useTimelinePlayback({
   const [currentTime, setCurrentTimeState] = useState(0)
 
   const currentTimeRef = useRef(0)
+  const isPlayingRef = useRef(isPlaying)
+  isPlayingRef.current = isPlaying
+
   const playheadRef = useRef<HTMLDivElement | null>(null)
   const timecodeRef = useRef<HTMLSpanElement | null>(null)
 
@@ -56,7 +70,7 @@ export function useTimelinePlayback({
   const frameCountRef = useRef(0)
 
   const playbackSettingsRef = useRef(playbackSettings)
-  useEffect(() => { playbackSettingsRef.current = playbackSettings })
+  playbackSettingsRef.current = playbackSettings
 
   const syncDucking = (isDuckTarget: boolean) => {
     const bgAudio = bgMusicAudioRef.current
@@ -72,17 +86,25 @@ export function useTimelinePlayback({
     if (!project) return
     const ps = playbackSettingsRef.current
     const musicConfig = ps.backgroundMusic
+    const speed = playbackSpeedRef.current
+    const muted = mutedTracksRef.current
 
     if (musicConfig) {
-      if (!bgMusicAudioRef.current) {
+      if (!bgMusicAudioRef.current || bgMusicAudioRef.current.src !== musicConfig.url) {
+        if (bgMusicAudioRef.current) bgMusicAudioRef.current.pause()
         bgMusicAudioRef.current = new Audio(musicConfig.url)
-        bgMusicAudioRef.current.loop = musicConfig.loop
       }
       const bgAudio = bgMusicAudioRef.current
-      bgAudio.playbackRate = musicConfig.playbackRate
-      
-      if (isPlaying || forcePlay) {
-        const bgRelativeTime = musicConfig.trimStart + (time * musicConfig.playbackRate)
+      bgAudio.loop = musicConfig.loop
+      bgAudio.muted = muted.bgm
+      bgAudio.playbackRate = clampRate(musicConfig.playbackRate * speed)
+
+      if (isPlayingRef.current || forcePlay) {
+        const trimWindow = Math.max(0.1, musicConfig.trimEnd - musicConfig.trimStart)
+        const relativeInWindow = musicConfig.loop
+          ? ((time * musicConfig.playbackRate) % trimWindow)
+          : (time * musicConfig.playbackRate)
+        const bgRelativeTime = musicConfig.trimStart + relativeInWindow
         if (bgRelativeTime <= musicConfig.trimEnd) {
           if (bgAudio.paused) {
             bgAudio.currentTime = bgRelativeTime
@@ -96,11 +118,9 @@ export function useTimelinePlayback({
       } else {
         bgAudio.pause()
       }
-    } else {
-      if (bgMusicAudioRef.current) {
-        bgMusicAudioRef.current.pause()
-        bgMusicAudioRef.current = null
-      }
+    } else if (bgMusicAudioRef.current) {
+      bgMusicAudioRef.current.pause()
+      bgMusicAudioRef.current = null
     }
 
     const getSlideIndexAtTime = getSlideIndexAtTimeRef.current
@@ -113,9 +133,9 @@ export function useTimelinePlayback({
 
     if (slideAudioConfig) {
       const relativeOffset = time - currentSlideTiming.start
-      const audioRelativeTime = slideAudioConfig.trimStart + (relativeOffset * slideAudioConfig.playbackRate)
+      const audioRelativeTime = slideAudioConfig.trimStart + relativeOffset * slideAudioConfig.playbackRate
       if (
-        (isPlaying || forcePlay) &&
+        (isPlayingRef.current || forcePlay) &&
         audioRelativeTime >= slideAudioConfig.trimStart &&
         audioRelativeTime <= slideAudioConfig.trimEnd
       ) {
@@ -126,32 +146,33 @@ export function useTimelinePlayback({
         }
         const slideAudio = slideAudioRef.current
         slideAudio.volume = slideAudioConfig.volume
-        slideAudio.playbackRate = slideAudioConfig.playbackRate
+        slideAudio.muted = muted.vo
+        slideAudio.playbackRate = clampRate(slideAudioConfig.playbackRate * speed)
         if (slideAudio.paused) {
           slideAudio.currentTime = audioRelativeTime
           slideAudio.play().catch(() => { })
-          syncDucking(true)
         } else if (Math.abs(slideAudio.currentTime - audioRelativeTime) > 0.25) {
           slideAudio.currentTime = audioRelativeTime
         }
+        syncDucking(!muted.vo)
       } else {
         if (slideAudioRef.current) {
           slideAudioRef.current.pause()
           slideAudioRef.current = null
           activeSlideAudioIdRef.current = null
-          syncDucking(false)
         }
+        syncDucking(false)
       }
     } else {
       if (slideAudioRef.current) {
         slideAudioRef.current.pause()
         slideAudioRef.current = null
         activeSlideAudioIdRef.current = null
-        syncDucking(false)
       }
+      syncDucking(false)
     }
 
-    if (!isPlaying && !forcePlay) {
+    if (!isPlayingRef.current && !forcePlay) {
       slideAudioRef.current?.pause()
       bgMusicAudioRef.current?.pause()
     }
@@ -165,8 +186,10 @@ export function useTimelinePlayback({
       const delta = (time - previousTimeRef.current) / 1000
       const totalDuration = totalDurationRef.current
       const ps = playbackSettingsRef.current
+      const speed = playbackSpeedRef.current
+      const pxPerSec = pxPerSecRef.current
 
-      let nextTime = currentTimeRef.current + delta
+      let nextTime = currentTimeRef.current + delta * speed
       let didLoopOrEnd = false
 
       if (nextTime >= totalDuration) {
@@ -183,19 +206,19 @@ export function useTimelinePlayback({
           didLoopOrEnd = true
         }
       }
-      
+
       const prevTime = currentTimeRef.current
       currentTimeRef.current = nextTime
 
       if (playheadRef.current) {
-        playheadRef.current.style.left = `${nextTime * PX_PER_SEC}px`
+        playheadRef.current.style.left = `${nextTime * pxPerSec}px`
       }
       if (timecodeRef.current) {
         timecodeRef.current.innerText = formatTime(nextTime)
       }
 
       if (timelineBodyRef.current) {
-        const playheadX = nextTime * PX_PER_SEC
+        const playheadX = nextTime * pxPerSec
         const container = timelineBodyRef.current
         const halfW = container.clientWidth / 2
         if (playheadX > container.scrollLeft + halfW) {
@@ -213,7 +236,7 @@ export function useTimelinePlayback({
       const captionChanged = activeCaptionPrev?.id !== activeCaptionNext?.id
 
       if (nextIdx !== prevIdx || didLoopOrEnd || captionChanged) {
-        syncAudio(nextTime, true)
+        syncAudio(nextTime, isPlayingRef.current)
         setCurrentTimeState(nextTime)
       } else {
         frameCountRef.current++
@@ -231,15 +254,15 @@ export function useTimelinePlayback({
     currentTimeRef.current = nextVal
 
     if (playheadRef.current) {
-      playheadRef.current.style.left = `${nextVal * PX_PER_SEC}px`
+      playheadRef.current.style.left = `${nextVal * pxPerSecRef.current}px`
     }
     if (timecodeRef.current) {
       timecodeRef.current.innerText = formatTime(nextVal)
     }
 
-    syncAudioRef.current(nextVal, true)
+    syncAudioRef.current(nextVal, isPlayingRef.current)
     setCurrentTimeState(nextVal)
-  }, [])
+  }, [pxPerSecRef])
 
   useEffect(() => {
     if (isPlaying) {
@@ -252,7 +275,6 @@ export function useTimelinePlayback({
       }
       bgMusicAudioRef.current?.pause()
       slideAudioRef.current?.pause()
-      
       setCurrentTimeState(currentTimeRef.current)
     }
     return () => {
@@ -263,6 +285,30 @@ export function useTimelinePlayback({
   useEffect(() => {
     syncAudio(currentTimeRef.current)
   }, [isPlaying, playbackSettings.backgroundMusic, project])
+
+  useEffect(() => {
+    const bgAudio = bgMusicAudioRef.current
+    const slideAudio = slideAudioRef.current
+    const musicConfig = playbackSettings.backgroundMusic
+
+    if (bgAudio && musicConfig) {
+      bgAudio.muted = mutedTracks.bgm
+      bgAudio.loop = musicConfig.loop
+      bgAudio.playbackRate = clampRate(musicConfig.playbackRate * playbackSpeed)
+      const isDucking = Boolean(slideAudio && !slideAudio.paused && !mutedTracks.vo)
+      bgAudio.volume =
+        isDucking && playbackSettings.duckBackgroundMusic !== false
+          ? musicConfig.volume * 0.2
+          : musicConfig.volume
+    }
+    if (slideAudio) {
+      slideAudio.muted = mutedTracks.vo
+      const activeSlideAudio = slidesWithTimingRef.current[getSlideIndexAtTimeRef.current(currentTimeRef.current)]?.slide?.audio
+      if (activeSlideAudio) {
+        slideAudio.playbackRate = clampRate(activeSlideAudio.playbackRate * playbackSpeed)
+      }
+    }
+  }, [mutedTracks.vo, mutedTracks.bgm, playbackSpeed, playbackSettings.duckBackgroundMusic, playbackSettings.backgroundMusic])
 
   useEffect(() => {
     return () => {
@@ -276,6 +322,7 @@ export function useTimelinePlayback({
     setIsPlaying,
     currentTime,
     setCurrentTime,
+    currentTimeRef,
     timelineBodyRef,
     playheadRef,
     timecodeRef,
