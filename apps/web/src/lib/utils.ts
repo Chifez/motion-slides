@@ -6,11 +6,24 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
+const ALLOWED_AUDIO_EXTENSIONS = [
+  '.mp3',
+  '.wav',
+  '.m4a',
+  '.ogg',
+  '.webm',
+  '.aac',
+  '.opus',
+  '.flac',
+  '.mp4',
+]
+
 export function isValidAudioFile(file: File): boolean {
-  const allowedExtensions = ['.mp3', '.wav', '.m4a', '.ogg']
+  const mime = file.type.toLowerCase()
   const nameLower = file.name.toLowerCase()
   return (
-    file.type.startsWith('audio/') ||
-    allowedExtensions.some(ext => nameLower.endsWith(ext))
+    mime.startsWith('audio/') ||
+    mime.startsWith('video/webm') ||
+    ALLOWED_AUDIO_EXTENSIONS.some(ext => nameLower.endsWith(ext))
   )
 }
