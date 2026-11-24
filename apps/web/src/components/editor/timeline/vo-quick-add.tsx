@@ -16,6 +16,28 @@ interface Props {
   onClose: () => void
 }
 
+const RECORDING_CANDIDATES = [
+  { mimeType: 'audio/webm;codecs=opus', ext: 'webm' },
+  { mimeType: 'audio/webm', ext: 'webm' },
+  { mimeType: 'audio/mp4', ext: 'm4a' },
+  { mimeType: 'audio/ogg;codecs=opus', ext: 'ogg' },
+] as const
+
+function pickRecordingFormat(): { mimeType: string; ext: string } | undefined {
+  if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+    return undefined
+  }
+  return RECORDING_CANDIDATES.find(candidate => MediaRecorder.isTypeSupported(candidate.mimeType))
+}
+
+function extensionFromMime(mimeType: string): string {
+  const lower = mimeType.toLowerCase()
+  if (lower.includes('mp4') || lower.includes('aac')) return 'm4a'
+  if (lower.includes('ogg')) return 'ogg'
+  if (lower.includes('wav')) return 'wav'
+  return 'webm'
+}
+
 /**
  * Theme-safe widget to generate an AI voiceover, record from the microphone,
  * or upload an audio file for the currently active slide.
@@ -34,6 +56,7 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const recordStartedAtRef = useRef<number>(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const activeVoices = provider === 'cloudflare' ? CLOUDFLARE_VOICES : elevenLabsVoices
@@ -83,14 +106,18 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
     }
   }, [])
 
-  const uploadAudioFile = async (file: File) => {
+  const uploadAudioFile = async (file: File, fallbackDuration?: number) => {
     setError(null)
     setMode('uploading')
     try {
-      const uploaded = await uploadTimelineAudioFile(file, { volume: 1, loop: false })
+      const uploaded = await uploadTimelineAudioFile(file, {
+        volume: 1,
+        loop: false,
+        fallbackDuration,
+      })
       onSave(uploaded)
-    } catch {
-      setError('Audio upload failed. Please try again.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Audio upload failed. Please try again.')
     } finally {
       setMode('idle')
     }
@@ -102,8 +129,13 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       recordedChunksRef.current = []
 
-      const mediaRecorder = new MediaRecorder(stream)
+      const format = pickRecordingFormat()
+      const mediaRecorder = new MediaRecorder(
+        stream,
+        format ? { mimeType: format.mimeType } : undefined,
+      )
       mediaRecorderRef.current = mediaRecorder
+      recordStartedAtRef.current = performance.now()
 
       mediaRecorder.ondataavailable = event => {
         if (event.data.size > 0) {
@@ -113,12 +145,20 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
 
       mediaRecorder.onstop = async () => {
         stream.getTracks().forEach(streamTrack => streamTrack.stop())
-        const audioBlob = new Blob(recordedChunksRef.current, { type: 'audio/webm' })
-        const audioFile = new File([audioBlob], 'voiceover.webm', { type: 'audio/webm' })
-        await uploadAudioFile(audioFile)
+        const elapsedSec = Math.max(0.5, (performance.now() - recordStartedAtRef.current) / 1000)
+        if (recordedChunksRef.current.length === 0) {
+          setError('Recording was empty. Please speak for at least one second and try again.')
+          setMode('idle')
+          return
+        }
+        const actualMime = mediaRecorder.mimeType || format?.mimeType || 'audio/webm'
+        const ext = format?.ext ?? extensionFromMime(actualMime)
+        const audioBlob = new Blob(recordedChunksRef.current, { type: actualMime })
+        const audioFile = new File([audioBlob], `voiceover.${ext}`, { type: actualMime })
+        await uploadAudioFile(audioFile, elapsedSec)
       }
 
-      mediaRecorder.start()
+      mediaRecorder.start(250)
       setMode('recording')
       setRecordingTime(0)
       recordingIntervalRef.current = setInterval(() => setRecordingTime(prev => prev + 1), 1000)
@@ -128,7 +168,13 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
   }
 
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop()
+    const recorder = mediaRecorderRef.current
+    if (recorder && recorder.state === 'recording') {
+      try {
+        recorder.requestData()
+      } catch {}
+      recorder.stop()
+    }
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current)
       recordingIntervalRef.current = null

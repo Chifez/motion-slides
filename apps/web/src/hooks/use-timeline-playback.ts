@@ -61,6 +61,7 @@ export function useTimelinePlayback({
   const timecodeRef = useRef<HTMLSpanElement | null>(null)
 
   const bgMusicAudioRef = useRef<HTMLAudioElement | null>(null)
+  const activeBgMusicIdRef = useRef<string | null>(null)
   const slideAudioRef = useRef<HTMLAudioElement | null>(null)
   const activeSlideAudioIdRef = useRef<string | null>(null)
   const requestRef = useRef<number | null>(null)
@@ -71,6 +72,22 @@ export function useTimelinePlayback({
 
   const playbackSettingsRef = useRef(playbackSettings)
   playbackSettingsRef.current = playbackSettings
+
+  const seekAndPlay = (audioEl: HTMLAudioElement, targetTime: number) => {
+    const safeTarget = Math.max(0, targetTime)
+    if (audioEl.readyState >= 1) {
+      audioEl.currentTime = safeTarget
+    } else {
+      audioEl.addEventListener(
+        'loadedmetadata',
+        () => {
+          audioEl.currentTime = safeTarget
+        },
+        { once: true },
+      )
+    }
+    audioEl.play().catch(() => {})
+  }
 
   const syncDucking = (isDuckTarget: boolean) => {
     const bgAudio = bgMusicAudioRef.current
@@ -90,9 +107,10 @@ export function useTimelinePlayback({
     const muted = mutedTracksRef.current
 
     if (musicConfig) {
-      if (!bgMusicAudioRef.current || bgMusicAudioRef.current.src !== musicConfig.url) {
+      if (!bgMusicAudioRef.current || activeBgMusicIdRef.current !== musicConfig.id) {
         if (bgMusicAudioRef.current) bgMusicAudioRef.current.pause()
         bgMusicAudioRef.current = new Audio(musicConfig.url)
+        activeBgMusicIdRef.current = musicConfig.id
       }
       const bgAudio = bgMusicAudioRef.current
       bgAudio.loop = musicConfig.loop
@@ -107,8 +125,7 @@ export function useTimelinePlayback({
         const bgRelativeTime = musicConfig.trimStart + relativeInWindow
         if (bgRelativeTime <= musicConfig.trimEnd) {
           if (bgAudio.paused) {
-            bgAudio.currentTime = bgRelativeTime
-            bgAudio.play().catch(() => { })
+            seekAndPlay(bgAudio, bgRelativeTime)
           } else if (Math.abs(bgAudio.currentTime - bgRelativeTime) > 0.25) {
             bgAudio.currentTime = bgRelativeTime
           }
@@ -121,6 +138,7 @@ export function useTimelinePlayback({
     } else if (bgMusicAudioRef.current) {
       bgMusicAudioRef.current.pause()
       bgMusicAudioRef.current = null
+      activeBgMusicIdRef.current = null
     }
 
     const getSlideIndexAtTime = getSlideIndexAtTimeRef.current
@@ -149,8 +167,7 @@ export function useTimelinePlayback({
         slideAudio.muted = muted.vo
         slideAudio.playbackRate = clampRate(slideAudioConfig.playbackRate * speed)
         if (slideAudio.paused) {
-          slideAudio.currentTime = audioRelativeTime
-          slideAudio.play().catch(() => { })
+          seekAndPlay(slideAudio, audioRelativeTime)
         } else if (Math.abs(slideAudio.currentTime - audioRelativeTime) > 0.25) {
           slideAudio.currentTime = audioRelativeTime
         }
