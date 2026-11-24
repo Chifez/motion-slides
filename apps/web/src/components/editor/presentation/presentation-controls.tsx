@@ -5,6 +5,7 @@ interface Props {
   slideIndex: number
   totalSlides: number
   playbackSettings: PlaybackSettings
+  autoplayEnabled?: boolean
   autoplayPaused: boolean
   slides: Slide[]
   onPrev: () => void
@@ -15,9 +16,10 @@ interface Props {
 
 export function PresentationControls({
   slideIndex, totalSlides, playbackSettings,
-  autoplayPaused, slides, onPrev, onNext,
+  autoplayEnabled, autoplayPaused, slides, onPrev, onNext,
   onToggleAutoplay, onJumpToSlide,
 }: Props) {
+  const showAutoplayToggle = autoplayEnabled ?? playbackSettings.autoplay
   return (
     <div className="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2.5 bg-black/75 border border-white/10 rounded-2xl px-5 py-3 backdrop-blur-md min-w-[280px]">
       
@@ -62,7 +64,7 @@ export function PresentationControls({
           </button>
         </div>
 
-        {playbackSettings.autoplay && (
+        {showAutoplayToggle && (
           <div className="flex items-center gap-2">
             <div className="w-px h-4 bg-white/10" />
             <button
