@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useIsPresent } from 'framer-motion'
 import { useMotionContext } from '@/context/motion-context'
 import { useEditorStore } from '@/store/editor-store'
 import { SELECTED_Z_INDEX } from '@/constants/export'
@@ -22,6 +22,7 @@ export const MotionWrapper = memo(function MotionWrapper({
   element, isSelected, isReadOnly, isContinuing, children,
   onPointerDown, onDoubleClick, onClick, ref
 }: Props) {
+  const isPresent = useIsPresent()
   const { isTransitioning, durationSec, ease, transitionAnimation, newElementIds, matchingIdMap } = useMotionContext()
   const selectedElementIds = useEditorStore(s => s.selectedElementIds)
   const isMultiSelected = isSelected && selectedElementIds.length > 1
@@ -51,7 +52,6 @@ export const MotionWrapper = memo(function MotionWrapper({
     width: element.size.width,
     height: element.size.height,
     rotate: element.rotation,
-    opacity: element.opacity,
     zIndex: targetZIndex,
     cursor: isReadOnly ? 'default' : 'grab',
     overflow: element.type === 'line' ? 'visible' : undefined,
@@ -62,24 +62,25 @@ export const MotionWrapper = memo(function MotionWrapper({
   const delay = staggerIndex >= 0 ? staggerIndex * 0.03 : 0
   const states = getTransitionStates(transitionAnimation, element.opacity)
   const matchedId = matchingIdMap[element.id] || element.id
-  const layoutId = (isTransitioning && isContinuing) ? matchedId : undefined
-  const layout = (isTransitioning && isContinuing) ? true : undefined
+  const layoutId = isPresent && isTransitioning && isContinuing ? matchedId : undefined
+  const layout = isPresent && isTransitioning && isContinuing ? true : undefined
 
   const style = {
     ...commonStyle,
     ...(isTransitioning && !isContinuing ? states.style : {}),
-    opacity: isTransitioning ? undefined : element.opacity,
+    pointerEvents: !isPresent ? ('none' as const) : commonStyle.pointerEvents,
   }
 
   const initial = isTransitioning && !isContinuing ? states.initial : false
 
   const animate = isTransitioning
     ? (isContinuing ? { opacity: element.opacity } : states.animate)
-    : undefined
+    : { opacity: element.opacity, x: 0, y: 0, scale: 1 }
 
+  const exitDuration = Math.max(0.15, durationSec * 0.3)
   const exit = {
     ...states.exit,
-    transition: { duration: durationSec * 0.3, ease: EASE_IN_OUT },
+    transition: { duration: exitDuration, ease: EASE_IN_OUT },
   }
 
   let transition: any

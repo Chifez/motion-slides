@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useId } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { MotionProvider } from '@/context/motion-context'
 import { CanvasElement } from './canvas-element'
@@ -6,7 +6,7 @@ import type { Slide, PlaybackSettings, SlideTransition, SceneElement } from '@mo
 import { useEditorStore } from '@/store/editor-store'
 import { ElementRenderer } from './element-renderer'
 import { getCanvasDimensions } from '@motionslides/shared'
-import { cubicBezierToArray } from '@/lib/motion-engine'
+import { cubicBezierToArray, normalizeTransitionDurationMs } from '@/lib/motion-engine'
 import { CanvasSpotlightOverlay } from './elements/canvas-spotlight-overlay'
 import { Info } from 'lucide-react'
 import { HotspotCard } from './elements/hotspot-card'
@@ -113,6 +113,7 @@ function getSlideTransitionVariants(animationType: string, w: number, h: number)
 }
 
 export function MotionStage({ slide, previousSlide, settings, activeTransition, mode }: Props) {
+  const stageId = useId()
   const reviewingSuggestionId = useEditorStore(state => state.reviewingSuggestionId)
   const reviewMode = useEditorStore(state => state.reviewMode)
   const activeSlideIndex = useEditorStore(state => state.activeSlideIndex)
@@ -123,7 +124,7 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
   const animationType = activeTransition?.animation ?? 'none'
 
   if (previousSlide && activeTransition && animationType !== 'magic-move') {
-    const durationMs = activeTransition?.duration ?? settings.transitionDuration
+    const durationMs = normalizeTransitionDurationMs(activeTransition?.duration, settings.transitionDuration)
     const durationSec = durationMs / 1000
     const ease = activeTransition?.ease
       ? cubicBezierToArray(activeTransition.ease)
@@ -225,7 +226,7 @@ export function MotionStage({ slide, previousSlide, settings, activeTransition, 
       activeTransition={activeTransition}
       isTimelinePreview={mode === 'presentation'}
     >
-      <LayoutGroup id="motion-stage">
+      <LayoutGroup id={`motion-stage-${stageId}`}>
         <CanvasSpotlightOverlay isVisible={slide.elements.some(el => el.isFocal || el.isHotspot)} />
         <AnimatePresence mode="sync" initial={false}>
           {slide.elements.map((element) => (
