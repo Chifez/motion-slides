@@ -1,5 +1,5 @@
-import { useEffect, useRef, memo } from 'react'
-import { WAVE_PATTERN } from './constants'
+import { useEffect, useRef } from 'react'
+import { WAVE_PATTERN, resolveCanvasColor } from './constants'
 import { useAudioWaveform } from '@/hooks/use-audio-waveform'
 
 interface Props {
@@ -10,7 +10,11 @@ interface Props {
   duration?: number
 }
 
-export const WaveformDecoration = memo(function WaveformDecoration({
+/**
+ * Renders decoded audio peak bars (or a subtle fallback cadence) onto a DPR-aware canvas,
+ * resolving CSS custom properties and redrawing when the root theme class changes.
+ */
+export function WaveformDecoration({
   color = 'rgba(255,255,255,0.25)',
   audioUrl,
   trimStart = 0,
@@ -41,7 +45,6 @@ export const WaveformDecoration = memo(function WaveformDecoration({
       const h = rect.height
       ctx.clearRect(0, 0, w, h)
 
-      const hasPeaks = allPeaks.length > 0
       const effectiveDuration = duration ?? null
       const effectiveTrimEnd = trimEnd ?? effectiveDuration
       const trimWindow =
@@ -52,7 +55,7 @@ export const WaveformDecoration = memo(function WaveformDecoration({
       type Bar = { xFraction: number; peak: number }
       const bars: Bar[] = []
 
-      if (hasPeaks && effectiveDuration != null && trimWindow != null && trimWindow > 0) {
+      if (allPeaks.length > 0 && effectiveDuration != null && trimWindow != null && trimWindow > 0) {
         allPeaks.forEach((peak, i) => {
           const barTime = (i / allPeaks.length) * effectiveDuration
           if (barTime >= trimStart && barTime <= (effectiveTrimEnd ?? effectiveDuration)) {
@@ -69,13 +72,15 @@ export const WaveformDecoration = memo(function WaveformDecoration({
               peak: WAVE_PATTERN[i % WAVE_PATTERN.length] / 28,
             }))
 
-      const barWidth = Math.max(1.5, (w / drawBars.length) - 1.5)
+      const barWidth = Math.max(1.5, w / drawBars.length - 1.5)
+      const resolvedColor = resolveCanvasColor(canvas, color)
+      const maxBarHeight = Math.max(4, h - 14)
 
+      ctx.fillStyle = resolvedColor
       drawBars.forEach(({ xFraction, peak }) => {
-        const barH = Math.max(2, peak * (h - 10))
+        const barH = Math.max(2, peak * maxBarHeight)
         const x = xFraction * w
-        const y = (h - barH) / 2
-        ctx.fillStyle = color
+        const y = h - 4 - barH
         ctx.beginPath()
         ctx.roundRect(x, y, barWidth, barH, 1)
         ctx.fill()
@@ -84,9 +89,19 @@ export const WaveformDecoration = memo(function WaveformDecoration({
 
     draw()
 
-    const observer = new ResizeObserver(draw)
-    observer.observe(canvas)
-    return () => observer.disconnect()
+    const resizeObserver = new ResizeObserver(draw)
+    resizeObserver.observe(canvas)
+
+    const themeObserver = new MutationObserver(draw)
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
+
+    return () => {
+      resizeObserver.disconnect()
+      themeObserver.disconnect()
+    }
   }, [allPeaks, color, trimStart, trimEnd, duration])
 
   return (
@@ -95,4 +110,4 @@ export const WaveformDecoration = memo(function WaveformDecoration({
       className="absolute inset-0 w-full h-full pointer-events-none"
     />
   )
-})
+}
