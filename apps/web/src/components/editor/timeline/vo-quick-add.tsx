@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Loader2, Lock, Mic, Upload, Volume2, Sparkles } from 'lucide-react'
+import { AudioLines, Loader2, Lock, Mic, Upload, Volume2 } from 'lucide-react'
 import type { SlideAudio } from '@motionslides/shared'
 import { generateVoiceoverAction, listVoiceoverOptionsAction } from '@/lib/actions/ai-studio'
 import {
@@ -7,6 +7,7 @@ import {
   type VoiceOption,
   type VoiceoverProvider,
 } from '@/lib/voiceover-catalog'
+import { uploadTimelineAudioFile } from './upload-audio'
 
 interface Props {
   existingAudio: SlideAudio | null
@@ -16,8 +17,8 @@ interface Props {
 }
 
 /**
- * Inline widget to record a voice-over from the microphone or upload an audio file
- * for the currently active slide.
+ * Theme-safe widget to generate an AI voiceover, record from the microphone,
+ * or upload an audio file for the currently active slide.
  */
 export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Props) {
   const [mode, setMode] = useState<'idle' | 'recording' | 'uploading' | 'ai-form' | 'generating'>('idle')
@@ -29,13 +30,14 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
   const [loadingCatalog, setLoadingCatalog] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [recordingTime, setRecordingTime] = useState(0)
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const activeVoices = provider === 'cloudflare' ? CLOUDFLARE_VOICES : elevenLabsVoices
-  const selectedVoice = activeVoices.find((v) => v.id === voiceId) ?? activeVoices[0] ?? null
+  const selectedVoice = activeVoices.find(v => v.id === voiceId) ?? activeVoices[0] ?? null
   const isElevenLabsLocked = provider === 'elevenlabs' && !hasElevenLabsKey
   const canGenerate = Boolean(aiText.trim()) && !isElevenLabsLocked && Boolean(selectedVoice)
 
@@ -45,7 +47,7 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
     setLoadingCatalog(true)
 
     listVoiceoverOptionsAction()
-      .then((res) => {
+      .then(res => {
         if (ignore) return
         setHasElevenLabsKey(res.hasElevenLabsKey)
         setElevenLabsVoices(res.elevenLabsVoices)
@@ -74,49 +76,19 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
             mediaRecorder.stream.getTracks().forEach(streamTrack => streamTrack.stop())
           }
           mediaRecorder.stop()
-        } catch (error) {
-          console.error('[VOQuickAdd Cleanup] Failed to stop recording on unmount:', error)
+        } catch (err) {
+          console.error('[VOQuickAdd Cleanup] Failed to stop recording on unmount:', err)
         }
       }
     }
   }, [])
 
-  const uploadBlob = async (blob: Blob, name: string) => {
+  const uploadAudioFile = async (file: File) => {
     setError(null)
     setMode('uploading')
     try {
-      const objectUrl = URL.createObjectURL(blob)
-      const duration = await new Promise<number>(resolve => {
-        const audio = new Audio(objectUrl)
-        audio.addEventListener('loadedmetadata', () => {
-          URL.revokeObjectURL(objectUrl)
-          resolve(audio.duration)
-        })
-        audio.addEventListener('error', () => {
-          URL.revokeObjectURL(objectUrl)
-          resolve(0)
-        })
-      })
-      
-      const formData = new FormData()
-      formData.append('file', blob, name)
-      formData.append('duration', duration.toString())
-      
-      const response = await fetch('/api/upload/audio', { method: 'POST', body: formData })
-      if (!response.ok) throw new Error('Upload failed')
-      
-      const uploadResult = await response.json()
-      onSave({
-        id: Math.random().toString(36).substring(7),
-        url: uploadResult.url,
-        fileName: uploadResult.fileName,
-        duration: uploadResult.duration || duration,
-        volume: 1,
-        loop: false,
-        playbackRate: 1,
-        trimStart: 0,
-        trimEnd: uploadResult.duration || duration,
-      })
+      const uploaded = await uploadTimelineAudioFile(file, { volume: 1, loop: false })
+      onSave(uploaded)
     } catch {
       setError('Audio upload failed. Please try again.')
     } finally {
@@ -129,26 +101,27 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       recordedChunksRef.current = []
-      
+
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
-      
+
       mediaRecorder.ondataavailable = event => {
         if (event.data.size > 0) {
           recordedChunksRef.current.push(event.data)
         }
       }
-      
+
       mediaRecorder.onstop = async () => {
         stream.getTracks().forEach(streamTrack => streamTrack.stop())
         const audioBlob = new Blob(recordedChunksRef.current, { type: 'audio/webm' })
-        await uploadBlob(audioBlob, 'voiceover.webm')
+        const audioFile = new File([audioBlob], 'voiceover.webm', { type: 'audio/webm' })
+        await uploadAudioFile(audioFile)
       }
-      
+
       mediaRecorder.start()
       setMode('recording')
       setRecordingTime(0)
-      recordingIntervalRef.current = setInterval(() => setRecordingTime(prevTime => prevTime + 1), 1000)
+      recordingIntervalRef.current = setInterval(() => setRecordingTime(prev => prev + 1), 1000)
     } catch {
       setError('Could not access microphone. Check browser permissions.')
     }
@@ -163,37 +136,38 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
     setMode('uploading')
   }
 
-  const formatTime = (seconds: number) => {
-    const minutesString = Math.floor(seconds / 60).toString().padStart(2, '0')
-    const secondsString = (seconds % 60).toString().padStart(2, '0')
-    return `${minutesString}:${secondsString}`
+  const formatRecTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60).toString().padStart(2, '0')
+    const secs = (seconds % 60).toString().padStart(2, '0')
+    return `${mins}:${secs}`
   }
 
-  const readAudioDuration = (url: string, fallback: number) => new Promise<number>((resolve) => {
-    const audio = new Audio(url)
-    const finish = (duration: number) => {
-      audio.removeAttribute('src')
-      audio.load()
-      resolve(Number.isFinite(duration) && duration > 0 ? duration : fallback)
-    }
-    audio.addEventListener('loadedmetadata', () => finish(audio.duration), { once: true })
-    audio.addEventListener('error', () => finish(fallback), { once: true })
-  })
+  const readAudioDuration = (url: string, fallback: number) =>
+    new Promise<number>(resolve => {
+      const audio = new Audio(url)
+      const finish = (duration: number) => {
+        audio.removeAttribute('src')
+        audio.load()
+        resolve(Number.isFinite(duration) && duration > 0 ? duration : fallback)
+      }
+      audio.addEventListener('loadedmetadata', () => finish(audio.duration), { once: true })
+      audio.addEventListener('error', () => finish(fallback), { once: true })
+    })
 
   const handleGenerate = async () => {
     if (!canGenerate || !selectedVoice) return
     setError(null)
     setMode('generating')
     try {
-      const result = await generateVoiceoverAction({
+      const result = (await generateVoiceoverAction({
         data: { provider, text: aiText, voiceId: selectedVoice.id },
-      }) as {
+      })) as {
         audioUrl: string
         durationEstimate: number
       }
       const duration = await readAudioDuration(result.audioUrl, result.durationEstimate)
       onSave({
-        id: Math.random().toString(36).substring(7),
+        id: Math.random().toString(36).substring(2, 9),
         url: result.audioUrl,
         fileName:
           provider === 'elevenlabs'
@@ -215,30 +189,31 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
 
   if (mode === 'uploading') {
     return (
-      <div className="flex items-center gap-2 text-[11px] text-white/50">
-        <Loader2 size={12} className="animate-spin" /> Uploading…
+      <div className="flex items-center gap-2 py-2 text-[11px] text-(--ms-text-secondary)">
+        <Loader2 size={13} className="animate-spin text-(--ms-accent)" /> Uploading audio…
       </div>
     )
   }
 
   if (mode === 'generating') {
     return (
-      <div className="flex items-center gap-2 text-[11px] text-white/50">
-        <Loader2 size={12} className="animate-spin" /> Generating AI Voice...
+      <div className="flex items-center gap-2 py-2 text-[11px] text-(--ms-text-secondary)">
+        <Loader2 size={13} className="animate-spin text-(--ms-accent)" /> Generating voiceover…
       </div>
     )
   }
 
   if (mode === 'recording') {
     return (
-      <div className="flex items-center gap-3">
-        <span className="flex items-center gap-1.5 text-red-400 text-[11px] font-mono">
+      <div className="flex items-center justify-between gap-3 py-1">
+        <span className="flex items-center gap-2 text-red-500 dark:text-red-400 text-[12px] font-mono tabular-nums font-medium">
           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          {formatTime(recordingTime)}
+          {formatRecTime(recordingTime)}
         </span>
         <button
+          type="button"
           onClick={stopRecording}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/20 border border-red-500/40 text-red-300 text-[11px] font-semibold rounded-lg cursor-pointer transition-transform duration-150 active:scale-[0.97]"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/12 border border-red-500/40 text-red-600 dark:text-red-300 text-[11px] font-semibold rounded-lg cursor-pointer transition-transform duration-150 active:scale-[0.97]"
         >
           <Volume2 size={12} /> Stop recording
         </button>
@@ -252,7 +227,11 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
         <div
           role="tablist"
           aria-label="Voiceover provider"
-          className="inline-flex self-start items-center gap-1 rounded-lg border border-white/10 bg-black/30 p-0.5"
+          className="inline-flex self-start items-center gap-1 rounded-lg border p-0.5"
+          style={{
+            backgroundColor: 'var(--ms-bg-surface)',
+            borderColor: 'var(--ms-tl-border-strong)',
+          }}
         >
           <button
             type="button"
@@ -265,8 +244,8 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
             }}
             className={`px-2.5 py-1 rounded-md text-[11px] font-medium border-none cursor-pointer transition-[transform,background-color,color] duration-150 active:scale-[0.97] ${
               provider === 'cloudflare'
-                ? 'bg-white/10 text-white'
-                : 'bg-transparent text-white/50 hover:text-white/80'
+                ? 'bg-(--ms-bg-elevated) text-(--ms-text-primary) shadow-xs'
+                : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
             }`}
           >
             Cloudflare AI
@@ -282,11 +261,11 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
             }}
             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium border-none cursor-pointer transition-[transform,background-color,color] duration-150 active:scale-[0.97] ${
               provider === 'elevenlabs'
-                ? 'bg-white/10 text-white'
-                : 'bg-transparent text-white/50 hover:text-white/80'
+                ? 'bg-(--ms-bg-elevated) text-(--ms-text-primary) shadow-xs'
+                : 'bg-transparent text-(--ms-text-muted) hover:text-(--ms-text-primary)'
             }`}
           >
-            {!hasElevenLabsKey && <Lock size={10} className="text-white/50" />}
+            {!hasElevenLabsKey && <Lock size={10} className="text-(--ms-text-muted)" />}
             ElevenLabs
           </button>
         </div>
@@ -295,15 +274,15 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
           value={aiText}
           onChange={e => setAiText(e.target.value)}
           placeholder="Script text for voiceover..."
-          className="w-full h-24 bg-black/20 border border-white/10 rounded-lg p-2 text-xs text-white resize-none"
+          className="w-full h-24 rounded-lg border px-2.5 py-2 text-xs text-(--ms-text-primary) bg-(--ms-bg-surface) border-(--ms-tl-border-strong) placeholder:text-(--ms-text-muted) focus:outline-none focus:border-(--ms-accent) resize-none"
         />
 
         {loadingCatalog && provider === 'elevenlabs' ? (
-          <div className="flex items-center gap-2 text-[11px] text-white/50">
+          <div className="flex items-center gap-2 text-[11px] text-(--ms-text-muted)">
             <Loader2 size={12} className="animate-spin" /> Loading ElevenLabs voices…
           </div>
         ) : isElevenLabsLocked ? (
-          <p className="text-[11px] text-white/60 bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 m-0">
+          <p className="text-[11px] text-(--ms-text-secondary) bg-(--ms-bg-surface) border border-(--ms-tl-border-strong) rounded-lg px-2.5 py-2 m-0">
             Add your ElevenLabs API key in Settings → API Keys to unlock ElevenLabs voices and custom voice clones.
           </p>
         ) : (
@@ -311,20 +290,20 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
             <select
               value={selectedVoice?.id ?? ''}
               onChange={e => setVoiceId(e.target.value)}
-              className="flex-1 min-w-0 bg-black/20 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/20"
+              className="flex-1 min-w-0 bg-(--ms-bg-surface) border border-(--ms-tl-border-strong) rounded-lg px-2 py-1.5 text-xs text-(--ms-text-primary) focus:outline-none focus:border-(--ms-accent)"
             >
-              {activeVoices.map((v) => (
+              {activeVoices.map(v => (
                 <option key={v.id} value={v.id}>
                   {v.name} — {v.description}
                   {v.category && v.category !== 'premade' ? ` (${v.category})` : ''}
                 </option>
               ))}
             </select>
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => { setError(null); setMode('idle') }}
-                className="text-[11px] text-white/50 hover:text-white px-2 border-none bg-transparent cursor-pointer transition-transform duration-150 active:scale-[0.97]"
+                className="text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) px-2 border-none bg-transparent cursor-pointer transition-transform duration-150 active:scale-[0.97]"
               >
                 Cancel
               </button>
@@ -332,7 +311,7 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
                 type="button"
                 disabled={!canGenerate}
                 onClick={handleGenerate}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 border border-blue-500 text-white text-[11px] font-semibold rounded-lg cursor-pointer transition-[transform,opacity] duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-(--ms-accent) border border-(--ms-accent) text-white text-[11px] font-semibold rounded-lg cursor-pointer transition-[transform,opacity] duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Generate
               </button>
@@ -345,54 +324,87 @@ export function VOQuickAdd({ existingAudio, slideScript, onSave, onClose }: Prop
             <button
               type="button"
               onClick={() => { setError(null); setMode('idle') }}
-              className="text-[11px] text-white/50 hover:text-white px-2 border-none bg-transparent cursor-pointer transition-transform duration-150 active:scale-[0.97]"
+              className="text-[11px] text-(--ms-text-muted) hover:text-(--ms-text-primary) px-2 border-none bg-transparent cursor-pointer transition-transform duration-150 active:scale-[0.97]"
             >
               Cancel
             </button>
           </div>
         )}
 
-        {error && <p role="alert" className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1.5">{error}</p>}
+        {error && (
+          <p
+            role="alert"
+            className="text-[11px] text-red-600 dark:text-red-300 bg-red-500/10 border border-red-500/25 rounded-md px-2.5 py-1.5 m-0"
+          >
+            {error}
+          </p>
+        )}
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-3 flex-wrap">
-        {existingAudio && (
-          <span className="text-[10px] text-white/30 italic">Replace: {existingAudio.fileName}</span>
-        )}
+    <div className="flex flex-col gap-2.5">
+      {existingAudio && (
+        <span className="text-[10px] text-(--ms-text-muted) truncate">
+          Current: {existingAudio.fileName} (selecting a source will replace it)
+        </span>
+      )}
+
+      <div
+        className="grid grid-cols-3 gap-1 p-1 rounded-xl border"
+        style={{
+          backgroundColor: 'var(--ms-bg-surface)',
+          borderColor: 'var(--ms-tl-border-strong)',
+        }}
+      >
         <button
+          type="button"
           onClick={() => { setError(null); setMode('ai-form') }}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 border border-blue-500/40 text-blue-300 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-blue-600/30 transition-[transform,background-color] duration-150 active:scale-[0.97]"
+          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[11px] font-medium text-(--ms-text-primary) bg-transparent hover:bg-(--ms-bg-elevated) border-none cursor-pointer transition-[background-color,transform] duration-150 active:scale-[0.97]"
         >
-          <Sparkles size={12} /> Generate AI
+          <AudioLines size={13} style={{ color: 'var(--ms-tl-vo-accent)' }} />
+          <span>AI Voice</span>
         </button>
+
         <button
+          type="button"
           onClick={startRecording}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/40 text-violet-300 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-violet-600/30 transition-[transform,background-color] duration-150 active:scale-[0.97]"
+          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[11px] font-medium text-(--ms-text-primary) bg-transparent hover:bg-(--ms-bg-elevated) border-none cursor-pointer transition-[background-color,transform] duration-150 active:scale-[0.97]"
         >
-          <Mic size={12} /> Record voice
+          <Mic size={13} className="text-(--ms-text-secondary)" />
+          <span>Record</span>
         </button>
+
         <button
+          type="button"
           onClick={() => { setError(null); fileInputRef.current?.click() }}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-white/60 text-[11px] font-semibold rounded-lg cursor-pointer hover:bg-white/10 transition-[transform,background-color] duration-150 active:scale-[0.97]"
+          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[11px] font-medium text-(--ms-text-primary) bg-transparent hover:bg-(--ms-bg-elevated) border-none cursor-pointer transition-[background-color,transform] duration-150 active:scale-[0.97]"
         >
-          <Upload size={12} /> Upload file
+          <Upload size={13} className="text-(--ms-text-secondary)" />
+          <span>Upload</span>
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="audio/*"
-          className="hidden"
-          onChange={async event => {
-            const file = event.target.files?.[0]
-            if (file) await uploadBlob(file, file.name)
-          }}
-        />
       </div>
-      {error && <p role="alert" className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1.5">{error}</p>}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*"
+        className="hidden"
+        onChange={async event => {
+          const file = event.target.files?.[0]
+          if (file) await uploadAudioFile(file)
+        }}
+      />
+
+      {error && (
+        <p
+          role="alert"
+          className="text-[11px] text-red-600 dark:text-red-300 bg-red-500/10 border border-red-500/25 rounded-md px-2.5 py-1.5 m-0"
+        >
+          {error}
+        </p>
+      )}
     </div>
   )
 }
