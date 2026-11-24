@@ -16,13 +16,14 @@ const FOOTER_LINKS = {
     { label: 'Changelog', href: 'https://github.com/Chifez/motion-slides/releases', external: true },
     { label: 'Issues', href: 'https://github.com/Chifez/motion-slides/issues', external: true },
   ],
-  Legal: [
-    { label: 'Privacy Policy', href: '/privacy', isRoute: true },
-  ],
   Workspace: [
     { label: 'Open Editor', href: '/dashboard', isRoute: true },
     { label: 'Dashboard', href: '/dashboard', isRoute: true },
   ],
+  Legal: [
+    { label: 'Privacy Policy', href: '/privacy', isRoute: true },
+  ]
+
 }
 
 export function LandingFooter() {
@@ -32,7 +33,7 @@ export function LandingFooter() {
     <footer className="border-t border-white/[0.06] bg-[#070709]">
       {/* Top section */}
       <div className="max-w-[1120px] mx-auto px-[24px] pt-[64px] pb-[44px]">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-[40px]">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-[30px]">
           {/* Brand column */}
           <div className="md:col-span-2 flex flex-col gap-[16px]">
             <Logo expanded size={26} />
