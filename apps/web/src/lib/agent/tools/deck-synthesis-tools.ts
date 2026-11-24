@@ -673,7 +673,7 @@ export async function executeDeckSynthesisTool(
             fromSlideId: slideId,
             toSlideId: nextSlideId,
             animation: 'magic-move',
-            duration: 0.65,
+            duration: 650,
             ease: { x1: 0.22, y1: 1, x2: 0.36, y2: 1 },
             trigger: 'click',
           })

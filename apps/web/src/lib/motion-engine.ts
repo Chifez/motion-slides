@@ -359,3 +359,20 @@ export function cubicBezierToArray(bezier: CubicBezier): [number, number, number
 export function msToSec(ms: number): number {
   return ms / 1000
 }
+
+/**
+ * Normalizes legacy second-based transition durations (e.g. `0.65` → `650ms`)
+ * while preserving normal millisecond durations and invalid/zero fallbacks.
+ */
+export function normalizeTransitionDurationMs(
+  duration: number | undefined | null,
+  fallbackMs: number,
+): number {
+  if (typeof duration !== 'number' || !Number.isFinite(duration) || duration <= 0) {
+    return fallbackMs
+  }
+  if (duration <= 10) {
+    return Math.round(duration * 1000)
+  }
+  return duration
+}

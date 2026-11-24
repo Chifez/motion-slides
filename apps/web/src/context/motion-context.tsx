@@ -16,6 +16,7 @@ import {
   buildTransition,
   cubicBezierToArray,
   msToSec,
+  normalizeTransitionDurationMs,
   getContinuingIds,
   getNewElementIds,
   getHeuristicMatchingMap,
@@ -107,7 +108,7 @@ interface ProviderProps {
 
 export function MotionProvider({ settings, previousSlide, currentSlide, activeTransition, children, isTimelinePreview = false }: ProviderProps) {
   // Per-transition settings override global playback settings when defined
-  const durationMs = activeTransition?.duration ?? settings.transitionDuration
+  const durationMs = normalizeTransitionDurationMs(activeTransition?.duration, settings.transitionDuration)
   const easeBezier = activeTransition?.ease ?? settings.transitionEase
 
   const transition = buildTransition({ ...settings, transitionDuration: durationMs, transitionEase: easeBezier })

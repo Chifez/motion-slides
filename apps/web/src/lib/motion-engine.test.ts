@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getHeuristicMatchingMap } from './motion-engine'
+import { getHeuristicMatchingMap, normalizeTransitionDurationMs } from './motion-engine'
 import type { Slide, SceneElement } from '@motionslides/shared'
 
 describe('Heuristic Magic Move Matching', () => {
@@ -88,5 +88,13 @@ describe('Heuristic Magic Move Matching', () => {
 
     const map = getHeuristicMatchingMap(fromSlide, toSlide)
     expect(map['node-new-id']).toBeUndefined()
+  })
+
+  it('normalizes legacy second-based transition durations into milliseconds', () => {
+    expect(normalizeTransitionDurationMs(0.65, 500)).toBe(650)
+    expect(normalizeTransitionDurationMs(500, 500)).toBe(500)
+    expect(normalizeTransitionDurationMs(0, 500)).toBe(500)
+    expect(normalizeTransitionDurationMs(undefined, 500)).toBe(500)
+    expect(normalizeTransitionDurationMs(Number.NaN, 500)).toBe(500)
   })
 })
