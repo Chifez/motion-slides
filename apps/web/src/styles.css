@@ -24,17 +24,24 @@
   --ms-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
 
   /* Timeline */
-  --ms-tl-bg: #f0f0f3;
-  --ms-tl-surface: #e8e8ec;
+  --ms-tl-bg: #f1f1f4;
+  --ms-tl-surface: #e9e9ee;
+  --ms-tl-track-bg: #f6f6f8;
+  --ms-tl-track-alt: #eeeef2;
   --ms-tl-border: rgba(0, 0, 0, 0.08);
-  --ms-tl-border-strong: rgba(0, 0, 0, 0.12);
-  --ms-tl-text-muted: rgba(0, 0, 0, 0.35);
-  --ms-tl-text-dim: rgba(0, 0, 0, 0.2);
+  --ms-tl-border-strong: rgba(0, 0, 0, 0.14);
+  --ms-tl-text-muted: rgba(0, 0, 0, 0.52);
+  --ms-tl-text-dim: rgba(0, 0, 0, 0.34);
+  --ms-tl-playhead: #18181b;
+  --ms-tl-snap: #2563eb;
+  --ms-tl-caption-accent: #d97706;
+  --ms-tl-vo-accent: #2563eb;
+  --ms-tl-bgm-accent: #0d9488;
   /* Waveform fills */
-  --ms-vo-fill: rgba(109, 40, 217, 0.35);
-  --ms-vo-fill-selected: rgba(139, 92, 246, 0.6);
-  --ms-bgm-fill: rgba(7, 89, 133, 0.35);
-  --ms-bgm-fill-selected: rgba(14, 165, 233, 0.55);
+  --ms-vo-fill: rgba(37, 99, 235, 0.36);
+  --ms-vo-fill-selected: rgba(37, 99, 235, 0.72);
+  --ms-bgm-fill: rgba(13, 148, 136, 0.34);
+  --ms-bgm-fill-selected: rgba(13, 148, 136, 0.68);
 
   /* Z-Index Tokens */
   --z-canvas: 10;
@@ -59,17 +66,24 @@
   --ms-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
 
   /* Timeline */
-  --ms-tl-bg: #0a0a0c;
-  --ms-tl-surface: #0d0d10;
-  --ms-tl-border: rgba(255, 255, 255, 0.06);
-  --ms-tl-border-strong: rgba(255, 255, 255, 0.10);
-  --ms-tl-text-muted: rgba(255, 255, 255, 0.30);
-  --ms-tl-text-dim: rgba(255, 255, 255, 0.15);
+  --ms-tl-bg: #0c0c0e;
+  --ms-tl-surface: #121215;
+  --ms-tl-track-bg: #0e0e11;
+  --ms-tl-track-alt: #111115;
+  --ms-tl-border: rgba(255, 255, 255, 0.07);
+  --ms-tl-border-strong: rgba(255, 255, 255, 0.14);
+  --ms-tl-text-muted: rgba(255, 255, 255, 0.52);
+  --ms-tl-text-dim: rgba(255, 255, 255, 0.30);
+  --ms-tl-playhead: #f4f4f5;
+  --ms-tl-snap: #3b82f6;
+  --ms-tl-caption-accent: #f59e0b;
+  --ms-tl-vo-accent: #3b82f6;
+  --ms-tl-bgm-accent: #14b8a6;
   /* Waveform fills */
-  --ms-vo-fill: rgba(139, 92, 246, 0.25);
-  --ms-vo-fill-selected: rgba(167, 139, 250, 0.45);
-  --ms-bgm-fill: rgba(56, 189, 248, 0.20);
-  --ms-bgm-fill-selected: rgba(125, 211, 252, 0.40);
+  --ms-vo-fill: rgba(59, 130, 246, 0.38);
+  --ms-vo-fill-selected: rgba(96, 165, 250, 0.75);
+  --ms-bgm-fill: rgba(20, 184, 166, 0.34);
+  --ms-bgm-fill-selected: rgba(45, 212, 191, 0.72);
 }
 
 /* ── Resets ────────────────────────────────── */

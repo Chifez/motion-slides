@@ -1,4 +1,4 @@
-import type { Slide } from '@motionslides/shared'
+import type { Slide, SlideTransition } from '@motionslides/shared'
 import {
   AUDIO_TYPE_BGM,
   AUDIO_TYPE_VOICEOVER,
@@ -19,6 +19,20 @@ export interface SlideWithTiming {
   end: number
   duration: number
   transitionDuration: number
+  outgoingTransition: SlideTransition | null
 }
 
+export interface MutedTracks {
+  vo: boolean
+  bgm: boolean
+}
 
+export interface ScrubState {
+  active: boolean
+  time: number
+}
+
+export interface ResizingSlideState {
+  slideId: string
+  duration: number
+}
