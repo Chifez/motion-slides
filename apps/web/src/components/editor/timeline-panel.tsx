@@ -34,6 +34,7 @@ export function TimelinePanel() {
   usePermissions()
   const isMobile = useIsMobile()
 
+  const isPresenting = useEditorStore(s => s.isPresenting)
   const timelineTracksVisible = useEditorStore(s => s.timelineTracksVisible ?? true)
   const setTimelineTracksVisible = useEditorStore(s => s.setTimelineTracksVisible)
   const activeSlideIndex = useEditorStore(s => s.activeSlideIndex)
@@ -282,8 +283,16 @@ export function TimelinePanel() {
     window.addEventListener('mouseup', onUp)
   }
 
+  // Stop timeline playback when fullscreen presentation launches
+  useEffect(() => {
+    if (isPresenting && playback.isPlaying) {
+      playback.setIsPlaying(false)
+    }
+  }, [isPresenting, playback.isPlaying, playback.setIsPlaying])
+
   // Timeline keyboard shortcuts
   useEffect(() => {
+    if (isPresenting) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return
       const target = e.target as HTMLElement | null
@@ -331,6 +340,7 @@ export function TimelinePanel() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [
+    isPresenting,
     playback.isPlaying,
     playback.setIsPlaying,
     playback.setCurrentTime,

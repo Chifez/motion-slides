@@ -39,6 +39,7 @@ export function TimelinePreview({
   currentTime,
 }: Props) {
   const project = useEditorStore(state => state.activeProject())
+  const isPresenting = useEditorStore(state => state.isPresenting)
   const defaultDims = getCanvasDimensions(playbackSettings.aspectRatio)
   const stageW = liveSlide?.customWidth ?? defaultDims.width
   const stageH = liveSlide?.customHeight ?? defaultDims.height
@@ -61,24 +62,24 @@ export function TimelinePreview({
         style={{ containerType: 'size' }}
       >
         <div
-          className="relative rounded-lg overflow-hidden bg-black ring-1 ring-black/15 dark:ring-white/10 shadow-[0_18px_48px_rgba(0,0,0,0.38)]"
+          className="relative isolate rounded-lg overflow-hidden bg-black ring-1 ring-black/15 dark:ring-white/10 shadow-[0_18px_48px_rgba(0,0,0,0.38)]"
           style={{
             width: `min(100cqw, calc(100cqh * ${ratio}))`,
             height: `min(100cqh, calc(100cqw / ${ratio}))`,
           }}
         >
-          {liveSlide ? (
+          {!isPresenting && liveSlide ? (
             <ScaledStage
               slide={liveSlide}
               previousSlide={livePrevSlide}
               settings={playbackSettings}
               activeTransition={activeTransition}
             />
-          ) : (
+          ) : !liveSlide ? (
             <div className="absolute inset-0 flex items-center justify-center text-white/30 text-xs">
               No slides yet
             </div>
-          )}
+          ) : null}
 
           {slides.length > 0 && (
             <div className="absolute top-2.5 right-2.5 bg-black/65 backdrop-blur-sm border border-white/10 text-[10px] font-mono tabular-nums text-white/70 px-2 py-0.5 rounded-md pointer-events-none">
@@ -86,7 +87,7 @@ export function TimelinePreview({
             </div>
           )}
 
-          {captionsVisible && (
+          {!isPresenting && captionsVisible && (
             <CaptionOverlay
               captions={project?.captions}
               currentTime={currentTime}
